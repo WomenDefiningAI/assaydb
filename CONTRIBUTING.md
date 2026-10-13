@@ -16,7 +16,8 @@ or expensive benchmark work with maintainers before implementation.
    git switch -c contribution/short-description upstream/main
    ```
    Replace YOUR_GITHUB_LOGIN with your login.
-2. Make a focused change. For engine changes, use Rust 1.90.0 and a native linker:
+2. Make a focused change and open a draft PR early to agree on scope. For engine
+   changes, use Rust 1.90.0 and a native linker:
    ```sh
    python3 scripts/with_engine_activity.py rust-tests cargo test --locked --all-targets
    python3 scripts/with_engine_activity.py clippy cargo clippy --locked --all-targets -- -D warnings
@@ -29,7 +30,7 @@ or expensive benchmark work with maintainers before implementation.
 3. Review every proposed commit for private data, credentials, session links,
    personal contact details, and upstream licensing. Use a GitHub noreply email
    if you prefer to keep your personal email private.
-4. Push to your fork and open a draft PR targeting main. Describe the change,
+4. Push updates to your fork and keep the draft PR targeting main. Describe the change,
    exact checks and outcomes, anything not run, limitations, and attribution.
 
 Do not change expected answers, benchmark inputs, queries, normalizers, or
@@ -40,6 +41,36 @@ a package upload or a new correctness or proof claim.
 On a shared host, unrelated checkouts must use the same
 `ASSAY_ACTIVITY_LOCK_PATH`. Serialize builds, tests, and native measurements;
 never benchmark a busy host or take independent nested locks.
+
+## Maintainer verification and current availability
+
+The intended path is a focused draft PR, local checks, maintainer review,
+scope-appropriate TestMini correctness and benchmark evidence, reviewed acceptance,
+and then approval and merge. TestMini execution and accepted-result publication
+are being prepared; this repository does not yet provide operating public
+automation for that path. No fresh TestMiniM4 Alpha 1/2 baseline is available.
+Leave unavailable checks and acceptance marked **pending**, rather than claiming
+a pass or implying that a platform merge check enforces this process.
+
+Maintainers agree on the required checks and compare the tested source revision
+with the current PR head and base. Results must be attached or linked to the PR,
+include failures and limitations, and be accepted before the change is approved.
+Any execution-affecting change invalidates old results and requires a rerun.
+Documentation-only changes receive link, example, privacy and presentation checks
+suited to their scope; they do not automatically require native benchmarks.
+Evidence-only commits need explicit final-head validation as described in the
+[planned result contract](docs/CONTRIBUTION-RESULTS.md).
+
+For performance work, start with a small slow-query reproduction using data you
+can redistribute. Agree on the workload, baseline and timing method before an
+expensive comparison. Development benchmark datasets and proof workspaces are
+not included in this export; future formal-proof or harness work needs separately
+agreed scope and available sources.
+
+Merged-PR credit is not correctness certification or benchmark acceptance.
+Charts may change only from reviewed, accepted measurements; existing historical
+values remain until such evidence is available. Publishing a Python or Rust
+package is a separate release action, not an automatic consequence of merging.
 
 ## Wrong answers and security
 

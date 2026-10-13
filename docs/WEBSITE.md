@@ -56,16 +56,20 @@ former assaydb.org performance, component-results, or receipt-viewer pages.
   and toggle positive and negative MAX inputs. Verify the no-JavaScript fallback.
 - Keep all historical values, denominators, losses, caveats, and license notices.
 
-## Later static hosting
+## Static hosting
 
-The root `vercel.json` selects no framework, skips install/build commands, and
-serves only `site/` as output. Its settings follow the
-[Vercel configuration reference](https://vercel.com/docs/project-configuration/vercel-json).
-It contains no project or account identity. Automatic Git deployments are
-disabled with `git.deploymentEnabled: false`, following the
-[Git configuration reference](https://vercel.com/docs/project-configuration/git-configuration).
-Enabling them requires a later, separately approved change. Connecting a host
-and deploying remain separate actions.
+The repository-root `vercel.json` describes a root-directory import: no framework,
+blank install/build commands, `site/` output, and `git.deploymentEnabled: false`.
+The current project instead uses Root Directory `site`, framework Other, blank
+install/build commands and output `.`. The repository-root configuration is not
+selected in that setup, so its Git deployment flag does not establish whether
+this project automatically deploys. See the Vercel
+[configuration reference](https://vercel.com/docs/project-configuration/vercel-json)
+and [Git configuration reference](https://vercel.com/docs/project-configuration/git-configuration).
+
+Automatic production deployment after an approved main-branch merge is intended,
+but has not yet been verified by a subsequent merge. This documentation update
+changes no hosting or GitHub settings and adds no runner or deployment workflow.
 
 ## Public contribution activity
 
@@ -104,7 +108,10 @@ authors. Bot names are plain text, with commit evidence links where available;
 we do not guess human profile URLs for app accounts. Reviews, comments, committers, raw author names/emails and coauthor
 trailers are not used to infer collaboration. Deleted/unlinked accounts and
 incomplete commit-author scans are labeled explicitly. This is attribution for a
-PR, not a claim that each author wrote every eligible file.
+PR, not a claim that each author wrote every eligible file. Merged-PR credit does
+not certify correctness or accept benchmark results. Future chart updates must
+use reviewed, accepted measurements under the
+[planned result contract](CONTRIBUTION-RESULTS.md); existing historical JSON is unchanged.
 
 The scan requests up to three 100-item pages of closed PRs ordered by most recent
 update, then sorts qualifying results by merge date. It displays up to 12 entries
