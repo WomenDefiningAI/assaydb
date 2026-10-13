@@ -17,8 +17,8 @@ the interactive charts from fetching their data.
 The approved website snapshot is `ce55d8c4a704ebc988685356c258aba11bea7d9b`.
 Its handoff archive, `assaydb-approved-website-ce55d8c.zip`, has SHA-256
 `be08b8d8224f4679d927c4909b1e4000398b93d0d186df31b2537ac59a88aa4b`.
-All 49 runtime files were imported. CSS, fonts, images, measurement exports, and evidence summaries preserve the
-approved bytes. Chart code is unchanged except for the coverage summary link.
+All 49 runtime files were imported. At import, CSS, fonts, images, measurement exports, and evidence summaries preserved the
+approved bytes. The contribution activity section described below adds a small CSS extension. Chart code is unchanged except for the coverage summary link.
 Public-facing copy and links were updated, and `progress.json` retains only the chart inputs,
 without the unused activity log and planning board.
 
@@ -66,3 +66,82 @@ disabled with `git.deploymentEnabled: false`, following the
 [Git configuration reference](https://vercel.com/docs/project-configuration/git-configuration).
 Enabling them requires a later, separately approved change. Connecting a host
 and deploying remain separate actions.
+
+## Public contribution activity
+
+The contribution page reads the unauthenticated public GitHub REST API for
+`WomenDefiningAI/assaydb` (repository ID `1418037309`) when opened or when a reader
+chooses **Check again**. It has no token, backend, build-time snapshot, persistent
+cache, scheduled job, or automatic polling. It works when `site/` is the hosting
+root. This feature does not change the hosting configuration.
+
+Only closed PRs with a merge timestamp into this repository's `main` can appear.
+Changed files must match at least one of these explicit paths:
+
+- `src/**/*.rs`, `tests/**/*.rs`, or `tests/fixtures/**/*.{sql,json,tsv}`;
+- `bindings/python/src/**/*.rs`, `bindings/python/python/**/*.{py,pyi}`, or
+  `bindings/python/tests/**/*.py`;
+- `benches/**/*.{rs,py,sql}`, `benchmarks/**/*.{rs,py,sql}`, or the existing
+  benchmark-method document `docs/BENCHMARK-INPUTS.md`;
+- `proofs/**/*.{rs,lean,v,smt2}` or `verification/**/*.{rs,lean,v,smt2}`.
+
+Here `**/*` also includes files directly inside that directory. The latter
+benchmark/proof directories reserve explicit locations for future public work;
+they do not assert that the separate reference evaluator has been released.
+Renamed files qualify by their old or new path. These are transparent path-based
+criteria, not an automated judgment of a change's scientific value. A mixed PR
+with a qualifying file can appear. Titles do not determine eligibility. Routine
+website, styling, deployment, release setup, manifests alone, build scripts and
+unmerged PRs do not qualify. The imported Alpha commits have no public PR records
+and are never seeded into the list. New relevant paths need an explicit update to
+this allowlist and its tests.
+
+Each entry shows its exact public PR, title, UTC merge date, and GitHub PR author.
+Additional authors appear only from GitHub-linked accounts on non-merge commits
+in that PR, with a commit link as evidence. Accounts are deduplicated without
+regard to letter case. Bots are labeled and grouped separately from human commit
+authors. Reviews, comments, committers, raw author names/emails and coauthor
+trailers are not used to infer collaboration. Deleted/unlinked accounts and
+incomplete commit-author scans are labeled explicitly. This is attribution for a
+PR, not a claim that each author wrote every eligible file.
+
+The scan requests up to three 100-item pages of closed PRs ordered by most recent
+update, then sorts qualifying results by merge date. It displays up to 12 entries
+and stops after 30 requests or 25 seconds (8 seconds per request). It follows file
+and commit pagination using only fixed GitHub API URLs, respecting the API's
+3,000-file and 250-commit caps. Limits and failures produce an incomplete/error
+message, not a false zero; verified entries remain visible. A complete scan with
+no qualifying PRs shows an honest empty state. The fallback GitHub link includes
+all merged PRs, including website work. It is available without JavaScript.
+
+Unauthenticated GitHub access is subject to shared-IP rate limits and availability.
+A page load normally needs one PR-list request, one file request per merged PR,
+and commit requests for qualifying PRs. Retry is manual. Live results can change
+between paginated requests; this is recent activity, not an exhaustive ledger.
+See the official [pull request API](https://docs.github.com/en/rest/pulls/pulls)
+and [rate limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api).
+
+All titles are rendered with DOM `textContent`, never HTML. API-provided URLs,
+PR bodies, email/name metadata and scripts are not used. Email-like strings are
+omitted from titles. Profile and evidence URLs use validated identifiers and
+fixed public GitHub prefixes. Requests omit credentials and the page referrer.
+
+Run dependency-free selection/pagination/error tests with:
+
+```sh
+node --test scripts/website-tests/contributors.test.cjs
+```
+
+With Python Playwright and Chromium already installed, serve `site/` as above,
+then run browser checks (fixture responses only; they do not call GitHub):
+
+```sh
+python3 scripts/website-tests/contributors.browser.py
+```
+
+`CHROMIUM` overrides `/usr/bin/chromium`; `WEBSITE_TEST_URL` overrides the local
+server URL. Optional `WEBSITE_SCREENSHOTS` writes desktop/mobile section captures.
+Browser tests cover all four pages, profile links, responsive overflow, XSS,
+loading, empty/error/retry states, unavailable accounts, bot attribution and the
+no-JavaScript fallback. Synthetic contribution records exist only in tests, never
+in the shipped site's data.

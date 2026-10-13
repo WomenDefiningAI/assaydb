@@ -6,3 +6,6 @@ body[data-page]{--color-story-accent:#e9a99b}
 .page-block>h2:first-child,#contribute>section>h3{color:var(--color-story-accent)}
 .page-block{border-left-color:var(--color-story-accent)}
 #speed-tabs button[aria-selected="true"],.start-choices button[aria-pressed="true"]{border-color:var(--color-story-accent);color:var(--color-story-accent);background:var(--color-panel)}
+
+/* Compact public contribution records, using the existing story palette. */
+.contribution-list{list-style:none;padding:0}.contribution-list>li{border-top:1px solid var(--color-rule);padding-block:1rem;overflow-wrap:anywhere}.contribution-list h3{margin:0 0 .5rem}.contribution-list p{margin-block:.4rem}#contribution-retry:disabled{opacity:.65;cursor:wait}
