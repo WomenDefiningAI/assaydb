@@ -100,7 +100,8 @@ Each entry shows its exact public PR, title, UTC merge date, and GitHub PR autho
 Additional authors appear only from GitHub-linked accounts on non-merge commits
 in that PR, with a commit link as evidence. Accounts are deduplicated without
 regard to letter case. Bots are labeled and grouped separately from human commit
-authors. Reviews, comments, committers, raw author names/emails and coauthor
+authors. Bot names are plain text, with commit evidence links where available;
+we do not guess human profile URLs for app accounts. Reviews, comments, committers, raw author names/emails and coauthor
 trailers are not used to infer collaboration. Deleted/unlinked accounts and
 incomplete commit-author scans are labeled explicitly. This is attribution for a
 PR, not a claim that each author wrote every eligible file.
@@ -114,7 +115,8 @@ message, not a false zero; verified entries remain visible. A complete scan with
 no qualifying PRs shows an honest empty state. The fallback GitHub link includes
 all merged PRs, including website work. It is available without JavaScript.
 
-Unauthenticated GitHub access is subject to shared-IP rate limits and availability.
+Unauthenticated GitHub access is limited to 60 requests per hour per originating
+IP address, shared with other anonymous clients on that IP, and depends on GitHub availability.
 A page load normally needs one PR-list request, one file request per merged PR,
 and commit requests for qualifying PRs. Retry is manual. Live results can change
 between paginated requests; this is recent activity, not an exhaustive ledger.

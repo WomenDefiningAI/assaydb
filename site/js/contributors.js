@@ -121,9 +121,10 @@
       parent.append(node); return node;
     };
     function userLink(parent, user) {
+      if (user.kind === 'bot') { add(parent, 'span', '@' + user.login + ' (bot)'); return; }
       const link = add(parent, 'a', '@' + user.login);
       link.href = 'https://github.com/' + encodeURIComponent(user.login);
-      if (user.kind !== 'user') add(parent, 'span', user.kind === 'bot' ? ' (bot)' : ' (account type unknown)');
+      if (user.kind !== 'user') add(parent, 'span', ' (account type unknown)');
     }
     for (const row of result.rows) {
       const item = add(list, 'li'), heading = add(item, 'h3');

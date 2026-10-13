@@ -47,6 +47,8 @@ with sync_playwright() as p:
         assert 'Private Name' not in text and 'private@example.com' not in text
         assert 'Other commit authors: @bob' in text and 'Bot commit authors: @builder[bot] (bot)' in text
         assert page.locator('a[href="https://github.com/WomenDefiningAI/assaydb/commit/' + 'a'*40 + '"]').count() == 1
+        assert page.locator('a[href="https://github.com/WomenDefiningAI/assaydb/commit/' + 'b'*40 + '"]').count() == 1
+        assert page.locator('#contribution-list a[href*="%5Bbot%5D"]').count() == 0
         page.locator('#engine-contributions details').evaluate('(node) => node.open = true')
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
         if os.environ.get('WEBSITE_SCREENSHOTS'):
@@ -73,6 +75,20 @@ with sync_playwright() as p:
     page.wait_for_function("document.querySelector('#contribution-status').textContent.startsWith('No merged')")
     assert page.locator('#contribution-list > li').count() == 0
     assert page.locator('#contribution-retry').is_enabled()
+    page.close()
+
+    # Bot PR authors remain labeled text, without guessed human profile URLs.
+    page = browser.new_page()
+    for login in ('dependabot[bot]', 'github-actions[bot]'):
+        page.route(API + '**', lambda route: route.fulfill(status=200, content_type='application/json', body=json.dumps(
+            [dict(filename='src/engine.rs')] if '/files?' in route.request.url else
+            [] if '/commits?' in route.request.url else [{**PR, 'user': dict(login=login, type='Bot')}])) )
+        page.goto(BASE + '/contribute.html')
+        page.wait_for_function("document.querySelector('#engine-contributions').getAttribute('aria-busy') === 'false'")
+        assert f'PR author: @{login} (bot)' in page.locator('#contribution-list').inner_text()
+        assert page.locator('#contribution-list a[href*="%5Bbot%5D"]').count() == 0
+        assert page.locator('#contribution-list h3 a').get_attribute('href').endswith('/pull/42')
+        page.unroute(API + '**')
     page.close()
 
     # Unavailable/deleted accounts and partial author evidence are explicit.
