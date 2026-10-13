@@ -17,9 +17,9 @@ the interactive charts from fetching their data.
 The approved website snapshot is `ce55d8c4a704ebc988685356c258aba11bea7d9b`.
 Its handoff archive, `assaydb-approved-website-ce55d8c.zip`, has SHA-256
 `be08b8d8224f4679d927c4909b1e4000398b93d0d186df31b2537ac59a88aa4b`.
-All 49 runtime files were imported. CSS, fonts, images, chart code, measurement
-exports, and evidence summaries preserve the approved bytes. Public-facing
-copy and links were updated, and `progress.json` retains only the chart inputs,
+All 49 runtime files were imported. CSS, fonts, images, measurement exports, and evidence summaries preserve the
+approved bytes. Chart code is unchanged except for the coverage summary link.
+Public-facing copy and links were updated, and `progress.json` retains only the chart inputs,
 without the unused activity log and planning board.
 
 Retain the font licenses in `site/fonts/*-OFL.txt` and the repository's existing
@@ -42,10 +42,10 @@ proved. Those runs disabled fast-engine cross-checking. The reference evaluator
 and its proof workspace are not publicly released. The public packages contain
 the experimental fast engine only.
 
-Some methods and receipt-viewer links use the existing public assaydb.org site;
-those supporting pages are not included here. Raw evidence links use the
-bundled summaries. Review these external dependencies before any future move
-of the production domain.
+Historical timing methods are retained in the collapsed section on the engine
+page. Timing and reference-coverage links resolve to bundled JSON measurement
+summaries. These summaries are not raw logs. The site does not depend on the
+former assaydb.org performance, component-results, or receipt-viewer pages.
 
 ## Validation when editing
 

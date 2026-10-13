@@ -84,7 +84,7 @@
       text('p',`${p.rate.toFixed(2)}% · ${fmt(p.n)} / ${fmt(p.total)} full-collection records`).className='detail-value';
       text('p',p.change);
       text('p',p.gain===null?'Baseline; no earlier full-suite point.':`${p.gain>=0?'+':''}${fmt(p.gain)} records · ${p.pp>=0?'+':''}${p.pp.toFixed(2)} percentage points vs previous milestone.`);
-      const link=text('a','Inspect this exact receipt →');link.href='https://www.assaydb.org/receipt.html?f='+encodeURIComponent(p.path);
+      const link=text('a','Measurement summary (JSON)');link.href=p.path;
       const dates=doc.createElement('details'), summary=doc.createElement('summary');summary.textContent='Recorded completion date';dates.append(summary);
       const date=doc.createElement('p');date.textContent=p.date;dates.append(date);detail.append(dates);
       detail.dataset.selected=String(i);
