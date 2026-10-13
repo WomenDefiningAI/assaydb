@@ -1,0 +1,112 @@
+{
+  "source_path": "reports/correctness-batch-7/sql-attempt-1/oracle/dataset-000/results.jsonl",
+  "source_sha256": "290b28e090f4a2077e5bc4ad217a398a0b2f317edc45ff330bea83e000e67997",
+  "record_count": 8,
+  "policy": "New explicit mixed Int/Float IN-subquery refusal; originals stay wrong in original evidence.",
+  "records": [
+    {
+      "dataset": 0,
+      "index": 20,
+      "sql": "SELECT (9007199254740993)=(CAST('9007199254740992' AS REAL)),(9007199254740993)<>(CAST('9007199254740992' AS REAL)),(9007199254740993)<(CAST('9007199254740992' AS REAL)),(9007199254740993)<=(CAST('9007199254740992' AS REAL)),(9007199254740993)>(CAST('9007199254740992' AS REAL)),(9007199254740993)>=(CAST('9007199254740992' AS REAL)),(9007199254740993) IN (CAST('9007199254740992' AS REAL)),(9007199254740993) IN (SELECT CAST('9007199254740992' AS REAL)),(9007199254740993) NOT IN (SELECT CAST('9007199254740992' AS REAL)),NULLIF(9007199254740993,CAST('9007199254740992' AS REAL)) IS NULL",
+      "sql_sha256": "9de24f56a79f6aa4a7b90ad2b11c38df2949bbd0026794e56e18a442f31b72b4",
+      "original_outcome": {
+        "status": "wrong-answer",
+        "detail": "value differs at row0/column7",
+        "ordered_float_bit_differences": [],
+        "ordered_storage_class_differences": 0,
+        "unordered_bit_alignment": null
+      }
+    },
+    {
+      "dataset": 0,
+      "index": 21,
+      "sql": "SELECT (CAST('9007199254740992' AS REAL))=(9007199254740993),(CAST('9007199254740992' AS REAL))<>(9007199254740993),(CAST('9007199254740992' AS REAL))<(9007199254740993),(CAST('9007199254740992' AS REAL))<=(9007199254740993),(CAST('9007199254740992' AS REAL))>(9007199254740993),(CAST('9007199254740992' AS REAL))>=(9007199254740993),(CAST('9007199254740992' AS REAL)) IN (9007199254740993),(CAST('9007199254740992' AS REAL)) IN (SELECT 9007199254740993),(CAST('9007199254740992' AS REAL)) NOT IN (SELECT 9007199254740993),NULLIF(CAST('9007199254740992' AS REAL),9007199254740993) IS NULL",
+      "sql_sha256": "5cd12767c2cb414d95f0159da2763ff055dc8bc55abdcf9c802cbc4fd15ce981",
+      "original_outcome": {
+        "status": "wrong-answer",
+        "detail": "value differs at row0/column7",
+        "ordered_float_bit_differences": [],
+        "ordered_storage_class_differences": 0,
+        "unordered_bit_alignment": null
+      }
+    },
+    {
+      "dataset": 0,
+      "index": 24,
+      "sql": "SELECT (-9007199254740993)=(CAST('-9007199254740992' AS REAL)),(-9007199254740993)<>(CAST('-9007199254740992' AS REAL)),(-9007199254740993)<(CAST('-9007199254740992' AS REAL)),(-9007199254740993)<=(CAST('-9007199254740992' AS REAL)),(-9007199254740993)>(CAST('-9007199254740992' AS REAL)),(-9007199254740993)>=(CAST('-9007199254740992' AS REAL)),(-9007199254740993) IN (CAST('-9007199254740992' AS REAL)),(-9007199254740993) IN (SELECT CAST('-9007199254740992' AS REAL)),(-9007199254740993) NOT IN (SELECT CAST('-9007199254740992' AS REAL)),NULLIF(-9007199254740993,CAST('-9007199254740992' AS REAL)) IS NULL",
+      "sql_sha256": "6b080a95e865cc84934b9d4670eccd76a7d49267039de0688e803622de4e6a35",
+      "original_outcome": {
+        "status": "wrong-answer",
+        "detail": "value differs at row0/column7",
+        "ordered_float_bit_differences": [],
+        "ordered_storage_class_differences": 0,
+        "unordered_bit_alignment": null
+      }
+    },
+    {
+      "dataset": 0,
+      "index": 25,
+      "sql": "SELECT (CAST('-9007199254740992' AS REAL))=(-9007199254740993),(CAST('-9007199254740992' AS REAL))<>(-9007199254740993),(CAST('-9007199254740992' AS REAL))<(-9007199254740993),(CAST('-9007199254740992' AS REAL))<=(-9007199254740993),(CAST('-9007199254740992' AS REAL))>(-9007199254740993),(CAST('-9007199254740992' AS REAL))>=(-9007199254740993),(CAST('-9007199254740992' AS REAL)) IN (-9007199254740993),(CAST('-9007199254740992' AS REAL)) IN (SELECT -9007199254740993),(CAST('-9007199254740992' AS REAL)) NOT IN (SELECT -9007199254740993),NULLIF(CAST('-9007199254740992' AS REAL),-9007199254740993) IS NULL",
+      "sql_sha256": "46188e74581396a6d39405223642d0c099d97cf1caee39c3ad8a79c9cb249bbd",
+      "original_outcome": {
+        "status": "wrong-answer",
+        "detail": "value differs at row0/column7",
+        "ordered_float_bit_differences": [],
+        "ordered_storage_class_differences": 0,
+        "unordered_bit_alignment": null
+      }
+    },
+    {
+      "dataset": 0,
+      "index": 28,
+      "sql": "SELECT (9223372036854775807)=(CAST('9223372036854775808' AS REAL)),(9223372036854775807)<>(CAST('9223372036854775808' AS REAL)),(9223372036854775807)<(CAST('9223372036854775808' AS REAL)),(9223372036854775807)<=(CAST('9223372036854775808' AS REAL)),(9223372036854775807)>(CAST('9223372036854775808' AS REAL)),(9223372036854775807)>=(CAST('9223372036854775808' AS REAL)),(9223372036854775807) IN (CAST('9223372036854775808' AS REAL)),(9223372036854775807) IN (SELECT CAST('9223372036854775808' AS REAL)),(9223372036854775807) NOT IN (SELECT CAST('9223372036854775808' AS REAL)),NULLIF(9223372036854775807,CAST('9223372036854775808' AS REAL)) IS NULL",
+      "sql_sha256": "1acae6ce1ccad53237385c3094ea863f3491fad768af35c55d42368d9d753a0c",
+      "original_outcome": {
+        "status": "wrong-answer",
+        "detail": "value differs at row0/column7",
+        "ordered_float_bit_differences": [],
+        "ordered_storage_class_differences": 0,
+        "unordered_bit_alignment": null
+      }
+    },
+    {
+      "dataset": 0,
+      "index": 29,
+      "sql": "SELECT (CAST('9223372036854775808' AS REAL))=(9223372036854775807),(CAST('9223372036854775808' AS REAL))<>(9223372036854775807),(CAST('9223372036854775808' AS REAL))<(9223372036854775807),(CAST('9223372036854775808' AS REAL))<=(9223372036854775807),(CAST('9223372036854775808' AS REAL))>(9223372036854775807),(CAST('9223372036854775808' AS REAL))>=(9223372036854775807),(CAST('9223372036854775808' AS REAL)) IN (9223372036854775807),(CAST('9223372036854775808' AS REAL)) IN (SELECT 9223372036854775807),(CAST('9223372036854775808' AS REAL)) NOT IN (SELECT 9223372036854775807),NULLIF(CAST('9223372036854775808' AS REAL),9223372036854775807) IS NULL",
+      "sql_sha256": "ef3124b498239721ba2d13a9737f9d3883e5e454c69afd87d5886b57c6d6ee93",
+      "original_outcome": {
+        "status": "wrong-answer",
+        "detail": "value differs at row0/column7",
+        "ordered_float_bit_differences": [],
+        "ordered_storage_class_differences": 0,
+        "unordered_bit_alignment": null
+      }
+    },
+    {
+      "dataset": 0,
+      "index": 32,
+      "sql": "SELECT (-9223372036854775807)=(CAST('-9223372036854775808' AS REAL)),(-9223372036854775807)<>(CAST('-9223372036854775808' AS REAL)),(-9223372036854775807)<(CAST('-9223372036854775808' AS REAL)),(-9223372036854775807)<=(CAST('-9223372036854775808' AS REAL)),(-9223372036854775807)>(CAST('-9223372036854775808' AS REAL)),(-9223372036854775807)>=(CAST('-9223372036854775808' AS REAL)),(-9223372036854775807) IN (CAST('-9223372036854775808' AS REAL)),(-9223372036854775807) IN (SELECT CAST('-9223372036854775808' AS REAL)),(-9223372036854775807) NOT IN (SELECT CAST('-9223372036854775808' AS REAL)),NULLIF(-9223372036854775807,CAST('-9223372036854775808' AS REAL)) IS NULL",
+      "sql_sha256": "b8735e5faa12b278731167c75d288ad93dff49a00ee30ef460e755d77348d5a9",
+      "original_outcome": {
+        "status": "wrong-answer",
+        "detail": "value differs at row0/column7",
+        "ordered_float_bit_differences": [],
+        "ordered_storage_class_differences": 0,
+        "unordered_bit_alignment": null
+      }
+    },
+    {
+      "dataset": 0,
+      "index": 33,
+      "sql": "SELECT (CAST('-9223372036854775808' AS REAL))=(-9223372036854775807),(CAST('-9223372036854775808' AS REAL))<>(-9223372036854775807),(CAST('-9223372036854775808' AS REAL))<(-9223372036854775807),(CAST('-9223372036854775808' AS REAL))<=(-9223372036854775807),(CAST('-9223372036854775808' AS REAL))>(-9223372036854775807),(CAST('-9223372036854775808' AS REAL))>=(-9223372036854775807),(CAST('-9223372036854775808' AS REAL)) IN (-9223372036854775807),(CAST('-9223372036854775808' AS REAL)) IN (SELECT -9223372036854775807),(CAST('-9223372036854775808' AS REAL)) NOT IN (SELECT -9223372036854775807),NULLIF(CAST('-9223372036854775808' AS REAL),-9223372036854775807) IS NULL",
+      "sql_sha256": "761c5589babf09371f15a4b4b69926186d67e31cdd4e2b4d117833255cde5f4a",
+      "original_outcome": {
+        "status": "wrong-answer",
+        "detail": "value differs at row0/column7",
+        "ordered_float_bit_differences": [],
+        "ordered_storage_class_differences": 0,
+        "unordered_bit_alignment": null
+      }
+    }
+  ]
+}

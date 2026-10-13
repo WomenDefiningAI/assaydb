@@ -1,0 +1,342 @@
+{
+  "sqllogictest_checkin": "ab599cbdd0976a63c5cfc7755588f716a7621f27",
+  "sqlite_version": "3.54.0",
+  "sqlite_source_id": "2026-10-07 10:41:59 d232720b7932c1cebe4cf5b1a1e9096889e1807844351390149dfeb2ea7fc304",
+  "amalgamation_sha256": "b739c477092f587417d402fe227eb13c0a83f7534e87082f4a1b80d429a57931",
+  "cases": [
+    {
+      "sql": "SELECT CAST(0 AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "0"
+      }
+    },
+    {
+      "sql": "SELECT CAST(0 AS REAL)",
+      "expected": {
+        "bits": "0000000000000000",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(1 AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "1"
+      }
+    },
+    {
+      "sql": "SELECT CAST(1 AS REAL)",
+      "expected": {
+        "bits": "3ff0000000000000",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(-1 AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "-1"
+      }
+    },
+    {
+      "sql": "SELECT CAST(-1 AS REAL)",
+      "expected": {
+        "bits": "bff0000000000000",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(9007199254740991 AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "9007199254740991"
+      }
+    },
+    {
+      "sql": "SELECT CAST(9007199254740991 AS REAL)",
+      "expected": {
+        "bits": "433fffffffffffff",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(9007199254740992 AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "9007199254740992"
+      }
+    },
+    {
+      "sql": "SELECT CAST(9007199254740992 AS REAL)",
+      "expected": {
+        "bits": "4340000000000000",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(9007199254740993 AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "9007199254740993"
+      }
+    },
+    {
+      "sql": "SELECT CAST(9007199254740993 AS REAL)",
+      "expected": {
+        "bits": "4340000000000000",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(-9007199254740993 AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "-9007199254740993"
+      }
+    },
+    {
+      "sql": "SELECT CAST(-9007199254740993 AS REAL)",
+      "expected": {
+        "bits": "c340000000000000",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(9223372036854775807 AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "9223372036854775807"
+      }
+    },
+    {
+      "sql": "SELECT CAST(9223372036854775807 AS REAL)",
+      "expected": {
+        "bits": "43e0000000000000",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(-9223372036854775808 AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "-9223372036854775808"
+      }
+    },
+    {
+      "sql": "SELECT CAST(-9223372036854775808 AS REAL)",
+      "expected": {
+        "bits": "c3e0000000000000",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(0.0 AS REAL) AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "0"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(0.0 AS REAL) AS REAL)",
+      "expected": {
+        "bits": "0000000000000000",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(-0.0 AS REAL) AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "0"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(-0.0 AS REAL) AS REAL)",
+      "expected": {
+        "bits": "8000000000000000",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(0.5 AS REAL) AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "0"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(0.5 AS REAL) AS REAL)",
+      "expected": {
+        "bits": "3fe0000000000000",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(-0.5 AS REAL) AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "0"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(-0.5 AS REAL) AS REAL)",
+      "expected": {
+        "bits": "bfe0000000000000",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(1.5 AS REAL) AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "1"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(1.5 AS REAL) AS REAL)",
+      "expected": {
+        "bits": "3ff8000000000000",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(-1.5 AS REAL) AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "-1"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(-1.5 AS REAL) AS REAL)",
+      "expected": {
+        "bits": "bff8000000000000",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(1.9999999999999998 AS REAL) AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "1"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(1.9999999999999998 AS REAL) AS REAL)",
+      "expected": {
+        "bits": "3fffffffffffffff",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(-1.9999999999999998 AS REAL) AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "-1"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(-1.9999999999999998 AS REAL) AS REAL)",
+      "expected": {
+        "bits": "bfffffffffffffff",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(9223372036854774784 AS REAL) AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "9223372036854774784"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(9223372036854774784 AS REAL) AS REAL)",
+      "expected": {
+        "bits": "43dfffffffffffff",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(-9223372036854774784 AS REAL) AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "-9223372036854774784"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(-9223372036854774784 AS REAL) AS REAL)",
+      "expected": {
+        "bits": "c3dfffffffffffff",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(9223372036854775807 AS REAL) AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "9223372036854775807"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(9223372036854775807 AS REAL) AS REAL)",
+      "expected": {
+        "bits": "43e0000000000000",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(-9223372036854775808 AS REAL) AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "-9223372036854775808"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(-9223372036854775808 AS REAL) AS REAL)",
+      "expected": {
+        "bits": "c3e0000000000000",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(9223372036854777856 AS REAL) AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "9223372036854775807"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(9223372036854777856 AS REAL) AS REAL)",
+      "expected": {
+        "bits": "43e0000000000001",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(-9223372036854777856 AS REAL) AS INTEGER)",
+      "expected": {
+        "class": "int",
+        "value": "-9223372036854775808"
+      }
+    },
+    {
+      "sql": "SELECT CAST(CAST(-9223372036854777856 AS REAL) AS REAL)",
+      "expected": {
+        "bits": "c3e0000000000001",
+        "class": "real"
+      }
+    },
+    {
+      "sql": "SELECT CAST(NULL AS INTEGER)",
+      "expected": {
+        "class": "null"
+      }
+    },
+    {
+      "sql": "SELECT CAST(NULL AS REAL)",
+      "expected": {
+        "class": "null"
+      }
+    }
+  ]
+}

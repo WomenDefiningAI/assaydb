@@ -1,0 +1,36 @@
+[package]
+name = "assaydb"
+version = "0.1.0-alpha.1"
+edition = "2024"
+rust-version = "1.90"
+publish = ["crates-io"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/WomenDefiningAI/assaydb"
+description = "Experimental analytical SQL engine with Arrow results and a JSON command-line interface"
+readme = "docs/CRATE-README.md"
+keywords = ["sql", "analytics", "arrow"]
+categories = ["database-implementations", "command-line-utilities"]
+include = ["/src/**", "/tests/*.rs", "/tests/fixtures/**", "/docs/CRATE-README.md", "/Cargo.toml", "/Cargo.lock", "/rust-toolchain.toml", "/LICENSE-MIT", "/LICENSE-APACHE", "/THIRD-PARTY-NOTICES", "/THIRD-PARTY-LICENSES"]
+default-run = "assaydb"
+
+[dependencies]
+arrow = { version = "=57.0.0", default-features = false, features = ["ipc"] }
+parquet = { version = "=57.0.0", default-features = false, features = ["arrow", "zstd", "snap", "async"] }
+sqlparser = { version = "=0.58.0", default-features = false, features = ["std"] }
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.145"
+chrono = { version = "=0.4.42", default-features = false, features = ["std"] }
+libc = "=0.2.190"
+ahash = "=0.8.12"
+hashbrown = { version = "=0.16.1", default-features = false, features = ["raw-entry"] }
+memchr = "=2.8.3"
+bytes = "=1.12.1"
+futures = { version = "=0.3.32", default-features = false, features = ["std", "executor"] }
+
+[profile.release]
+debug = 0
+strip = "debuginfo"
+# Optimize across the engine and Arrow/Parquet crate boundaries. Preserve
+# overflow checks in SQL kernels; this changes compiler optimization only.
+lto = "thin"
+codegen-units = 1

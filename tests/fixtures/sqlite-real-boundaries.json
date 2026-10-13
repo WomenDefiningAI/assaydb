@@ -1,0 +1,224 @@
+{
+  "sqllogictest_checkin": "ab599cbdd0976a63c5cfc7755588f716a7621f27",
+  "sqlite_version": "3.54.0",
+  "sqlite_source_id": "2026-10-07 10:41:59 d232720b7932c1cebe4cf5b1a1e9096889e1807844351390149dfeb2ea7fc304",
+  "amalgamation_sha256": "b739c477092f587417d402fe227eb13c0a83f7534e87082f4a1b80d429a57931",
+  "oracle_library_sha256": "383b0405301166ea36879c880aaf086cf84de3b9b3026319aa5c75d09a3f9d61",
+  "rows": [
+    {
+      "text": "0",
+      "bits": "0000000000000000",
+      "finite": true
+    },
+    {
+      "text": "-0",
+      "bits": "8000000000000000",
+      "finite": true
+    },
+    {
+      "text": "-0.0",
+      "bits": "8000000000000000",
+      "finite": true
+    },
+    {
+      "text": "1e-999",
+      "bits": "0000000000000000",
+      "finite": true
+    },
+    {
+      "text": "-1e-999",
+      "bits": "8000000000000000",
+      "finite": true
+    },
+    {
+      "text": "4.9406564584124654e-324",
+      "bits": "0000000000000001",
+      "finite": true
+    },
+    {
+      "text": "4.9406564584124653e-324",
+      "bits": "0000000000000001",
+      "finite": true
+    },
+    {
+      "text": "2.4703282292062327e-324",
+      "bits": "0000000000000000",
+      "finite": true
+    },
+    {
+      "text": "2.4703282292062328e-324",
+      "bits": "0000000000000001",
+      "finite": true
+    },
+    {
+      "text": "7.410984687618698e-324",
+      "bits": "0000000000000001",
+      "finite": true
+    },
+    {
+      "text": "7.410984687618699e-324",
+      "bits": "0000000000000002",
+      "finite": true
+    },
+    {
+      "text": "2.225073858507201e-308",
+      "bits": "000fffffffffffff",
+      "finite": true
+    },
+    {
+      "text": "2.2250738585072011e-308",
+      "bits": "000fffffffffffff",
+      "finite": true
+    },
+    {
+      "text": "2.2250738585072012e-308",
+      "bits": "0010000000000000",
+      "finite": true
+    },
+    {
+      "text": "2.2250738585072013e-308",
+      "bits": "0010000000000000",
+      "finite": true
+    },
+    {
+      "text": "2.2250738585072014e-308",
+      "bits": "0010000000000000",
+      "finite": true
+    },
+    {
+      "text": "2.2250738585072015e-308",
+      "bits": "0010000000000000",
+      "finite": true
+    },
+    {
+      "text": "0.9999999999999999",
+      "bits": "3fefffffffffffff",
+      "finite": true
+    },
+    {
+      "text": "1.0000000000000001",
+      "bits": "3ff0000000000000",
+      "finite": true
+    },
+    {
+      "text": "1.0000000000000002",
+      "bits": "3ff0000000000001",
+      "finite": true
+    },
+    {
+      "text": "1.00000000000000011102230246251565404236316680908203125",
+      "bits": "3ff0000000000000",
+      "finite": true
+    },
+    {
+      "text": "1.00000000000000011102230246251565404236316680908203126",
+      "bits": "3ff0000000000000",
+      "finite": true
+    },
+    {
+      "text": "9007199254740991",
+      "bits": "433fffffffffffff",
+      "finite": true
+    },
+    {
+      "text": "9007199254740992",
+      "bits": "4340000000000000",
+      "finite": true
+    },
+    {
+      "text": "9007199254740993",
+      "bits": "4340000000000000",
+      "finite": true
+    },
+    {
+      "text": "9007199254740994",
+      "bits": "4340000000000001",
+      "finite": true
+    },
+    {
+      "text": "9223372036854775807",
+      "bits": "43e0000000000000",
+      "finite": true
+    },
+    {
+      "text": "9223372036854775808",
+      "bits": "43e0000000000000",
+      "finite": true
+    },
+    {
+      "text": "1.7976931348623155e308",
+      "bits": "7feffffffffffffe",
+      "finite": true
+    },
+    {
+      "text": "1.7976931348623157e308",
+      "bits": "7fefffffffffffff",
+      "finite": true
+    },
+    {
+      "text": "1.7976931348623158e308",
+      "bits": "7fefffffffffffff",
+      "finite": true
+    },
+    {
+      "text": "1.7976931348623159e308",
+      "bits": "7ff0000000000000",
+      "finite": false
+    },
+    {
+      "text": "1e309",
+      "bits": "7ff0000000000000",
+      "finite": false
+    },
+    {
+      "text": "-1e309",
+      "bits": "fff0000000000000",
+      "finite": false
+    },
+    {
+      "text": "1e999999",
+      "bits": "7ff0000000000000",
+      "finite": false
+    },
+    {
+      "text": "-1e999999",
+      "bits": "fff0000000000000",
+      "finite": false
+    },
+    {
+      "text": "0000000000000000000000000000000000001.25e2",
+      "bits": "405f400000000000",
+      "finite": true
+    },
+    {
+      "text": "  -12.5e+2tail",
+      "bits": "c093880000000000",
+      "finite": true
+    },
+    {
+      "text": "12.5e+tail",
+      "bits": "4029000000000000",
+      "finite": true
+    },
+    {
+      "text": ".5e-2tail",
+      "bits": "3f747ae147ae147b",
+      "finite": true
+    },
+    {
+      "text": "0x123",
+      "bits": "0000000000000000",
+      "finite": true
+    },
+    {
+      "text": "NaN",
+      "bits": "0000000000000000",
+      "finite": true
+    },
+    {
+      "text": "Inf",
+      "bits": "0000000000000000",
+      "finite": true
+    }
+  ]
+}

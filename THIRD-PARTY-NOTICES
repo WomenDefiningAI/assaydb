@@ -1,0 +1,31 @@
+Assay third-party notices
+
+Original Assay code is dual-licensed MIT OR Apache-2.0. Third-party
+components retain their own licenses. Cargo lockfiles pin versions and registry
+checksums. evidence/cargo-dependencies.json records declared dependency licenses;
+it does not relicense upstream packages. THIRD-PARTY-LICENSES retains the
+available upstream license texts, including their required copyright notices.
+Its stated target-specific coverage limitations remain in force.
+Source builds obtain dependencies from upstream. Binary redistribution requires
+review of the applicable dependency licenses and notices for that exact build.
+
+Apache Arrow and Parquet: Apache-2.0, Apache Software Foundation.
+sqlparser-rs: Apache-2.0.
+PyO3 and maturin: upstream MIT/Apache-2.0 licensing.
+PyArrow and optional Python conversions are separate upstream packages:
+PyArrow (Apache-2.0), pandas (BSD-3-Clause), and Polars (MIT).
+DuckDB (MIT) is a separate reference dependency used by Python package checks.
+No reference query engine executes Assay SQL as a fallback.
+
+SQLite-compatible conversion and test oracle provenance:
+D. Richard Hipp and SQLite contributors. The frozen sqllogictest check-in is
+ab599cbdd0976a63c5cfc7755588f716a7621f27.
+docs/licenses/SQLLOGICTEST-COPYRIGHT.md retains its original license options.
+The corpus and upstream driver are not bundled. Original Assay regression
+fixtures retain their embedded source/hash provenance.
+
+Contributor Covenant 2.1: Coraline Ada Ehmke and contributors, CC-BY-4.0.
+CODE_OF_CONDUCT.md retains upstream attribution; removal of the development
+draft preface is an Assay adaptation. This policy is not relicensed MIT/Apache.
+Source: https://www.contributor-covenant.org/version/2/1/code_of_conduct/
+License: https://creativecommons.org/licenses/by/4.0/

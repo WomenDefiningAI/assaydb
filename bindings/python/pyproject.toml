@@ -1,0 +1,40 @@
+[build-system]
+requires = ["maturin==1.9.6"]
+build-backend = "maturin"
+
+[project]
+name = "assaydb"
+version = "0.1.0a1"
+description = "Assay analytical SQL with native Rust sessions and Arrow results"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT OR Apache-2.0"
+license-files = ["LICENSE-MIT", "LICENSE-APACHE", "THIRD-PARTY-NOTICES", "THIRD-PARTY-LICENSES"]
+dependencies = ["pyarrow>=18"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Rust",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+]
+
+[project.urls]
+Repository = "https://github.com/WomenDefiningAI/assaydb"
+Issues = "https://github.com/WomenDefiningAI/assaydb/issues"
+
+[project.optional-dependencies]
+pandas = ["pandas>=2.0"]
+polars = ["polars>=1.0"]
+
+[tool.maturin]
+manifest-path = "Cargo.toml"
+python-source = "python"
+module-name = "assaydb._native"
+# Source distributions are produced from the reviewed allowlist staging script.
+include = [
+  { path = "tests/**", format = "sdist" },
+  { path = "notebooks/**", format = "sdist" },
+  { path = "BUILDING.md", format = "sdist" },
+  { path = "source-manifest.json", format = "sdist" },
+]

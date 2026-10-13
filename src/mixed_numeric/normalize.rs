@@ -1,0 +1,96 @@
+//! Bind all original alternatives, then exclude only proved unreachable result
+//! arms from type promotion. Keep conditions: their eager errors still belong
+//! to the query even when their Boolean result is known.
+use super::*;
+
+fn bounded(e: &Expr, left: &mut usize) -> bool {
+    if *left == 0 {
+        return false;
+    }
+    *left -= 1;
+    match &e.kind {
+        Kind::Literal(_) | Kind::Column(_) => true,
+        Kind::Neg(a)
+        | Kind::Not(a)
+        | Kind::IsNull(a, _)
+        | Kind::Cast(a)
+        | Kind::Function(_, a)
+        | Kind::Year(a)
+        | Kind::Substring(a, _, _) => bounded(a, left),
+        Kind::Binary(_, a, b) | Kind::NullIf(a, b) | Kind::Position(a, b) | Kind::Like(a, b, _) => {
+            bounded(a, left) && bounded(b, left)
+        }
+        Kind::Case(branches, other) => {
+            branches
+                .iter()
+                .all(|(c, v)| bounded(c, left) && bounded(v, left))
+                && bounded(other, left)
+        }
+    }
+}
+fn null() -> Expr {
+    Expr {
+        ty: Type::Null,
+        kind: Kind::Literal(Literal::Null),
+    }
+}
+
+pub(crate) fn normalize_expression(
+    mut e: Expr,
+    schema: &Schema,
+    facts: Option<&[Fact]>,
+) -> Result<Expr> {
+    // Recursive Binder calls normalize children first, so ancestors are bound
+    // from the corrected types. No second evaluator or post-planning retyping.
+    if !matches!(e.kind, Kind::Case(..)) || !bounded(&e, &mut 256) {
+        return Ok(e);
+    }
+    let fallback;
+    let input = if let Some(facts) = facts {
+        facts
+    } else {
+        fallback = fields(schema)?;
+        &fallback
+    };
+    let Kind::Case(branches, other) = &mut e.kind else {
+        unreachable!()
+    };
+    let mut ty = Type::Null;
+    let mut end = branches.len();
+    let mut reaches_else = true;
+    let mut dead = Vec::new();
+    for (i, (condition, value)) in branches.iter().enumerate() {
+        // Nonrejecting facts: final whole-query guard runs after ordinary name
+        // and type binding, including later projections and unreachable arms.
+        let fact = expression_mode(condition, input, false)?;
+        if fact.nulls == NULL || fact.boolean == Some(false) {
+            dead.push(i);
+            continue;
+        }
+        ty = crate::bind::common_type(&ty, &value.ty)?;
+        if fact.boolean == Some(true) && fact.nulls == VALUE {
+            end = i + 1;
+            reaches_else = false;
+            break;
+        }
+    }
+    if reaches_else {
+        ty = crate::bind::common_type(&ty, &other.ty)?;
+    }
+    // This is a type repair, not general dependency pruning. When the reachable
+    // type already matches, retain the original CASE and every dependency;
+    // grouped binding and its eager error/name precedence remain unchanged.
+    // A wholly untyped NULL keeps its existing contextual type as before.
+    if ty == Type::Null || ty == e.ty {
+        return Ok(e);
+    }
+    for i in dead {
+        branches[i].1 = null();
+    }
+    branches.truncate(end);
+    if !reaches_else {
+        **other = null();
+    }
+    e.ty = ty;
+    Ok(e)
+}

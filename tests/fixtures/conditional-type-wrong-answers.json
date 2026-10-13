@@ -1,0 +1,487 @@
+[
+  {
+    "file": "test/random/expr/slt_good_15.test",
+    "line": 74054,
+    "sql_sha256": "6b2b07626862795e7e40b8460b94a3b93126e1041befaa5169f0f02a61b46f4d",
+    "sql": "SELECT ALL - 50 / - COALESCE ( - 20, + AVG ( ALL + 29 ) + ( - 44 ) ) + + 75 AS col2, COALESCE ( + 51, COUNT ( * ) - ( SUM ( ALL + 17 ) ) * + 23 ) AS col2",
+    "expected": [
+      73,
+      51
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_3.test",
+    "line": 44578,
+    "sql_sha256": "57fa511e88a2f8fd5e3ba503f8e6b766e5aa50e3ed383ead45cc11189c7556ee",
+    "sql": "SELECT ALL - ( 30 ) - + COALESCE ( 43, - AVG ( 67 ) ) / - 60 col2",
+    "expected": [
+      -30
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_4.test",
+    "line": 38161,
+    "sql_sha256": "9b2af25a53b512cb8ea8cfbc7caf158aca53f606b0cf0b6ff5fc9ca9b2ed55e5",
+    "sql": "SELECT ALL COALESCE ( - 81, + + 9, - AVG ( - 51 ) * + 47 ) / + + 14 + 16 / + + COUNT ( * ) col2",
+    "expected": [
+      11
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_16.test",
+    "line": 30075,
+    "sql_sha256": "be2d0f7003b531c50bab4496fefc6bcbac2a45e868120b1884cff5f23ffd4538",
+    "sql": "SELECT + - 43 + + + COALESCE ( - + CAST ( NULL AS INTEGER ), - - 9, 90, - AVG ( - + 38 ) - + - AVG ( - - 58 ) + - 85 * + + 93 * - 72 * + COUNT ( * ) ) / + + 83 AS col1",
+    "expected": [
+      -43
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_17.test",
+    "line": 16183,
+    "sql_sha256": "1b0b7bb7263a7eeff1772fd09b24c1358cc56228f85c68ec814b555a3326b6b8",
+    "sql": "SELECT + 33 / + COALESCE ( 92, COUNT ( * ), CASE + 17 WHEN + - COALESCE ( 24, - + COUNT ( * ) * 13 ) THEN - 95 + + + AVG ( + 69 ) END ) * + - 79 + - + 57 col0",
+    "expected": [
+      -57
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_112.test",
+    "line": 42367,
+    "sql_sha256": "e795d94b17b8a1d701e52678a599e83fedb0a1c88dc921104811cf82d5ddda57",
+    "sql": "SELECT - 16 / - COALESCE ( 63, - + AVG ( DISTINCT 35 ) - - - 85 ) + - 85 col1",
+    "expected": [
+      -85
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_96.test",
+    "line": 63091,
+    "sql_sha256": "7367b5268817a720aceb07336a0e43ddca6b44cd8f0184f333a0adaea5671f88",
+    "sql": "SELECT 78 + - MAX ( DISTINCT - 32 ) / COALESCE ( - 25, 13 + MIN ( + 12 ) + - CAST ( NULL AS INTEGER ) * + MAX ( 8 ) * + AVG ( + + 43 ) ) * + 61 + ( + 36 ) + + ( 17 ) + - + 40 * + + 82",
+    "expected": [
+      -3210
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_6.test",
+    "line": 64612,
+    "sql_sha256": "689ab0bf87bdcd4394b627b65708b8ffd802b121da655bc40ecc0bca0d38f6cf",
+    "sql": "SELECT ALL + - ( - ( + - COALESCE ( + - 44, - - 38 + AVG ( - - 80 ) + + - 39 + + CAST ( NULL AS INTEGER ) + - 65 + + 43 * - 62 / - + 56 / 21 * 86 ) ) ) / 29 + - - COUNT ( * ) - - 81 * - + MIN ( + 47 )",
+    "expected": [
+      -3805
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_6.test",
+    "line": 77386,
+    "sql_sha256": "293c6cceaddde20befad16f36e8d6ae9cb5e9ed79fa68300755be0508cf321f6",
+    "sql": "SELECT + COALESCE ( - 21, - AVG ( ALL 93 ) * - 26 + 4 * - 70, 8 * 99 + COUNT ( * ) - 84 ) / - 2 + - 99",
+    "expected": [
+      -89
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_8.test",
+    "line": 31091,
+    "sql_sha256": "7170bc75c6e1a702fcd704a503c730194cf0e5ff04d236d62c8f389f6edc6b63",
+    "sql": "SELECT + + 14 - - COALESCE ( + 2, - 79 / + AVG ( ALL + 45 ) + - COUNT ( * ) * 31, - CAST ( NULL AS INTEGER ) + + MIN ( DISTINCT 83 ) ) / CAST ( 63 * - 40 + 4 AS INTEGER ) col0",
+    "expected": [
+      14
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_8.test",
+    "line": 51476,
+    "sql_sha256": "e0d12366f255b5d9d0aff3cd36e922c9bd2ea4a3d5f1e484ad634053c2580750",
+    "sql": "SELECT DISTINCT COALESCE ( + 25, 85 / 89 + + AVG ( DISTINCT - CAST ( + 2 AS INTEGER ) ) + - 94 + 56, + 91 ) / - 81 - - 7 AS col2",
+    "expected": [
+      7
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_113.test",
+    "line": 63008,
+    "sql_sha256": "3b95bb5fd699dafb785c7001a4703c825a88075518cd0f91ba76f7a7e5f53106",
+    "sql": "SELECT CASE 24 WHEN - - 89 + ( + ( + - 42 ) ) * + - 50 THEN NULL ELSE + 23 * - 45 END / COALESCE ( - 87, - 93 * - 8 * + + AVG ( 10 ) / 94 * - ( 21 ), + 79 ) * 95 * + 65",
+    "expected": [
+      67925
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_113.test",
+    "line": 72259,
+    "sql_sha256": "c28142857d8a4e0a7b50eaa4c18496318b70bb0c6a8be31faa8872ec5e9613f3",
+    "sql": "SELECT ALL + 50 * - - 52 * ( + 78 ) + - + COALESCE ( - + 32, + AVG ( DISTINCT - ( + 84 ) ) ) / + - 56",
+    "expected": [
+      202800
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_111.test",
+    "line": 61960,
+    "sql_sha256": "9eab24a03a3cba4cc675e9a86b5d234c1e89175ff66ba5e04f669f1b8efcb555",
+    "sql": "SELECT DISTINCT 7 + + + 10 + - 76 / COALESCE ( AVG ( + + CAST ( NULL AS INTEGER ) ), + - 29, - - 65 ) * - + 2 col1",
+    "expected": [
+      13
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_7.test",
+    "line": 64829,
+    "sql_sha256": "92df89337c38e6e43882b8efc9d960d2223ed6a13cf33c1c9fcfe59d008c8cff",
+    "sql": "SELECT ALL + 32 / - - COALESCE ( 43, + + 81 * + + CASE 75 WHEN - - 1 + 94 - + - ( + 0 ) THEN - 34 ELSE NULL END * + AVG ( DISTINCT 69 ) - MIN ( + CAST ( 41 AS INTEGER ) ), 63 * 29 ) * - 28",
+    "expected": [
+      0
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_7.test",
+    "line": 66548,
+    "sql_sha256": "a07c0e2124cb79ecc7012cfdef461667de219ad20da89cadf59064030cd3799c",
+    "sql": "SELECT DISTINCT COALESCE ( - CAST ( NULL AS INTEGER ), + - SUM ( + - 43 ), + + AVG ( ALL - 28 ) ) / - + 65 * 41 col2, 40 / + 66",
+    "expected": [
+      0,
+      0
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_115.test",
+    "line": 77322,
+    "sql_sha256": "fb0e981ca798c50854628f57c4fb87665ee8a8ebdfef285fda21d71544a18e62",
+    "sql": "SELECT 17 / - COALESCE ( - + 60, - + AVG ( DISTINCT 54 ) * COUNT ( * ), + 0 ) * + MAX ( ALL - 17 ) * + - 15 - + - 14 * - + 89 - 83, ( - 61 ) / + 84 * - 65 * - 35 col1",
+    "expected": [
+      -1329,
+      0
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_21.test",
+    "line": 89733,
+    "sql_sha256": "6acee21fb2b6eb86947d62c5ac7c7fd9c0df280b20f6b2d03bf993292191487e",
+    "sql": "SELECT DISTINCT - 6 / - COALESCE ( + + 31, + AVG ( DISTINCT + 64 ), - 64 + + ( - - 26 ) ) * 21 * - 90 - COUNT ( * ) + 49 + - - 1 + + MAX ( ALL + + 83 ) * 83 * 48 - + 80 + - 37 * COUNT ( * )",
+    "expected": [
+      330604
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_19.test",
+    "line": 56717,
+    "sql_sha256": "05c269c7bd985d040a0febc78a79c26fcebeb2f6376233a89f680aa41c5579c5",
+    "sql": "SELECT - 23 / + COALESCE ( + + 79, + 4, - 75 + - AVG ( + 40 ) + - 48 + + 5 ) + 62",
+    "expected": [
+      62
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_85.test",
+    "line": 36156,
+    "sql_sha256": "1ed8a9347dcafdcba57972405170aa6f8870cb3e04e99bab9545fece1e8d7122",
+    "sql": "SELECT ALL - 21, COUNT ( * ) / - 6 + - CASE + + 40 WHEN + 9 * + + 29 + + ( + 38 ) THEN NULL ELSE COALESCE ( 80, 77 * 7 ) / + COALESCE ( MAX ( ALL + - 74 ), CAST ( + - 81 AS INTEGER ) * 73 * - 93 * - AVG ( + - 92 ), 35, - ( - + 17 ) / - 77 ) END + - 69 * + + COUNT ( * ) * + 42 * + 47 AS col0",
+    "expected": [
+      -21,
+      -136205
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_85.test",
+    "line": 92601,
+    "sql_sha256": "6981e58c440d6d5148b138582f1db346d22d99459294d24b9e186c0cec4ef175",
+    "sql": "SELECT - COALESCE ( - 13, + 87 / - COUNT ( * ), MAX ( ALL + 82 ) * - + 73 * - AVG ( 48 ) + 8 ) / + 77 + - + 64 + 2 * - 88 + - MAX ( + 3 )",
+    "expected": [
+      -243
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_63.test",
+    "line": 57016,
+    "sql_sha256": "f93d058f03be05f39dcdff33f3905b6cc2cf385395b169487b9c6baeaddd7fd7",
+    "sql": "SELECT DISTINCT - ( + 14 ) / - COALESCE ( - 6, - AVG ( - 29 ) + + 66 + + 16 ) + - 57 + + 94 col1",
+    "expected": [
+      35
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_67.test",
+    "line": 9397,
+    "sql_sha256": "02e914cc337a565ccb219fbfc691cef0f8e968b94ea3093559ba4f59f5f0f1e0",
+    "sql": "SELECT ALL + - 48 / COALESCE ( SUM ( ALL + - 27 ), + - 13, CASE 32 WHEN + COUNT ( * ) THEN NULL WHEN COUNT ( * ) THEN NULL WHEN + 47 THEN - 81 - - + 54 * + - AVG ( ALL + + 84 ) ELSE NULL END ) - - COUNT ( * ) - MIN ( ALL - + 83 ) + - 95",
+    "expected": [
+      -10
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_107.test",
+    "line": 23150,
+    "sql_sha256": "60f03a0f8e4282f2242a2b1e51f3bfd15abec12cdd3d2b64acdbacb2898cbf8c",
+    "sql": "SELECT DISTINCT - 49 / + + CASE + + 42 WHEN 28 * + - ( - ( + CAST ( + - 11 AS REAL ) ) ) / + 78 THEN COUNT ( * ) + + AVG ( DISTINCT - CASE + - 57 WHEN - + 8 THEN NULL ELSE - 51 END ) + 9 ELSE 65 END * + 36 AS col2",
+    "expected": [
+      0
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_22.test",
+    "line": 77293,
+    "sql_sha256": "8bd1a1493361ee41707c45bd843e68c2b2ce232fc8997dac0646e0875794c676",
+    "sql": "SELECT COALESCE ( - 20, - - 70 * + 37 * + CAST ( NULL AS INTEGER ) / + - AVG ( ( - - 3 ) ) + 2 ) / - MAX ( + + 83 ) * - 33 + - 79 * - 34 AS col1",
+    "expected": [
+      2686
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_80.test",
+    "line": 90171,
+    "sql_sha256": "d4f9abebfb700afbd1e46207dd17845a8b6b97355991d8ad5674f78ecfff31f9",
+    "sql": "SELECT ( COALESCE ( ( + 56 ), + - 35 * ( - 40 ) * + AVG ( - - 85 ) - 66, + + CAST ( NULL AS INTEGER ) * + 44 / + + 24 ) ) / 47 - 32 col1",
+    "expected": [
+      -31
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_90.test",
+    "line": 51912,
+    "sql_sha256": "3206186d1fe405d1c996a08aa0ba4a9e5ff983f7b483e1d6c893c241d2d99e01",
+    "sql": "SELECT - ( + COALESCE ( + 12, 88, 24 / AVG ( + - 53 ) - - 51 ) ) / + 7 + 2 AS col1",
+    "expected": [
+      1
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_90.test",
+    "line": 68786,
+    "sql_sha256": "95225611cf58376a393e770b7a0cb18516fb08a174f22f9b50e61c8dcd03e2b1",
+    "sql": "SELECT - 13 * 31 * + - 85 + + 34 + - CASE - 70 WHEN - 5 THEN + AVG ( + ( - - 92 ) ) + 26 + 26 * + ( + 79 * CAST ( CASE - COUNT ( * ) WHEN - COUNT ( * ) THEN - 92 * + 28 WHEN COUNT ( * ) THEN NULL END AS INTEGER ) ) ELSE + COUNT ( * ) END * + 65 / 16 col2",
+    "expected": [
+      34285
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_71.test",
+    "line": 81796,
+    "sql_sha256": "7c3733e6b6065c10467cfe57ac5c5cdba8c89d149243040f8ec3264e0cf307ec",
+    "sql": "SELECT DISTINCT + 1 * 26 * - 89 + - 59 / - + COALESCE ( + 78, + COUNT ( 84 ) + + AVG ( ALL - + ( - - 75 ) ) * - CAST ( + - 8 AS INTEGER ), 92 ) + + 77 / + 47 - - MIN ( + ( + 68 ) ) AS col2, COUNT ( * ) + - - 31",
+    "expected": [
+      -2245,
+      32
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_69.test",
+    "line": 30285,
+    "sql_sha256": "f73cca14fd5915d3ea7aa07e6b0e21c281bd3ab6d02f8538ae710ef174b6c3bc",
+    "sql": "SELECT DISTINCT - 84 + + + CASE COUNT ( * ) WHEN 48 THEN + 44 * AVG ( DISTINCT 76 ) ELSE 20 * + - 50 END / 88 + 47 * 31",
+    "expected": [
+      1362
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_64.test",
+    "line": 2193,
+    "sql_sha256": "eb16eb9eb1de0bb523737892e1e1826a13fe438e0a2054caaa5f86755a4c9285",
+    "sql": "SELECT + 72 / COALESCE ( - + MAX ( DISTINCT + 33 ), - + 86 * 47, 19 + - 80 + - AVG ( DISTINCT 97 ) * + + CASE + - 50 WHEN + 58 THEN 90 + + - 30 WHEN - COUNT ( * ) THEN - 94 END * 27 ) / 37 + 18 * - CAST ( - 34 AS INTEGER )",
+    "expected": [
+      612
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_82.test",
+    "line": 20858,
+    "sql_sha256": "4636c4dd63728624ad3b987a96cc74cf1557a49ad5272311b3360c3836b7634f",
+    "sql": "SELECT COUNT ( * ) / - COALESCE ( + 93, - AVG ( DISTINCT + 55 ) ) * 31 * - 97 - - + 60 col1",
+    "expected": [
+      60
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_41.test",
+    "line": 25671,
+    "sql_sha256": "950dfd09d1a646880b20b3c58a98261d4c5cbb79c1159df2212c475ee8ec697c",
+    "sql": "SELECT DISTINCT - + 34 + + - 26 + - 34 + - 34 + + COALESCE ( 93, COUNT ( * ) + + 44 - 16, - AVG ( + 86 ) + 12 ) / 86 * + 55 * + 46",
+    "expected": [
+      2402
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_60.test",
+    "line": 46545,
+    "sql_sha256": "d1d72b32ace9fb8027edb2cc9ba49a23dce28eb9f3f8ee1420462fffcab0b035",
+    "sql": "SELECT ALL ( - COUNT ( * ) ) + + - COUNT ( * ) + 36 / COALESCE ( + CAST ( 76 AS INTEGER ), COUNT ( * ) - - + 21 * 44 * + COALESCE ( 61, - AVG ( 41 ) / - 34 ) + COALESCE ( 67, - ( 69 ), - 75 + 35 * + ( 78 * - 20 ) ) * + 36, 99 ) * + 65",
+    "expected": [
+      -2
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_55.test",
+    "line": 21239,
+    "sql_sha256": "dd4dee043bc365f623ad059aeb58d564a3069a3c3edd40b3a7323f2896b62d40",
+    "sql": "SELECT 74 / + + COALESCE ( - 40, - AVG ( + - 63 ), COALESCE ( + - 12, + 33 ) ) + 4",
+    "expected": [
+      3
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_44.test",
+    "line": 32664,
+    "sql_sha256": "056d7440ebe18fbdf746c1f3f4ed1f2e9c86f6d9e16fe722bb62b26e6b0a69fb",
+    "sql": "SELECT DISTINCT CASE + + 84 WHEN 9 THEN + MAX ( ALL - - 9 ) * - 88 + AVG ( + + 49 ) ELSE 73 * + 63 END / + 6 / + COALESCE ( + - COUNT ( * ), + COUNT ( ALL - + 34 ) ) - + 54 * - 96 + - + 21 + 82 * + - 24 col1",
+    "expected": [
+      2429
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_59.test",
+    "line": 38041,
+    "sql_sha256": "d96a55fd66cf272db490eb5dbcbd0434140482a43b62a82ba5574a4f556e3043",
+    "sql": "SELECT ALL - COUNT ( * ) / COALESCE ( 16, + AVG ( + 93 ), - + COUNT ( * ) ) + 27 col1",
+    "expected": [
+      27
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_59.test",
+    "line": 52343,
+    "sql_sha256": "22b20ec044a9ffe9d0441037cd01e39e860bdff8b6423a819f99cc26adc7312b",
+    "sql": "SELECT - CASE + CAST ( NULL AS INTEGER ) WHEN + MIN ( ALL + CAST ( - CASE + 48 WHEN + + 37 THEN NULL ELSE 98 END AS INTEGER ) ) THEN NULL ELSE 95 + + - COUNT ( * ) END * - ( + SUM ( ALL - - 57 ) ) + - ( - - COUNT ( * ) ) + + ( - 98 ) / + + CASE - 68 WHEN - 97 THEN NULL WHEN 60 THEN - + AVG ( 69 ) + - - CAST ( NULL AS INTEGER ) + - 64 + + 68 * + 22 / + 28 ELSE 27 + 51 END * + COUNT ( * )",
+    "expected": [
+      5356
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_45.test",
+    "line": 60366,
+    "sql_sha256": "2ca3933efe75fd20237a6b7eab38151722a0ba679e95057a3af6520f4bf49d0f",
+    "sql": "SELECT ALL - COALESCE ( + 35, CAST ( + 83 AS INTEGER ) * 1, 74 + + COUNT ( - 44 ) + - ( 41 ) * + AVG ( + 16 ) + 87 * MIN ( DISTINCT - 11 ) ) / + + 50 + - 7 + + 26 * 58 AS col0",
+    "expected": [
+      1501
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_53.test",
+    "line": 64835,
+    "sql_sha256": "6e7ffb9dcd2a9dc24b10836b0c523c83a3f973f0c360c104dd3ff1c8fc86085a",
+    "sql": "SELECT 66 + + COALESCE ( + 88, - COUNT ( * ), AVG ( DISTINCT - 36 ) ) / - ( 46 ) AS col1",
+    "expected": [
+      65
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_34.test",
+    "line": 48279,
+    "sql_sha256": "257d98af683dde61588cf7471cda0308e78a57200bf9db0ddfea709677398db9",
+    "sql": "SELECT DISTINCT 51, + 28 / COALESCE ( - + 80, - 41 * + + AVG ( DISTINCT ( - 11 ) ) / - COUNT ( * ) * + + ( - ( - 32 ) ) - + 53 ) * - 7 + + COUNT ( - 46 + 14 * + 97 ) AS col0",
+    "expected": [
+      51,
+      1
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_34.test",
+    "line": 60166,
+    "sql_sha256": "6c6be5db1691b2cad25a4688b9be2d750cd5a7d220ffd33dd98f9ab8bc0fe10c",
+    "sql": "SELECT DISTINCT COALESCE ( - 32, + + 47, + - ( AVG ( + 8 ) ) * + 16 ) / + CAST ( - 33 AS INTEGER ) * - 15 AS col0",
+    "expected": [
+      0
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_109.test",
+    "line": 30436,
+    "sql_sha256": "45fbd67ff1de851758ad5fb33a5904dcf23ee3d8f54632863bfcfba641886353",
+    "sql": "SELECT - - 69 / - COALESCE ( - 14, + 45 * 38 * ( + 88 ) + + - 23 * + + COALESCE ( - 98, 43 * 96, + 41 * AVG ( ALL - 88 / 49 ), - ( 79 ) + 73 ) ) + 88 * - 78 AS col2",
+    "expected": [
+      -6860
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_109.test",
+    "line": 45438,
+    "sql_sha256": "442d3d58c9c8903d72fb5ed158afb3279915a6c1dd59c0ee2a45299b5611403a",
+    "sql": "SELECT ALL 14 / - CASE - 60 WHEN + 58 THEN - AVG ( DISTINCT + + 51 ) ELSE 29 END + + 23 AS col1",
+    "expected": [
+      23
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_109.test",
+    "line": 87914,
+    "sql_sha256": "1df6d6982e3cd08554b62d29a2efbbaa1568b59e4a5de796246fbec4627c26ed",
+    "sql": "SELECT - MAX ( ALL + 37 ) + + 27 * COUNT ( * ) / + COALESCE ( + 26, - AVG ( ALL + - 51 ) ) AS col1",
+    "expected": [
+      -36
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_24.test",
+    "line": 6902,
+    "sql_sha256": "0328ec1e793daa1bf5d68e9e85477ad972f8308ae661919d25ffc01d3983758d",
+    "sql": "SELECT + 3 + + COALESCE ( 33, + + AVG ( - 81 ) + + + CAST ( - 37 AS INTEGER ) ) / - 52, + 98 AS col0",
+    "expected": [
+      3,
+      98
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_24.test",
+    "line": 60733,
+    "sql_sha256": "f1312ac67bc71f882b0f5efab1f2e3355ec561b51b1a4ef33547d001a8c103c4",
+    "sql": "SELECT + - 15 - - + 8 / CASE - 99 WHEN + CAST ( NULL AS INTEGER ) THEN + COUNT ( * ) * - 78 * - ( - 59 ) + AVG ( + 1 ) + + 35 + - 39 - - 92 / - 1 WHEN 40 THEN NULL ELSE + 39 END",
+    "expected": [
+      -15
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_30.test",
+    "line": 14034,
+    "sql_sha256": "0328ec1e793daa1bf5d68e9e85477ad972f8308ae661919d25ffc01d3983758d",
+    "sql": "SELECT + 3 + + COALESCE ( 33, + + AVG ( - 81 ) + + + CAST ( - 37 AS INTEGER ) ) / - 52, + 98 AS col0",
+    "expected": [
+      3,
+      98
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_30.test",
+    "line": 68986,
+    "sql_sha256": "f1312ac67bc71f882b0f5efab1f2e3355ec561b51b1a4ef33547d001a8c103c4",
+    "sql": "SELECT + - 15 - - + 8 / CASE - 99 WHEN + CAST ( NULL AS INTEGER ) THEN + COUNT ( * ) * - 78 * - ( - 59 ) + AVG ( + 1 ) + + 35 + - 39 - - 92 / - 1 WHEN 40 THEN NULL ELSE + 39 END",
+    "expected": [
+      -15
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_13.test",
+    "line": 14320,
+    "sql_sha256": "26017bd8d8c3c4ae51ff42631d3d168a338ac6a68295170f16fe692bd20671f0",
+    "sql": "SELECT DISTINCT - CASE CAST ( - 91 AS INTEGER ) WHEN + COUNT ( * ) THEN NULL WHEN + 31 - + COALESCE ( + CAST ( - 3 AS INTEGER ), - + 66 ) THEN - + AVG ( DISTINCT + 72 ) ELSE - COUNT ( * ) END * 58 * + + ( COUNT ( * ) ) / - 61 * + - 33 * + 65 - - 65 AS col0",
+    "expected": [
+      65
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_13.test",
+    "line": 47974,
+    "sql_sha256": "dc0bbb23c761537915fe7bb87ecc96fbee3467b0e4498c7f73654c6e4b71bae5",
+    "sql": "SELECT + COALESCE ( + 59, - AVG ( - 39 ) ) / - 51 - - + 43 AS col2",
+    "expected": [
+      42
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_29.test",
+    "line": 11722,
+    "sql_sha256": "26017bd8d8c3c4ae51ff42631d3d168a338ac6a68295170f16fe692bd20671f0",
+    "sql": "SELECT DISTINCT - CASE CAST ( - 91 AS INTEGER ) WHEN + COUNT ( * ) THEN NULL WHEN + 31 - + COALESCE ( + CAST ( - 3 AS INTEGER ), - + 66 ) THEN - + AVG ( DISTINCT + 72 ) ELSE - COUNT ( * ) END * 58 * + + ( COUNT ( * ) ) / - 61 * + - 33 * + 65 - - 65 AS col0",
+    "expected": [
+      65
+    ]
+  },
+  {
+    "file": "test/random/expr/slt_good_29.test",
+    "line": 48100,
+    "sql_sha256": "dc0bbb23c761537915fe7bb87ecc96fbee3467b0e4498c7f73654c6e4b71bae5",
+    "sql": "SELECT + COALESCE ( + 59, - AVG ( - 39 ) ) / - 51 - - + 43 AS col2",
+    "expected": [
+      42
+    ]
+  }
+]

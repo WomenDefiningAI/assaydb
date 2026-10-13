@@ -1,0 +1,12 @@
+/.export-review/
+/target/
+**/target/
+/dist/
+/artifacts/
+/.venv*/
+**/__pycache__/
+*.py[cod]
+.env
+.env.*
+.DS_Store
+/.engine-activity.lock

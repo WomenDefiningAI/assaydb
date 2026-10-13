@@ -1,0 +1,122 @@
+{
+  "reference_path": "research/SQL-CAST-REAL-REFERENCE.json",
+  "reference_sha256": "e91bfa23fba5f1e0bfcb3120dca215a5b07289f5683a6fcec093e9cb44dc7245",
+  "expected_origin": "Manually fixed exact mathematical relations; pinned SQLite crosscheck before candidate acceptance. No candidate-derived expected values.",
+  "cases": [
+    {
+      "integer": "0",
+      "real": "0",
+      "comparison": 0
+    },
+    {
+      "integer": "0",
+      "real": "-0.0",
+      "comparison": 0
+    },
+    {
+      "integer": "0",
+      "real": "0.5",
+      "comparison": -1
+    },
+    {
+      "integer": "0",
+      "real": "-0.5",
+      "comparison": 1
+    },
+    {
+      "integer": "1",
+      "real": "1.5",
+      "comparison": -1
+    },
+    {
+      "integer": "-1",
+      "real": "-1.5",
+      "comparison": 1
+    },
+    {
+      "integer": "1",
+      "real": "0.5",
+      "comparison": 1
+    },
+    {
+      "integer": "-1",
+      "real": "-0.5",
+      "comparison": -1
+    },
+    {
+      "integer": "9007199254740991",
+      "real": "9007199254740992",
+      "comparison": -1
+    },
+    {
+      "integer": "9007199254740992",
+      "real": "9007199254740992",
+      "comparison": 0
+    },
+    {
+      "integer": "9007199254740993",
+      "real": "9007199254740992",
+      "comparison": 1
+    },
+    {
+      "integer": "9007199254740993",
+      "real": "9007199254740994",
+      "comparison": -1
+    },
+    {
+      "integer": "-9007199254740993",
+      "real": "-9007199254740992",
+      "comparison": -1
+    },
+    {
+      "integer": "-9007199254740993",
+      "real": "-9007199254740994",
+      "comparison": 1
+    },
+    {
+      "integer": "9223372036854775807",
+      "real": "9223372036854775808",
+      "comparison": -1
+    },
+    {
+      "integer": "-9223372036854775808",
+      "real": "-9223372036854775808",
+      "comparison": 0
+    },
+    {
+      "integer": "-9223372036854775807",
+      "real": "-9223372036854775808",
+      "comparison": 1
+    },
+    {
+      "integer": "9223372036854775807",
+      "real": "9223372036854774784",
+      "comparison": 1
+    },
+    {
+      "integer": "-9223372036854775808",
+      "real": "-9223372036854777856",
+      "comparison": 1
+    },
+    {
+      "integer": "0",
+      "real": "4.9406564584124654e-324",
+      "comparison": -1
+    },
+    {
+      "integer": "0",
+      "real": "-4.9406564584124654e-324",
+      "comparison": 1
+    },
+    {
+      "integer": "9223372036854775807",
+      "real": "1e100",
+      "comparison": -1
+    },
+    {
+      "integer": "-9223372036854775808",
+      "real": "-1e100",
+      "comparison": 1
+    }
+  ]
+}

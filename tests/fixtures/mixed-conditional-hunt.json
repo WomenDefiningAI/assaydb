@@ -1,0 +1,1540 @@
+{
+  "reason": "New explicit user approval temporarily refuses every reachable row-dependent Int/Float conditional at every consumer until tagged representation. Original214conditional wrong records retained;153ordinary comparison failures belong to separate comparator work.",
+  "plan_sha256": "16f92c49617461eb8837a78a021b3c48e37f82098add02bcf24ab0ab265ffd80",
+  "wrong_records_sha256": "cbae18aa0540a3c3eed4cc620d59184d8f7c02f06463d644744bbd2a767cdcc3",
+  "selected_count": 214,
+  "datasets": [
+    {
+      "dataset": 1,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,3,NULL,(-1),(-9223372036854775807),'')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,NULL,0,0,0,'\u03bb'),(1,1,1,0,1,'abc')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 10,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS x FROM t) SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS z FROM t ORDER BY id",
+          "sql_sha256": "5f839aa9449b5178c28fdd242bdeabc5865b1fbd94d71ba87fcffb4e2bbef94c"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 190,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-4) AS REAL) END AS x FROM t) SELECT id,(CAST(CASE WHEN b IS NULL THEN n ELSE CAST((-4) AS REAL) END AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "65726ab6d60d8f0a90f6bf5123b335ef987b99a1e297003ba05309434f114eb0"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 235,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(1 AS REAL) END AS x FROM t) SELECT id,ABS(CASE WHEN b IS NULL THEN n ELSE CAST(1 AS REAL) END) AS z FROM t ORDER BY id",
+          "sql_sha256": "37d605b0f8f4464f14e6af3e745acdb774ce0ff7912580cb55b1a30aadca8295"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 280,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END AS x FROM t) SELECT id,(CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "62bd888967663ab50c5ac31b24dcc5c3e4580799df8b1133552ba580c6f5c9c7"
+        },
+        {
+          "index": 361,
+          "sql": "SELECT MIN(COALESCE(n,CAST(15 AS REAL))) AS z FROM t",
+          "sql_sha256": "039de15b4d70aa1437eaceb56af7aadad48874a6e0a89f9b1a57aeaa4d95e5cb"
+        },
+        {
+          "index": 370,
+          "sql": "SELECT MIN(CASE WHEN b IS NULL THEN n ELSE CAST(16 AS REAL) END) AS z FROM t",
+          "sql_sha256": "c5dd75c20dfb97641e7b9c35c9c9c2525ad1bd4119cc65ce15bbf83b99ea3c64"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        },
+        {
+          "index": 415,
+          "sql": "SELECT MAX(CASE WHEN b IS NULL THEN n ELSE CAST(21 AS REAL) END) AS z FROM t",
+          "sql_sha256": "82cb9d2d8e0cac447e9d29fc5133cf15770e07ed9943490429769621a68dc5df"
+        }
+      ]
+    },
+    {
+      "dataset": 2,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-3),NULL,NULL,(-9007199254740993),'-7'),(1,NULL,(-7),0,(-9007199254740992),'03')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,7,NULL,NULL,1,'abc'),(1,1,7,NULL,9007199254740991,''),(2,1,2,NULL,9007199254740992,'-7'),(3,(-7),NULL,1,9007199254740993,'0'),(4,(-7),2,(-1),9223372036854775806,'-7'),(5,(-1),(-2),2,9223372036854775807,'0'),(6,7,2,0,(-9223372036854775808),NULL),(7,(-7),(-2),(-1),(-9223372036854775807),NULL),(8,0,2,0,(-9007199254740993),'abc'),(9,1,(-1),1,(-9007199254740992),''),(10,3,NULL,NULL,(-1),'03'),(11,0,0,0,0,NULL),(12,3,7,2,1,'-7'),(13,3,(-2),1,9007199254740991,NULL),(14,(-7),0,0,9007199254740992,'a''b'),(15,1,(-2),0,9007199254740993,'abc'),(16,0,NULL,2,9223372036854775806,'0')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 10,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS x FROM t) SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS z FROM t ORDER BY id",
+          "sql_sha256": "5f839aa9449b5178c28fdd242bdeabc5865b1fbd94d71ba87fcffb4e2bbef94c"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 235,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(1 AS REAL) END AS x FROM t) SELECT id,ABS(CASE WHEN b IS NULL THEN n ELSE CAST(1 AS REAL) END) AS z FROM t ORDER BY id",
+          "sql_sha256": "37d605b0f8f4464f14e6af3e745acdb774ce0ff7912580cb55b1a30aadca8295"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 280,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END AS x FROM t) SELECT id,(CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "62bd888967663ab50c5ac31b24dcc5c3e4580799df8b1133552ba580c6f5c9c7"
+        },
+        {
+          "index": 361,
+          "sql": "SELECT MIN(COALESCE(n,CAST(15 AS REAL))) AS z FROM t",
+          "sql_sha256": "039de15b4d70aa1437eaceb56af7aadad48874a6e0a89f9b1a57aeaa4d95e5cb"
+        },
+        {
+          "index": 370,
+          "sql": "SELECT MIN(CASE WHEN b IS NULL THEN n ELSE CAST(16 AS REAL) END) AS z FROM t",
+          "sql_sha256": "c5dd75c20dfb97641e7b9c35c9c9c2525ad1bd4119cc65ce15bbf83b99ea3c64"
+        }
+      ]
+    },
+    {
+      "dataset": 3,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,7,(-7),0,(-9007199254740992),'-7'),(1,NULL,0,0,(-1),'-7'),(2,7,2,2,0,'-7'),(3,(-1),1,(-1),1,'03'),(4,(-3),7,2,9007199254740991,NULL),(5,7,(-1),0,9007199254740992,NULL),(6,(-3),NULL,NULL,9007199254740993,'a''b')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,0,2,0,9007199254740991,'a''b'),(1,1,2,0,9007199254740992,'0'),(2,7,NULL,(-1),9007199254740993,'abc'),(3,0,(-2),(-1),9223372036854775806,'0'),(4,(-3),2,0,9223372036854775807,NULL),(5,1,(-7),(-1),(-9223372036854775808),'\u03bb'),(6,7,(-2),(-1),(-9223372036854775807),NULL),(7,0,0,0,(-9007199254740993),'-7'),(8,NULL,0,NULL,(-9007199254740992),'\u03bb'),(9,(-7),0,2,(-1),''),(10,(-3),7,2,0,'\u03bb'),(11,0,(-1),(-1),1,''),(12,7,2,0,9007199254740991,'a''b'),(13,1,(-2),2,9007199254740992,'abc'),(14,1,NULL,0,9007199254740993,'abc'),(15,(-1),(-2),0,9223372036854775806,NULL),(16,(-1),7,1,9223372036854775807,'-7')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 10,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS x FROM t) SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS z FROM t ORDER BY id",
+          "sql_sha256": "5f839aa9449b5178c28fdd242bdeabc5865b1fbd94d71ba87fcffb4e2bbef94c"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 235,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(1 AS REAL) END AS x FROM t) SELECT id,ABS(CASE WHEN b IS NULL THEN n ELSE CAST(1 AS REAL) END) AS z FROM t ORDER BY id",
+          "sql_sha256": "37d605b0f8f4464f14e6af3e745acdb774ce0ff7912580cb55b1a30aadca8295"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 280,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END AS x FROM t) SELECT id,(CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "62bd888967663ab50c5ac31b24dcc5c3e4580799df8b1133552ba580c6f5c9c7"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        },
+        {
+          "index": 415,
+          "sql": "SELECT MAX(CASE WHEN b IS NULL THEN n ELSE CAST(21 AS REAL) END) AS z FROM t",
+          "sql_sha256": "82cb9d2d8e0cac447e9d29fc5133cf15770e07ed9943490429769621a68dc5df"
+        }
+      ]
+    },
+    {
+      "dataset": 4,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-7),NULL,1,(-1),'abc'),(1,3,1,1,0,'a''b'),(2,0,2,1,1,'abc'),(3,0,1,NULL,9007199254740991,''),(4,NULL,(-2),2,9007199254740992,'a''b'),(5,NULL,7,NULL,9007199254740993,'03'),(6,0,0,0,9223372036854775806,'-7'),(7,1,2,0,9223372036854775807,''),(8,(-7),NULL,0,(-9223372036854775808),'0'),(9,NULL,(-1),NULL,(-9223372036854775807),'abc'),(10,NULL,2,0,(-9007199254740993),NULL),(11,7,(-7),1,(-9007199254740992),'0'),(12,(-1),0,0,(-1),'\u03bb'),(13,(-3),(-1),1,0,''),(14,(-3),0,2,1,NULL),(15,(-3),(-1),2,9007199254740991,NULL),(16,3,0,2,9007199254740992,'a''b')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,0,(-2),1,9007199254740992,'abc'),(1,1,7,NULL,9007199254740993,'\u03bb'),(2,1,2,NULL,9223372036854775806,'0'),(3,3,0,0,9223372036854775807,NULL),(4,0,(-1),0,(-9223372036854775808),''),(5,1,(-7),0,(-9223372036854775807),NULL),(6,(-3),1,0,(-9007199254740993),'03')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 280,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END AS x FROM t) SELECT id,(CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "62bd888967663ab50c5ac31b24dcc5c3e4580799df8b1133552ba580c6f5c9c7"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 11,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-1),(-1),0,9223372036854775807,'')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-3),2,0,(-9007199254740992),'0'),(1,7,7,0,(-1),'-7')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 361,
+          "sql": "SELECT MIN(COALESCE(n,CAST(15 AS REAL))) AS z FROM t",
+          "sql_sha256": "039de15b4d70aa1437eaceb56af7aadad48874a6e0a89f9b1a57aeaa4d95e5cb"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 12,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-7),2,0,(-9223372036854775808),''),(1,0,0,0,(-9223372036854775807),'abc')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-1),7,2,(-1),'03'),(1,1,(-7),1,0,'\u03bb'),(2,1,(-2),(-1),1,'abc'),(3,(-7),2,(-1),9007199254740991,'a''b'),(4,0,0,0,9007199254740992,'03'),(5,0,(-1),(-1),9007199254740993,''),(6,7,(-2),2,9223372036854775806,''),(7,3,2,2,9223372036854775807,'a''b'),(8,(-3),2,(-1),(-9223372036854775808),'0'),(9,1,0,(-1),(-9223372036854775807),'abc'),(10,0,7,2,(-9007199254740993),'0'),(11,0,2,0,(-9007199254740992),'0'),(12,(-3),(-2),(-1),(-1),''),(13,7,0,1,0,'\u03bb'),(14,3,1,0,1,'0'),(15,0,0,0,9007199254740991,'a''b'),(16,0,(-2),(-1),9007199254740992,'0')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 13,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,3,0,0,(-9223372036854775807),''),(1,(-7),7,1,(-9007199254740993),''),(2,(-1),2,0,(-9007199254740992),''),(3,(-7),0,0,(-1),'\u03bb'),(4,7,0,0,0,'\u03bb'),(5,(-3),0,0,1,'-7'),(6,3,7,2,9007199254740991,'\u03bb')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,7,(-1),2,0,'abc'),(1,0,2,1,1,'03'),(2,3,(-1),(-1),9007199254740991,'abc'),(3,1,(-2),2,9007199254740992,'03'),(4,7,1,2,9007199254740993,''),(5,(-7),2,1,9223372036854775806,'abc'),(6,0,0,2,9223372036854775807,'03'),(7,(-3),(-7),0,(-9223372036854775808),'03'),(8,0,0,0,(-9223372036854775807),''),(9,0,2,2,(-9007199254740993),''),(10,1,1,1,(-9007199254740992),'a''b'),(11,(-1),2,(-1),(-1),'a''b'),(12,7,7,0,0,'0'),(13,0,(-1),0,1,'03'),(14,7,(-1),0,9007199254740991,'-7'),(15,7,0,2,9007199254740992,'-7'),(16,0,2,(-1),9007199254740993,'')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 361,
+          "sql": "SELECT MIN(COALESCE(n,CAST(15 AS REAL))) AS z FROM t",
+          "sql_sha256": "039de15b4d70aa1437eaceb56af7aadad48874a6e0a89f9b1a57aeaa4d95e5cb"
+        }
+      ]
+    },
+    {
+      "dataset": 14,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,3,(-2),2,(-9007199254740993),'abc'),(1,(-1),(-1),0,(-9007199254740992),'a''b'),(2,(-3),7,2,(-1),'\u03bb'),(3,(-7),1,0,0,'a''b'),(4,(-1),1,1,1,'0'),(5,(-3),0,0,9007199254740991,'-7'),(6,1,0,(-1),9007199254740992,''),(7,0,(-2),2,9007199254740993,'03'),(8,1,(-7),1,9223372036854775806,''),(9,3,(-1),1,9223372036854775807,'03'),(10,3,1,0,(-9223372036854775808),'\u03bb'),(11,3,1,2,(-9223372036854775807),'\u03bb'),(12,7,(-7),0,(-9007199254740993),''),(13,3,0,2,(-9007199254740992),'\u03bb'),(14,0,7,(-1),(-1),'-7'),(15,(-7),1,0,0,''),(16,0,(-1),0,1,'03')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,1,0,0,1,'0'),(1,7,2,0,9007199254740991,''),(2,3,0,2,9007199254740992,'\u03bb'),(3,(-1),(-7),0,9007199254740993,''),(4,7,1,(-1),9223372036854775806,'0'),(5,(-3),7,0,9223372036854775807,'a''b'),(6,(-3),1,(-1),(-9223372036854775808),'03')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 18,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-3),7,(-1),1,'-7'),(1,0,(-2),(-1),9007199254740991,'03'),(2,(-7),7,0,9007199254740992,''),(3,(-1),(-7),1,9007199254740993,'abc'),(4,0,(-2),2,9223372036854775806,'a''b'),(5,(-1),7,NULL,9223372036854775807,'-7'),(6,(-3),7,0,(-9223372036854775808),'abc')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-1),7,0,9223372036854775806,NULL),(1,(-7),(-1),0,9223372036854775807,'a''b'),(2,(-1),(-1),NULL,(-9223372036854775808),''),(3,0,0,NULL,(-9223372036854775807),'0'),(4,NULL,7,0,(-9007199254740993),''),(5,0,1,0,(-9007199254740992),'0'),(6,3,(-1),1,(-1),'abc'),(7,(-1),(-7),0,0,''),(8,(-1),NULL,0,1,NULL),(9,NULL,(-2),2,9007199254740991,'03'),(10,(-1),1,NULL,9007199254740992,'abc'),(11,NULL,2,0,9007199254740993,'03'),(12,0,0,1,9223372036854775806,'abc'),(13,3,0,1,9223372036854775807,'\u03bb'),(14,1,(-7),0,(-9223372036854775808),NULL),(15,(-3),1,0,(-9223372036854775807),''),(16,(-1),(-1),0,(-9007199254740993),'-7')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 19,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,3,(-2),0,9007199254740991,'a''b'),(1,(-1),(-7),(-1),9007199254740992,'-7'),(2,1,NULL,2,9007199254740993,'03'),(3,(-1),(-7),1,9223372036854775806,'-7'),(4,NULL,0,NULL,9223372036854775807,'a''b'),(5,(-7),2,NULL,(-9223372036854775808),''),(6,7,NULL,NULL,(-9223372036854775807),'-7'),(7,1,NULL,0,(-9007199254740993),'\u03bb'),(8,NULL,2,NULL,(-9007199254740992),'a''b'),(9,0,(-2),NULL,(-1),'03'),(10,(-1),0,2,0,'abc'),(11,7,0,NULL,1,'-7'),(12,3,(-7),0,9007199254740991,'abc'),(13,1,(-7),0,9007199254740992,'a''b'),(14,NULL,1,2,9007199254740993,''),(15,1,0,(-1),9223372036854775806,'abc'),(16,(-1),(-7),2,9223372036854775807,'0')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,1,(-7),1,9223372036854775807,''),(1,(-1),NULL,0,(-9223372036854775808),'abc'),(2,1,1,(-1),(-9223372036854775807),'\u03bb'),(3,0,(-1),0,(-9007199254740993),'-7'),(4,0,2,2,(-9007199254740992),'a''b'),(5,(-3),0,(-1),(-1),NULL),(6,0,7,1,0,NULL)"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 10,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS x FROM t) SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS z FROM t ORDER BY id",
+          "sql_sha256": "5f839aa9449b5178c28fdd242bdeabc5865b1fbd94d71ba87fcffb4e2bbef94c"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 190,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-4) AS REAL) END AS x FROM t) SELECT id,(CAST(CASE WHEN b IS NULL THEN n ELSE CAST((-4) AS REAL) END AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "65726ab6d60d8f0a90f6bf5123b335ef987b99a1e297003ba05309434f114eb0"
+        },
+        {
+          "index": 235,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(1 AS REAL) END AS x FROM t) SELECT id,ABS(CASE WHEN b IS NULL THEN n ELSE CAST(1 AS REAL) END) AS z FROM t ORDER BY id",
+          "sql_sha256": "37d605b0f8f4464f14e6af3e745acdb774ce0ff7912580cb55b1a30aadca8295"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 280,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END AS x FROM t) SELECT id,(CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "62bd888967663ab50c5ac31b24dcc5c3e4580799df8b1133552ba580c6f5c9c7"
+        },
+        {
+          "index": 370,
+          "sql": "SELECT MIN(CASE WHEN b IS NULL THEN n ELSE CAST(16 AS REAL) END) AS z FROM t",
+          "sql_sha256": "c5dd75c20dfb97641e7b9c35c9c9c2525ad1bd4119cc65ce15bbf83b99ea3c64"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        },
+        {
+          "index": 415,
+          "sql": "SELECT MAX(CASE WHEN b IS NULL THEN n ELSE CAST(21 AS REAL) END) AS z FROM t",
+          "sql_sha256": "82cb9d2d8e0cac447e9d29fc5133cf15770e07ed9943490429769621a68dc5df"
+        }
+      ]
+    },
+    {
+      "dataset": 26,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,3,0,0,(-9007199254740993),'-7')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-1),7,(-1),1,''),(1,(-7),0,0,9007199254740991,'03')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 361,
+          "sql": "SELECT MIN(COALESCE(n,CAST(15 AS REAL))) AS z FROM t",
+          "sql_sha256": "039de15b4d70aa1437eaceb56af7aadad48874a6e0a89f9b1a57aeaa4d95e5cb"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 28,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,7,(-7),1,(-1),'\u03bb'),(1,7,(-2),1,0,'03'),(2,0,1,0,1,'0'),(3,3,7,0,9007199254740991,'\u03bb'),(4,(-3),0,2,9007199254740992,'-7'),(5,(-3),2,0,9007199254740993,'03'),(6,(-3),(-7),0,9223372036854775806,'0')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,0,2,0,9007199254740992,'abc'),(1,0,0,0,9007199254740993,'03'),(2,0,1,0,9223372036854775806,'\u03bb'),(3,(-1),2,2,9223372036854775807,'03'),(4,0,1,0,(-9223372036854775808),'-7'),(5,(-7),(-2),0,(-9223372036854775807),''),(6,(-1),2,(-1),(-9007199254740993),'-7'),(7,0,(-2),1,(-9007199254740992),''),(8,0,2,0,(-1),'0'),(9,(-3),1,0,0,'abc'),(10,3,(-7),1,1,'a''b'),(11,0,1,1,9007199254740991,''),(12,(-7),7,(-1),9007199254740992,'abc'),(13,(-7),7,0,9007199254740993,'a''b'),(14,(-1),2,2,9223372036854775806,''),(15,3,2,2,9223372036854775807,'-7'),(16,1,0,0,(-9223372036854775808),'\u03bb')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 29,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,1,(-7),(-1),0,'\u03bb'),(1,0,(-1),0,1,''),(2,3,(-7),(-1),9007199254740991,'\u03bb'),(3,(-1),0,2,9007199254740992,'abc'),(4,7,(-1),(-1),9007199254740993,'03'),(5,0,(-7),2,9223372036854775806,'abc'),(6,0,(-2),0,9223372036854775807,''),(7,0,(-1),2,(-9223372036854775808),''),(8,3,7,0,(-9223372036854775807),''),(9,0,0,0,(-9007199254740993),''),(10,0,2,0,(-9007199254740992),''),(11,0,0,2,(-1),'\u03bb'),(12,(-7),2,2,0,'\u03bb'),(13,(-1),1,1,1,'-7'),(14,3,0,2,9007199254740991,'abc'),(15,(-1),(-7),2,9007199254740992,'a''b'),(16,1,2,0,9007199254740993,'03')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,7,2,0,9007199254740993,'0'),(1,1,7,0,9223372036854775806,'-7'),(2,(-7),(-2),2,9223372036854775807,'a''b'),(3,1,1,0,(-9223372036854775808),'03'),(4,0,(-2),(-1),(-9223372036854775807),'abc'),(5,1,0,0,(-9007199254740993),'a''b'),(6,0,(-7),0,(-9007199254740992),'')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 32,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,7,(-2),2,9007199254740992,'0'),(1,(-7),NULL,NULL,9007199254740993,'03')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,3,7,2,(-9223372036854775808),NULL),(1,0,1,0,(-9223372036854775807),'-7'),(2,7,NULL,NULL,(-9007199254740993),''),(3,(-1),(-2),(-1),(-9007199254740992),'03'),(4,7,NULL,(-1),(-1),NULL),(5,(-1),(-2),1,0,'a''b'),(6,3,1,NULL,1,'03'),(7,NULL,1,0,9007199254740991,NULL),(8,0,NULL,NULL,9007199254740992,'a''b'),(9,(-1),0,NULL,9007199254740993,'a''b'),(10,7,7,1,9223372036854775806,''),(11,(-3),0,0,9223372036854775807,NULL),(12,3,1,1,(-9223372036854775808),'-7'),(13,(-7),(-7),2,(-9223372036854775807),'a''b'),(14,3,(-1),(-1),(-9007199254740993),'03'),(15,(-7),(-1),0,(-9007199254740992),NULL),(16,NULL,1,2,(-1),'03')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 10,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS x FROM t) SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS z FROM t ORDER BY id",
+          "sql_sha256": "5f839aa9449b5178c28fdd242bdeabc5865b1fbd94d71ba87fcffb4e2bbef94c"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 235,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(1 AS REAL) END AS x FROM t) SELECT id,ABS(CASE WHEN b IS NULL THEN n ELSE CAST(1 AS REAL) END) AS z FROM t ORDER BY id",
+          "sql_sha256": "37d605b0f8f4464f14e6af3e745acdb774ce0ff7912580cb55b1a30aadca8295"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 280,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END AS x FROM t) SELECT id,(CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "62bd888967663ab50c5ac31b24dcc5c3e4580799df8b1133552ba580c6f5c9c7"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        },
+        {
+          "index": 415,
+          "sql": "SELECT MAX(CASE WHEN b IS NULL THEN n ELSE CAST(21 AS REAL) END) AS z FROM t",
+          "sql_sha256": "82cb9d2d8e0cac447e9d29fc5133cf15770e07ed9943490429769621a68dc5df"
+        }
+      ]
+    },
+    {
+      "dataset": 33,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,0,7,0,9007199254740993,'abc'),(1,NULL,(-2),1,9223372036854775806,'a''b'),(2,3,0,0,9223372036854775807,'a''b'),(3,3,7,(-1),(-9223372036854775808),NULL),(4,0,(-1),0,(-9223372036854775807),NULL),(5,(-7),(-2),2,(-9007199254740993),'03'),(6,(-7),(-1),2,(-9007199254740992),'abc')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-1),NULL,1,(-9223372036854775807),'0'),(1,(-3),(-1),2,(-9007199254740993),'03'),(2,NULL,7,NULL,(-9007199254740992),'abc'),(3,0,(-1),0,(-1),'-7'),(4,(-3),NULL,1,0,NULL),(5,(-7),(-1),2,1,'-7'),(6,1,(-7),2,9007199254740991,'03'),(7,(-3),7,NULL,9007199254740992,''),(8,(-1),(-7),0,9007199254740993,'-7'),(9,(-1),(-7),NULL,9223372036854775806,'-7'),(10,3,(-7),0,9223372036854775807,''),(11,0,7,2,(-9223372036854775808),'03'),(12,0,NULL,NULL,(-9223372036854775807),''),(13,0,1,1,(-9007199254740993),''),(14,(-3),(-2),2,(-9007199254740992),'0'),(15,(-1),(-2),0,(-1),'\u03bb'),(16,7,(-7),2,0,'')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 34,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-7),NULL,1,9223372036854775806,'0'),(1,7,1,0,9223372036854775807,'-7'),(2,(-3),(-7),(-1),(-9223372036854775808),''),(3,(-7),2,1,(-9223372036854775807),'0'),(4,(-7),1,NULL,(-9007199254740993),'0'),(5,0,NULL,2,(-9007199254740992),''),(6,(-1),7,0,(-1),''),(7,(-7),(-7),0,0,'\u03bb'),(8,7,NULL,1,1,''),(9,0,(-1),0,9007199254740991,'0'),(10,(-3),(-1),2,9007199254740992,'-7'),(11,NULL,(-1),NULL,9007199254740993,'03'),(12,(-1),NULL,0,9223372036854775806,'-7'),(13,7,NULL,0,9223372036854775807,'-7'),(14,(-1),1,2,(-9223372036854775808),'-7'),(15,1,(-1),2,(-9223372036854775807),'-7'),(16,NULL,(-7),2,(-9007199254740993),'0')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,7,(-7),(-1),(-9007199254740993),'03'),(1,1,(-1),0,(-9007199254740992),'-7'),(2,1,2,0,(-1),'0'),(3,0,NULL,(-1),0,'-7'),(4,(-1),7,2,1,'0'),(5,(-1),(-1),(-1),9007199254740991,'0'),(6,0,7,(-1),9007199254740992,'03')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 10,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS x FROM t) SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS z FROM t ORDER BY id",
+          "sql_sha256": "5f839aa9449b5178c28fdd242bdeabc5865b1fbd94d71ba87fcffb4e2bbef94c"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 235,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(1 AS REAL) END AS x FROM t) SELECT id,ABS(CASE WHEN b IS NULL THEN n ELSE CAST(1 AS REAL) END) AS z FROM t ORDER BY id",
+          "sql_sha256": "37d605b0f8f4464f14e6af3e745acdb774ce0ff7912580cb55b1a30aadca8295"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 280,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END AS x FROM t) SELECT id,(CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "62bd888967663ab50c5ac31b24dcc5c3e4580799df8b1133552ba580c6f5c9c7"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        },
+        {
+          "index": 415,
+          "sql": "SELECT MAX(CASE WHEN b IS NULL THEN n ELSE CAST(21 AS REAL) END) AS z FROM t",
+          "sql_sha256": "82cb9d2d8e0cac447e9d29fc5133cf15770e07ed9943490429769621a68dc5df"
+        }
+      ]
+    },
+    {
+      "dataset": 43,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-1),0,(-1),9007199254740991,'\u03bb'),(1,1,1,0,9007199254740992,''),(2,0,(-7),1,9007199254740993,'03'),(3,0,(-2),0,9223372036854775806,''),(4,(-7),(-1),(-1),9223372036854775807,''),(5,(-3),7,0,(-9223372036854775808),'\u03bb'),(6,(-3),1,0,(-9223372036854775807),'')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-7),(-2),0,9223372036854775807,'abc'),(1,(-7),7,(-1),(-9223372036854775808),'abc'),(2,(-1),0,0,(-9223372036854775807),'abc'),(3,7,0,(-1),(-9007199254740993),''),(4,3,(-1),1,(-9007199254740992),'03'),(5,7,(-2),(-1),(-1),'0'),(6,0,0,1,0,''),(7,3,(-7),1,1,'0'),(8,0,(-2),0,9007199254740991,''),(9,(-1),0,0,9007199254740992,''),(10,7,(-7),(-1),9007199254740993,'-7'),(11,0,(-2),0,9223372036854775806,''),(12,(-3),(-1),2,9223372036854775807,''),(13,0,2,(-1),(-9223372036854775808),'-7'),(14,7,1,(-1),(-9223372036854775807),'\u03bb'),(15,0,1,1,(-9007199254740993),'0'),(16,7,(-1),(-1),(-9007199254740992),'0')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 44,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,0,7,1,9007199254740992,'a''b'),(1,3,(-7),1,9007199254740993,'\u03bb'),(2,1,1,0,9223372036854775806,''),(3,(-3),1,(-1),9223372036854775807,'0'),(4,7,0,0,(-9223372036854775808),'a''b'),(5,0,(-1),0,(-9223372036854775807),'a''b'),(6,0,(-2),0,(-9007199254740993),'03'),(7,(-1),(-1),2,(-9007199254740992),'-7'),(8,3,2,1,(-1),''),(9,7,(-7),0,0,''),(10,(-1),(-1),(-1),1,'0'),(11,0,7,(-1),9007199254740991,'-7'),(12,(-3),2,1,9007199254740992,'03'),(13,(-7),1,0,9007199254740993,'0'),(14,(-3),7,0,9223372036854775806,''),(15,(-7),7,1,9223372036854775807,'a''b'),(16,0,0,0,(-9223372036854775808),'abc')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-7),0,0,(-9223372036854775808),'-7'),(1,(-1),0,0,(-9223372036854775807),''),(2,3,0,0,(-9007199254740993),'0'),(3,(-1),2,0,(-9007199254740992),''),(4,(-7),7,0,(-1),''),(5,(-1),2,0,0,'a''b'),(6,1,7,1,1,'abc')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 46,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,1,1,0,9223372036854775806,'\u03bb')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-3),(-1),(-1),(-9007199254740993),'abc'),(1,(-3),7,2,(-9007199254740992),NULL)"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 361,
+          "sql": "SELECT MIN(COALESCE(n,CAST(15 AS REAL))) AS z FROM t",
+          "sql_sha256": "039de15b4d70aa1437eaceb56af7aadad48874a6e0a89f9b1a57aeaa4d95e5cb"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 47,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-7),(-2),(-1),9223372036854775807,'\u03bb'),(1,(-1),0,0,(-9223372036854775808),'a''b')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,1,2,(-1),(-9007199254740992),'03'),(1,0,0,0,(-1),''),(2,7,(-1),NULL,0,'0'),(3,(-1),0,2,1,NULL),(4,7,2,0,9007199254740991,'0'),(5,7,(-1),NULL,9007199254740992,'-7'),(6,0,7,1,9007199254740993,'abc'),(7,7,7,(-1),9223372036854775806,''),(8,(-1),(-1),2,9223372036854775807,'-7'),(9,(-7),NULL,0,(-9223372036854775808),'a''b'),(10,(-7),2,0,(-9223372036854775807),'-7'),(11,(-7),NULL,NULL,(-9007199254740993),'abc'),(12,(-7),(-2),2,(-9007199254740992),'abc'),(13,3,7,2,(-1),'03'),(14,(-3),0,(-1),0,'\u03bb'),(15,(-1),NULL,0,1,'abc'),(16,0,(-7),0,9007199254740991,'0')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 48,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-1),0,(-1),(-9223372036854775808),''),(1,(-7),0,1,(-9223372036854775807),'\u03bb'),(2,(-1),(-2),0,(-9007199254740993),''),(3,3,2,0,(-9007199254740992),'03'),(4,0,(-2),0,(-1),'\u03bb'),(5,1,0,(-1),0,'03'),(6,(-7),NULL,2,1,'-7')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,0,NULL,1,(-1),'-7'),(1,(-1),(-1),2,0,'abc'),(2,0,(-1),2,1,'-7'),(3,(-1),(-7),NULL,9007199254740991,'a''b'),(4,3,7,NULL,9007199254740992,'a''b'),(5,NULL,(-1),0,9007199254740993,'-7'),(6,(-1),(-2),2,9223372036854775806,'a''b'),(7,0,NULL,1,9223372036854775807,'03'),(8,(-7),(-2),0,(-9223372036854775808),'a''b'),(9,3,0,1,(-9223372036854775807),''),(10,3,7,1,(-9007199254740993),'\u03bb'),(11,(-7),7,1,(-9007199254740992),'-7'),(12,3,0,2,(-1),'\u03bb'),(13,7,7,0,0,'0'),(14,NULL,2,(-1),1,'03'),(15,7,2,0,9007199254740991,'-7'),(16,0,1,1,9007199254740992,'abc')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        }
+      ]
+    },
+    {
+      "dataset": 49,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,1,NULL,0,(-9223372036854775807),'03'),(1,(-7),(-7),2,(-9007199254740993),'0'),(2,7,(-1),0,(-9007199254740992),'\u03bb'),(3,7,7,NULL,(-1),'-7'),(4,1,2,NULL,0,NULL),(5,0,(-7),1,1,'abc'),(6,0,2,NULL,9007199254740991,'a''b'),(7,(-3),1,2,9007199254740992,'a''b'),(8,(-7),1,0,9007199254740993,'abc'),(9,0,(-2),NULL,9223372036854775806,'0'),(10,(-1),(-7),NULL,9223372036854775807,'a''b'),(11,0,7,1,(-9223372036854775808),'03'),(12,(-1),1,2,(-9223372036854775807),NULL),(13,0,(-7),1,(-9007199254740993),'0'),(14,1,(-2),1,(-9007199254740992),'abc'),(15,3,0,2,(-1),'abc'),(16,(-1),1,2,0,'0')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,1,7,2,0,'0'),(1,(-3),NULL,NULL,1,''),(2,(-3),1,0,9007199254740991,'a''b'),(3,(-3),NULL,NULL,9007199254740992,'-7'),(4,3,(-2),(-1),9007199254740993,'\u03bb'),(5,3,7,NULL,9223372036854775806,''),(6,1,NULL,1,9223372036854775807,'abc')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 10,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS x FROM t) SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS z FROM t ORDER BY id",
+          "sql_sha256": "5f839aa9449b5178c28fdd242bdeabc5865b1fbd94d71ba87fcffb4e2bbef94c"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 190,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-4) AS REAL) END AS x FROM t) SELECT id,(CAST(CASE WHEN b IS NULL THEN n ELSE CAST((-4) AS REAL) END AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "65726ab6d60d8f0a90f6bf5123b335ef987b99a1e297003ba05309434f114eb0"
+        },
+        {
+          "index": 235,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(1 AS REAL) END AS x FROM t) SELECT id,ABS(CASE WHEN b IS NULL THEN n ELSE CAST(1 AS REAL) END) AS z FROM t ORDER BY id",
+          "sql_sha256": "37d605b0f8f4464f14e6af3e745acdb774ce0ff7912580cb55b1a30aadca8295"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 280,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END AS x FROM t) SELECT id,(CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "62bd888967663ab50c5ac31b24dcc5c3e4580799df8b1133552ba580c6f5c9c7"
+        },
+        {
+          "index": 370,
+          "sql": "SELECT MIN(CASE WHEN b IS NULL THEN n ELSE CAST(16 AS REAL) END) AS z FROM t",
+          "sql_sha256": "c5dd75c20dfb97641e7b9c35c9c9c2525ad1bd4119cc65ce15bbf83b99ea3c64"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 56,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-3),(-7),2,9007199254740992,'abc')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,3,0,0,(-9223372036854775808),'0'),(1,3,(-1),(-1),(-9223372036854775807),'')"
+      ],
+      "queries": [
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        }
+      ]
+    },
+    {
+      "dataset": 57,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,7,1,0,9007199254740993,'a''b'),(1,(-7),2,0,9223372036854775806,'abc')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-1),1,(-1),(-9223372036854775807),'\u03bb'),(1,(-1),(-7),1,(-9007199254740993),''),(2,(-7),0,2,(-9007199254740992),'0'),(3,7,(-7),2,(-1),'-7'),(4,1,2,2,0,'-7'),(5,0,(-1),(-1),1,'\u03bb'),(6,0,7,0,9007199254740991,'\u03bb'),(7,(-3),2,0,9007199254740992,'\u03bb'),(8,0,(-1),1,9007199254740993,'0'),(9,3,0,1,9223372036854775806,'abc'),(10,0,7,1,9223372036854775807,'\u03bb'),(11,7,1,0,(-9223372036854775808),'a''b'),(12,0,(-7),(-1),(-9223372036854775807),'a''b'),(13,0,1,0,(-9007199254740993),''),(14,(-1),7,1,(-9007199254740992),''),(15,3,0,0,(-1),'0'),(16,3,7,2,0,'')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 361,
+          "sql": "SELECT MIN(COALESCE(n,CAST(15 AS REAL))) AS z FROM t",
+          "sql_sha256": "039de15b4d70aa1437eaceb56af7aadad48874a6e0a89f9b1a57aeaa4d95e5cb"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 58,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,0,(-7),(-1),9223372036854775806,'\u03bb'),(1,7,(-2),1,9223372036854775807,''),(2,(-3),0,2,(-9223372036854775808),'\u03bb'),(3,(-7),0,1,(-9223372036854775807),'0'),(4,0,(-7),(-1),(-9007199254740993),'0'),(5,1,0,0,(-9007199254740992),''),(6,1,0,1,(-1),'a''b')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,7,1,(-1),(-9007199254740993),'\u03bb'),(1,0,7,1,(-9007199254740992),'abc'),(2,(-3),7,0,(-1),''),(3,0,1,0,0,'03'),(4,(-3),0,0,1,'-7'),(5,7,(-2),0,9007199254740991,''),(6,0,(-7),1,9007199254740992,''),(7,0,0,2,9007199254740993,'0'),(8,0,2,2,9223372036854775806,'0'),(9,7,(-7),1,9223372036854775807,'abc'),(10,0,1,0,(-9223372036854775808),'\u03bb'),(11,0,(-1),0,(-9223372036854775807),'abc'),(12,3,7,2,(-9007199254740993),'0'),(13,1,2,0,(-9007199254740992),'0'),(14,(-1),1,1,(-1),'abc'),(15,3,2,0,0,'-7'),(16,0,(-7),(-1),1,'03')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 59,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-1),(-7),0,9223372036854775807,'a''b'),(1,3,(-2),0,(-9223372036854775808),'abc'),(2,0,(-2),0,(-9223372036854775807),'\u03bb'),(3,0,(-7),2,(-9007199254740993),'03'),(4,1,(-2),1,(-9007199254740992),'0'),(5,(-1),(-2),0,(-1),'03'),(6,0,1,2,0,'03'),(7,(-1),(-1),(-1),1,'a''b'),(8,7,(-1),1,9007199254740991,'0'),(9,3,2,(-1),9007199254740992,'\u03bb'),(10,0,7,0,9007199254740993,'0'),(11,0,1,(-1),9223372036854775806,'03'),(12,0,7,1,9223372036854775807,'0'),(13,(-7),0,0,(-9223372036854775808),'0'),(14,0,0,0,(-9223372036854775807),'-7'),(15,(-3),0,0,(-9007199254740993),'03'),(16,1,7,(-1),(-9007199254740992),'0')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-1),2,2,(-9007199254740992),'03'),(1,(-7),(-1),0,(-1),'03'),(2,7,7,0,0,'abc'),(3,0,0,1,1,'03'),(4,0,(-7),(-1),9007199254740991,'-7'),(5,7,(-1),0,9007199254740992,'\u03bb'),(6,0,(-2),0,9007199254740993,'abc')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 61,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,7,7,0,(-9223372036854775807),'0')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,0,(-1),0,0,'a''b'),(1,NULL,(-1),2,1,NULL)"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 361,
+          "sql": "SELECT MIN(COALESCE(n,CAST(15 AS REAL))) AS z FROM t",
+          "sql_sha256": "039de15b4d70aa1437eaceb56af7aadad48874a6e0a89f9b1a57aeaa4d95e5cb"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 62,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,3,0,NULL,(-9007199254740993),'-7'),(1,NULL,0,1,(-9007199254740992),'0')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-1),NULL,2,1,'\u03bb'),(1,NULL,1,NULL,9007199254740991,'a''b'),(2,1,0,0,9007199254740992,'0'),(3,7,(-7),0,9007199254740993,'a''b'),(4,(-7),(-1),1,9223372036854775806,'03'),(5,1,NULL,NULL,9223372036854775807,'03'),(6,3,(-2),NULL,(-9223372036854775808),'\u03bb'),(7,1,(-2),2,(-9223372036854775807),''),(8,NULL,0,NULL,(-9007199254740993),'a''b'),(9,(-3),1,0,(-9007199254740992),'a''b'),(10,1,(-1),(-1),(-1),'\u03bb'),(11,7,1,1,0,'abc'),(12,7,2,2,1,'abc'),(13,7,(-7),(-1),9007199254740991,'03'),(14,0,2,0,9007199254740992,'a''b'),(15,3,(-7),(-1),9007199254740993,NULL),(16,(-3),1,1,9223372036854775806,'abc')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 361,
+          "sql": "SELECT MIN(COALESCE(n,CAST(15 AS REAL))) AS z FROM t",
+          "sql_sha256": "039de15b4d70aa1437eaceb56af7aadad48874a6e0a89f9b1a57aeaa4d95e5cb"
+        }
+      ]
+    },
+    {
+      "dataset": 63,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-3),(-7),0,(-9007199254740992),'0'),(1,0,1,1,(-1),'03'),(2,3,NULL,2,0,'03'),(3,(-1),0,0,1,'03'),(4,3,7,(-1),9007199254740991,'-7'),(5,NULL,7,NULL,9007199254740992,'03'),(6,(-3),(-7),1,9007199254740993,'-7')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,0,(-1),2,9007199254740991,'03'),(1,3,2,NULL,9007199254740992,'abc'),(2,NULL,0,NULL,9007199254740993,'abc'),(3,0,(-1),2,9223372036854775806,'0'),(4,0,7,0,9223372036854775807,NULL),(5,(-3),7,2,(-9223372036854775808),'a''b'),(6,(-3),(-7),NULL,(-9223372036854775807),'-7'),(7,(-1),(-1),(-1),(-9007199254740993),'abc'),(8,(-3),(-1),(-1),(-9007199254740992),'a''b'),(9,NULL,7,(-1),(-1),NULL),(10,(-3),(-1),0,0,NULL),(11,7,(-2),1,1,'0'),(12,(-3),(-7),NULL,9007199254740991,'abc'),(13,1,(-1),NULL,9007199254740992,'0'),(14,NULL,2,0,9007199254740993,'abc'),(15,(-3),1,0,9223372036854775806,'\u03bb'),(16,3,1,1,9223372036854775807,'0')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 64,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,3,NULL,0,(-1),'\u03bb'),(1,(-7),7,2,0,'\u03bb'),(2,(-3),7,0,1,'0'),(3,3,1,1,9007199254740991,'03'),(4,3,(-2),0,9007199254740992,'-7'),(5,(-3),(-1),1,9007199254740993,'abc'),(6,(-3),0,0,9223372036854775806,'-7'),(7,3,0,0,9223372036854775807,'\u03bb'),(8,NULL,2,0,(-9223372036854775808),'-7'),(9,(-3),7,2,(-9223372036854775807),'a''b'),(10,(-7),7,(-1),(-9007199254740993),'\u03bb'),(11,NULL,2,(-1),(-9007199254740992),'03'),(12,1,1,NULL,(-1),'0'),(13,NULL,7,1,0,'-7'),(14,0,0,1,1,'a''b'),(15,3,1,2,9007199254740991,''),(16,(-3),2,0,9007199254740992,'a''b')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-3),(-7),0,9007199254740992,'0'),(1,0,1,0,9007199254740993,'a''b'),(2,NULL,(-2),2,9223372036854775806,'0'),(3,(-3),7,0,9223372036854775807,''),(4,1,(-2),0,(-9223372036854775808),'03'),(5,(-1),(-2),1,(-9223372036854775807),'0'),(6,(-1),(-7),NULL,(-9007199254740993),'\u03bb')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 71,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,1,(-1),0,9223372036854775807,'-7')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-3),1,2,(-9007199254740992),'-7'),(1,(-7),(-7),(-1),(-1),'\u03bb')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 361,
+          "sql": "SELECT MIN(COALESCE(n,CAST(15 AS REAL))) AS z FROM t",
+          "sql_sha256": "039de15b4d70aa1437eaceb56af7aadad48874a6e0a89f9b1a57aeaa4d95e5cb"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 72,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-7),0,(-1),(-9223372036854775808),'a''b'),(1,(-7),(-2),0,(-9223372036854775807),'-7')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-1),7,(-1),(-1),'-7'),(1,0,2,0,0,'03'),(2,0,0,2,1,'\u03bb'),(3,0,(-2),1,9007199254740991,'\u03bb'),(4,1,0,1,9007199254740992,''),(5,0,0,2,9007199254740993,'03'),(6,(-1),0,1,9223372036854775806,'abc'),(7,0,0,(-1),9223372036854775807,''),(8,3,0,2,(-9223372036854775808),'03'),(9,0,2,0,(-9223372036854775807),'abc'),(10,(-7),2,1,(-9007199254740993),''),(11,(-7),1,0,(-9007199254740992),''),(12,0,(-2),0,(-1),'\u03bb'),(13,(-7),7,2,0,''),(14,(-3),0,(-1),1,'0'),(15,1,(-2),1,9007199254740991,''),(16,0,1,0,9007199254740992,'-7')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 73,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-1),0,2,(-9223372036854775807),'abc'),(1,(-3),1,(-1),(-9007199254740993),''),(2,0,(-1),0,(-9007199254740992),''),(3,0,(-7),0,(-1),'0'),(4,7,0,1,0,'abc'),(5,(-3),(-7),(-1),1,''),(6,0,1,(-1),9007199254740991,'abc')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,3,0,1,0,'abc'),(1,(-7),0,2,1,''),(2,7,(-7),0,9007199254740991,'abc'),(3,(-1),(-2),(-1),9007199254740992,''),(4,0,(-7),0,9007199254740993,''),(5,0,(-1),0,9223372036854775806,'03'),(6,0,1,0,9223372036854775807,''),(7,(-3),7,1,(-9223372036854775808),''),(8,(-7),7,0,(-9223372036854775807),''),(9,(-1),(-7),0,(-9007199254740993),'a''b'),(10,0,(-2),0,(-9007199254740992),'0'),(11,1,7,0,(-1),'0'),(12,(-7),7,1,0,'03'),(13,(-7),(-1),2,1,'a''b'),(14,3,(-7),0,9007199254740991,'0'),(15,0,7,1,9007199254740992,'0'),(16,0,(-7),0,9007199254740993,'')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 361,
+          "sql": "SELECT MIN(COALESCE(n,CAST(15 AS REAL))) AS z FROM t",
+          "sql_sha256": "039de15b4d70aa1437eaceb56af7aadad48874a6e0a89f9b1a57aeaa4d95e5cb"
+        }
+      ]
+    },
+    {
+      "dataset": 74,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-3),1,0,(-9007199254740993),''),(1,7,1,(-1),(-9007199254740992),'0'),(2,0,(-1),2,(-1),''),(3,(-1),0,2,0,'a''b'),(4,0,(-1),0,1,'-7'),(5,0,(-7),2,9007199254740991,''),(6,(-1),0,2,9007199254740992,'0'),(7,7,0,1,9007199254740993,''),(8,1,1,1,9223372036854775806,'03'),(9,0,(-7),0,9223372036854775807,'03'),(10,1,7,0,(-9223372036854775808),'-7'),(11,3,0,0,(-9223372036854775807),''),(12,1,(-7),0,(-9007199254740993),'\u03bb'),(13,0,(-2),2,(-9007199254740992),'\u03bb'),(14,1,2,1,(-1),''),(15,3,(-7),0,0,'03'),(16,(-3),2,(-1),1,'0')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-3),(-2),2,1,'-7'),(1,(-7),2,(-1),9007199254740991,''),(2,1,(-2),0,9007199254740992,'03'),(3,(-7),0,(-1),9007199254740993,'03'),(4,3,(-2),0,9223372036854775806,''),(5,0,0,2,9223372036854775807,''),(6,(-3),(-2),(-1),(-9223372036854775808),'a''b')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 78,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,NULL,(-7),0,1,'abc'),(1,0,NULL,(-1),9007199254740991,'a''b'),(2,1,(-1),2,9007199254740992,'a''b'),(3,(-1),2,0,9007199254740993,'a''b'),(4,(-3),(-2),0,9223372036854775806,'\u03bb'),(5,0,7,0,9223372036854775807,NULL),(6,(-7),2,NULL,(-9223372036854775808),NULL)",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-1),7,1,9223372036854775806,'a''b'),(1,0,(-1),(-1),9223372036854775807,'-7'),(2,(-1),0,0,(-9223372036854775808),'\u03bb'),(3,1,1,0,(-9223372036854775807),'-7'),(4,3,(-2),NULL,(-9007199254740993),'\u03bb'),(5,0,1,1,(-9007199254740992),'0'),(6,1,2,0,(-1),'-7'),(7,(-7),1,1,0,'\u03bb'),(8,0,(-1),NULL,1,'03'),(9,3,2,0,9007199254740991,NULL),(10,3,(-7),0,9007199254740992,'0'),(11,0,0,0,9007199254740993,'abc'),(12,7,1,1,9223372036854775806,NULL),(13,NULL,NULL,(-1),9223372036854775807,'03'),(14,0,2,2,(-9223372036854775808),'abc'),(15,7,(-2),2,(-9223372036854775807),NULL),(16,0,0,0,(-9007199254740993),'a''b')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 79,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,1,0,2,9007199254740991,'abc'),(1,NULL,(-1),NULL,9007199254740992,'03'),(2,0,(-1),2,9007199254740993,'a''b'),(3,1,1,NULL,9223372036854775806,'0'),(4,(-3),(-1),NULL,9223372036854775807,NULL),(5,1,7,0,(-9223372036854775808),'\u03bb'),(6,(-1),7,2,(-9223372036854775807),'-7'),(7,(-1),(-2),0,(-9007199254740993),'\u03bb'),(8,1,7,NULL,(-9007199254740992),'-7'),(9,(-1),NULL,2,(-1),'a''b'),(10,(-1),NULL,(-1),0,'-7'),(11,7,(-7),2,1,'0'),(12,0,NULL,0,9007199254740991,'\u03bb'),(13,3,(-2),2,9007199254740992,NULL),(14,0,1,1,9007199254740993,''),(15,NULL,(-2),(-1),9223372036854775806,'03'),(16,(-1),(-1),2,9223372036854775807,'\u03bb')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-7),1,0,9223372036854775807,'-7'),(1,(-1),0,2,(-9223372036854775808),'0'),(2,NULL,(-7),0,(-9223372036854775807),'0'),(3,0,7,0,(-9007199254740993),'0'),(4,1,(-1),1,(-9007199254740992),NULL),(5,0,2,2,(-1),'\u03bb'),(6,0,(-2),(-1),0,'03')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 86,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,0,2,0,(-9007199254740993),'0')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,0,0,0,1,'a''b'),(1,0,2,0,9007199254740991,'abc')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 361,
+          "sql": "SELECT MIN(COALESCE(n,CAST(15 AS REAL))) AS z FROM t",
+          "sql_sha256": "039de15b4d70aa1437eaceb56af7aadad48874a6e0a89f9b1a57aeaa4d95e5cb"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 88,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,0,1,(-1),(-1),''),(1,3,1,1,0,'abc'),(2,(-3),0,0,1,'a''b'),(3,0,(-7),2,9007199254740991,'0'),(4,(-7),(-1),1,9007199254740992,''),(5,3,2,(-1),9007199254740993,'03'),(6,1,7,1,9223372036854775806,'abc')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-3),0,0,9007199254740992,''),(1,1,0,0,9007199254740993,'0'),(2,(-3),2,(-1),9223372036854775806,'0'),(3,0,2,1,9223372036854775807,''),(4,3,0,2,(-9223372036854775808),''),(5,(-3),(-7),0,(-9223372036854775807),'a''b'),(6,1,(-2),1,(-9007199254740993),''),(7,3,0,1,(-9007199254740992),'\u03bb'),(8,1,2,1,(-1),'abc'),(9,3,1,0,0,'abc'),(10,3,1,(-1),1,''),(11,(-7),(-2),2,9007199254740991,''),(12,3,7,2,9007199254740992,'\u03bb'),(13,3,(-2),(-1),9007199254740993,'a''b'),(14,(-3),(-2),(-1),9223372036854775806,''),(15,0,0,0,9223372036854775807,'\u03bb'),(16,(-1),0,1,(-9223372036854775808),'a''b')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 89,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-3),(-1),2,0,''),(1,(-1),(-7),2,1,'0'),(2,3,(-2),0,9007199254740991,'a''b'),(3,7,2,0,9007199254740992,'a''b'),(4,(-1),0,1,9007199254740993,'abc'),(5,3,(-1),0,9223372036854775806,'-7'),(6,0,(-2),1,9223372036854775807,''),(7,0,(-2),2,(-9223372036854775808),'abc'),(8,3,(-7),0,(-9223372036854775807),'0'),(9,(-3),7,1,(-9007199254740993),'0'),(10,3,0,2,(-9007199254740992),'03'),(11,0,(-7),0,(-1),'abc'),(12,0,0,1,0,'-7'),(13,0,0,1,1,'\u03bb'),(14,7,2,0,9007199254740991,'-7'),(15,(-7),0,0,9007199254740992,''),(16,3,(-1),1,9007199254740993,'-7')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,7,2,0,9007199254740993,'a''b'),(1,(-1),7,0,9223372036854775806,'0'),(2,(-1),0,2,9223372036854775807,''),(3,(-3),1,0,(-9223372036854775808),''),(4,0,(-7),2,(-9223372036854775807),'\u03bb'),(5,7,2,2,(-9007199254740993),'\u03bb'),(6,7,0,0,(-9007199254740992),'\u03bb')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 92,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,7,0,1,9007199254740992,'a''b'),(1,(-3),7,1,9007199254740993,'0')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,(-3),7,NULL,(-9223372036854775808),'0'),(1,1,1,0,(-9223372036854775807),'\u03bb'),(2,(-7),(-7),1,(-9007199254740993),NULL),(3,1,1,2,(-9007199254740992),'a''b'),(4,7,(-2),0,(-1),''),(5,(-7),2,0,0,''),(6,(-7),(-1),(-1),1,'a''b'),(7,3,0,NULL,9007199254740991,'\u03bb'),(8,(-7),1,NULL,9007199254740992,'-7'),(9,3,7,0,9007199254740993,'a''b'),(10,0,NULL,2,9223372036854775806,'-7'),(11,3,0,NULL,9223372036854775807,'-7'),(12,(-7),1,(-1),(-9223372036854775808),'abc'),(13,NULL,2,2,(-9223372036854775807),'03'),(14,3,0,0,(-9007199254740993),'\u03bb'),(15,(-1),1,NULL,(-9007199254740992),'abc'),(16,3,(-7),2,(-1),'')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 226,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(0 AS REAL)) AS x FROM t) SELECT id,ABS(COALESCE(n,CAST(0 AS REAL))) AS z FROM t ORDER BY id",
+          "sql_sha256": "ba2956d27bafa59424a0f72054eecd0801315c48f9c2c47f338ce90257535246"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        }
+      ]
+    },
+    {
+      "dataset": 93,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,(-7),1,2,9007199254740993,'0'),(1,1,NULL,(-1),9223372036854775806,''),(2,7,(-7),1,9223372036854775807,'\u03bb'),(3,(-7),NULL,2,(-9223372036854775808),'\u03bb'),(4,(-3),2,0,(-9223372036854775807),NULL),(5,NULL,0,(-1),(-9007199254740993),''),(6,3,NULL,2,(-9007199254740992),'')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,NULL,2,0,(-9223372036854775807),'-7'),(1,(-3),(-7),1,(-9007199254740993),NULL),(2,(-3),(-7),1,(-9007199254740992),''),(3,7,1,NULL,(-1),''),(4,1,7,1,0,'-7'),(5,0,(-1),NULL,1,'abc'),(6,NULL,(-7),0,9007199254740991,'a''b'),(7,NULL,0,0,9007199254740992,'abc'),(8,7,(-7),0,9007199254740993,'-7'),(9,1,7,(-1),9223372036854775806,'03'),(10,1,NULL,NULL,9223372036854775807,'a''b'),(11,7,NULL,0,(-9223372036854775808),'abc'),(12,(-7),(-1),2,(-9223372036854775807),'03'),(13,0,1,0,(-9007199254740993),'abc'),(14,(-7),NULL,2,(-9007199254740992),''),(15,0,1,NULL,(-1),'-7'),(16,(-1),(-1),1,0,'')"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 10,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS x FROM t) SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS z FROM t ORDER BY id",
+          "sql_sha256": "5f839aa9449b5178c28fdd242bdeabc5865b1fbd94d71ba87fcffb4e2bbef94c"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 280,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END AS x FROM t) SELECT id,(CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "62bd888967663ab50c5ac31b24dcc5c3e4580799df8b1133552ba580c6f5c9c7"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        },
+        {
+          "index": 415,
+          "sql": "SELECT MAX(CASE WHEN b IS NULL THEN n ELSE CAST(21 AS REAL) END) AS z FROM t",
+          "sql_sha256": "82cb9d2d8e0cac447e9d29fc5133cf15770e07ed9943490429769621a68dc5df"
+        }
+      ]
+    },
+    {
+      "dataset": 94,
+      "setup": [
+        "CREATE TABLE t(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO t VALUES (0,3,(-1),NULL,9223372036854775806,'\u03bb'),(1,1,2,1,9223372036854775807,'03'),(2,7,2,2,(-9223372036854775808),''),(3,3,NULL,2,(-9223372036854775807),''),(4,0,7,(-1),(-9007199254740993),'a''b'),(5,1,(-1),0,(-9007199254740992),'03'),(6,NULL,(-2),0,(-1),'abc'),(7,7,0,2,0,'a''b'),(8,0,7,1,1,'\u03bb'),(9,(-3),2,0,9007199254740991,'03'),(10,(-1),7,0,9007199254740992,'-7'),(11,(-3),(-7),1,9007199254740993,'03'),(12,0,NULL,2,9223372036854775806,'0'),(13,NULL,2,2,9223372036854775807,'a''b'),(14,3,0,0,(-9223372036854775808),'0'),(15,NULL,(-2),1,(-9223372036854775807),'abc'),(16,0,0,0,(-9007199254740993),'-7')",
+        "CREATE TABLE u(id INTEGER,a INTEGER,b INTEGER,k INTEGER,n INTEGER,s TEXT)",
+        "INSERT INTO u VALUES (0,3,NULL,0,(-9007199254740993),'-7'),(1,(-1),(-2),0,(-9007199254740992),'abc'),(2,0,2,(-1),(-1),'0'),(3,(-1),(-7),1,0,'03'),(4,(-3),7,(-1),1,'-7'),(5,(-7),(-7),(-1),9007199254740991,'0'),(6,3,(-2),NULL,9007199254740992,NULL)"
+      ],
+      "queries": [
+        {
+          "index": 1,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS x FROM t) SELECT id,COALESCE(n,CAST((-25) AS REAL)) AS z FROM t ORDER BY id",
+          "sql_sha256": "5677ac5d65033796acaf488b46869014bc6f02c391905577478e0d3e951224f8"
+        },
+        {
+          "index": 10,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS x FROM t) SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-24) AS REAL) END AS z FROM t ORDER BY id",
+          "sql_sha256": "5f839aa9449b5178c28fdd242bdeabc5865b1fbd94d71ba87fcffb4e2bbef94c"
+        },
+        {
+          "index": 181,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST((-5) AS REAL)) AS x FROM t) SELECT id,(CAST(COALESCE(n,CAST((-5) AS REAL)) AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "7558a08478e92476ca0557bf1dfe785a500c4a100f8aba59fdb79f33a9d67393"
+        },
+        {
+          "index": 190,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST((-4) AS REAL) END AS x FROM t) SELECT id,(CAST(CASE WHEN b IS NULL THEN n ELSE CAST((-4) AS REAL) END AS INTEGER) / 2) AS z FROM t ORDER BY id",
+          "sql_sha256": "65726ab6d60d8f0a90f6bf5123b335ef987b99a1e297003ba05309434f114eb0"
+        },
+        {
+          "index": 235,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(1 AS REAL) END AS x FROM t) SELECT id,ABS(CASE WHEN b IS NULL THEN n ELSE CAST(1 AS REAL) END) AS z FROM t ORDER BY id",
+          "sql_sha256": "37d605b0f8f4464f14e6af3e745acdb774ce0ff7912580cb55b1a30aadca8295"
+        },
+        {
+          "index": 271,
+          "sql": "WITH q AS (SELECT id,COALESCE(n,CAST(5 AS REAL)) AS x FROM t) SELECT id,(COALESCE(n,CAST(5 AS REAL)) + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "494e0263f1f627a1e510bd9e894bcb74d428ae91598b1c88b2455d8e93fa7e47"
+        },
+        {
+          "index": 280,
+          "sql": "WITH q AS (SELECT id,CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END AS x FROM t) SELECT id,(CASE WHEN b IS NULL THEN n ELSE CAST(6 AS REAL) END + 1) AS z FROM t ORDER BY id",
+          "sql_sha256": "62bd888967663ab50c5ac31b24dcc5c3e4580799df8b1133552ba580c6f5c9c7"
+        },
+        {
+          "index": 370,
+          "sql": "SELECT MIN(CASE WHEN b IS NULL THEN n ELSE CAST(16 AS REAL) END) AS z FROM t",
+          "sql_sha256": "c5dd75c20dfb97641e7b9c35c9c9c2525ad1bd4119cc65ce15bbf83b99ea3c64"
+        },
+        {
+          "index": 406,
+          "sql": "SELECT MAX(COALESCE(n,CAST(20 AS REAL))) AS z FROM t",
+          "sql_sha256": "9cec8da82931646941dad2b958964be815b6d730f5694566f8a7948326698494"
+        },
+        {
+          "index": 415,
+          "sql": "SELECT MAX(CASE WHEN b IS NULL THEN n ELSE CAST(21 AS REAL) END) AS z FROM t",
+          "sql_sha256": "82cb9d2d8e0cac447e9d29fc5133cf15770e07ed9943490429769621a68dc5df"
+        }
+      ]
+    }
+  ]
+}
