@@ -1,0 +1,248 @@
+{
+  "applicable": {
+    "matched_verified": 2427379,
+    "nonpasses": 3512335,
+    "pending": 0,
+    "rate_percent": 40.86693399715878,
+    "total": 5939714
+  },
+  "applicable_status_counts": {
+    "expected-setup-error": 20,
+    "label-coverage-gap": 26099,
+    "matched-verified-query": 2427379,
+    "outside-subset": 3156581,
+    "setup-dependent-unavailable": 118885,
+    "setup-gap": 34311,
+    "setup-only": 176439
+  },
+  "engine_status": "Verified mode is a development-branch implementation, not an implemented feature of the exported default fast engine.",
+  "excluded_records": {
+    "policy": "Only other-engine onlyif, after-halt and control-only records are excluded from the applicable denominator. They remain in the fixed denominator. Every engine is treated as non-SQLite.",
+    "total": 1481625
+  },
+  "first_blocker_counts": [
+    {
+      "code": "numeric-expression",
+      "description": "Numeric expression outside S1 allowlist",
+      "records": 1494550
+    },
+    {
+      "code": "query-clause",
+      "description": "ORDER BY, LIMIT, CTE, locks or other query modifiers outside S1",
+      "records": 774206
+    },
+    {
+      "code": "snapshot-type",
+      "description": "Query uses a column that is not declared INTEGER with physical Int64 values (including SELECT * over a table with one); unused columns no longer block it",
+      "records": 385121
+    },
+    {
+      "code": "non-integer-literal",
+      "description": "S1 numeric expressions accept INTEGER and NULL literals only",
+      "records": 141836
+    },
+    {
+      "code": "select-clause",
+      "description": "SELECT clause outside single-table filter/project S1",
+      "records": 133169
+    },
+    {
+      "code": "single-table",
+      "description": "At most one registered base table is admitted (more than one table in FROM)",
+      "records": 125146
+    },
+    {
+      "code": "snapshot-view",
+      "description": "Whole-catalog view refusal",
+      "records": 49943
+    },
+    {
+      "code": "join",
+      "description": "Join outside S1",
+      "records": 48378
+    },
+    {
+      "code": "table-factor",
+      "description": "Non-base-table factor outside S1",
+      "records": 3232
+    },
+    {
+      "code": "query-body",
+      "description": "Only a direct SELECT is admitted",
+      "records": 1000
+    }
+  ],
+  "first_blocker_interpretation": "These are the first observed refusal codes, not exhaustive independent feature gaps or promised gains. Whole-catalog type/view checks may stop admission before the query is inspected.",
+  "first_blocker_method": "Tallied read-only from the run's 622 retained per-record archives, each rehashed against the run's SHA256SUMS.json and its archive receipt before reading. Status totals equal completion.json exactly, and the refusal codes sum to the outside-subset count. No SQL was rerun.",
+  "fixed": {
+    "matched_verified": 2427379,
+    "non_sqlite_maximum_percent": 80.03561082440783,
+    "nonpasses": 4993960,
+    "pending": 0,
+    "rate_percent": 32.70810024983362,
+    "total": 7421339
+  },
+  "format": "assay-verified-coverage-full-v1",
+  "id": "verified-coverage-full-3",
+  "limitations": [
+    "Coverage diagnostic only. Table setup is trusted, never proved, and earns no credit.",
+    "Unsupported records, label gaps and unproved fallbacks count as nonpasses, never as verified.",
+    "Zero wrong outcomes in this run is an observation on this frozen test set, not a proof for all SQL.",
+    "Verified mode is a development branch, not part of the exported fast engine. The SQL-to-S1 translation, including the new DISTINCT mapping, per-column type admission and SELECT * expansion, is trusted code, not proved.",
+    "The coverage change from the previous receipt combines DISTINCT, per-column type admission and SELECT *; this run does not attribute it to individual features.",
+    "26,099 records matched the expected answer but are not credited, because an earlier record in the same sqllogictest label chain was not verified (status label-coverage-gap).",
+    "Raw per-record streams are retained privately; this is a compact path-free summary."
+  ],
+  "measurement": {
+    "applicable_queries": 5728944,
+    "applicable_statements": 210770,
+    "attempted_queries": 5610059,
+    "completed_files": 622,
+    "cross_check_enabled": false,
+    "label_chain_gaps": 1319043,
+    "linked_value_observed": 2453478,
+    "mode": "verified_s1",
+    "numerator_rule": "Only matched verified queries receive credit. Trusted setup, exclusions, refusals, unavailable queries and unresolved label chains remain nonpasses.",
+    "proven_core_note": "Proven core S1 v5: S1 v4 plus SELECT DISTINCT, proved to keep the first occurrence of each distinct row and to return each present row exactly once. Library 70 verified, 0 errors; fixtures 76/76. Verified mode also stopped refusing whole tables because of an unused REAL or TEXT column, and admits SELECT * over the declared columns; both of those are trusted translation code, not proofs. Joins and aggregates are not included. Compared with the previous full-suite receipt on the same 622 files: +803,038 matched verified records.",
+    "source_of_final_status": "Completed inner and outer receipts (outer completed=True, exit code 0); all 622 per-file archives rehashed against the run's SHA256SUMS and archive receipts (0 mismatches) by a read-only Claude tally whose status totals equal completion.json exactly.",
+    "translation_admitted": 2453478
+  },
+  "presentation": {
+    "board": [
+      {
+        "codes": [
+          "snapshot-type"
+        ],
+        "statuses": [],
+        "what": "Text, decimal and real columns",
+        "why": "Queries that use a text, decimal or real column. The proven core handles only integer and NULL values so far; columns a query doesn't use no longer block it."
+      },
+      {
+        "codes": [
+          "numeric-expression"
+        ],
+        "statuses": [],
+        "what": "More numeric expressions",
+        "why": "Arithmetic or functions outside the set the core already proves."
+      },
+      {
+        "codes": [
+          "query-clause"
+        ],
+        "statuses": [],
+        "tag": "Planned",
+        "what": "ORDER BY, LIMIT and CTEs",
+        "why": "Sorting, row limits and WITH clauses."
+      },
+      {
+        "codes": [],
+        "statuses": [
+          "setup-only"
+        ],
+        "what": "Table setup (CREATE, INSERT), not yet proven",
+        "why": "The setup statements themselves. They run on trusted code and never count until setup is proven too."
+      },
+      {
+        "codes": [
+          "single-table",
+          "join"
+        ],
+        "statuses": [],
+        "tag": "In progress",
+        "what": "Joins and other multi-table queries",
+        "why": "Queries that read more than one table, including joins, which milestone 2 is proving now."
+      },
+      {
+        "codes": [],
+        "statuses": [
+          "setup-gap",
+          "setup-dependent-unavailable"
+        ],
+        "what": "Setup the core can't load yet",
+        "why": "Earlier setup in the same test file used something the core can't load, so the queries that depend on it can't run there."
+      },
+      {
+        "codes": [
+          "non-integer-literal"
+        ],
+        "statuses": [],
+        "what": "Decimal and text constants",
+        "why": "Constants like 1.5 or 'a' inside an expression. The proven core accepts integer and NULL constants only."
+      },
+      {
+        "codes": [
+          "select-clause"
+        ],
+        "statuses": [],
+        "tag": "Next",
+        "what": "GROUP BY and other SELECT clauses",
+        "why": "Queries using GROUP BY, HAVING or other SELECT clauses beyond filtering, choosing columns, DISTINCT."
+      },
+      {
+        "codes": [
+          "snapshot-view"
+        ],
+        "statuses": [],
+        "what": "Views",
+        "why": "Test files that define views are set aside as a whole for now."
+      },
+      {
+        "codes": [
+          "table-factor",
+          "query-body"
+        ],
+        "statuses": [],
+        "what": "Other query shapes",
+        "why": "Subqueries or functions in FROM, and UNION or other compound queries."
+      }
+    ],
+    "log_change": "Chapter 2: SELECT DISTINCT proven and measured on the full suite",
+    "log_owner": "helenlkupp",
+    "log_tools": "Codex wrote the proofs and translation in short task cards; Claude reviewed the proof statements and ran the official proof checks and the frozen measurement",
+    "point_label": "Full suite, DISTINCT proved; unused non-INTEGER columns and SELECT * admitted",
+    "prove_note": "Measured on all 622 files with Assay's verified mode, which is still in development and not yet in the public code. The proven core now also covers SELECT DISTINCT; earlier full-suite results used smaller cores. Translation into the proven core is trusted, not proven, and so are per-column type admission and SELECT * expansion. Table setup is trusted, not proven, and earns no credit. The earlier scalar-model proof marks the track start, not a measured coverage point."
+  },
+  "previous_receipt": {
+    "applicable_percent": 27.347124794224097,
+    "fixed_percent": 21.88743837197034,
+    "matched_verified": 1624341,
+    "receipt": "evidence/verified-coverage-full-2.json"
+  },
+  "provenance": {
+    "completion_sha256": "82c6688b4db485a73b8db01ad02987dc20acf73ce33c63f54a97b9651d4c11bd",
+    "config_sha256": "9d653fde5be0fc0cd20218052016836de9124a68cff8f2d819548f21d7a2af55",
+    "first_blocker_tally_sha256": "064a31fe349be758e2cb8bcd97eca179ecaa3d97c2e95cdbc7fe0157d35ae8e8",
+    "ledger_sha256": "e8ddfeca9a707a9b8330f42c12b73d79e020227fd3b987daca601ed181c32845",
+    "linked_library_sha256": "5641294ca68fb2f50c3b7d0caf7cb524854300c95bbf1e7faec822f640656bca",
+    "native_coverage_binary_sha256": "3b7b58bc254fd653b6e0ed6452da795656d5a0e0d40fb3c8370a02a3d4eb58f6",
+    "native_source_commit": "907d0a7dcb84c0dc19a5472ee038b724dacdb7a3",
+    "outer_exit_sha256": "e5a3fa846daf285552cc8d01ad50d6679351f3a2e08a8b70927ad5eb9c8f88c2",
+    "proof_bundle_sha256": "053e5485e74eb766b42d2b21d9fa385325de92cd43b77bee7a495e869a339b3b",
+    "s1_v5_proof_manifest_sha256": "e9b1e1adbca3bb7fb58b2506654e7b28bc2fdaf1dcdeeeca08507e1dd89e84d9",
+    "summary_sha256": "5d8d9dab7e39dd7e8584ce3c8e6dd19a2fe6aba8204d4e832774f46785a7446e"
+  },
+  "schema": "assay-completed-verified-coverage/1",
+  "status": "completed-full-suite-measurement",
+  "test_set": {
+    "files": 622,
+    "id": "sqlite-slt/full-622",
+    "license": "CC0 option offered by upstream",
+    "name": "SQLite official sqllogictest, all 622 frozen files"
+  },
+  "timing": {
+    "elapsed_seconds": 6244.5,
+    "finished_pacific": "2026-10-10T18:08:53.142018-07:00",
+    "hours_since_first_recorded_commit": 103.7,
+    "started_pacific": "2026-10-10T16:24:48.667849-07:00",
+    "time_basis": "manifest started_unix and completion finished_unix"
+  },
+  "trust_boundaries": [
+    "Parser and translation into the proved S1 input",
+    "Catalog construction and statement setup",
+    "Result normalization and corpus label bookkeeping",
+    "FFI transport, artifact attestation and execution toolchain",
+    "Per-column snapshot type admission and SELECT * expansion"
+  ],
+  "wrong_outcomes": 0,
+  "wrong_outcomes_complete": true
+}

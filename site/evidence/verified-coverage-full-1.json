@@ -1,0 +1,144 @@
+{
+ "format": "assay-verified-coverage-full-v1",
+ "status": "completed-full-suite-measurement",
+ "engine_status": "Verified mode is a development-branch implementation, not an implemented feature of the exported default fast engine.",
+ "test_set": {
+  "id": "sqlite-slt/full-622",
+  "name": "SQLite official sqllogictest, all 622 frozen files",
+  "files": 622,
+  "license": "CC0 option offered by upstream"
+ },
+ "fixed": {
+  "matched_verified": 388825,
+  "total": 7421339,
+  "rate_percent": 5.239283638707247,
+  "non_sqlite_maximum_percent": 80.03561082440783,
+  "nonpasses": 7032514,
+  "pending": 0
+ },
+ "applicable": {
+  "matched_verified": 388825,
+  "total": 5939714,
+  "rate_percent": 6.546190607830613,
+  "nonpasses": 5550889,
+  "pending": 0
+ },
+ "wrong_outcomes": 0,
+ "wrong_outcomes_complete": true,
+ "measurement": {
+  "mode": "verified_s1",
+  "cross_check_enabled": false,
+  "completed_files": 622,
+  "applicable_queries": 5728944,
+  "applicable_statements": 210770,
+  "attempted_queries": 5610059,
+  "translation_admitted": 388873,
+  "linked_value_observed": 388873,
+  "label_chain_gaps": 1559246,
+  "numerator_rule": "Only matched verified queries receive credit. Trusted setup, exclusions, refusals, unavailable queries and unresolved label chains remain nonpasses.",
+  "same_proven_core_as_pilot": "Same native artifact as the 35-file pilot; the increase comes from measuring all 622 files, not from new proofs. Milestone 2 (joins, DISTINCT) is not included.",
+  "source_of_final_status": "Completed inner and outer receipts, all 4,980 ledger entries rehashed (0 mismatches), and an independent minimal receipt audit."
+ },
+ "applicable_status_counts": {
+  "expected-setup-error": 20,
+  "label-coverage-gap": 48,
+  "matched-verified-query": 388825,
+  "outside-subset": 5221186,
+  "setup-dependent-unavailable": 118885,
+  "setup-gap": 34311,
+  "setup-only": 176439
+ },
+ "excluded_records": {
+  "total": 1481625,
+  "policy": "Only other-engine onlyif, after-halt and control-only records are excluded from the applicable denominator. They remain in the fixed denominator. Every engine is treated as non-SQLite."
+ },
+ "preregistered_projection": {
+  "primary_passes": 377079.39,
+  "primary_fixed_percent": 5.081,
+  "primary_applicable_percent": 6.3484,
+  "sensitivity_passes": 375938.19,
+  "note": "Actual matched verified exceeded the primary projection by 11,746 records."
+ },
+ "timing": {
+  "started_pacific": "2026-10-09T18:45:35.135171-07:00",
+  "finished_pacific": "2026-10-09T20:03:57.753773-07:00",
+  "elapsed_seconds": 4702.6,
+  "hours_since_first_recorded_commit": 81.62,
+  "time_basis": "manifest started_unix and completion finished_unix"
+ },
+ "trust_boundaries": [
+  "Parser and translation into the proved S1 input",
+  "Catalog construction and statement setup",
+  "Result normalization and corpus label bookkeeping",
+  "FFI transport, artifact attestation and execution toolchain"
+ ],
+ "provenance": {
+  "native_source_commit": "6a6b4cdd257714b872a3011bef0a08a2f6155190",
+  "native_coverage_binary_sha256": "a3291739e2a86d9f8f49ee2ffb55c40de11cb6aedb40df2dc77d059de1dad1f2",
+  "linked_library_sha256": "88745479b1a0ed4e54350c44a5415020f1d5c9b1d6815a3ad6ee6ebcb26daa47",
+  "config_sha256": "a8027e0fe44248f9b647f2301175957c61e4e79079db29015e574916b477644d",
+  "completion_sha256": "eea95ade7d79362a5cf3514bdb65655e723a0d9d7db744070fa8a9c8553be524",
+  "ledger_sha256": "9d2c26ac2bbaa7603b63e094f19a1f5d653ea0fe26799ea9d090957f5402b078",
+  "ledger_entries": 4980,
+  "summary_sha256": "d5d4207bc6b205f735f620f867846923c77b974d93b1d4c9289cbede7cc514dc",
+  "outer_exit_sha256": "e45ed0e00f590674d7992557c88e75bfd8bb6a03921cc922d39c8f3191e6dc00",
+  "minimal_audit_sha256": "85065a02a28b74b58c82ca213679146cdd213d959ffcddc558c66d4c16969b75"
+ },
+ "limitations": [
+  "Coverage diagnostic only. Table setup is trusted, never proved, and earns no credit.",
+  "Unsupported records, label gaps and unproved fallbacks count as nonpasses, never as verified.",
+  "Zero wrong outcomes in this run is an observation on this frozen test set, not a proof for all SQL.",
+  "The native artifact is the pilot build, not a fresh build of the current export.",
+  "Raw per-record streams are retained privately; this is a compact path-free summary."
+ ],
+ "first_blocker_counts": [
+  {
+   "code": "snapshot-type",
+   "records": 1689081,
+   "description": "Declared INTEGER and physical Int64 required, including empty or all-NULL columns"
+  },
+  {
+   "code": "numeric-expression",
+   "records": 1311413,
+   "description": "Numeric expression outside S1 allowlist"
+  },
+  {
+   "code": "single-table",
+   "records": 1083350,
+   "description": "Exactly one registered base table required; also includes unmapped constant SELECT"
+  },
+  {
+   "code": "select-clause",
+   "records": 1009860,
+   "description": "SELECT clause outside single-table filter/project S1"
+  },
+  {
+   "code": "snapshot-view",
+   "records": 49943,
+   "description": "Whole-catalog view refusal"
+  },
+  {
+   "code": "wildcard",
+   "records": 37512,
+   "description": "Wildcard expansion not mapped"
+  },
+  {
+   "code": "join",
+   "records": 34913,
+   "description": "Join outside S1"
+  },
+  {
+   "code": "query-clause",
+   "records": 2660,
+   "description": "ORDER BY, LIMIT, CTE, locks or other query modifiers outside S1"
+  },
+  {
+   "code": "table-factor",
+   "records": 2454,
+   "description": "Non-base-table factor outside S1"
+  }
+ ],
+ "first_blocker_interpretation": "These are the first observed refusal codes, not exhaustive independent feature gaps or promised gains. Whole-catalog type/view checks may stop admission before the query is inspected. Single-table refusals include constant SELECT, so they cannot all be attributed to joins.",
+ "first_blocker_method": "Tallied read-only from the run's 622 retained per-record streams, each checked against the run ledger before reading. Status totals equal completion.json exactly, and the refusal codes sum to the outside-subset count. No SQL was rerun.",
+ "first_blocker_tally_sha256": "e4896090bf0d2b8cfdfabb630a63391bebf73f5107cd87efc5719e301b3e9451"
+}

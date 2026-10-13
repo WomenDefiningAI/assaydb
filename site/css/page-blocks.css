@@ -1,0 +1,8 @@
+body[data-page]{--color-story-accent:#e9a99b}
+/* Bounded page grouping; chart geometry and navigation keep their own styles. */
+.page-block{border:1px solid var(--color-rule);background:var(--color-panel);padding:clamp(1rem,2vw,1.5rem);margin-block:1.5rem;min-width:0}.page-block>h2:first-child{margin-top:0}.instruction-block{border-top:1px solid var(--color-rule);padding-top:1rem;margin-top:1rem}.instruction-block h3{margin-top:0}#contribute>section{border-top:1px solid var(--color-rule);padding-block:1rem}#contribute>section>h3{margin-top:0}.receipt-header{border:1px solid var(--color-rule);padding:1rem;background:var(--color-panel)}.receipt-choices{border:1px solid var(--color-rule);padding:1rem}.receipt-hash code{overflow-wrap:anywhere}@media(max-width:30rem){.page-block{padding:1rem}.page-block code{overflow-wrap:anywhere}.receipt-header{padding:1rem}}
+
+/* Coral marks narrative emphasis and selection, never measured series/status. */
+.page-block>h2:first-child,#contribute>section>h3{color:var(--color-story-accent)}
+.page-block{border-left-color:var(--color-story-accent)}
+#speed-tabs button[aria-selected="true"],.start-choices button[aria-pressed="true"]{border-color:var(--color-story-accent);color:var(--color-story-accent);background:var(--color-panel)}

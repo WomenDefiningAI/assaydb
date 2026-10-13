@@ -1,0 +1,55 @@
+{
+  "schema": "assay-site-speed-export/1",
+  "run_id": "macbook-run-001",
+  "field": "sum_query_round_medians_seconds",
+  "units": "seconds",
+  "aggregation": "Recorded sum of per-query round medians; not total campaign wall-clock time.",
+  "benchmarks_rerun": false,
+  "source_hashes_match_retained_receipt": true,
+  "provenance": {
+    "origin": "User-supplied full-precision export, audited by parent against retained compact receipt: four recorded source-hash strings and eight ratios match.",
+    "original_summary_files_independently_rehashed": false,
+    "retained_receipt": "evidence/completed-speed-macbook-run-001.json"
+  },
+  "query_count": 22,
+  "rounds": 3,
+  "hot_samples_per_round": 5,
+  "lanes": {
+    "sf1-w1": {
+      "source_file": "sf1-w1/summary.json",
+      "source_file_sha256": "ad6db645d553015ac02677b1323982c9c5bb38905edccec5e146474271241761",
+      "sum_query_round_medians_seconds": {
+        "assaydb": 14.996023081,
+        "duckdb": 19.976448333999826,
+        "polars": 15.142487999999673
+      }
+    },
+    "sf1-w10": {
+      "source_file": "sf1-w10/summary.json",
+      "source_file_sha256": "28219e8882f7f98622714079730f6521eae4e0d0934d0fcec0c6d524e06e4e59",
+      "sum_query_round_medians_seconds": {
+        "assaydb": 3.6528838300000004,
+        "duckdb": 3.4954562500000748,
+        "polars": 2.695904872999904
+      }
+    },
+    "sf10-w1": {
+      "source_file": "sf10-w1/summary.json",
+      "source_file_sha256": "ada5648110e1727a13574cbd201b20fa691ddf861f4be0502861908409104849",
+      "sum_query_round_medians_seconds": {
+        "assaydb": 234.53204274599997,
+        "duckdb": 207.11583566699778,
+        "polars": 153.32941016799896
+      }
+    },
+    "sf10-w10": {
+      "source_file": "sf10-w10/summary.json",
+      "source_file_sha256": "507def32b8a8acc21840186e7137654fd22b51947c98d26da25697d180a35db9",
+      "sum_query_round_medians_seconds": {
+        "assaydb": 93.75193096499999,
+        "duckdb": 30.99840596299964,
+        "polars": 22.537468297003215
+      }
+    }
+  }
+}

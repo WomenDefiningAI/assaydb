@@ -1,0 +1,144 @@
+{
+ "format": "assay-verified-coverage-full-v1",
+ "status": "completed-full-suite-measurement",
+ "engine_status": "Verified mode is a development-branch implementation, not an implemented feature of the exported default fast engine.",
+ "test_set": {
+  "id": "sqlite-slt/full-622",
+  "name": "SQLite official sqllogictest, all 622 frozen files",
+  "files": 622,
+  "license": "CC0 option offered by upstream"
+ },
+ "fixed": {
+  "matched_verified": 1624341,
+  "total": 7421339,
+  "rate_percent": 21.88743837197034,
+  "non_sqlite_maximum_percent": 80.03561082440783,
+  "nonpasses": 5796998,
+  "pending": 0
+ },
+ "applicable": {
+  "matched_verified": 1624341,
+  "total": 5939714,
+  "rate_percent": 27.347124794224097,
+  "nonpasses": 4315373,
+  "pending": 0
+ },
+ "wrong_outcomes": 0,
+ "wrong_outcomes_complete": true,
+ "measurement": {
+  "mode": "verified_s1",
+  "cross_check_enabled": false,
+  "completed_files": 622,
+  "applicable_queries": 5728944,
+  "applicable_statements": 210770,
+  "attempted_queries": 5610059,
+  "translation_admitted": 1624389,
+  "linked_value_observed": 1624389,
+  "label_chain_gaps": 1401702,
+  "numerator_rule": "Only matched verified queries receive credit. Trusted setup, exclusions, refusals, unavailable queries and unresolved label chains remain nonpasses.",
+  "proven_core_note": "Proven core S1 v4: milestone 1 plus two newly proved features, unary plus (+x, proved to be the identity) and constant SELECT (a query with no table, proved over a single empty row). Library 59 verified, 0 errors; fixtures 68/68. Compared with the previous full-suite receipt on the same 622 files: +1,235,516 matched verified records. Joins and DISTINCT are not included.",
+  "source_of_final_status": "Completed inner and outer receipts (outer completed=True, exit code 0); all 622 per-file archives rehashed against the run's SHA256SUMS and archive receipts (0 mismatches) by a read-only Claude tally whose status totals equal completion.json exactly."
+ },
+ "applicable_status_counts": {
+  "expected-setup-error": 20,
+  "label-coverage-gap": 48,
+  "matched-verified-query": 1624341,
+  "outside-subset": 3985670,
+  "setup-dependent-unavailable": 118885,
+  "setup-gap": 34311,
+  "setup-only": 176439
+ },
+ "excluded_records": {
+  "total": 1481625,
+  "policy": "Only other-engine onlyif, after-halt and control-only records are excluded from the applicable denominator. They remain in the fixed denominator. Every engine is treated as non-SQLite."
+ },
+ "previous_receipt": {
+  "receipt": "evidence/verified-coverage-full-1.json",
+  "matched_verified": 388825,
+  "fixed_percent": 5.239283638707247,
+  "applicable_percent": 6.546190607830613
+ },
+ "timing": {
+  "started_pacific": "2026-10-10T09:07:27.822469-07:00",
+  "finished_pacific": "2026-10-10T10:30:24.712871-07:00",
+  "elapsed_seconds": 4976.9,
+  "hours_since_first_recorded_commit": 96.06,
+  "time_basis": "manifest started_unix and completion finished_unix"
+ },
+ "trust_boundaries": [
+  "Parser and translation into the proved S1 input",
+  "Catalog construction and statement setup",
+  "Result normalization and corpus label bookkeeping",
+  "FFI transport, artifact attestation and execution toolchain"
+ ],
+ "provenance": {
+  "native_source_commit": "89810b77e6fc22152c61151680a76c456cb586b2",
+  "native_coverage_binary_sha256": "f33eb458456323a12600a787cb79fd15dee465a2bede00143f36acb910be2a3b",
+  "linked_library_sha256": "b67a17fd6888aad83d8f55e6a0fb420a1348411139d8566029ac663017483eb6",
+  "proof_bundle_sha256": "6c46bc7ec0ffe172f7988cedef78d87e1ac05f781c8c1d45aac21042ef4c5554",
+  "s1_v4_proof_manifest_sha256": "26006635f7c65040c85d431c8bf09ff42781e107505934eb68305a4cee0f3ef8",
+  "config_sha256": "d2d140795a3145bbec7a23fbeeedd49e73963585ac2a3abc58cfd0ec8244aa83",
+  "completion_sha256": "e0791e9a7dc357c2519cd6cb7dbe35a8d95dd2dceafe8ea6c869ab40b9fb5e90",
+  "ledger_sha256": "77a6d64e21d92ddc130e0f43e5ff05076113b21f13c841fda5c1d4bf1a8ca001",
+  "summary_sha256": "282ceb21c56cafe7705e9e899c25c7dc852d5433afce003d0240bd0b091034d2",
+  "outer_exit_sha256": "8b44e02ea180a7a14af52b34b69b7c09798b578298205d75fe0d2a18f2821772",
+  "first_blocker_tally_sha256": "7cb9c6139b53716dc8b9d59185cea4fc0286fad9a7072ef62e2fe623c2a5e57c"
+ },
+ "limitations": [
+  "Coverage diagnostic only. Table setup is trusted, never proved, and earns no credit.",
+  "Unsupported records, label gaps and unproved fallbacks count as nonpasses, never as verified.",
+  "Zero wrong outcomes in this run is an observation on this frozen test set, not a proof for all SQL.",
+  "Verified mode is a development branch, not part of the exported fast engine. The SQL-to-S1 translation, including the new unary plus and constant SELECT mappings, is trusted code, not proved.",
+  "An earlier full run measuring unary plus alone completed, but its outer receipt failed because other processes were waiting on the shared machine lock. It is retained privately as diagnostic only and is not published as a result.",
+  "Raw per-record streams are retained privately; this is a compact path-free summary."
+ ],
+ "first_blocker_counts": [
+  {
+   "code": "snapshot-type",
+   "records": 1689081,
+   "description": "Declared INTEGER and physical Int64 required, including empty or all-NULL columns"
+  },
+  {
+   "code": "numeric-expression",
+   "records": 1017471,
+   "description": "Numeric expression outside S1 allowlist"
+  },
+  {
+   "code": "select-clause",
+   "records": 1009860,
+   "description": "SELECT clause outside single-table filter/project S1"
+  },
+  {
+   "code": "wildcard",
+   "records": 90286,
+   "description": "Wildcard expansion not mapped"
+  },
+  {
+   "code": "single-table",
+   "records": 89002,
+   "description": "At most one registered base table is admitted (more than one table in FROM)"
+  },
+  {
+   "code": "snapshot-view",
+   "records": 49943,
+   "description": "Whole-catalog view refusal"
+  },
+  {
+   "code": "join",
+   "records": 34913,
+   "description": "Join outside S1"
+  },
+  {
+   "code": "query-clause",
+   "records": 2660,
+   "description": "ORDER BY, LIMIT, CTE, locks or other query modifiers outside S1"
+  },
+  {
+   "code": "table-factor",
+   "records": 2454,
+   "description": "Non-base-table factor outside S1"
+  }
+ ],
+ "first_blocker_interpretation": "These are the first observed refusal codes, not exhaustive independent feature gaps or promised gains. Whole-catalog type/view checks may stop admission before the query is inspected.",
+ "first_blocker_method": "Tallied read-only from the run's 622 retained per-record archives, each rehashed against the run's SHA256SUMS.json and its archive receipt before reading. Status totals equal completion.json exactly, and the refusal codes sum to the outside-subset count. No SQL was rerun."
+}

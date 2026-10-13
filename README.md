@@ -5,7 +5,7 @@ sessions and Arrow results. This snapshot contains Alpha 2:
 Python `0.1.0a2` and Rust version metadata `0.1.0-alpha.2`.
 
 The fast engine is tested, not formally proved. This export contains no linked
-verified mode, proof workspaces, website, or benchmark datasets. Catalogs are
+verified mode, proof workspaces, or benchmark datasets. Catalogs are
 temporary and SQL support is incomplete. Only read Parquet files you trust.
 Accounted query limits do not cap total process memory.
 
@@ -50,6 +50,13 @@ reports and follow the [code of conduct](CODE_OF_CONDUCT.md).
 from this sanitized export. It records registry-specific source evidence without
 equating PyPI and crates.io provenance.
 [Benchmark input instructions](docs/BENCHMARK-INPUTS.md) explain excluded inputs.
+
+## Public website
+
+The four-page static site is in [site/](site/). Serve it locally with
+`python3 -m http.server 8080 --bind 127.0.0.1 --directory site`.
+See [website maintenance](docs/WEBSITE.md) for source provenance, historical
+measurement scope, checks, and configuration for later static hosting.
 
 ## Licensing and attribution
 

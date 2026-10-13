@@ -56,6 +56,7 @@ license, and attribution notices; do not copy incompatible material. In your PR,
 request the GitHub handle or display name you want credited and describe the
 contribution. Maintainers review credit alongside the change.
 
-This repository exports the Alpha 1 and Alpha 2 fast engine. Proof workspaces,
-the website, and development benchmark datasets are outside this export.
+This repository exports the Alpha 1 and Alpha 2 fast engine. Proof workspaces
+and development benchmark datasets are outside this export. The static website
+is maintained separately under `site/`; see [website maintenance](docs/WEBSITE.md).
 [Release provenance](docs/RELEASES.md) explains the source references and limits.
