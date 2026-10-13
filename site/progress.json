@@ -1,0 +1,94 @@
+{
+  "schema": "assay-verification-progress/1",
+  "asOf": "2026-10-11T15:03:48-07:00",
+  "chapters": {
+    "build": {
+      "receipt": "evidence/fast-engine-progression.json"
+    },
+    "prove": {
+      "receipt": "evidence/completed-verified-coverage-full-9.json",
+      "points": [
+        {
+          "hour": 75.46,
+          "passed": 4077,
+          "applicableTotal": 333836,
+          "wrong": 0,
+          "label": "35-file pilot",
+          "receipt": "evidence/verified-coverage-pilot-1.json"
+        },
+        {
+          "hour": 81.62,
+          "passed": 388825,
+          "applicableTotal": 5939714,
+          "wrong": 0,
+          "label": "Full suite",
+          "receipt": "evidence/verified-coverage-full-1.json"
+        },
+        {
+          "hour": 96.06,
+          "passed": 1624341,
+          "applicableTotal": 5939714,
+          "wrong": 0,
+          "label": "Full suite, unary plus and constant SELECT added",
+          "receipt": "evidence/verified-coverage-full-2.json"
+        },
+        {
+          "hour": 103.7,
+          "passed": 2427379,
+          "applicableTotal": 5939714,
+          "wrong": 0,
+          "label": "Full suite, DISTINCT proved; unused non-INTEGER columns and SELECT * admitted",
+          "receipt": "evidence/completed-verified-coverage-full-3.json"
+        },
+        {
+          "hour": 106.33,
+          "passed": 2997068,
+          "applicableTotal": 5939714,
+          "wrong": 0,
+          "label": "Full suite, aggregates without GROUP BY proved",
+          "receipt": "evidence/completed-verified-coverage-full-4.json"
+        },
+        {
+          "hour": 110.13,
+          "passed": 3710253,
+          "applicableTotal": 5939714,
+          "wrong": 0,
+          "label": "Full suite, CASE, IN, BETWEEN and ABS proved",
+          "receipt": "evidence/completed-verified-coverage-full-5.json"
+        },
+        {
+          "hour": 114.55,
+          "passed": 4022499,
+          "applicableTotal": 5939714,
+          "wrong": 0,
+          "label": "Full suite, ORDER BY and LIMIT proved",
+          "receipt": "evidence/completed-verified-coverage-full-6.json"
+        },
+        {
+          "hour": 117.98,
+          "passed": 4964030,
+          "applicableTotal": 5939714,
+          "wrong": 0,
+          "label": "Full suite, exact decimal comparisons proved",
+          "receipt": "evidence/completed-verified-coverage-full-7.json"
+        },
+        {
+          "hour": 121.45,
+          "passed": 5086352,
+          "applicableTotal": 5939714,
+          "wrong": 0,
+          "label": "Full suite, GROUP BY and HAVING proved",
+          "receipt": "evidence/completed-verified-coverage-full-8.json"
+        },
+        {
+          "hour": 124.62,
+          "passed": 5169602,
+          "applicableTotal": 5939714,
+          "wrong": 0,
+          "label": "Full suite, IN subqueries proved",
+          "receipt": "evidence/completed-verified-coverage-full-9.json"
+        }
+      ]
+    }
+  }
+}

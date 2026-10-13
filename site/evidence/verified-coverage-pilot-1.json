@@ -1,0 +1,175 @@
+{
+  "format": "assay-verified-coverage-pilot-v1",
+  "status": "completed-diagnostic-pilot",
+  "engine_status": "Verified mode is a development-branch implementation, not an implemented feature of the exported default fast engine.",
+  "test_set": {
+    "id": "sqlite-slt/pilot-35",
+    "name": "SQLite official sqllogictest frozen 35-file pilot",
+    "files": 35,
+    "source_checkin": "ab599cbdd0976a63c5cfc7755588f716a7621f27",
+    "license": "CC0 option offered by upstream",
+    "scope_sha256": "4b029fa677ac6c97f112269b613a2ca6045300f1df5e5c1fffbf3a96a2c73131"
+  },
+  "fixed": {
+    "matched_verified": 4077,
+    "total": 358096,
+    "rate_percent": 1.1385215137840132,
+    "non_sqlite_maximum_percent": 93.22528037174389,
+    "nonpasses": 354019,
+    "pending": 0
+  },
+  "applicable": {
+    "matched_verified": 4077,
+    "total": 333836,
+    "rate_percent": 1.2212583424196313,
+    "nonpasses": 329759,
+    "pending": 0
+  },
+  "wrong_outcomes": 0,
+  "measurement": {
+    "mode": "verified_s1",
+    "cross_check_enabled": false,
+    "completed_files": 35,
+    "native_file_exits_zero": 35,
+    "applicable_queries": 252753,
+    "applicable_statements": 81083,
+    "linked_attested_values": 4125,
+    "matched_but_unresolved_label_chain": 48,
+    "numerator_rule": "Only matched verified queries receive credit. Trusted setup, exclusions, refusals, unavailable queries and unresolved label chains remain nonpasses.",
+    "wrong_outcome_scope": "Completed pilot observations; unsupported and unproved setup are coverage gaps, not proved answers.",
+    "source_of_final_status": "Completed finalization receipt and read-only audit; the original summary remains provisional."
+  },
+  "applicable_status_counts": {
+    "label-coverage-gap": 48,
+    "matched-verified-query": 4077,
+    "outside-subset": 198405,
+    "setup-dependent-unavailable": 50223,
+    "setup-gap": 23615,
+    "setup-only": 57468
+  },
+  "first_blocker_counts": [
+    {
+      "code": "snapshot-type",
+      "records": 141235,
+      "description": "Declared INTEGER and physical Int64 required, including empty or all-NULL columns"
+    },
+    {
+      "code": "select-clause",
+      "records": 19750,
+      "description": "SELECT clause outside single-table filter/project S1"
+    },
+    {
+      "code": "numeric-expression",
+      "records": 17694,
+      "description": "Numeric expression outside S1 allowlist"
+    },
+    {
+      "code": "single-table",
+      "records": 8995,
+      "description": "Exactly one registered base table required; also includes unmapped constant SELECT"
+    },
+    {
+      "code": "snapshot-view",
+      "records": 7975,
+      "description": "Whole-catalog view refusal"
+    },
+    {
+      "code": "query-clause",
+      "records": 1660,
+      "description": "ORDER BY, LIMIT, CTE, locks or other query modifiers outside S1"
+    },
+    {
+      "code": "wildcard",
+      "records": 567,
+      "description": "Wildcard expansion not mapped"
+    },
+    {
+      "code": "join",
+      "records": 493,
+      "description": "Join outside S1"
+    },
+    {
+      "code": "table-factor",
+      "records": 36,
+      "description": "Non-base-table factor outside S1"
+    }
+  ],
+  "first_blocker_interpretation": "These are the first observed refusal codes, not exhaustive independent feature gaps or promised gains. Whole-catalog type/view checks may stop admission before the query is inspected. Single-table refusals include constant SELECT, so they cannot all be attributed to joins.",
+  "setup_limits": {
+    "tainted_files": 11,
+    "unsupported_trigger_files": 1,
+    "catalog_identity_memory_refusal_files": 10,
+    "catalog_identity_construction_limit_bytes": 16777216,
+    "note": "Uncertain setup can make later queries unavailable; no cap was relaxed and setup is not machine-proved."
+  },
+  "excluded_records": {
+    "total": 24260,
+    "categories": {
+      "control-only": 35,
+      "onlyif-other-engine": 24225
+    },
+    "policy": "Only other-engine onlyif, after-halt and control-only records are excluded from the applicable denominator. They remain in the fixed denominator. Every engine is treated as non-SQLite."
+  },
+  "full_verified_corpus": {
+    "status": "not run",
+    "fixed_total": 7421339,
+    "fixed_non_sqlite_maximum_percent": 80.03561082440783,
+    "applicable_total": 5939714,
+    "note": "This pilot establishes neither full-corpus verified coverage nor the launch gate. No confidence interval or full-run result is claimed."
+  },
+  "trust_boundaries": [
+    "Parser and translation into the proved S1 input",
+    "Catalog construction and statement setup",
+    "Result normalization and corpus label bookkeeping",
+    "FFI transport, artifact attestation and execution toolchain"
+  ],
+  "provenance": {
+    "native_source_commit": "6a6b4cdd257714b872a3011bef0a08a2f6155190",
+    "native_source_manifest_sha256": "74b2111e47cc7a34851daec523bcfe0673ef95439d2684593c6fa2f77532eaf8",
+    "native_coverage_binary_sha256": "a3291739e2a86d9f8f49ee2ffb55c40de11cb6aedb40df2dc77d059de1dad1f2",
+    "linked_library_sha256": "88745479b1a0ed4e54350c44a5415020f1d5c9b1d6815a3ad6ee6ebcb26daa47",
+    "proof_bundle_sha256": "a1babde2ed422992010e5104624adbb2bf82fe85b93a70728ea7da6f63102ce3",
+    "proved_source_sha256": {
+      "evaluator.rs": "917427bcc21491578435ecf384d07554504f5a9b61408f2ceb993cdb8c1406a7",
+      "lib.rs": "534a4edfbe25f300b49b4656f50fea87a5049c11657df4e5e3089040ab9655d5",
+      "main.rs": "3d4ac26e49c2d7a59b0dba4cda696d40c4fb0646d86e00988aac2a55b2a4c2a0",
+      "query.rs": "9fd085faf664c8a453f72dc49fdbf459ddb40db0b31beb3b5b1fb98245f52f3d",
+      "scalar.rs": "9d8ff821f3d2282878f7d1cd60643c9c13bab86b660b7c62468d6355dac69fb0"
+    },
+    "controller_source_sha256": {
+      "README.md": "06f32e8d55a97b5205b94ecf5bc2cab7a359c367af76cd408b157a02dc4925d9",
+      "adapter.py": "5cff042448b2f66b572d3aec5e7f9f2d18f4a4f5f1bc3388b2ac3f870b100f21",
+      "controller.py": "7c2be6ea356c9b4ab434d0162e0a098b61db50fd2dfd4145eeb50495721b100a",
+      "finalize.py": "e44a27aa63cb7af0c64b75e6e475028db96110fcfee10c03aecd1a19aacce9e4",
+      "frozen.py": "c64ca3b3b6c171d7151e943fa0c3458fe299e9ff340f749b5dd9647d1ecd1849",
+      "policy.py": "eac82dc8d39fe156a25c9ba88df8922e0b58238dd8a5dda8f700200c81fddbf3",
+      "resources.py": "4d3765f34918505d91004dde604226415db7a8c293598a88699118d0f2ce33f0",
+      "run.py": "83daeae6654132263bf5e730353f6016b453e43313b38d4a2614e6f6ec30b354",
+      "scheduler.py": "54a2e4274cb294107f76853a3d6d8b28c8ebcb2149dc4cc95ef39c81bd6f134f",
+      "tests/test_controller.py": "9641e286dafc24d60d3467401abdf679e285394890bb34bf2f03d71390671b54",
+      "tests/test_finalize.py": "19fbb233dcdbc982c8b8689028cf6170062c169df10da28e13310babecbf1aa5",
+      "tests/test_outer_receipts.py": "f6747f04736fb719e862db8e7a60304d32bdb4341cea2908623cc3251b06f332",
+      "tests/test_resources.py": "ec790240bf26912175df1183bfb65478dac25280f7118c9e83fd561642e02a6a",
+      "tests/test_transport.py": "3f771e89b3be826567240b8e0f9f07e73380f6042b626591c9cf5caa8e7a99ae",
+      "transport.py": "b3c5e65224e9098cf6655d15470db2cb09637db41985ad0aedff88abb50ea438"
+    },
+    "config_sha256": "95dc8a5f3eced1d4642040ce829cbd90a04c3a74dd9116f488b90368c6334a58",
+    "run_manifest_sha256": "3a2944c1e590e5f06685b60d3a90159afad9f87ec6f496b96b6ad75600195934",
+    "completion_sha256": "c059027ecbac3850ab934324c6f3d397dbb67456ab0480e129dd09f666ca6f34",
+    "original_summary_sha256": "b78ca33a19ce8dd63dbdfea082e521d96ef4bfae57b650f65eee8beb4240f10c",
+    "original_evidence_ledger_sha256": "05d285bbf818de7291b02e4496e343a63ee8ec5317a5006fb7192526050b1d98",
+    "outer_receipt_ledger_sha256": "110534a1bdbc3a958c626c5cfed88d2ceeb09a4e0c9965f0fb8f975986e5a4a3",
+    "read_only_audit_sha256": "ea5ded4588e9aa499864840f09cdbf5edfb80a59d979ea84d219455631ac2bce",
+    "exclusion_stream_sha256": "69952124896cb8f7e9a9fe551154b0e076900878de0a2e4bd78b3a3bc4c1c8e2",
+    "exclusion_uncompressed_sha256": "29d75e03a8f049c2646bcc26f60c03f449380cee637ee445f01d4db2fc77c9ef"
+  },
+  "curation_validation": {
+    "original_ledger_entries_rehashed": 109,
+    "original_ledger_bytes": 291281649,
+    "outer_ledger_entries_rehashed": 4,
+    "source_and_artifact_pins_rehashed": 39,
+    "per_file_summaries_reconciled": 35,
+    "raw_streams_rescored": false,
+    "scope": "Compact path-free summary of retained original evidence; no new SQL, proof or benchmark execution."
+  }
+}

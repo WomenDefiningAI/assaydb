@@ -1,0 +1,107 @@
+/* Assay identity v2 · Petrol Lab · 2026-10-10. All font URLs are bundled, local files. */
+@import url("../fonts/webfonts.css");
+
+:root {
+  color-scheme: dark;
+  /* Petrol Lab. Brand teal is the unchanged logo color, not a UI text color. */
+  --assay-teal: #2c7973;
+  --assay-teal-dark: #25665f; /* Legacy mark utility; not dark-page text. */
+  --assay-teal-light: #72cdbb;
+  --assay-ink: #081b1d;
+  --assay-page: #081b1d;
+  --assay-white: #e4f0eb;
+  --assay-surface: #102829;
+  --assay-muted: #95b2ae;
+  --assay-line: #28403f;
+  --assay-dark: #081b1d;
+  --assay-outline: #60817b;
+
+  --color-bg: var(--assay-page);
+  --color-panel: var(--assay-surface);
+  --color-soft: var(--assay-surface);
+  --color-text: var(--assay-white);
+  --color-muted: var(--assay-muted);
+  --color-link: var(--assay-teal-light);
+  --color-link-on-soft: var(--assay-teal-light);
+  --color-rule: var(--assay-line); /* Decorative only; not a control boundary. */
+  --color-control-border: var(--assay-outline);
+  --color-action: var(--assay-teal-light);
+  --color-action-hover: var(--assay-white);
+  --color-action-text: var(--assay-ink);
+  --color-focus: var(--assay-teal-light);
+  --color-dark-bg: var(--assay-page);
+  --color-on-dark: var(--assay-white);
+  --color-muted-on-dark: var(--assay-muted);
+  --color-link-on-dark: var(--assay-teal-light);
+
+  /* Direct labels and exact values carry meaning independently of color. */
+  --chart-tested: #81a8ba;
+  --chart-proven: #72cdbb;
+  --chart-waiting: #95b2ae;
+  --chart-axis: #95b2ae;
+  --chart-grid: #28403f;
+  --chart-track: #102829;
+  --chart-faster: #72cdbb;
+  --chart-slower: #d4a878;
+  --chart-attention: #d4a878;
+  /* Optional future ordered ramp: low to high luminance. Every step exceeds
+     3:1 on panel; adjacent steps still need labels/patterns. Not new series. */
+  --chart-sequential-1: #4d8e81;
+  --chart-sequential-2: #579e90;
+  --chart-sequential-3: #60aea0;
+  --chart-sequential-4: #69bdae;
+  --chart-sequential-5: #72cdbb;
+
+  --font-heading: "Outfit", "Avenir Next", system-ui, sans-serif;
+  --font-body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --weight-body: 400;
+  --weight-label: 500;
+  --weight-heading: 600;
+  --weight-wordmark: 600;
+  --text-xs: .75rem;
+  --text-sm: .875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-h2: clamp(1.75rem, 3.5vw, 2rem);
+  --text-h1: clamp(2.125rem, 5.3vw, 2.5rem);
+  --leading-body: 1.6;
+  --leading-heading: 1.12;
+  --measure-body: 66ch;
+
+  /* A 4px spacing foundation. */
+  --space-1: .25rem;
+  --space-2: .5rem;
+  --space-3: .75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --radius: .5rem;
+  --radius-small: .25rem;
+  --border-width: 1px;
+  --container-max: 75rem; /* 1200px at the default root size. */
+  --container-gutter: 1.25rem;
+  --grid-columns: 4;
+  --grid-gap: 1rem;
+  --control-min-height: 2.75rem;
+  --focus-width: 2px;
+  --focus-offset: 3px;
+  --transition-fast: 120ms;
+}
+
+@media (min-width: 48rem) {
+  :root { --container-gutter: 2rem; --grid-columns: 6; --grid-gap: 1.5rem; }
+}
+@media (min-width: 64rem) {
+  :root { --container-gutter: 2.5rem; --grid-columns: 12; --grid-gap: 2rem; --text-h1: clamp(3rem, 4.4vw, 3.5rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --transition-fast: 0ms; }
+}

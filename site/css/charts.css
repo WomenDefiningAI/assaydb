@@ -1,0 +1,64 @@
+/* The existing Assay website's chart grammar, in Petrol Lab v2.
+   No invented line chart, zero-filled missing data, or composite coverage score. */
+.chart { margin-block: var(--space-6); }
+.chart__caption { margin-bottom: var(--space-6); color: var(--color-muted); font-size: var(--text-sm); max-width: 90ch; }
+.comparison { display: grid; gap: var(--space-6); }
+.comparison__row { display: grid; grid-template-columns: minmax(9rem, 13rem) minmax(0, 1fr) 5rem; gap: var(--space-4); align-items: center; }
+.comparison__label { font-weight: 600; line-height: 1.4; }
+.comparison__label small { display: block; margin-top: var(--space-1); color: var(--color-muted); font-size: var(--text-xs); font-weight: 400; }
+.comparison__track { height: 2rem; position: relative; background: var(--chart-track); border-left: 1px solid var(--chart-axis); border-right: 1px dashed var(--chart-axis); }
+.comparison__fill { display: block; height: 100%; width: var(--value); background: var(--chart-tested); }
+.comparison__fill--proven { background: var(--chart-proven); }
+.comparison__value { color: var(--chart-tested); text-align: right; font: 600 1.25rem / 1 var(--font-heading); font-variant-numeric: tabular-nums; }
+.comparison__value--proven { color: var(--chart-proven); }
+.comparison__axis { display: flex; justify-content: space-between; grid-column: 2; color: var(--color-muted); font: 400 .6875rem / 1.4 var(--font-code); }
+.chart-key { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-bottom: var(--space-4); font-size: var(--text-xs); color: var(--color-muted); }
+.chart-key span { display: inline-flex; align-items: center; gap: var(--space-2); }
+.chart-key i { width: 1rem; height: .5rem; display: inline-block; background: var(--chart-tested); }
+.chart-key .is-proven { background: var(--chart-proven); }
+.table-wrap { max-width: 100%; overflow: auto; scrollbar-gutter: stable; margin-block: var(--space-4); }
+.data-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.data-table caption { text-align: left; padding-bottom: var(--space-4); font-size: var(--text-sm); color: var(--color-muted); }
+.data-table th, .data-table td { padding: var(--space-4) var(--space-4) var(--space-4) 0; text-align: left; vertical-align: top; border-bottom: 1px solid var(--color-rule); }
+.data-table th:last-child, .data-table td:last-child { padding-right: 0; }
+.data-table thead th { color: var(--color-muted); font-size: var(--text-xs); line-height: 1.4; font-weight: 600; border-bottom-color: var(--color-control-border); }
+.data-table tbody th { font-weight: 500; }
+.data-table .n { text-align: right; font-family: var(--font-code); font-size: var(--text-xs); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.data-table .nowrap { white-space: nowrap; }
+.data-table .sub { display: block; margin-top: var(--space-1); font-size: var(--text-xs); color: var(--color-muted); }
+.data-table--measurements { min-width: 56rem; }
+.data-table--speed { min-width: 39rem; }
+.data-table--contributions { min-width: 63rem; }
+.data-table--goals { min-width: 36rem; }
+.data-table--fallback { min-width: 38rem; }
+.spark { display: inline-block; width: 5rem; height: .5rem; margin-left: var(--space-3); vertical-align: middle; background: var(--chart-track); }
+.spark i { display: block; height: 100%; width: var(--value); background: var(--chart-tested); }
+.spark--proven i { background: var(--chart-proven); }
+.data-table .faster { color: var(--chart-faster); }
+.data-table .slower { color: var(--chart-slower); }
+.rank { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-5); }
+.rank__item { padding-top: var(--space-5); border-top: 1px solid var(--color-rule); }
+.rank__head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2) var(--space-5); align-items: baseline; }
+.rank__name { font-size: var(--text-sm); font-weight: 500; }
+.rank__value { color: var(--color-muted); font: 400 var(--text-xs) / 1.5 var(--font-code); font-variant-numeric: tabular-nums; }
+.rank__status { margin-left: var(--space-2); color: var(--chart-attention); font-size: var(--text-xs); font-weight: 400; }
+.rank__track { margin-top: var(--space-2); height: .5rem; }
+/* Exact widths may be subpixel. Never add a min-width, stroke or fill border. */
+.rank__fill { display: block; width: var(--value); height: 100%; background: var(--chart-waiting); }
+.rank__fill--proven { background: var(--chart-proven); }
+.rank__why { margin-top: var(--space-2); color: var(--color-muted); font-size: var(--text-sm); max-width: 95ch; }
+.chart-details { margin-top: var(--space-6); border-top: 1px solid var(--color-rule); }
+.chart-details summary { width: fit-content; padding-block: var(--space-3); min-height: 44px; color: var(--color-link); font-size: var(--text-sm); cursor: pointer; text-decoration: underline; text-underline-offset: .2em; }
+.chart-details summary:hover { text-decoration-thickness: 2px; }
+@media (max-width: 47.99rem) {
+  .comparison__row { grid-template-columns: minmax(0, 1fr) 5rem; gap: var(--space-2) var(--space-3); }
+  .comparison__label { grid-column: 1 / -1; }
+  .comparison__track { grid-column: 1; }
+  .comparison__axis { grid-column: 1; }
+  .comparison__value { grid-column: 2; }
+}
+@media (forced-colors: active) {
+  .comparison__fill, .spark i, .rank__fill, .chart-key i { background: CanvasText; }
+  .comparison__fill--proven, .spark--proven i, .rank__fill--proven, .chart-key .is-proven { background: Highlight; }
+  .comparison__track { border-color: CanvasText; }
+}

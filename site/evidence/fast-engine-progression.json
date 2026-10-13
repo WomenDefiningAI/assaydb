@@ -1,0 +1,549 @@
+{
+  "format": "assay-fast-engine-progression-v1",
+  "scope": "Retained fast-engine full-corpus results and historical speed measurements; no new experiment or verified-coverage claim",
+  "clock_origin": {
+    "commit": "998abebd9c0060f6f35481a15a71e13c6d94984e",
+    "author_time": "2026-10-06T10:26:54-07:00",
+    "committer_time": "2026-10-06T10:26:54-07:00",
+    "unix": 1791307614.0,
+    "note": "First recorded commit already contains M0/M1 work. This clock excludes earlier development and is elapsed wall time, not active coding time or an end-to-end project duration."
+  },
+  "full_scope": {
+    "files": 622,
+    "fixed_records": 7421339,
+    "applicable_records": 5939714,
+    "non_sqlite_fixed_maximum_percent": 80.03561082440783,
+    "displayed_non_sqlite_fixed_maximum_percent": 80.04,
+    "scoring": "Records include statements, expected errors and query results. Unsupported/errors remain nonpasses."
+  },
+  "events": [
+    {
+      "id": "full-run-1",
+      "label": "Historical full run 1",
+      "event_kind": "derived_run_completion",
+      "time_basis": "manifest.started_unix + summary.elapsed_seconds; derived wall-clock end, not file mtime",
+      "started_unix": 1791433677.022146,
+      "elapsed_seconds": 578.5922518749721,
+      "unix": 1791434255.6143978,
+      "pacific": "2026-10-07T21:37:35.614398-07:00",
+      "hours_since_first_recorded_commit": 35.17822622160117,
+      "fixed": {
+        "passed": 5747389,
+        "total": 7421339,
+        "rate_percent": 77.4440973522433
+      },
+      "applicable": {
+        "passed": 5747389,
+        "total": 5939714,
+        "rate_percent": 96.76204948588433
+      },
+      "wrong_answers": 53,
+      "provenance": {
+        "original_manifest_sha256": "0ac38613fde5515a56c93da97d36190345710a5529c6a75482ec39fc55f0570d",
+        "original_summary_sha256": "a0552aaf97faf847770770502b2dbc79ad22222a2b2a59e70094a87b7525ef05",
+        "recorded_source_commit": "62a8835e3b28ba67e8ea45a52c653acfeb16a4c4",
+        "binary_sha256": "3e581a7bc2df29a5d662e0c2cb66e442b16a3abde2bfe5c8fee33962e44180ca"
+      }
+    },
+    {
+      "id": "full-run-2",
+      "label": "Historical full run 2",
+      "event_kind": "derived_run_completion",
+      "time_basis": "manifest.started_unix + summary.elapsed_seconds; derived wall-clock end, not file mtime",
+      "started_unix": 1791438222.135725,
+      "elapsed_seconds": 583.0868093748577,
+      "unix": 1791438805.2225344,
+      "pacific": "2026-10-07T22:53:25.222534-07:00",
+      "hours_since_first_recorded_commit": 36.442006259560586,
+      "fixed": {
+        "passed": 5935512,
+        "total": 7421339,
+        "rate_percent": 79.97899031428156
+      },
+      "applicable": {
+        "passed": 5935512,
+        "total": 5939714,
+        "rate_percent": 99.92925585305959
+      },
+      "wrong_answers": 0,
+      "provenance": {
+        "original_manifest_sha256": "1dca87ca70cdfc4eb93e980c6eac466d27724407511fc507b6c11253d090aea4",
+        "original_summary_sha256": "dc9ced68fdea8777110f081a3cfd600883a9b0bcd866a912c5b295438d801ebe",
+        "recorded_source_commit": "eeb17693efd3f227a992048897741d8486032671",
+        "binary_sha256": "fc412656ded73d64a880b48b87b6c2c68b2ee9ce5e3cc902a92c74d48bdee417"
+      }
+    },
+    {
+      "id": "full-run-8",
+      "label": "Historical full run 8",
+      "event_kind": "derived_run_completion",
+      "time_basis": "manifest.started_unix + summary.elapsed_seconds; derived wall-clock end, not file mtime",
+      "started_unix": 1791480526.894327,
+      "elapsed_seconds": 585.5266330000013,
+      "unix": 1791481112.42096,
+      "pacific": "2026-10-08T10:38:32.420960-07:00",
+      "hours_since_first_recorded_commit": 48.19400582220819,
+      "fixed": {
+        "passed": 5937087,
+        "total": 7421339,
+        "rate_percent": 80.0002128995859
+      },
+      "applicable": {
+        "passed": 5937087,
+        "total": 5939714,
+        "rate_percent": 99.95577228129166
+      },
+      "wrong_answers": 0,
+      "provenance": {
+        "original_manifest_sha256": "e30876bd6489650183025c963a2f9240b4996ba8bdacf44a15caf45196d14021",
+        "original_summary_sha256": "f4d759e2caeda55a5aa55daac5115caac28c6260b135f1ad48ab0059bbd5645c",
+        "recorded_source_commit": "7f59b25ecc3a1bac3daa7864688d643b2257c1a9",
+        "binary_sha256": "bb929b98e661bfb658e9088f94d9cb4e351e1bc0cee2226fd6354dcd8578f678"
+      }
+    },
+    {
+      "id": "exact-integer-merge",
+      "label": "Exact INTEGER semantics merged after full gates",
+      "event_kind": "git_merge",
+      "time_basis": "Git committer timestamp; not the time of the earlier full-corpus run",
+      "unix": 1791568402.0,
+      "pacific": "2026-10-09T10:53:22-07:00",
+      "hours_since_first_recorded_commit": 72.44111111111111,
+      "fixed": {
+        "passed": 5937073,
+        "total": 7421339,
+        "rate_percent": 80.0000242543832
+      },
+      "applicable": {
+        "passed": 5937073,
+        "total": 5939714,
+        "rate_percent": 99.95553657970737
+      },
+      "wrong_answers": 0,
+      "provenance": {
+        "commit": "75274595ce090c92ee7c54ad6d90dd194c69a4b3",
+        "author_time": "2026-10-09T10:53:22-07:00",
+        "committer_time": "2026-10-09T10:53:22-07:00",
+        "original_manifest_sha256": "f053e2c01f987e650e481b50c8f36db7eb9169444dca8e73be6370b6edb99085",
+        "original_summary_sha256": "5eaa2b94f2bbc2f71cbd0a57971fee549933c723d77239b84d971dc0ee4aa632",
+        "compact_summary_file": "sqlite-full-exact-integers.json",
+        "compact_summary_sha256": "3badf158877a95795ba75f784cad969823f021698e977523f2a79d0a4a120ece"
+      },
+      "compatibility_cost": "14 fewer passes than full run 8; conservative grouped-binding errors remain failures"
+    }
+  ],
+  "context_events": [
+    {
+      "id": "first-successful-verus-model-proof",
+      "label": "First successful isolated scalar-type model proof; not S1 query evaluation or corpus coverage",
+      "event_kind": "recorded_proof_completion",
+      "unix": 1791501887.626995,
+      "pacific": "2026-10-08T16:24:47.626995-07:00",
+      "hours_since_first_recorded_commit": 53.96489638752408,
+      "verified_obligations": 23,
+      "proof_errors": 0,
+      "prior_failed_attempts": 3,
+      "provenance": {
+        "model_manifest_sha256": "db85bf6f43818bee0a9ecea87832a5b05a18e0c47520f045ca1128d8d3df9e04",
+        "command_sha256": "61eea4dfec3fe06518fbdf16a349de18cedda0449d64b77237d34b9903fc9807",
+        "stdout_sha256": "ff65435dd6bdbbcdadbfcc543001a1200849488e66aac50fcd192427aa924f38"
+      }
+    },
+    {
+      "id": "verified-mode-pilot-completion",
+      "label": "Verified S1 diagnostic pilot completed",
+      "event_kind": "recorded_finalization_completion",
+      "unix": 1791579280.365105,
+      "pacific": "2026-10-09T13:54:40.365105-07:00",
+      "hours_since_first_recorded_commit": 75.46287919580936,
+      "fixed": {
+        "matched_verified": 4077,
+        "total": 358096,
+        "rate_percent": 1.1385215137840132,
+        "non_sqlite_maximum_percent": 93.22528037174389,
+        "nonpasses": 354019,
+        "pending": 0
+      },
+      "applicable": {
+        "matched_verified": 4077,
+        "total": 333836,
+        "rate_percent": 1.2212583424196313,
+        "nonpasses": 329759,
+        "pending": 0
+      },
+      "wrong_outcomes": 0,
+      "provenance": {
+        "completion_sha256": "c059027ecbac3850ab934324c6f3d397dbb67456ab0480e129dd09f666ca6f34",
+        "public_receipt_file": "verified-coverage-pilot-1.json",
+        "public_receipt_sha256": "2093d7a33d01e13abf0e458a1e68da962054c161c10a5d5c4984eb250fce9aeb"
+      }
+    }
+  ],
+  "speed": {
+    "ratio_direction": "Assay elapsed time / reference elapsed time; below 1 faster, above 1 slower",
+    "scope": "Earlier measured fast-engine revision, not this export, the exact-integer merge or verified mode",
+    "measurement_manifest_sha256": "70eb17335247b533f247a7664d560e1f9e861aeb9ed85fefed8d41d313491578",
+    "harness_commit": "cf0b8a53633c7000603d74d965dce0ab0eb2bd91",
+    "saved_build_commit": "912eae955b9512921324db7b4f864399596ef3aa",
+    "binary_sha256": "8c01ab44889bfb9b2da7318c020ebaf7cbeaf32c21df23dc379a1d5667627494",
+    "public_source_file": "speed.json",
+    "public_source_sha256": "1625bb4c365eae5f3da7faa476a586ec7b1b662044d58b47dbefabbb86afa29a",
+    "hardware": {
+      "architecture": "arm64",
+      "cpu": "Apple M4",
+      "logical_cpus": 10,
+      "memory_bytes": 17179869184
+    },
+    "completed_timing_outcomes": 792,
+    "failed_timing_outcomes": 0,
+    "wrong_answers": 0,
+    "protocol": {
+      "draws": 10000,
+      "fixed_queries": 22,
+      "interval": "marginal percentile95; three round clusters and 15 measured samples per engine/query, not 15 independent observations; no hardware portability claim",
+      "point_estimator": "M3 pooled total ratio of sums over66 query-round medians; geometric mean of 66 paired ratios",
+      "query_seconds_estimator": "arithmetic mean of three round medians; gap ratio of sums over those three rounds",
+      "rounds": 3,
+      "seed": 57290,
+      "within_round_samples": 5
+    },
+    "timing_boundary": "sql-to-materialized-arrow",
+    "comparisons": [
+      {
+        "lane": "sf1-w1",
+        "reference": "polars",
+        "queries": 22,
+        "total_ratio": 0.938138481946491,
+        "total_confidence_95": [
+          0.9050292714612419,
+          0.9579412438335122
+        ],
+        "geomean_ratio": 0.9654225593164883,
+        "geomean_confidence_95": [
+          0.9427259848432324,
+          0.9805540860408997
+        ]
+      },
+      {
+        "lane": "sf1-w1",
+        "reference": "duckdb",
+        "queries": 22,
+        "total_ratio": 0.7290858730329942,
+        "total_confidence_95": [
+          0.7167197513253133,
+          0.7352352885782282
+        ],
+        "geomean_ratio": 0.7325885365886798,
+        "geomean_confidence_95": [
+          0.7209127686561363,
+          0.7391876159505213
+        ]
+      },
+      {
+        "lane": "sf1-w10",
+        "reference": "polars",
+        "queries": 22,
+        "total_ratio": 1.2660588443493521,
+        "total_confidence_95": [
+          1.2550248175808798,
+          1.2779112724255328
+        ],
+        "geomean_ratio": 1.2608064218019943,
+        "geomean_confidence_95": [
+          1.2501800011075463,
+          1.2738970074007543
+        ]
+      },
+      {
+        "lane": "sf1-w10",
+        "reference": "duckdb",
+        "queries": 22,
+        "total_ratio": 0.960060841358479,
+        "total_confidence_95": [
+          0.9410950431482435,
+          0.9748080104392264
+        ],
+        "geomean_ratio": 0.9609611551950447,
+        "geomean_confidence_95": [
+          0.9366482592139407,
+          0.9791376138425459
+        ]
+      },
+      {
+        "lane": "sf10-w1",
+        "reference": "polars",
+        "queries": 22,
+        "total_ratio": 1.5449632587670121,
+        "total_confidence_95": [
+          1.5029436685652466,
+          1.5806438586519695
+        ],
+        "geomean_ratio": 1.2803254645355306,
+        "geomean_confidence_95": [
+          1.2737798787091679,
+          1.285501619698774
+        ]
+      },
+      {
+        "lane": "sf10-w1",
+        "reference": "duckdb",
+        "queries": 22,
+        "total_ratio": 1.1618791521975353,
+        "total_confidence_95": [
+          1.1275344409276093,
+          1.1908643389233768
+        ],
+        "geomean_ratio": 0.9387401302232086,
+        "geomean_confidence_95": [
+          0.9316980965383953,
+          0.9443939822371981
+        ]
+      },
+      {
+        "lane": "sf10-w10",
+        "reference": "polars",
+        "queries": 22,
+        "total_ratio": 4.1364008603809665,
+        "total_confidence_95": [
+          3.9363846673722893,
+          4.30253135094671
+        ],
+        "geomean_ratio": 2.057169702768246,
+        "geomean_confidence_95": [
+          2.0457998972268436,
+          2.0693678906033677
+        ]
+      },
+      {
+        "lane": "sf10-w10",
+        "reference": "duckdb",
+        "queries": 22,
+        "total_ratio": 3.033096808031255,
+        "total_confidence_95": [
+          2.8055066104901925,
+          3.2059539685667713
+        ],
+        "geomean_ratio": 1.486815680950363,
+        "geomean_confidence_95": [
+          1.451909263094231,
+          1.5099838630773394
+        ]
+      }
+    ],
+    "limits": [
+      "One machine; no portability conclusion. SQL-to-materialized-Arrow boundary, hot cache, no purge.",
+      "Three rotated rounds, five measured samples after one warmup. Marginal95% intervals; rounds are clusters, not 15 independent observations.",
+      "Measured engine precedes optional Python local-reader additions. No claim that export wheel itself has been speed measured.",
+      "SF10 uses prescribed spill settings; ratios reflect those settings. No claim to match an official TPC benchmark."
+    ],
+    "interpretation": "SF1/1 worker favors Assay against both references. SF1/10 workers favors Assay against DuckDB but not Polars. SF10/1 worker loses on total to both, while the DuckDB geomean favors Assay. SF10/10 workers loses on both aggregates to both references."
+  },
+  "source_documents": [
+    {
+      "file": "evidence/PROGRESSION.md",
+      "sha256": "30df2d9670d08a4355c88c33982d0a88e25576c32a071c9370fbe19bb3ffaf5d"
+    },
+    {
+      "file": "evidence/launch1-source-summary-hashes.json",
+      "sha256": "d68d60190d32db78660e533979e27c7244c11ecd66042d04d74d6a52c7339dd3"
+    },
+    {
+      "file": "docs/RESULTS.md",
+      "sha256": "0772546ffec4cf70d26a8fca5e3b7f3a39cf8b58b022dda1f64fb365b20ab3b3"
+    }
+  ],
+  "limitations": [
+    "Historical runs use different source revisions; retained evidence does not certify every later change.",
+    "Run 1 retains 53 wrong answers. Zero observed wrong answers in later frozen tests is not a proof for all SQL.",
+    "The first Verus event concerns a scalar-type model; it is distinct from the later proved evaluator and its pilot measurement.",
+    "All timing ratios and both aggregate metrics are retained, including losses; no portability or audited TPC benchmark claim.",
+    "No file mtimes, invented timestamps or reconstructed expected answers were used."
+  ],
+  "historical_series": {
+    "scope": "Selected receipt-backed historical slice and diagnostic pilot milestones; not a complete attempt log.",
+    "base_receipt_sha256": "890828eec7f13e27f9b4366f699767e5a9b4fb9ec4c82f3d1aec5d4ff962d8e4",
+    "slice": {
+      "fixed_total": 11222,
+      "applicable_total": 11030,
+      "points": [],
+      "availability": "No proposed early slice point has a retained, located run wall-clock receipt; chart points omitted, not zero."
+    },
+    "pilot": {
+      "file_count": 35,
+      "fixed_total": 358096,
+      "applicable_total": 333836,
+      "points": [
+        {
+          "id": "pilot-initial",
+          "event_kind": "diagnostic-pilot-completion",
+          "hours_since_first_commit": 31.32863467057546,
+          "completion_unix": 1791420397.084814,
+          "completion_utc": "2026-10-08T00:46:37.084814+00:00",
+          "clock_basis": "recorded manifest.started_unix + summary.elapsed_seconds",
+          "started_unix": 1791420277.125142,
+          "elapsed_seconds": 119.95967195834965,
+          "fixed": {
+            "passed": 305669,
+            "total": 358096,
+            "percent": 85.35951253295205,
+            "non_sqlite_maximum_percent": 93.22528037174389
+          },
+          "applicable": {
+            "passed": 305669,
+            "total": 333836,
+            "percent": 91.562623563666
+          },
+          "wrong_answers": 646,
+          "excluded_records": 24260,
+          "statuses": {
+            "conditional-not-executed": 24225,
+            "control-only": 35,
+            "engine-error": 1550,
+            "engine-pass": 305669,
+            "engine-unsupported": 25971,
+            "engine-wrong-answer": 646
+          },
+          "source_commit": "2029b8508e54d745dd4e436ad9ce50ed12bb37aa",
+          "binary_sha256": "d7586dd7a971aa94f4b9ba14a988b5c6bc05bd69895b3fdca209ec61c18d099c",
+          "source_receipts": {
+            "summary_sha256": "70ec39da193eb66262eef83abb7d81a3d5065bc35c5833da7cf7ca45e10af972",
+            "manifest_sha256": "1179e65cf9b92fcd350fd61de8a798f3354353497fb784c4cb76e0540371c747",
+            "scope_sha256": {
+              "frozen-pilot-scope-lock.json": "4b029fa677ac6c97f112269b613a2ca6045300f1df5e5c1fffbf3a96a2c73131",
+              "scope.json": "da9760e7e18e57427e5a04fcceae9df7ca1845ce43052c37df347dfa69fa3211"
+            }
+          }
+        },
+        {
+          "id": "pilot-integer-division",
+          "event_kind": "diagnostic-pilot-completion",
+          "hours_since_first_commit": 31.999007351266012,
+          "completion_unix": 1791422810.4264646,
+          "completion_utc": "2026-10-08T01:26:50.426465+00:00",
+          "clock_basis": "recorded manifest.started_unix + summary.elapsed_seconds",
+          "started_unix": 1791422680.8455439,
+          "elapsed_seconds": 129.58092075027525,
+          "fixed": {
+            "passed": 306317,
+            "total": 358096,
+            "percent": 85.54046959474555,
+            "non_sqlite_maximum_percent": 93.22528037174389
+          },
+          "applicable": {
+            "passed": 306317,
+            "total": 333836,
+            "percent": 91.75673084987838
+          },
+          "wrong_answers": 0,
+          "excluded_records": 24260,
+          "statuses": {
+            "conditional-not-executed": 24225,
+            "control-only": 35,
+            "engine-error": 1548,
+            "engine-pass": 306317,
+            "engine-unsupported": 25971
+          },
+          "source_commit": "f4137ecb97ad501b7edb78934b222b19073b48d5",
+          "binary_sha256": "c90f8dc72a632b9e24ccfaa485af989b2581c69c56185d28c9bf4c76ebd9092a",
+          "source_receipts": {
+            "summary_sha256": "62c2c31d00b369f1d69a0b87afb5c1ffc8bf415a11b5c4c48228624d863c431f",
+            "manifest_sha256": "35b073f49c80695f619fcb5b072187f1139ee6a68f07666ccaea4ef1a874e09f",
+            "scope_sha256": {
+              "frozen-pilot-scope-lock.json": "4b029fa677ac6c97f112269b613a2ca6045300f1df5e5c1fffbf3a96a2c73131",
+              "scope.json": "da9760e7e18e57427e5a04fcceae9df7ca1845ce43052c37df347dfa69fa3211"
+            }
+          }
+        },
+        {
+          "id": "pilot-distinct",
+          "event_kind": "diagnostic-pilot-completion",
+          "hours_since_first_commit": 32.527192888855936,
+          "completion_unix": 1791424711.8944,
+          "completion_utc": "2026-10-08T01:58:31.894400+00:00",
+          "clock_basis": "recorded manifest.started_unix + summary.elapsed_seconds",
+          "started_unix": 1791424590.0201752,
+          "elapsed_seconds": 121.8742247079499,
+          "fixed": {
+            "passed": 319315,
+            "total": 358096,
+            "percent": 89.17022251016488,
+            "non_sqlite_maximum_percent": 93.22528037174389
+          },
+          "applicable": {
+            "passed": 319315,
+            "total": 333836,
+            "percent": 95.65025940881151
+          },
+          "wrong_answers": 0,
+          "excluded_records": 24260,
+          "statuses": {
+            "conditional-not-executed": 24225,
+            "control-only": 35,
+            "engine-error": 2142,
+            "engine-pass": 319315,
+            "engine-unsupported": 12379
+          },
+          "source_commit": "a493a923123b7fcc510dc57a80d5355db996c897",
+          "binary_sha256": "9d9e050d4779d441e5894348a82f087978ffb9b11bc23223ee2754547781f7df",
+          "source_receipts": {
+            "summary_sha256": "bdc031cf91b86d7fbb5144b85eeb9572540140739594840d2635c0c93f015fae",
+            "manifest_sha256": "d494f5ed7e03e7ae1bea3d61f4f42ba73ffab668ad9cbc84260a4f822737e780",
+            "scope_sha256": {
+              "frozen-pilot-scope-lock.json": "4b029fa677ac6c97f112269b613a2ca6045300f1df5e5c1fffbf3a96a2c73131",
+              "scope.json": "da9760e7e18e57427e5a04fcceae9df7ca1845ce43052c37df347dfa69fa3211"
+            }
+          }
+        },
+        {
+          "id": "pilot-combined-features",
+          "event_kind": "diagnostic-pilot-completion",
+          "hours_since_first_commit": 33.63901430017418,
+          "completion_unix": 1791428714.4514806,
+          "completion_utc": "2026-10-08T03:05:14.451481+00:00",
+          "clock_basis": "recorded manifest.started_unix + summary.elapsed_seconds",
+          "started_unix": 1791428592.3686268,
+          "elapsed_seconds": 122.0828537917696,
+          "fixed": {
+            "passed": 330453,
+            "total": 358096,
+            "percent": 92.2805616371029,
+            "non_sqlite_maximum_percent": 93.22528037174389
+          },
+          "applicable": {
+            "passed": 330453,
+            "total": 333836,
+            "percent": 98.98662816472759
+          },
+          "wrong_answers": 0,
+          "excluded_records": 24260,
+          "statuses": {
+            "conditional-not-executed": 24225,
+            "control-only": 35,
+            "engine-error": 241,
+            "engine-pass": 330453,
+            "engine-unsupported": 3142
+          },
+          "source_commit": "625626fe1ffdfdd8427d9daf5f1bf4828d6064b3",
+          "binary_sha256": "8eede7de80806edd22dee1bba797bb873598d55ba828d206844c691400964bb3",
+          "source_receipts": {
+            "summary_sha256": "17a1ff9b25e8cf0047399c67dadc72348ba9481bc3dd1c5a6aae7a1612c44f2c",
+            "manifest_sha256": "931b5687b2dc81415f5d9ddd4ff4f5884faca80ccac18b3e6c55a3bf6e0da4ee",
+            "scope_sha256": {
+              "frozen-pilot-scope-lock.json": "4b029fa677ac6c97f112269b613a2ca6045300f1df5e5c1fffbf3a96a2c73131",
+              "scope.json": "da9760e7e18e57427e5a04fcceae9df7ca1845ce43052c37df347dfa69fa3211"
+            }
+          }
+        }
+      ],
+      "diagnostic_only": true
+    },
+    "limitations": [
+      "Elapsed hours are wall time since the first recorded commit, which already contained M0/M1; not active coding time.",
+      "Completion times use recorded run start plus recorded elapsed duration, never file modification time or an inferred development milestone.",
+      "These are records including statements and control records, not counts of SELECT queries.",
+      "The first pilot has 646 observed wrong answers; subsequent selected pilot points have zero. Later zero does not erase earlier wrong answers.",
+      "Pilot rates are measurements on the fixed 35-file diagnostic sample, not full-corpus results or launch claims.",
+      "Only retained compact summaries and manifests were rehashed here; raw result streams were not reread or rescored."
+    ]
+  }
+}

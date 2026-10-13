@@ -1,0 +1,293 @@
+{
+  "applicable": {
+    "matched_verified": 4964030,
+    "nonpasses": 975684,
+    "pending": 0,
+    "rate_percent": 83.57355253131716,
+    "total": 5939714
+  },
+  "applicable_status_counts": {
+    "expected-setup-error": 20,
+    "label-coverage-gap": 151,
+    "matched-verified-query": 4964030,
+    "outside-subset": 645858,
+    "resource-refusal": 20,
+    "setup-dependent-unavailable": 118885,
+    "setup-gap": 34311,
+    "setup-only": 176439
+  },
+  "engine_status": "Verified mode is a development-branch implementation, not an implemented feature of the exported default fast engine.",
+  "excluded_records": {
+    "policy": "Only other-engine onlyif, after-halt and control-only records are excluded from the applicable denominator. They remain in the fixed denominator. Every engine is treated as non-SQLite.",
+    "total": 1481625
+  },
+  "first_blocker_counts": [
+    {
+      "code": "select-clause",
+      "description": "SELECT clause outside single-table filter/project S1",
+      "records": 133169
+    },
+    {
+      "code": "single-table",
+      "description": "At most one registered base table is admitted (more than one table in FROM)",
+      "records": 125146
+    },
+    {
+      "code": "numeric-expression",
+      "description": "Numeric expression outside S1 allowlist",
+      "records": 113679
+    },
+    {
+      "code": "cast-type",
+      "description": "S1 accepts plain CAST to INT, INTEGER or BIGINT without length or FORMAT",
+      "records": 57467
+    },
+    {
+      "code": "snapshot-type",
+      "description": "Query uses a column that is neither INTEGER nor a REAL column inside the exact decimal domain (including SELECT * over a table with one); unused columns do not block it",
+      "records": 56826
+    },
+    {
+      "code": "real-operand",
+      "description": "A REAL column used anywhere other than directly in a comparison, BETWEEN or IN list (arithmetic, output, aggregates)",
+      "records": 56520
+    },
+    {
+      "code": "snapshot-view",
+      "description": "Whole-catalog view refusal",
+      "records": 49943
+    },
+    {
+      "code": "join",
+      "description": "Join outside S1",
+      "records": 48378
+    },
+    {
+      "code": "table-factor",
+      "description": "Non-base-table factor outside S1",
+      "records": 3232
+    },
+    {
+      "code": "query-body",
+      "description": "Only a direct SELECT is admitted",
+      "records": 1000
+    },
+    {
+      "code": "order-null-placement",
+      "description": "Ascending ORDER BY without NULLS FIRST/LAST over a column that holds a NULL (SQLite and the fast engine place NULLs differently), refused after execution",
+      "records": 467
+    },
+    {
+      "code": "non-integer-literal",
+      "description": "S1 numeric expressions accept INTEGER and NULL literals only",
+      "records": 26
+    },
+    {
+      "code": "order-ties",
+      "description": "Rows that differ but tie on every ORDER BY key (order not determined), refused after execution",
+      "records": 5
+    }
+  ],
+  "first_blocker_interpretation": "These are the first observed refusal codes, not exhaustive independent feature gaps or promised gains. Whole-catalog type/view checks may stop admission before the query is inspected.",
+  "first_blocker_method": "Tallied read-only from the run's 622 retained per-record archives, each rehashed against the run's SHA256SUMS.json and its archive receipt before reading. Status totals equal completion.json exactly, and the refusal codes sum to the outside-subset count. No SQL was rerun.",
+  "fixed": {
+    "matched_verified": 4964030,
+    "non_sqlite_maximum_percent": 80.03561082440783,
+    "nonpasses": 2457309,
+    "pending": 0,
+    "rate_percent": 66.88860325609704,
+    "total": 7421339
+  },
+  "format": "assay-verified-coverage-full-v1",
+  "id": "verified-coverage-full-7",
+  "limitations": [
+    "Coverage diagnostic only. Table setup is trusted, never proved, and earns no credit.",
+    "Unsupported records, label gaps and unproved fallbacks count as nonpasses, never as verified.",
+    "Zero wrong outcomes in this run is an observation on this frozen test set, not a proof for all SQL.",
+    "Verified mode is a development branch, not part of the exported fast engine. The SQL-to-S1 translation, including decimal scaling, ORDER BY key resolution and the v7 rewrites, is trusted code, not proved; so is loading REAL columns as exact decimals.",
+    "Agreement with SQLite on REAL comparisons rests on a stated, unproved argument: every admitted value has at most 15 significant digits, magnitude below 2^53 and at most 18 fractional digits, and under those limits rounding to double preserves order and equality. Values outside the limits are refused.",
+    "20 records with very long WHERE clauses were refused with ast-resource-limit (status resource-refusal): bringing their many decimal operands to a common scale adds expression nodes past the core's size bound. They are refused, not answered, and count as nonpasses.",
+    "151 records matched the expected answer but are not credited, because an earlier record in the same sqllogictest label chain was not verified (status label-coverage-gap).",
+    "Raw per-record streams are retained privately; this is a compact path-free summary."
+  ],
+  "measurement": {
+    "applicable_queries": 5728944,
+    "applicable_statements": 210770,
+    "attempted_queries": 5610059,
+    "completed_files": 622,
+    "cross_check_enabled": false,
+    "label_chain_gaps": 157581,
+    "linked_value_observed": 4964181,
+    "mode": "verified_s1",
+    "numerator_rule": "Only matched verified queries receive credit. Trusted setup, exclusions, refusals, unavailable queries and unresolved label chains remain nonpasses.",
+    "proven_core_note": "Proven core S1 v9: S1 v8 plus the proved meaning of exact decimal comparisons. REAL (FLOAT, REAL, DOUBLE) columns and decimal literals are admitted only as direct operands of comparisons, BETWEEN and IN lists; the translator brings the operands of each one to a common scale with integer multiplication, and the proofs show that this gives exactly the comparison of the decimal values, never a wrong value, with precision overflow as the only possible error. Library 206 verified, 0 errors; fixtures 132/132. REAL arithmetic, REAL output and text values are not included. Compared with the previous full-suite receipt on the same 622 files: +941,531 matched verified records.",
+    "source_of_final_status": "Completed inner and outer receipts (outer completed=True, exit code 0); all 622 per-file archives rehashed against the run's SHA256SUMS and archive receipts (0 mismatches) by a read-only Claude tally whose status totals equal completion.json exactly.",
+    "translation_admitted": 4964653
+  },
+  "presentation": {
+    "board": [
+      {
+        "codes": [],
+        "statuses": [
+          "setup-only"
+        ],
+        "what": "Table setup (CREATE, INSERT), not yet proven",
+        "why": "The setup statements themselves. They run on trusted code and never count until setup is proven too."
+      },
+      {
+        "codes": [
+          "single-table",
+          "join"
+        ],
+        "statuses": [],
+        "tag": "In progress",
+        "what": "Joins and other multi-table queries",
+        "why": "Queries that read more than one table, including joins, which milestone 2 is proving now."
+      },
+      {
+        "codes": [],
+        "statuses": [
+          "setup-gap",
+          "setup-dependent-unavailable"
+        ],
+        "what": "Setup the core can't load yet",
+        "why": "Earlier setup in the same test file used something the core can't load, so the queries that depend on it can't run there."
+      },
+      {
+        "codes": [
+          "select-clause"
+        ],
+        "statuses": [],
+        "tag": "Next",
+        "what": "GROUP BY and other SELECT clauses",
+        "why": "Queries using GROUP BY, HAVING or other SELECT clauses beyond filtering, choosing columns, DISTINCT and aggregates over the whole table."
+      },
+      {
+        "codes": [
+          "numeric-expression"
+        ],
+        "statuses": [],
+        "what": "More numeric expressions",
+        "why": "Arithmetic or functions outside the set the core already proves. Searched CASE, ABS, IN lists and BETWEEN are now proven, and CAST to an integer type, COALESCE, NULLIF, simple CASE, NOT IN and NOT BETWEEN are counted through them."
+      },
+      {
+        "codes": [
+          "cast-type"
+        ],
+        "statuses": [],
+        "what": "Other conversions (CAST)",
+        "why": "CAST to a type other than an integer type, or with a length or FORMAT. CAST to INT, INTEGER or BIGINT is now counted."
+      },
+      {
+        "codes": [
+          "snapshot-type"
+        ],
+        "statuses": [],
+        "what": "Text columns and out-of-range real values",
+        "why": "Queries that use a text column or another non-integer type, or a real column holding a value outside the exact decimal limits. Real columns within the limits are now counted when they are compared."
+      },
+      {
+        "codes": [
+          "real-operand"
+        ],
+        "statuses": [],
+        "what": "Real values in arithmetic or output",
+        "why": "Real columns used in arithmetic, returned as output or aggregated. Comparing a real column, with =, <, BETWEEN or IN, is now proven through exact decimals; other uses are not yet."
+      },
+      {
+        "codes": [
+          "snapshot-view"
+        ],
+        "statuses": [],
+        "what": "Views",
+        "why": "Test files that define views are set aside as a whole for now."
+      },
+      {
+        "codes": [
+          "table-factor",
+          "query-body"
+        ],
+        "statuses": [],
+        "what": "Other query shapes",
+        "why": "Subqueries or functions in FROM, and UNION or other compound queries."
+      },
+      {
+        "codes": [
+          "order-null-placement",
+          "order-ties"
+        ],
+        "statuses": [],
+        "what": "ORDER BY results the core refuses",
+        "why": "ORDER BY and LIMIT are now proven. Verified mode still refuses, rather than answers, an ascending sort without NULLS FIRST or LAST over a column holding a NULL (SQLite and the fast engine place NULLs differently), and rows that differ but tie on every sort key."
+      },
+      {
+        "codes": [
+          "non-integer-literal"
+        ],
+        "statuses": [],
+        "what": "Decimal and text constants",
+        "why": "Text constants like 'a' inside an expression, and decimal constants outside the exact decimal limits. Decimal constants in comparisons are now counted."
+      },
+      {
+        "codes": [],
+        "statuses": [
+          "resource-refusal"
+        ],
+        "what": "Queries too large for the core",
+        "why": "Very long WHERE clauses whose decimal comparisons, once brought to a common scale, exceed the core's size bound. Verified mode refuses them rather than answering."
+      }
+    ],
+    "log_change": "Chapter 2: exact decimal comparisons proven and measured on the full suite",
+    "log_owner": "helenlkupp",
+    "log_tools": "Codex wrote the proofs and translation in short task cards; Claude wrote and reviewed the proof statements, pinned the semantics against the fast engine, and ran the official proof checks and the frozen measurement",
+    "point_label": "Full suite, exact decimal comparisons proved",
+    "prove_note": "Measured on all 622 files with Assay's verified mode, which is still in development and not yet in the public code. The proven core now also covers exact decimal comparisons: real columns and decimal constants compared with =, <, BETWEEN or IN are brought to a common scale as integers, and the proofs show this gives exactly the comparison of the decimal values. Agreement with SQLite's floating-point comparisons rests on a stated, unproved argument about the admitted values (at most 15 significant digits, below 2^53, at most 18 decimal places). Earlier full-suite results used smaller cores. Translation into the proven core is trusted, not proven, including the decimal scaling and loading of real columns, the rewrites of CAST to integer types, COALESCE, NULLIF, simple CASE, NOT IN and NOT BETWEEN (the COALESCE and NULLIF rewrites have proved meanings), and so are per-column type admission, SELECT * expansion, aggregate error-witness collection, ORDER BY key resolution and the refusals for NULL placement and ties. Table setup is trusted, not proven, and earns no credit. The earlier scalar-model proof marks the track start, not a measured coverage point."
+  },
+  "previous_receipt": {
+    "applicable_percent": 67.72209907749766,
+    "fixed_percent": 54.20179565978592,
+    "matched_verified": 4022499,
+    "receipt": "evidence/completed-verified-coverage-full-6.json"
+  },
+  "provenance": {
+    "completion_sha256": "3b38c7d718b6a68b4a42ba8c74cf2da1996a865497e3ea4ac51b9400b28a5aea",
+    "config_sha256": "479956aa2768006baf64d528165e5855f634a84dbe9f7e1a9db181e08ec3f31b",
+    "first_blocker_tally_sha256": "f9d4028e786322bac29603d00377b4d541f3cfce9cc271d06de43a26770cf277",
+    "ledger_sha256": "a87216398f214151392869e4bfa391d231b380feb330a271bd489c1cee557c3d",
+    "linked_library_sha256": "3e2bc876f6f17d5013ef9180705220021305ecffecf95d780d22a228d3e1e4bd",
+    "native_coverage_binary_sha256": "58a14ee9510bff89059560508f01c0fe6febc8335f2777d093074aed5f448120",
+    "native_source_commit": "4898aedaf192745dc2a8e7f0670b8c31e1865f5a",
+    "outer_exit_sha256": "113033e7ada2fa5e0fad8f943c4ef03df2ea35f99159ba2b11b70a0adadaa933",
+    "proof_bundle_sha256": "a875357f6ed82db2e18afde6595a752e85e79fde418c697f4d06596c72e970a0",
+    "s1_v9_proof_manifest_sha256": "783527eea8b4ae2ce62915d67c6555960601386f11ab0052bb1b165dd5fe88c9",
+    "summary_sha256": "f91412fa035dd53f9b381322ae53a6933b7b9ab7f4cce20f49a42d188ee7c937"
+  },
+  "schema": "assay-completed-verified-coverage/1",
+  "status": "completed-full-suite-measurement",
+  "test_set": {
+    "files": 622,
+    "id": "sqlite-slt/full-622",
+    "license": "CC0 option offered by upstream",
+    "name": "SQLite official sqllogictest, all 622 frozen files"
+  },
+  "timing": {
+    "elapsed_seconds": 7611.0,
+    "finished_pacific": "2026-10-11T08:25:41.989135-07:00",
+    "hours_since_first_recorded_commit": 117.98,
+    "started_pacific": "2026-10-11T06:18:51.034950-07:00",
+    "time_basis": "manifest started_unix and completion finished_unix"
+  },
+  "trust_boundaries": [
+    "Parser and translation into the proved S1 input",
+    "Catalog construction and statement setup",
+    "Result normalization and corpus label bookkeeping",
+    "FFI transport, artifact attestation and execution toolchain",
+    "Per-column snapshot type admission and SELECT * expansion",
+    "Error-witness collection for aggregate queries",
+    "SQL rewrites of CAST, COALESCE, NULLIF, simple CASE, NOT IN and NOT BETWEEN",
+    "ORDER BY/LIMIT translation and the post-execution NULL-placement and tie refusals",
+    "REAL column loading as scaled integers, decimal literal parsing and the choice of common scales"
+  ],
+  "wrong_outcomes": 0,
+  "wrong_outcomes_complete": true
+}
