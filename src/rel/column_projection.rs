@@ -1,4 +1,4 @@
-//! Column projections share identical arrays; raw INTEGER widening is lossless
+//! Column projections share identical arrays; INTEGER widening is lossless
 //! and computed once per unique source column, including duplicate aliases.
 use crate::{
     Result,
@@ -12,6 +12,31 @@ use arrow::{
     datatypes::{DataType, Schema, SchemaRef},
     record_batch::{RecordBatch, RecordBatchOptions},
 };
+use std::sync::Arc;
+
+pub(super) fn output_schema(plan: &Plan, source: &Schema) -> SchemaRef {
+    let wide = super::schema(&plan.names, &plan.types);
+    let Some(selected) = columns(plan, source, &wide) else {
+        return wide;
+    };
+    // Only direct references to Int64 inputs qualify. Int32 conversions,
+    // computed INTEGERs and wide INTEGER references keep precision-38 fields.
+    Arc::new(Schema::new(
+        selected
+            .iter()
+            .enumerate()
+            .map(|(out, column)| {
+                if plan.types[out] == Type::Int
+                    && source.field(*column).data_type() == &DataType::Int64
+                {
+                    Type::Int.field(&plan.names[out], false)
+                } else {
+                    wide.field(out).clone()
+                }
+            })
+            .collect::<Vec<_>>(),
+    ))
+}
 
 pub(super) fn columns(plan: &Plan, source: &Schema, output: &Schema) -> Option<Vec<usize>> {
     if !plan.projection_pushdown
@@ -365,5 +390,60 @@ mod tests {
         drop(output);
         drop(lease);
         assert_eq!(budget.used(), 0);
+    }
+
+    #[test]
+    fn native_integer_projection_preserves_boundaries_nulls_and_wide_sources() {
+        let wide_value = i128::from(i64::MAX) + 1;
+        let source = Arc::new(Schema::new(vec![
+            Field::new("x", DataType::Int64, true),
+            Type::Int.field("z", true),
+        ]));
+        let batch = RecordBatch::try_new(
+            source.clone(),
+            vec![
+                Arc::new(Int64Array::from(vec![Some(i64::MIN), None, Some(i64::MAX)])),
+                Arc::new(
+                    Decimal128Array::from(vec![Some(wide_value), None, Some(-wide_value)])
+                        .with_precision_and_scale(38, 0)
+                        .unwrap(),
+                ),
+            ],
+        )
+        .unwrap();
+        let (plan, _) = plan(&source, &[0, 0, 1]);
+        let output = output_schema(&plan, &source);
+        for i in 0..2 {
+            assert_eq!(output.field(i).data_type(), &DataType::Int64);
+        }
+        assert!(Type::is_wide_integer(output.field(2)));
+        let selected = columns(&plan, &source, &output).unwrap();
+        let budget = Budget::new(1 << 20);
+        for input in [batch.clone(), batch.slice(1, 0)] {
+            let (actual, lease) = project(&input, &selected, output.clone(), &budget).unwrap();
+            assert!(Arc::ptr_eq(actual.column(0), input.column(0)));
+            assert!(Arc::ptr_eq(actual.column(0), actual.column(1)));
+            assert!(Arc::ptr_eq(actual.column(2), input.column(1)));
+            assert_eq!(actual.num_rows(), input.num_rows());
+            assert!(budget.used() >= actual.get_array_memory_size());
+            drop(actual);
+            drop(lease);
+            assert_eq!(budget.used(), 0);
+        }
+    }
+
+    #[test]
+    fn computed_and_aggregate_integer_projections_keep_wide_fields() {
+        let source = Schema::new(vec![Field::new("x", DataType::Int64, true)]);
+        for sql in [
+            "SELECT x + 1 AS y, x AS z",
+            "SELECT SUM(x) AS y",
+            "SELECT x AS y FROM t ORDER BY y",
+        ] {
+            let query = bind::parse(sql).unwrap();
+            let plan = bind::bind(&query, &source, None, true).unwrap();
+            let output = output_schema(&plan, &source);
+            assert!(output.fields().iter().all(|f| Type::is_wide_integer(f)));
+        }
     }
 }

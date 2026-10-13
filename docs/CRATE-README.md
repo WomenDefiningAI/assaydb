@@ -1,7 +1,7 @@
 # Assay engine alpha
 
 Assay is an experimental analytical SQL engine with Arrow results. Version
-`0.1.0-alpha.1` packages the fast engine and two JSON protocol executables,
+`0.1.0-alpha.2` packages the fast engine and two JSON protocol executables,
 `assaydb` and `assaydb-session`. It is not an interactive SQL shell. The engine is
 tested, not proved, and this package does not include linked verified execution.
 Separate verification evidence is research with a narrower scope.
@@ -29,7 +29,7 @@ for temporary catalogs; Python is the documented higher-level session API.
 To install the published version directly from crates.io:
 
 ```sh
-cargo install assaydb --version 0.1.0-alpha.1 --locked --bin assaydb
+cargo install assaydb --version 0.1.0-alpha.2 --locked --bin assaydb
 ```
 
 See [release provenance](RELEASES.md) for the independent source-verification status.

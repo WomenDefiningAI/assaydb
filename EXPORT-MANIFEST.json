@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "release": "alpha1",
-  "source_commit": "44b5ab5ede4504649217ee9909f9c265b44b31b7",
+  "release": "alpha2",
+  "source_commit": "17b575b7c556c47ccc461209f02d28e6a5cf6045",
   "excluded": [
     "website",
     "private Git history and operational notes",
@@ -63,17 +63,17 @@
     {
       "path": "Cargo.lock",
       "bytes": 28571,
-      "sha256": "4f30d714897aeffa07be4af8e674c912776cfa54d3d8edeea9a7c7465959dbf3",
+      "sha256": "24a0809c4349fb853e7fd6f309672846d5721726ffdca5bbb02ed772abc39249",
       "mode": "0644",
-      "source_git_blob": "16013c5338f5e2af4fe6440c11be8e4d7b1a2541",
+      "source_git_blob": "7c18083d2453d0cbf50e008bdcd2bb1b6b3e4d3d",
       "change": "unchanged"
     },
     {
       "path": "Cargo.toml",
       "bytes": 1618,
-      "sha256": "28d3370003e6db570a287f95a98c66d13a4ce39643dd35b77e56fa7e69e00dcf",
+      "sha256": "8f1b18f3969a6a0ab40d2dba9ac68130ba24e4759bbf632d4d343274fa6d3429",
       "mode": "0644",
-      "source_git_blob": "93ee4206ac0fce5f340d60721cec1eb3df0cadb5",
+      "source_git_blob": "51e3118f200273cf22941af347fad4849ebd21c5",
       "change": "unchanged"
     },
     {
@@ -95,7 +95,7 @@
     {
       "path": "README.md",
       "bytes": 2546,
-      "sha256": "07f10a18010e69914e2713067852aced9208a55be0215327d293082886323612",
+      "sha256": "ec1b1136940c449a29a0dae091a6a948355cb3941a002da8c4c3e821d1cd103b",
       "mode": "0644",
       "source_git_blob": null,
       "change": "new public documentation"
@@ -151,17 +151,17 @@
     {
       "path": "bindings/python/Cargo.lock",
       "bytes": 30611,
-      "sha256": "df1d36af05188317446868263d002a5d3b055d6730bbed86b5cd92c7f5c42435",
+      "sha256": "6f0cf033c7de8a07c7f405d692a4eeac703bf8d66ffc7ab400b38eafc0a4f93c",
       "mode": "0644",
-      "source_git_blob": "04740d02825e1ae6ff0cbd551c9162c378174fce",
+      "source_git_blob": "ae5bcff02db98742004faad87d48766271240d43",
       "change": "unchanged"
     },
     {
       "path": "bindings/python/Cargo.toml",
       "bytes": 624,
-      "sha256": "73639a92854fcda462d0fd04cd7484228924ef17f015fc7fea02ec8c16944ea5",
+      "sha256": "d8822712e00c88847437f511a91f1714f57c64c17c0e253ece2459035332cda0",
       "mode": "0644",
-      "source_git_blob": "f48f529f5bb90098c6a2572e895b36461a85e1f9",
+      "source_git_blob": "7573e12496d67d16f275103760eea435fcd88c9d",
       "change": "unchanged"
     },
     {
@@ -182,10 +182,10 @@
     },
     {
       "path": "bindings/python/README.md",
-      "bytes": 3860,
-      "sha256": "ad8abe32a7613aa98d6751ff5bb3693a09428deb1793bcc5c7b4eaf192b2e5e6",
+      "bytes": 3863,
+      "sha256": "8dcce134571998c4dcf28c413b46fbf181bbe190ef380be317d60ec6e7a9ff4e",
       "mode": "0644",
-      "source_git_blob": "ec22bb0524b87a2bb3a8275e014844f940f38b91",
+      "source_git_blob": "adc549669c763520e7084d5ecf2fbd71123d437d",
       "change": "export documentation/portable tooling"
     },
     {
@@ -215,9 +215,9 @@
     {
       "path": "bindings/python/pyproject.toml",
       "bytes": 1212,
-      "sha256": "fbd180f968069779f76bf03dc73a6993a61771b1f4a200c870e90bd3cea88a45",
+      "sha256": "25f94790e653daedec8d56929a9d3ae1288004464facaf58567c459cb4bfca48",
       "mode": "0644",
-      "source_git_blob": "ee6388a13d5785eb0c12e457547d760eece67b50",
+      "source_git_blob": "e428db49ce13a9b4e6c6a11af9be4dea04d86393",
       "change": "unchanged"
     },
     {
@@ -311,15 +311,15 @@
     {
       "path": "docs/CRATE-README.md",
       "bytes": 2367,
-      "sha256": "4f57da601cae35b0b7759e58ebcd6b00788f60435f4054b817e02f73535cfe1f",
+      "sha256": "4ba27fabce497731dc6e273838f9ca9bd207538c548b9876fbcd462d68979965",
       "mode": "0644",
-      "source_git_blob": "2532fb3d8a7dae7f4172943249ef220911024f8b",
+      "source_git_blob": "34789139cca9e5b27e642a6febbcd32aa6354ee8",
       "change": "export documentation/portable tooling"
     },
     {
       "path": "docs/RELEASES.md",
       "bytes": 3071,
-      "sha256": "bae5982b688b9e3e826d5b96f20eedadfa1b1d39025678d24936fc7dabf18839",
+      "sha256": "4cc632146c5d972825381b38f8eeae8b0c91d08b17e58208207013016d7dc7b8",
       "mode": "0644",
       "source_git_blob": null,
       "change": "new public documentation"
@@ -902,10 +902,10 @@
     },
     {
       "path": "src/rel.rs",
-      "bytes": 154734,
-      "sha256": "3360f1096fe060e17a2864b70d09c7be612f2d177e262b6c4f6530628758425f",
+      "bytes": 156418,
+      "sha256": "9d2586fdb5422eb484b3008b7878dbe39e7673e7c2cfd8a412ef1b5a6a241961",
       "mode": "0644",
-      "source_git_blob": "0084bbb0260280fcafdf4363e37e187a71713cba",
+      "source_git_blob": "36db70884d78ee74ca82f94caf27c266b2b5f92f",
       "change": "unchanged"
     },
     {
@@ -918,10 +918,10 @@
     },
     {
       "path": "src/rel/column_projection.rs",
-      "bytes": 13336,
-      "sha256": "c5845bd7fe73e8beb6eeced80dfd48d2ee375fb219a4ae61b71612e3f77fe726",
+      "bytes": 16512,
+      "sha256": "aa40a0f7de9e48f3e589d5b3f598cb9358028b5f38ad1824e6b82f1417e45e18",
       "mode": "0644",
-      "source_git_blob": "a58b30f1ac7b198475868b5f87b12699ada95cf6",
+      "source_git_blob": "d1357067fc0849961d51d46df3c88f42eb4a8022",
       "change": "unchanged"
     },
     {
@@ -1679,6 +1679,6 @@
   ],
   "provenance_status": {
     "pypi": "historical publication-log source and hash-verification evidence reviewed",
-    "crates_io": "official index checksum, published archive VCS source, and all original package inputs independently verified"
+    "crates_io": "historical publication-log source and registry checksum evidence reviewed"
   }
 }

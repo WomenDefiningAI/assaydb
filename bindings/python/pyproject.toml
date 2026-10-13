@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "assaydb"
-version = "0.1.0a1"
+version = "0.1.0a2"
 description = "Assay analytical SQL with native Rust sessions and Arrow results"
 readme = "README.md"
 requires-python = ">=3.10"

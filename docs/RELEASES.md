@@ -5,7 +5,7 @@
 | Alpha 1 | 0.1.0a1 | 0.1.0-alpha.1 | 44b5ab5ede4504649217ee9909f9c265b44b31b7 |
 | Alpha 2 | 0.1.0a2 | 0.1.0-alpha.2 | 17b575b7c556c47ccc461209f02d28e6a5cf6045 |
 
-This tree is the sanitized Alpha 1 snapshot, not current development main.
+This tree is the sanitized Alpha 2 snapshot, not current development main.
 EXPORT-MANIFEST.json records each exported path, upstream Git blob identity when
 applicable, sanitization notes, and SHA-256 of the exported bytes.
 Export commits will have different identities from their original sources.

@@ -1,14 +1,14 @@
 # Assay for Python
 
-Native analytical SQL with Arrow results. Version `0.1.0a1` is an experimental
+Native analytical SQL with Arrow results. Version `0.1.0a2` is an experimental
 alpha. The packaged fast engine is tested, not proved, and does not include
 linked verified execution. Separate proof research describes its own narrower
 scope. Only read Parquet files you trust.
 
-Install the alpha from PyPI:
+Install this version from PyPI:
 
 ```sh
-python -m pip install --only-binary=:all: 'assaydb==0.1.0a1'
+python -m pip install --only-binary=:all: 'assaydb==0.1.0a2'
 ```
 
 A supplied wheel can also be installed with

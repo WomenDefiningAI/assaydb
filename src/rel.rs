@@ -1536,7 +1536,7 @@ fn unary(q: &s::Query, input: Node) -> Result<Node> {
     let facts = crate::mixed_numeric::binding_facts(&input)?;
     let plan = bind::bind_with_facts(q, &input.schema, &facts)?;
     Ok(Node {
-        schema: schema(&plan.names, &plan.types),
+        schema: column_projection::output_schema(&plan, &input.schema),
         estimated_rows: input.estimated_rows,
         op: RelOp::Unary {
             plan,
@@ -2937,7 +2937,35 @@ impl Node {
                                 send(b)
                             })?;
                         merge(&mut metrics, &result.metrics);
-                        emit(result.batch.clone())
+                        if result.batch.schema() == self.schema {
+                            return emit(result.batch.clone());
+                        }
+                        // A direct Int64 projection can have a narrow prepared
+                        // schema even when execution disables pushdown. Keep the
+                        // general executor's evaluation and validation, then
+                        // narrow only those output fields using checked INTEGER
+                        // conversion. The enabled pushdown path still shares
+                        // the source arrays without wide intermediate copies.
+                        let _lease = budget
+                            .reserve(result.batch.get_array_memory_size().saturating_add(256))?;
+                        let arrays = result
+                            .batch
+                            .columns()
+                            .iter()
+                            .zip(self.schema.fields())
+                            .map(|(array, field)| {
+                                if field.data_type() == &arrow::datatypes::DataType::Int64
+                                    && array.data_type() != field.data_type()
+                                {
+                                    execute::materialize(array, &Type::Int)
+                                } else {
+                                    Ok(array.clone())
+                                }
+                            })
+                            .collect::<Result<Vec<_>>>()?;
+                        let batch = RecordBatch::try_new(self.schema.clone(), arrays)
+                            .map_err(|e| e.to_string())?;
+                        emit(batch)
                     })?;
                     merge(&mut ctx.metrics, &metrics);
                     return Ok(());

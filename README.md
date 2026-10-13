@@ -1,8 +1,8 @@
 # Assay
 
 Assay is an experimental analytical SQL engine written in Rust, with Python
-sessions and Arrow results. This snapshot contains Alpha 1:
-Python `0.1.0a1` and Rust version metadata `0.1.0-alpha.1`.
+sessions and Arrow results. This snapshot contains Alpha 2:
+Python `0.1.0a2` and Rust version metadata `0.1.0-alpha.2`.
 
 The fast engine is tested, not formally proved. This export contains no linked
 verified mode, proof workspaces, website, or benchmark datasets. Catalogs are
@@ -16,7 +16,7 @@ Use a virtual environment:
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install --only-binary=:all: assaydb==0.1.0a1
+python -m pip install --only-binary=:all: assaydb==0.1.0a2
 ```
 
 ```python
