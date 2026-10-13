@@ -70,7 +70,7 @@ pushes or base changes, and merge only the reviewed head.
 
 A protected, versioned acceptance record must link the accepted result hashes,
 tested source, final head, base, scope, limitations and maintainer decision.
-Site publication is a separate reviewed step after acceptance and merge. Future charts
+The accepted chart-data update belongs to the reviewed merge; the intended site deployment then publishes that version from main. Automatic deployment is not yet verified. Future charts
 and their no-JavaScript fallbacks must derive from the same versioned accepted
 data, never from PR prose or the contribution-credit list. Until that path exists
 and new measurements are accepted, retain all current historical chart JSON,
