@@ -58,18 +58,28 @@ former assaydb.org performance, component-results, or receipt-viewer pages.
 
 ## Static hosting
 
-The repository-root `vercel.json` describes a root-directory import: no framework,
-blank install/build commands, `site/` output, and `git.deploymentEnabled: false`.
-The current project instead uses Root Directory `site`, framework Other, blank
-install/build commands and output `.`. The repository-root configuration is not
-selected in that setup, so its Git deployment flag does not establish whether
-this project automatically deploys. See the Vercel
+The Vercel project uses Root Directory `site` and production branch `main`.
+Keep those project settings in place; they are not set by `vercel.json`.
+The configuration lives at `site/vercel.json`, in the project's root directory:
+
+- `framework: null` selects Other.
+- Empty `installCommand` and `buildCommand` values skip installation and building.
+- `outputDirectory: "."` serves the static files directly from `site/`.
+
+No routing or header overrides are added. Existing HTML paths, assets and JSON
+remain unchanged. See Vercel's
 [configuration reference](https://vercel.com/docs/project-configuration/vercel-json)
-and [Git configuration reference](https://vercel.com/docs/project-configuration/git-configuration).
+and [static build and Root Directory guidance](https://vercel.com/docs/builds/configure-a-build).
+
+The former repository-root configuration, including `git.deploymentEnabled: false`,
+has been removed to eliminate contradictory configuration. It has not been
+established whether that flag suppressed deployments with Root Directory `site`;
+this cleanup is not a proven fix for the stale production deployment.
 
 Automatic production deployment after an approved main-branch merge is intended,
-but has not yet been verified by a subsequent merge. This documentation update
-changes no hosting or GitHub settings and adds no runner or deployment workflow.
+but has not yet been verified by a subsequent merge. These repository changes do
+not change Vercel dashboard or GitHub settings, add a deployment workflow, or
+verify a production deployment. Deployment remains a separate maintainer action.
 
 ## Public contribution activity
 
