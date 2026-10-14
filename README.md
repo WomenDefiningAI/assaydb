@@ -56,7 +56,7 @@ equating PyPI and crates.io provenance.
 The four-page static site is in [site/](site/). Serve it locally with
 `python3 -m http.server 8080 --bind 127.0.0.1 --directory site`.
 See [website maintenance](docs/WEBSITE.md) for source provenance, historical
-measurement scope, checks, and configuration for later static hosting.
+measurement scope, checks, and static hosting configuration.
 
 ## Licensing and attribution
 
