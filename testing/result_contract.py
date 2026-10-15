@@ -74,12 +74,27 @@ def validate(bundle, policy, root):
         require(suite['pacific_day'] == suite['baseline_pacific_day'], name + ': comparison day mismatch')
         require(suite['baseline_commit'] == policy['base_commit'], name + ': stale baseline')
         require(suite['baseline_tool_manifest_sha256'] == policy['tool_manifest_sha256'], name + ': baseline tool mismatch')
+        # The authority is the separately supplied reviewer policy, not a hash
+        # echoed by the candidate. Verify actual scope bytes before consuming any
+        # result. Candidate and baseline agreement alone cannot establish coverage.
+        scope_path = artifact(root, suite['scope_records'])
+        require(digest(scope_path) == expected['scope_sha256'], name + ': frozen scope pin mismatch')
+        frozen_scope = records(scope_path)
         counts = Counter({status: 0 for status in STATUSES})
         candidate = records(artifact(root, suite['records']))
         baseline = records(artifact(root, suite['baseline_records']))
-        for index, pair in enumerate(itertools.zip_longest(candidate, baseline)):
-            current, previous = pair
-            require(current is not None and previous is not None, name + ': truncated comparison')
+        for index, triple in enumerate(itertools.zip_longest(candidate, baseline, frozen_scope)):
+            current, previous, target = triple
+            require(current is not None and previous is not None and target is not None, name + ': truncated comparison or frozen scope')
+            require(type(target['index']) is int and target['index'] == index, name + ': reordered frozen scope')
+            for row in (current, previous):
+                require(row['id'] == target['id'] and row['sql_sha256'] == target['sql_sha256'], name + ': record differs from frozen scope')
+                reason = target.get('exclusion_reason')
+                if reason is not None:
+                    require(name == 'slt' and reason in ('onlyif-other-engine', 'after-halt', 'control-only'), name + ': invalid frozen exclusion')
+                    require(row['status'] == 'excluded' and row.get('reason') == reason, name + ': record exclusion differs from frozen scope')
+                else:
+                    require(row['status'] != 'excluded' and row.get('reason') is None, name + ': exclusion absent from frozen scope')
             require(current['index'] == previous['index'] == index, name + ': duplicate or reordered index')
             require(current['id'] == previous['id'] and current['sql_sha256'] == previous['sql_sha256'], name + ': changed record identity')
             require(current['status'] in STATUSES and previous['status'] in STATUSES, name + ': unknown outcome')
@@ -91,6 +106,7 @@ def validate(bundle, policy, root):
                 require(current.get('reason') in ('onlyif-other-engine', 'after-halt', 'control-only') and current.get('reason') == previous.get('reason'), name + ': unapproved exclusion')
                 require(name == 'slt', name + ': exclusion outside frozen SLT')
             counts[current['status']] += 1
+        require(digest(scope_path) == expected['scope_sha256'], name + ': frozen scope changed during validation')
         require(sum(counts.values()) == expected['total'], name + ': incomplete denominator')
         require(dict(counts) == suite['counts'], name + ': reported counts differ from records')
         require(counts['excluded'] == expected['excluded'], name + ': changed exclusion denominator')

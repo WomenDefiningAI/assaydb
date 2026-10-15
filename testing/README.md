@@ -39,6 +39,17 @@ python3 testing/result_contract.py PRIVATE_RESULTS/bundle.json \
   --policy PRIVATE_RESULTS/reviewer-policy.json --output NEW_SUMMARY.json
 ```
 
+The `--policy` file is an authority input supplied by the protected reviewer,
+never accepted from the candidate or inferred from a bundle. For every suite,
+`scope_sha256` pins the actual independently generated ordered JSONL scope file.
+The bundle supplies `scope_records: {path, sha256}`; both digests must match the
+reviewer's pin. Each scope row contains `index`, `id`, `sql_sha256`, and an
+optional `exclusion_reason` derived only from frozen SLT directives. Both result
+streams must match every scope row, including exclusions; mutual agreement and
+matching totals alone are insufficient. Scope bytes are rehashed after validation.
+Generate and review these scope files from frozen inputs before running the
+candidate. Changing scope requires a new reviewer policy and input review.
+
 Keep raw evidence and policy outside the public checkout. Each record carries an
 index, stable identity, SQL hash and status. Candidate and baseline streams must
 have equal identities in equal order; suite counts must equal those streams.
