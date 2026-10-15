@@ -34,7 +34,7 @@
     }
     const player=playback.player({motion,step:i=>{host.dataset.stage='checkpoint';select(i);},finish:announce=>{host.dataset.stage='final';select(5,announce);}});
     function choose(i){player.cancel();host.dataset.stage='final';select(i,true);}
-    buttons.forEach((b,i)=>{b.addEventListener('click',e=>{let nearest=i;const svg=host.querySelector('svg');if(e&&Number.isFinite(e.clientX)&&Number.isFinite(e.clientY)&&svg?.getScreenCTM){const at=svg.createSVGPoint();at.x=e.clientX;at.y=e.clientY;const local=at.matrixTransform(svg.getScreenCTM().inverse()),width=svg.getBoundingClientRect().width;nearest=nearestPoint(points,width,local.x,local.y);}choose(nearest);});b.addEventListener('focus',()=>choose(i));b.addEventListener('keydown',e=>{
+    buttons.forEach((b,i)=>{b.addEventListener('click',e=>{let nearest=i;const svg=host.querySelector('svg');if(e&&Number.isFinite(e.clientX)&&Number.isFinite(e.clientY)&&svg?.getScreenCTM){const at=svg.createSVGPoint();at.x=e.clientX;at.y=e.clientY;const local=at.matrixTransform(svg.getScreenCTM().inverse()),width=svg.getBoundingClientRect().width;nearest=nearestPoint(points,width,local.x,local.y);}choose(nearest);});b.addEventListener('pointermove',e=>{if(e.pointerType!=='touch')choose(i);});b.addEventListener('focus',()=>choose(i));b.addEventListener('keydown',e=>{
       if(e.key==='Enter'||e.key===' '){e.preventDefault();choose(i);return;}
       const next=keyIndex(i,e.key);if(next==null)return;e.preventDefault();choose(next);buttons[next].focus();
     });});

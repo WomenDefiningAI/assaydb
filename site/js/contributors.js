@@ -135,6 +135,11 @@
       const meta = add(item, 'p', 'Merged '), date = add(meta, 'time', row.mergedAt.slice(0, 10) + ' (UTC)'); date.dateTime = row.mergedAt;
       const author = add(item, 'p', 'PR author: ');
       if (row.author) userLink(author, row.author); else add(author, 'span', 'GitHub account unavailable');
+      const metrics = add(item, 'dl'); metrics.className = 'contribution-metrics';
+      add(metrics, 'dt', 'Accuracy · new wrong answers');
+      add(metrics, 'dd', 'Not measured against the tested main baseline.');
+      add(metrics, 'dt', 'Speed · paired suite wall time');
+      add(metrics, 'dd', 'Not measured against the same main baseline and host/configuration.');
       for (const [kind, label] of [['user', 'Other commit authors'], ['bot', 'Bot commit authors'], ['unknown', 'Other accounts with commits']]) {
         const accounts = row.authors.filter(a => a.kind === kind);
         if (!accounts.length) continue;

@@ -1,78 +1,69 @@
 # Contributing to Assay
 
-Start with [SQL coverage](docs/SQL-COVERAGE.md), [semantics](SEMANTICS-LOG.md),
+We need help with **speed** and **SQL coverage**. Verification coverage comes
+after Alpha 3. Start small: explain one slow query or a SQL behavior that needs
+better support, using data you can share.
+
+[Discuss scope and evidence with maintainers in a GitHub issue first](https://github.com/WomenDefiningAI/assaydb/issues/new).
+Then open a focused draft PR from public `main`. The repository has a
+[wrong-answer template](https://github.com/WomenDefiningAI/assaydb/issues/new?template=wrong-answer.md)
+for incorrect results; use a plain issue to propose other work.
+
+Read [SQL coverage](docs/SQL-COVERAGE.md), [semantics](SEMANTICS-LOG.md),
 [limitations](docs/WHAT-ASSAY-ISNT.md), and the [code of conduct](CODE_OF_CONDUCT.md).
-Choose a small change and explain the behavior it fixes. Discuss new SQL semantics
-or expensive benchmark work with maintainers before implementation.
+Follow the [technical contribution workflow](docs/CONTRIBUTION-WORKFLOW.md)
+for fork/branch commands, regression checks, shared-host coordination, privacy,
+and exact-source evidence review. Keep failures and unsupported cases visible;
+never change expected answers, inputs or denominators to improve a result.
 
-## Fork, check, and open a draft PR
+## Contribution validation for each PR: our process
 
-1. Fork `WomenDefiningAI/assaydb`, clone your fork, and branch from upstream main:
-   ```sh
-   git clone https://github.com/YOUR_GITHUB_LOGIN/assaydb.git
-   cd assaydb
-   git remote add upstream https://github.com/WomenDefiningAI/assaydb.git
-   git fetch upstream main
-   git switch -c contribution/short-description upstream/main
-   ```
-   Replace YOUR_GITHUB_LOGIN with your login.
-2. Make a focused change and open a draft PR early to agree on scope. For engine
-   changes, use Rust 1.90.0 and a native linker:
-   ```sh
-   python3 scripts/with_engine_activity.py rust-tests cargo test --locked --all-targets
-   python3 scripts/with_engine_activity.py clippy cargo clippy --locked --all-targets -- -D warnings
-   cargo fmt --all -- --check
-   ```
-   Add a regression for the behavior, including relevant NULLs, empty inputs,
-   duplicates, boundaries, and refusals. Documentation changes also need link, example, and privacy review; these
-   local checks do not exempt a PR from the full independent merge gate. Python changes need fresh installed-package
-   checks following [BUILDING](bindings/python/BUILDING.md).
-3. Review every proposed commit for private data, credentials, session links,
-   personal contact details, and upstream licensing. Use a GitHub noreply email
-   if you prefer to keep your personal email private.
-4. Push updates to your fork and keep the draft PR targeting main. Describe the change,
-   exact checks and outcomes, anything not run, limitations, and attribution.
+Independent validation on Test Mini includes:
 
-Do not change expected answers, benchmark inputs, queries, normalizers, or
-denominators to make a check pass. Unsupported cases remain failures. Include
-all observed failures when reporting measurements. No passing check authorizes
-a package upload or a new correctness or proof claim.
+- **SLT (SQLLogicTest):** known SQL problems and expected answers from
+  [SQLite’s suite](https://www.sqlite.org/sqllogictest/doc/trunk/about.wiki).
+- **hunt55K:** 55,000 differential queries compare results with independent
+  references. See our [public generators](testing/hunt55k) and
+  [frozen-input requirements](testing/README.md#sources).
+- **SF10 correctness:** check the 22-query analytical workload on roughly 10 GB,
+  including worker and resource cases. See [TPC-H background](https://www.tpc.org/tpch/)
+  and our [benchmark input limits](docs/BENCHMARK-INPUTS.md).
+- **SF10 timing:** repeated same-host comparisons with pinned inputs, tools and
+  settings; retain every outcome and distinguish totals from geometric means.
+  These are research measurements, not audited TPC-H results.
+- **Retail real-world tests:** original analysis, product variants and decimal
+  edge cases on real and synthetic fixtures. See the
+  [UCI Online Retail source](https://doi.org/10.24432/C5BW33) and our
+  [public SQL and documentation](testing/analysis/README.md).
 
-On a shared host, unrelated checkouts must use the same
-`ASSAY_ACTIVITY_LOCK_PATH`. Serialize builds, tests, and native measurements;
-never benchmark a busy host or take independent nested locks.
+Standard checks and acceptance-small complement those workloads. Every PR
+considered for merge needs independent full-suite evidence; missing evidence
+blocks merge, with no automatic website-only exemption. Maintainers review and
+accept the exact-source results. GitHub checks alone do not establish this gate.
+The [full testing workflow](testing/README.md) retains the technical requirements,
+input availability, no-regression rules and release limits.
 
-## Maintainer verification and current availability
+PR5 has [reviewed infrastructure evidence](site/evidence/full-suite/latest.json),
+not an Alpha 3 release qualification. PR6 remains a draft under independent
+validation. The Alpha 3 goal is 0.95× Polars for both total time and geometric
+mean on the agreed 10 GB workload; it has not been achieved by the published
+reviewed evidence. Merge, chart acceptance and package release are separate decisions.
 
-Every PR considered for merge requires independent Test Mini full SLT, frozen
-55K differential, SF10 correctness and timing, real-world original and variant
-analysis, standard checks and acceptance-small evidence. Missing inputs or runs
-block merge. There is no automatic documentation-only exemption. See
-[the full-suite setup and current blockers](testing/README.md).
+## Credit and proposed contribution metrics
 
-Open a focused draft PR, collect evidence against the exact candidate and base,
-and attach or link all results for maintainer review. Keep passed, unsupported,
-wrong, error, excluded and not-run outcomes distinct. Use fresh same-host baseline
-and candidate measurements with identical pinned tools and inputs. Changes that
-affect execution invalidate prior results. Evidence-only changes require explicit
-final-head delta review; never relabel an old result as a new run.
+The website lists merged engine and meaningful testing PRs with author, title,
+number and merge date. Website-only PRs are excluded. Credit is not certification.
 
-Public automation does not yet enforce this complete gate. The result-contract
-prototype performs structural validation; trusted collector integration and raw
-measurement review remain required. GitHub checks and merged-PR attribution alone
-are not full-suite qualification. PR #4 was merged without full SLT, 55K or SF10
-runs and remains unqualified under this requirement.
-
-For performance work, start with a small slow-query reproduction using data you
-can redistribute. Agree on the workload, baseline and timing method before an
-expensive comparison. Development benchmark datasets and proof workspaces are
-not included in this export; future formal-proof or harness work needs separately
-agreed scope and available sources.
-
-Merged-PR credit is not correctness certification or benchmark acceptance.
-Charts may change only from reviewed, accepted measurements; existing historical
-values remain until such evidence is available. Publishing a Python or Rust
-package is a separate release action, not an automatic consequence of merging.
+Pending Helen’s feedback, the proposed accuracy metric is new wrong answers
+versus the tested main baseline; the proposed speed metric is paired suite
+wall-time percentage change against that same main baseline on the same host
+and configuration. Negative percentages mean less time. Missing reviewed
+measurements display **Not measured**. Neither a ratio to Polars nor a historical
+baseline comparison establishes a PR’s change against main. Zero new wrong
+answers does not establish coverage; applicable pass counts and unsupported/error
+outcomes remain in the linked full-suite evidence. The existing
+[result contract](docs/CONTRIBUTION-RESULTS.md) remains authoritative for evidence
+structure; these proposed display metrics do not change acceptance policy.
 
 ## Wrong answers and security
 

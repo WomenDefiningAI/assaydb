@@ -1,0 +1,50 @@
+{
+  "schema": "assay-speed-journey-notes/v1",
+  "status": "sanitized-development-notes",
+  "publication_scope": "Sanitized narrative summaries from development-log research; no private raw artifacts or private repository links. These notes are not accepted benchmark evidence.",
+  "configuration_status": "Host, workers and full timing protocol for intermediate milestones await confirmation; numeric development measurements are omitted.",
+  "milestones": [
+    {
+      "id": "dense-groups",
+      "title": "Dense group IDs",
+      "lesson": "Use compact group identities to avoid repeated grouping work.",
+      "measurement_status": "not-published-pending-configuration"
+    },
+    {
+      "id": "distinct-radix",
+      "title": "COUNT DISTINCT radix",
+      "lesson": "A more suitable distinct-counting strategy reduced repeated work in a slow query.",
+      "measurement_status": "not-published-pending-configuration"
+    },
+    {
+      "id": "scan-reuse",
+      "title": "Reuse filtered scans",
+      "lesson": "Avoid scanning and filtering the same input repeatedly.",
+      "measurement_status": "not-published-pending-configuration"
+    },
+    {
+      "id": "cardinality",
+      "title": "Use actual row counts",
+      "lesson": "Optimization admission must reflect actual cardinality. Keep corrected measurements instead of choosing the first, more favorable timing.",
+      "measurement_status": "not-published-pending-configuration"
+    },
+    {
+      "id": "scan-claiming",
+      "title": "Dynamic scan claiming",
+      "lesson": "Improve how workers claim scan work; worker count alone does not guarantee useful parallelism.",
+      "measurement_status": "not-published-pending-configuration"
+    },
+    {
+      "id": "continuations",
+      "title": "Pipeline continuations",
+      "lesson": "Scheduling changes need resource ownership and cancellation checks as well as timing. A matching committed tree does not itself prove a binary rebuild comparison.",
+      "measurement_status": "not-published-pending-configuration"
+    },
+    {
+      "id": "combined",
+      "title": "Combined development attempt",
+      "lesson": "Total time and geometric mean can disagree. A provisional near-parity total from one attempt is not an accepted release result.",
+      "measurement_status": "not-published-pending-configuration"
+    }
+  ]
+}

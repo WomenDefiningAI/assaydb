@@ -80,3 +80,26 @@ and their no-JavaScript fallbacks must derive from the same versioned accepted
 data, never from PR prose or the contribution-credit list. Until that path exists
 and new measurements are accepted, retain all current historical chart JSON,
 values, machine/release context and caveats unchanged.
+
+## Proposed website display metrics (pending feedback)
+
+These display definitions do not replace the acceptance contract above. The
+contributor list is populated from merged public PR metadata; an absent reviewed
+measurement displays **Not measured**, not zero. Never mine PR prose for numbers.
+
+A future reviewed per-PR display record should carry `pr`, `candidate_commit`,
+`tested_main_commit`, `host`, `configuration`, `suite_scope`, `evidence_url`, and
+`review_status`, alongside nullable metrics:
+
+- `accuracy.new_wrong_answers`: count versus the tested main baseline. Retain
+  applicable SLT passed/total and wrong/unsupported/error counts in the evidence;
+  zero new wrong answers alone does not establish coverage.
+- `speed.paired_suite_wall_time_percent_change`: 100 × (candidate time / main
+  time − 1), using paired suite wall time on the same host and configuration.
+
+Only accepted evidence with that exact baseline/scope supports those fields.
+Leave values null when unavailable. Historical-source comparisons and
+Assay/Polars ratios are separate measurements and must not populate these fields.
+The current UI deliberately has no accepted values for these proposed metrics.
+Helen may revise the accuracy display to applicable SLT passed/total; preserve
+explicit schema/version and scope labels if that changes.
