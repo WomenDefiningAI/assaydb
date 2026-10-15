@@ -116,3 +116,45 @@ any executable change. The command performs no network, merge or deployment.
 PR #4's scoped validation is historical, incomplete full-suite evidence. Its
 merge does not qualify its source under this gate. It must receive independent
 full-suite evidence before any such qualification is claimed.
+
+## Separate candidate/controller admission adapter
+
+`candidate_boundary.py` implements read-only identity verification for a public
+candidate whose repository intentionally differs from the private controller.
+**Unvalidated on full suites.** It does not build, import candidate code, launch
+collectors, alter the installed controller or relax the original private runner.
+
+```sh
+python3 testing/candidate_boundary.py --policy PRIVATE_POLICY.json \
+  --policy-sha256 INDEPENDENT_REVIEWED_POLICY_SHA256 \
+  --candidate CLEAN_CANDIDATE_CHECKOUT --controller PINNED_CONTROLLER_CHECKOUT \
+  --inputs PRIVATE_FROZEN_INPUTS --build IMMUTABLE_BUILD_ARTIFACTS \
+  --output NEW_ADMISSION_RECEIPT.json
+```
+
+The reviewer policy has separate `candidate`, `controller`, `inputs` and `build`
+objects. `candidate` pins commit, tree and the SHA256 of every tracked file;
+a fresh source checkout must have no modified, untracked or ignored files.
+`controller` pins its own commit/tree, explicit tool directories and their exact
+complete file inventory; missing or extra files (including caches) refuse.
+These inventories are never compared to each other or merged together.
+
+`inputs` maps role names to confined relative paths and hashes, including
+`slt-scope`, `hunt-plan`, `sqlite-oracle`, `query-manifest` and `dataset-manifest`.
+`build` pins a separate protected-collector receipt, both native binary hashes,
+source/controller identities, exact command and environment digest. The versioned
+`assay-separated-build/v1` receipt must contain identical before/after source
+inventory digests, controller tool digest, a successful exit, pinned Cargo JSON
+events and binary snapshots for `assaydb` and `assaydb-session`. Both native
+artifacts must have Cargo `fresh: false`; cache-only, missing, duplicate or changed
+artifacts refuse. Paths are confined; symlinks refuse. Existing receipt schemas
+must get an explicitly reviewed conversion, not a silent reinterpretation.
+
+Policy construction and build execution belong to the protected collector, not
+the candidate. A hash proves identity, not who created the artifact. The separate
+reviewer pin must come from outside candidate-controlled inputs. Before executing
+any suite, retain admission receipts for both baseline and candidate and use the
+same controller/tool/input identities. The runtime integration must preserve
+source/build provenance, lock ownership, lifecycle, metamorphic, exclusions,
+comparison and same-host/day checks. This adapter does not make the old private
+runner accept the public checkout; that runtime integration remains unvalidated.
