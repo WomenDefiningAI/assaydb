@@ -1,0 +1,242 @@
+{
+  "schema": "assay-reviewed-pr-evidence/v1",
+  "status": "accepted",
+  "pr": 5,
+  "candidate_commit": "b5e8f49f081a52afc9a00841acd1c21f964255f6",
+  "candidate_tree": "096632f47085e395324942d1f7eb52a1af391668",
+  "base_commit": "bc576ddf610d665056c6a340f617eb0990979218",
+  "reviewed_code_head": "27b10d7b5de07137c1c941d7bf2e6d5f66b0cff7",
+  "reviewer": "owner-authorized-agent",
+  "host": "Test Mini",
+  "counts": {
+    "slt": {
+      "passed": 5937073,
+      "unsupported": 640,
+      "wrong": 0,
+      "error": 2001,
+      "not-run": 0,
+      "excluded": 1481625
+    },
+    "hunt55k": {
+      "passed": 46980,
+      "unsupported": 6975,
+      "wrong": 0,
+      "error": 1045,
+      "not-run": 0,
+      "excluded": 0
+    },
+    "sf10-correctness": {
+      "passed": 110,
+      "unsupported": 0,
+      "wrong": 0,
+      "error": 0,
+      "not-run": 0,
+      "excluded": 0
+    },
+    "sf10-timing": {
+      "passed": 44,
+      "unsupported": 0,
+      "wrong": 0,
+      "error": 0,
+      "not-run": 0,
+      "excluded": 0
+    },
+    "retail-original": {
+      "passed": 18,
+      "unsupported": 22,
+      "wrong": 0,
+      "error": 0,
+      "not-run": 0,
+      "excluded": 0
+    },
+    "retail-exact-product": {
+      "passed": 18,
+      "unsupported": 6,
+      "wrong": 0,
+      "error": 0,
+      "not-run": 0,
+      "excluded": 0
+    },
+    "standard": {
+      "passed": 9,
+      "unsupported": 0,
+      "wrong": 0,
+      "error": 0,
+      "not-run": 0,
+      "excluded": 0
+    },
+    "acceptance-small": {
+      "passed": 43,
+      "unsupported": 0,
+      "wrong": 0,
+      "error": 0,
+      "not-run": 0,
+      "excluded": 0
+    }
+  },
+  "timing": {
+    "protocol": "assay-sf10-rotated-three-five/v1",
+    "phases": {
+      "baseline-timing-w1": {
+        "polars": {
+          "total": 1.4274283492656843,
+          "geomean": 1.2555620698939607,
+          "confidence_95": {
+            "total": [
+              1.4240650473743728,
+              1.4356354956134139
+            ],
+            "geomean": [
+              1.2520961187560347,
+              1.258592522330999
+            ]
+          }
+        },
+        "duckdb": {
+          "total": 1.0778923510369167,
+          "geomean": 0.9234369017223568,
+          "confidence_95": {
+            "total": [
+              1.0749731137966982,
+              1.0839764112783044
+            ],
+            "geomean": [
+              0.9219558079084781,
+              0.9257877420027267
+            ]
+          }
+        }
+      },
+      "baseline-timing-w10": {
+        "polars": {
+          "total": 3.3912386530600616,
+          "geomean": 2.0140785165716837,
+          "confidence_95": {
+            "total": [
+              3.336225508100913,
+              3.4474644593644412
+            ],
+            "geomean": [
+              2.0009180576785224,
+              2.0303306691803136
+            ]
+          }
+        },
+        "duckdb": {
+          "total": 2.5376418196023307,
+          "geomean": 1.4800848625586869,
+          "confidence_95": {
+            "total": [
+              2.5032156413220927,
+              2.573767591037574
+            ],
+            "geomean": [
+              1.474126998390192,
+              1.4884761004977778
+            ]
+          }
+        }
+      },
+      "candidate-timing-w1": {
+        "polars": {
+          "total": 0.959531730939811,
+          "geomean": 0.9687176045625885,
+          "confidence_95": {
+            "total": [
+              0.9583393778812502,
+              0.9601270656145388
+            ],
+            "geomean": [
+              0.9653616027358084,
+              0.9698632623909779
+            ]
+          }
+        },
+        "duckdb": {
+          "total": 0.7248093739649365,
+          "geomean": 0.7126211308988276,
+          "confidence_95": {
+            "total": [
+              0.7241545619896891,
+              0.7253661207302123
+            ],
+            "geomean": [
+              0.7119586537683363,
+              0.7132172994536546
+            ]
+          }
+        }
+      },
+      "candidate-timing-w10": {
+        "polars": {
+          "total": 1.0532584728638135,
+          "geomean": 1.1181235619887582,
+          "confidence_95": {
+            "total": [
+              1.0502353685989716,
+              1.0579180407977413
+            ],
+            "geomean": [
+              1.1140568556920176,
+              1.1223362023284058
+            ]
+          }
+        },
+        "duckdb": {
+          "total": 0.7908346185524543,
+          "geomean": 0.8241176728106074,
+          "confidence_95": {
+            "total": [
+              0.7883603578815456,
+              0.7940261154180219
+            ],
+            "geomean": [
+              0.8210694398781635,
+              0.8266774886199694
+            ]
+          }
+        }
+      }
+    },
+    "ratio_direction": "assaydb/reference",
+    "rounds": 3,
+    "timed_samples_per_query_per_round": 5,
+    "warmups_per_query_per_round": 1,
+    "performance_qualified": false
+  },
+  "bundle_sha256": "3f0c6ab40cd6509514183c59175af486ec4c4c37af0f40dc3967442a3af2b7ea",
+  "policy_sha256": "961b56cb0ed28bd572e397354fadc992eb98310ffdf055945c71e144a02d315c",
+  "acceptance_policy": "infrastructure-no-regression/v1",
+  "nonpass_categories": {
+    "slt": {
+      "engine-unsupported": 640,
+      "engine-error": 2001
+    },
+    "hunt55k": {
+      "native-unsupported": 6975,
+      "native-error": 1020,
+      "oracle-error": 25
+    },
+    "sf10-correctness": {},
+    "sf10-timing": {},
+    "retail-original": {
+      "unsupported": 22
+    },
+    "retail-exact-product": {
+      "unsupported": 6
+    },
+    "standard": {},
+    "acceptance-small": {}
+  },
+  "comparison_modes": {
+    "slt": "native-baseline",
+    "hunt55k": "native-baseline",
+    "sf10-correctness": "native-baseline",
+    "sf10-timing": "native-baseline",
+    "retail-original": "native-baseline",
+    "retail-exact-product": "native-baseline",
+    "standard": "candidate-checks",
+    "acceptance-small": "native-baseline"
+  },
+  "release_qualified": false
+}
