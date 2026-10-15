@@ -1,0 +1,3654 @@
+{
+  "duckdb_version": "1.5.6",
+  "sqlite_version": "3.51.0 2025-06-12 13:14:41 f0ca7bba1c5e232e5d279fad6338121ab55af0c8c68c84cdfb18ba5114dcaapl (64-bit)",
+  "setup_sha256": "4d6a326e834dcb5992812fba4fa032a8481cd48d4485992285e0aae5f0c61c75",
+  "setup_sql": "CREATE TABLE wr(id INTEGER, region TEXT, product TEXT, sales INTEGER, month INTEGER);\nINSERT INTO wr VALUES (1,'east','apple',10,1),(2,'east','pear',20,1),(3,'east','pear',20,2),(4,'west','apple',30,1),(5,'west','plum',30,1),(6,'west','pear',NULL,2),(7,NULL,'apple',5,1),(8,NULL,'pear',5,2),(9,'east',NULL,NULL,2),(10,'west','fig',7,2),(11,'east','fig',10,1),(12,NULL,NULL,NULL,2);\nCREATE TABLE empty_wr(id INTEGER, region TEXT, sales INTEGER);\nCREATE TABLE typed_wr(id INTEGER, amount DECIMAL(20,2), day DATE, text_key TEXT, real_key REAL, flag BOOLEAN);\nINSERT INTO typed_wr VALUES (1,90071992547409.92,DATE '2024-01-01','a',0.5,TRUE),(2,90071992547409.93,DATE '2024-01-02','b',0.5,FALSE),(3,90071992547409.92,DATE '2024-01-01','a',-0.5,TRUE),(4,NULL,NULL,NULL,NULL,NULL),(5,-1.25,DATE '2023-12-31','é',1.25,FALSE);\n",
+  "cases_sha256": "dab87a11f935a54e1b5a05246a8b1799a99136203194f958e94096e49b083906",
+  "row_number_policy": "Every reference ROW_NUMBER has a unique ORDER BY; canonical peer order is checked independently in Rust.",
+  "float_policy": "Finite and signed-zero keys match SQL numeric equality. NaN payload distinctions follow existing Assay GROUP BY; see README.md and native Parquet boundary tests.",
+  "disagreements": [],
+  "cases": [
+    {
+      "id": "w001",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, ROW_NUMBER() OVER (ORDER BY sales ASC NULLS LAST, id) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          6
+        ],
+        [
+          3,
+          7
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          5,
+          9
+        ],
+        [
+          6,
+          10
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          9,
+          11
+        ],
+        [
+          10,
+          3
+        ],
+        [
+          11,
+          5
+        ],
+        [
+          12,
+          12
+        ]
+      ]
+    },
+    {
+      "id": "w002",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, ROW_NUMBER() OVER (ORDER BY sales DESC NULLS FIRST, id) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          8
+        ],
+        [
+          2,
+          6
+        ],
+        [
+          3,
+          7
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          11
+        ],
+        [
+          8,
+          12
+        ],
+        [
+          9,
+          2
+        ],
+        [
+          10,
+          10
+        ],
+        [
+          11,
+          9
+        ],
+        [
+          12,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "w003",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, ROW_NUMBER() OVER (ORDER BY product ASC NULLS LAST, sales DESC NULLS LAST, id) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          6
+        ],
+        [
+          3,
+          7
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          10
+        ],
+        [
+          6,
+          9
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          8,
+          8
+        ],
+        [
+          9,
+          11
+        ],
+        [
+          10,
+          5
+        ],
+        [
+          11,
+          4
+        ],
+        [
+          12,
+          12
+        ]
+      ]
+    },
+    {
+      "id": "w004",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, ROW_NUMBER() OVER (PARTITION BY region ORDER BY sales ASC NULLS LAST, id) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          9,
+          5
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "w005",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, ROW_NUMBER() OVER (PARTITION BY region ORDER BY sales DESC NULLS FIRST, id) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          2
+        ],
+        [
+          8,
+          3
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          4
+        ],
+        [
+          11,
+          5
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w006",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, ROW_NUMBER() OVER (PARTITION BY region ORDER BY product ASC NULLS LAST, sales DESC NULLS LAST, id) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          9,
+          5
+        ],
+        [
+          10,
+          2
+        ],
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "w007",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, ROW_NUMBER() OVER (PARTITION BY month, region ORDER BY sales ASC NULLS LAST, id) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          6,
+          2
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          2
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "w008",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, ROW_NUMBER() OVER (PARTITION BY month, region ORDER BY sales DESC NULLS FIRST, id) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          2
+        ],
+        [
+          11,
+          3
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w009",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, ROW_NUMBER() OVER (PARTITION BY month, region ORDER BY product ASC NULLS LAST, sales DESC NULLS LAST, id) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          6,
+          2
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          2
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "w010",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, RANK() OVER (ORDER BY sales ASC NULLS LAST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          6
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          5,
+          8
+        ],
+        [
+          6,
+          10
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          10
+        ],
+        [
+          10,
+          3
+        ],
+        [
+          11,
+          4
+        ],
+        [
+          12,
+          10
+        ]
+      ]
+    },
+    {
+      "id": "w011",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, RANK() OVER (ORDER BY sales DESC NULLS FIRST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          8
+        ],
+        [
+          2,
+          6
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          11
+        ],
+        [
+          8,
+          11
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          10
+        ],
+        [
+          11,
+          8
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w012",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, RANK() OVER (ORDER BY product ASC NULLS LAST, sales DESC NULLS LAST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          6
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          10
+        ],
+        [
+          6,
+          9
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          8,
+          8
+        ],
+        [
+          9,
+          11
+        ],
+        [
+          10,
+          5
+        ],
+        [
+          11,
+          4
+        ],
+        [
+          12,
+          11
+        ]
+      ]
+    },
+    {
+      "id": "w013",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, RANK() OVER (PARTITION BY region ORDER BY sales ASC NULLS LAST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          5
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          12,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "w014",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, RANK() OVER (PARTITION BY region ORDER BY sales DESC NULLS FIRST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          2
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          4
+        ],
+        [
+          11,
+          4
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w015",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, RANK() OVER (PARTITION BY region ORDER BY product ASC NULLS LAST, sales DESC NULLS LAST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          9,
+          5
+        ],
+        [
+          10,
+          2
+        ],
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "w016",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, RANK() OVER (PARTITION BY month, region ORDER BY sales ASC NULLS LAST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          2
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          2
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          12,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "w017",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, RANK() OVER (PARTITION BY month, region ORDER BY sales DESC NULLS FIRST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          2
+        ],
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w018",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, RANK() OVER (PARTITION BY month, region ORDER BY product ASC NULLS LAST, sales DESC NULLS LAST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          6,
+          2
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          2
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "w019",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, DENSE_RANK() OVER (ORDER BY sales ASC NULLS LAST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          6,
+          6
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          6
+        ],
+        [
+          10,
+          2
+        ],
+        [
+          11,
+          3
+        ],
+        [
+          12,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "w020",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, DENSE_RANK() OVER (ORDER BY sales DESC NULLS FIRST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          6
+        ],
+        [
+          8,
+          6
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          5
+        ],
+        [
+          11,
+          4
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w021",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, DENSE_RANK() OVER (ORDER BY product ASC NULLS LAST, sales DESC NULLS LAST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          6
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          9
+        ],
+        [
+          6,
+          8
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          8,
+          7
+        ],
+        [
+          9,
+          10
+        ],
+        [
+          10,
+          5
+        ],
+        [
+          11,
+          4
+        ],
+        [
+          12,
+          10
+        ]
+      ]
+    },
+    {
+      "id": "w022",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, DENSE_RANK() OVER (PARTITION BY region ORDER BY sales ASC NULLS LAST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          3
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          12,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "w023",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, DENSE_RANK() OVER (PARTITION BY region ORDER BY sales DESC NULLS FIRST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          2
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          3
+        ],
+        [
+          11,
+          3
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w024",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, DENSE_RANK() OVER (PARTITION BY region ORDER BY product ASC NULLS LAST, sales DESC NULLS LAST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          9,
+          4
+        ],
+        [
+          10,
+          2
+        ],
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "w025",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, DENSE_RANK() OVER (PARTITION BY month, region ORDER BY sales ASC NULLS LAST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          2
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          2
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          12,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "w026",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, DENSE_RANK() OVER (PARTITION BY month, region ORDER BY sales DESC NULLS FIRST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          2
+        ],
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w027",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, DENSE_RANK() OVER (PARTITION BY month, region ORDER BY product ASC NULLS LAST, sales DESC NULLS LAST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          6,
+          2
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          2
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "w028",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, RANK() OVER () AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w029",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, RANK() OVER (PARTITION BY region) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w030",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, RANK() OVER (PARTITION BY month, region) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w031",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, DENSE_RANK() OVER () AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w032",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, DENSE_RANK() OVER (PARTITION BY region) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w033",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id, DENSE_RANK() OVER (PARTITION BY month, region) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w034",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,ROW_NUMBER() OVER (PARTITION BY region ORDER BY sales NULLS LAST,id) AS r FROM empty_wr ORDER BY id;",
+      "rows": []
+    },
+    {
+      "id": "w035",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,ROW_NUMBER() OVER (PARTITION BY id ORDER BY sales NULLS LAST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w036",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,ROW_NUMBER() OVER (ORDER BY month NULLS LAST,id)+10 AS r FROM wr ORDER BY r;",
+      "rows": [
+        [
+          1,
+          11
+        ],
+        [
+          2,
+          12
+        ],
+        [
+          4,
+          13
+        ],
+        [
+          5,
+          14
+        ],
+        [
+          7,
+          15
+        ],
+        [
+          11,
+          16
+        ],
+        [
+          3,
+          17
+        ],
+        [
+          6,
+          18
+        ],
+        [
+          8,
+          19
+        ],
+        [
+          9,
+          20
+        ],
+        [
+          10,
+          21
+        ],
+        [
+          12,
+          22
+        ]
+      ]
+    },
+    {
+      "id": "w037",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,ROW_NUMBER() OVER (PARTITION BY region ORDER BY sales NULLS LAST,id) AS r FROM wr WHERE id=2 ORDER BY id;",
+      "rows": [
+        [
+          2,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w038",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,ROW_NUMBER() OVER (ORDER BY sales NULLS LAST,id) AS r FROM wr ORDER BY r DESC LIMIT 4;",
+      "rows": [
+        [
+          12,
+          12
+        ],
+        [
+          9,
+          11
+        ],
+        [
+          6,
+          10
+        ],
+        [
+          5,
+          9
+        ]
+      ]
+    },
+    {
+      "id": "w039",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,RANK() OVER (PARTITION BY region ORDER BY sales NULLS LAST,id) AS r FROM empty_wr ORDER BY id;",
+      "rows": []
+    },
+    {
+      "id": "w040",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,RANK() OVER (PARTITION BY id ORDER BY sales NULLS LAST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w041",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,RANK() OVER (ORDER BY month NULLS LAST,id)+10 AS r FROM wr ORDER BY r;",
+      "rows": [
+        [
+          1,
+          11
+        ],
+        [
+          2,
+          12
+        ],
+        [
+          4,
+          13
+        ],
+        [
+          5,
+          14
+        ],
+        [
+          7,
+          15
+        ],
+        [
+          11,
+          16
+        ],
+        [
+          3,
+          17
+        ],
+        [
+          6,
+          18
+        ],
+        [
+          8,
+          19
+        ],
+        [
+          9,
+          20
+        ],
+        [
+          10,
+          21
+        ],
+        [
+          12,
+          22
+        ]
+      ]
+    },
+    {
+      "id": "w042",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,RANK() OVER (PARTITION BY region ORDER BY sales NULLS LAST,id) AS r FROM wr WHERE id=2 ORDER BY id;",
+      "rows": [
+        [
+          2,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w043",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,RANK() OVER (ORDER BY sales NULLS LAST,id) AS r FROM wr ORDER BY r DESC LIMIT 4;",
+      "rows": [
+        [
+          12,
+          12
+        ],
+        [
+          9,
+          11
+        ],
+        [
+          6,
+          10
+        ],
+        [
+          5,
+          9
+        ]
+      ]
+    },
+    {
+      "id": "w044",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,DENSE_RANK() OVER (PARTITION BY region ORDER BY sales NULLS LAST,id) AS r FROM empty_wr ORDER BY id;",
+      "rows": []
+    },
+    {
+      "id": "w045",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,DENSE_RANK() OVER (PARTITION BY id ORDER BY sales NULLS LAST) AS r FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          12,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w046",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,DENSE_RANK() OVER (ORDER BY month NULLS LAST,id)+10 AS r FROM wr ORDER BY r;",
+      "rows": [
+        [
+          1,
+          11
+        ],
+        [
+          2,
+          12
+        ],
+        [
+          4,
+          13
+        ],
+        [
+          5,
+          14
+        ],
+        [
+          7,
+          15
+        ],
+        [
+          11,
+          16
+        ],
+        [
+          3,
+          17
+        ],
+        [
+          6,
+          18
+        ],
+        [
+          8,
+          19
+        ],
+        [
+          9,
+          20
+        ],
+        [
+          10,
+          21
+        ],
+        [
+          12,
+          22
+        ]
+      ]
+    },
+    {
+      "id": "w047",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,DENSE_RANK() OVER (PARTITION BY region ORDER BY sales NULLS LAST,id) AS r FROM wr WHERE id=2 ORDER BY id;",
+      "rows": [
+        [
+          2,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w048",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,DENSE_RANK() OVER (ORDER BY sales NULLS LAST,id) AS r FROM wr ORDER BY r DESC LIMIT 4;",
+      "rows": [
+        [
+          12,
+          12
+        ],
+        [
+          9,
+          11
+        ],
+        [
+          6,
+          10
+        ],
+        [
+          5,
+          9
+        ]
+      ]
+    },
+    {
+      "id": "w049",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,RANK() OVER (ORDER BY amount NULLS LAST) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          5,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w050",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,RANK() OVER (PARTITION BY amount ORDER BY id) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w051",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,RANK() OVER (ORDER BY day NULLS LAST) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          5,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w052",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,RANK() OVER (PARTITION BY day ORDER BY id) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w053",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,RANK() OVER (ORDER BY text_key NULLS LAST) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          5,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "w054",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,RANK() OVER (PARTITION BY text_key ORDER BY id) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w055",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,RANK() OVER (ORDER BY real_key NULLS LAST) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          5,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "w056",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,RANK() OVER (PARTITION BY real_key ORDER BY id) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w057",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,RANK() OVER (ORDER BY flag NULLS LAST) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          5,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w058",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,RANK() OVER (PARTITION BY flag ORDER BY id) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "w059",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,DENSE_RANK() OVER (ORDER BY amount NULLS LAST) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          5,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w060",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,DENSE_RANK() OVER (PARTITION BY amount ORDER BY id) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w061",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,DENSE_RANK() OVER (ORDER BY day NULLS LAST) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          5,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w062",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,DENSE_RANK() OVER (PARTITION BY day ORDER BY id) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w063",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,DENSE_RANK() OVER (ORDER BY text_key NULLS LAST) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          5,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "w064",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,DENSE_RANK() OVER (PARTITION BY text_key ORDER BY id) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w065",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,DENSE_RANK() OVER (ORDER BY real_key NULLS LAST) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          5,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "w066",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,DENSE_RANK() OVER (PARTITION BY real_key ORDER BY id) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w067",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,DENSE_RANK() OVER (ORDER BY flag NULLS LAST) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          5,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w068",
+      "ordered": true,
+      "sqlite": false,
+      "sql": "SELECT id,DENSE_RANK() OVER (PARTITION BY flag ORDER BY id) AS r FROM typed_wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "w069",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT region,product,SUM(sales) AS revenue,DENSE_RANK() OVER (PARTITION BY region ORDER BY SUM(sales) DESC NULLS LAST) AS r FROM wr GROUP BY region,product ORDER BY region NULLS LAST,product NULLS LAST;",
+      "rows": [
+        [
+          "east",
+          "apple",
+          10,
+          2
+        ],
+        [
+          "east",
+          "fig",
+          10,
+          2
+        ],
+        [
+          "east",
+          "pear",
+          40,
+          1
+        ],
+        [
+          "east",
+          null,
+          null,
+          3
+        ],
+        [
+          "west",
+          "apple",
+          30,
+          1
+        ],
+        [
+          "west",
+          "fig",
+          7,
+          2
+        ],
+        [
+          "west",
+          "pear",
+          null,
+          3
+        ],
+        [
+          "west",
+          "plum",
+          30,
+          1
+        ],
+        [
+          null,
+          "apple",
+          5,
+          1
+        ],
+        [
+          null,
+          "pear",
+          5,
+          1
+        ],
+        [
+          null,
+          null,
+          null,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "w070",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT region,product,revenue,r FROM (SELECT region,product,SUM(sales) AS revenue,DENSE_RANK() OVER (PARTITION BY region ORDER BY SUM(sales) DESC NULLS LAST) AS r FROM wr GROUP BY region,product) q WHERE r<=3 ORDER BY region NULLS LAST,r,product NULLS LAST;",
+      "rows": [
+        [
+          "east",
+          "pear",
+          40,
+          1
+        ],
+        [
+          "east",
+          "apple",
+          10,
+          2
+        ],
+        [
+          "east",
+          "fig",
+          10,
+          2
+        ],
+        [
+          "east",
+          null,
+          null,
+          3
+        ],
+        [
+          "west",
+          "apple",
+          30,
+          1
+        ],
+        [
+          "west",
+          "plum",
+          30,
+          1
+        ],
+        [
+          "west",
+          "fig",
+          7,
+          2
+        ],
+        [
+          "west",
+          "pear",
+          null,
+          3
+        ],
+        [
+          null,
+          "apple",
+          5,
+          1
+        ],
+        [
+          null,
+          "pear",
+          5,
+          1
+        ],
+        [
+          null,
+          null,
+          null,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "w071",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT month,product,SUM(sales) AS spend,RANK() OVER (PARTITION BY month ORDER BY SUM(sales) DESC NULLS LAST) AS r FROM wr GROUP BY month,product ORDER BY month,r,product NULLS LAST;",
+      "rows": [
+        [
+          1,
+          "apple",
+          45,
+          1
+        ],
+        [
+          1,
+          "plum",
+          30,
+          2
+        ],
+        [
+          1,
+          "pear",
+          20,
+          3
+        ],
+        [
+          1,
+          "fig",
+          10,
+          4
+        ],
+        [
+          2,
+          "pear",
+          25,
+          1
+        ],
+        [
+          2,
+          "fig",
+          7,
+          2
+        ],
+        [
+          2,
+          null,
+          null,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "w072",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT region,SUM(sales) AS total,DENSE_RANK() OVER (ORDER BY SUM(sales) DESC NULLS LAST) AS r FROM wr GROUP BY region HAVING SUM(sales)>20 ORDER BY r,region NULLS LAST;",
+      "rows": [
+        [
+          "west",
+          67,
+          1
+        ],
+        [
+          "east",
+          60,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "w073",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id FROM wr ORDER BY DENSE_RANK() OVER (PARTITION BY region ORDER BY sales DESC NULLS LAST), id LIMIT 7;",
+      "rows": [
+        [
+          2
+        ],
+        [
+          3
+        ],
+        [
+          4
+        ],
+        [
+          5
+        ],
+        [
+          7
+        ],
+        [
+          8
+        ],
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "id": "w074",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id FROM wr ORDER BY ROW_NUMBER() OVER (ORDER BY sales DESC NULLS LAST,id)+10;",
+      "rows": [
+        [
+          4
+        ],
+        [
+          5
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ],
+        [
+          1
+        ],
+        [
+          11
+        ],
+        [
+          10
+        ],
+        [
+          7
+        ],
+        [
+          8
+        ],
+        [
+          6
+        ],
+        [
+          9
+        ],
+        [
+          12
+        ]
+      ]
+    },
+    {
+      "id": "w075",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT DISTINCT DENSE_RANK() OVER (PARTITION BY region ORDER BY sales NULLS LAST) AS r FROM wr ORDER BY r;",
+      "rows": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ]
+      ]
+    },
+    {
+      "id": "w076",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,ROW_NUMBER() OVER (ORDER BY id) AS a,RANK() OVER (PARTITION BY region ORDER BY sales DESC NULLS LAST) AS b,DENSE_RANK() OVER (ORDER BY month NULLS LAST) AS c FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          1,
+          3,
+          1
+        ],
+        [
+          2,
+          2,
+          1,
+          1
+        ],
+        [
+          3,
+          3,
+          1,
+          2
+        ],
+        [
+          4,
+          4,
+          1,
+          1
+        ],
+        [
+          5,
+          5,
+          1,
+          1
+        ],
+        [
+          6,
+          6,
+          4,
+          2
+        ],
+        [
+          7,
+          7,
+          1,
+          1
+        ],
+        [
+          8,
+          8,
+          1,
+          2
+        ],
+        [
+          9,
+          9,
+          5,
+          2
+        ],
+        [
+          10,
+          10,
+          3,
+          2
+        ],
+        [
+          11,
+          11,
+          3,
+          1
+        ],
+        [
+          12,
+          12,
+          3,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "w077",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,CASE WHEN DENSE_RANK() OVER (ORDER BY sales NULLS LAST)<=2 THEN 1 ELSE 0 END AS top_flag FROM wr ORDER BY id;",
+      "rows": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          0
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          0
+        ],
+        [
+          12,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "w078",
+      "ordered": true,
+      "sqlite": true,
+      "sql": "SELECT id,r FROM (SELECT id,ROW_NUMBER() OVER (PARTITION BY region ORDER BY sales DESC NULLS LAST,id) AS r FROM wr) q WHERE r<=2 ORDER BY id;",
+      "rows": [
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "w079",
+      "ordered": false,
+      "sqlite": true,
+      "sql": "SELECT id,RANK() OVER (PARTITION BY region ORDER BY sales NULLS LAST) AS r FROM wr;",
+      "rows": [
+        [
+          10,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          12,
+          3
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          11,
+          1
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          9,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "w080",
+      "ordered": false,
+      "sqlite": true,
+      "sql": "SELECT id,DENSE_RANK() OVER (ORDER BY sales NULLS LAST) AS r FROM wr;",
+      "rows": [
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          10,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          11,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          6,
+          6
+        ],
+        [
+          9,
+          6
+        ],
+        [
+          12,
+          6
+        ]
+      ]
+    }
+  ],
+  "nan_boundary": {
+    "sql": "SELECT id, RANK() OVER (ORDER BY f NULLS LAST) AS r, DENSE_RANK() OVER (ORDER BY f NULLS LAST) AS d, ROW_NUMBER() OVER (PARTITION BY f ORDER BY id) AS n FROM wr_float_boundary ORDER BY id",
+    "input_float_bits": [
+      "8000000000000000",
+      "0000000000000000",
+      "8000000000000000",
+      "7ff8000000000001",
+      "7ff8000000000001",
+      "7ff8000000000002",
+      null,
+      "3fe0000000000000"
+    ],
+    "duckdb_rows": [
+      [
+        0,
+        1,
+        1,
+        1
+      ],
+      [
+        1,
+        1,
+        1,
+        2
+      ],
+      [
+        2,
+        1,
+        1,
+        3
+      ],
+      [
+        3,
+        5,
+        3,
+        1
+      ],
+      [
+        4,
+        5,
+        3,
+        2
+      ],
+      [
+        5,
+        5,
+        3,
+        3
+      ],
+      [
+        6,
+        8,
+        4,
+        1
+      ],
+      [
+        7,
+        4,
+        2,
+        1
+      ]
+    ],
+    "assay_grouping_policy_rows": [
+      [
+        0,
+        1,
+        1,
+        1
+      ],
+      [
+        1,
+        1,
+        1,
+        2
+      ],
+      [
+        2,
+        1,
+        1,
+        3
+      ],
+      [
+        3,
+        5,
+        3,
+        1
+      ],
+      [
+        4,
+        5,
+        3,
+        2
+      ],
+      [
+        5,
+        7,
+        4,
+        1
+      ],
+      [
+        6,
+        8,
+        5,
+        1
+      ],
+      [
+        7,
+        4,
+        2,
+        1
+      ]
+    ],
+    "matches_duckdb": false,
+    "reason": "Existing Assay GROUP BY preserves NaN payloads; window keys deliberately retain that equality contract. This explicitly reported difference is outside the 80 shared-domain goldens.",
+    "sqlite": "NaN payloads are not representable by the SQLite SQL fixture interface."
+  },
+  "finite_zero_boundary": {
+    "sql": "SELECT id, RANK() OVER (ORDER BY f NULLS LAST) AS r, DENSE_RANK() OVER (ORDER BY f NULLS LAST) AS d, ROW_NUMBER() OVER (PARTITION BY f ORDER BY id) AS n FROM wr_finite_boundary ORDER BY id",
+    "duckdb_rows": [
+      [
+        0,
+        1,
+        1,
+        1
+      ],
+      [
+        1,
+        1,
+        1,
+        2
+      ],
+      [
+        2,
+        1,
+        1,
+        3
+      ],
+      [
+        6,
+        5,
+        3,
+        1
+      ],
+      [
+        7,
+        4,
+        2,
+        1
+      ]
+    ],
+    "sqlite_rows": [
+      [
+        0,
+        1,
+        1,
+        1
+      ],
+      [
+        1,
+        1,
+        1,
+        2
+      ],
+      [
+        2,
+        1,
+        1,
+        3
+      ],
+      [
+        6,
+        5,
+        3,
+        1
+      ],
+      [
+        7,
+        4,
+        2,
+        1
+      ]
+    ]
+  }
+}

@@ -1,0 +1,1703 @@
+{
+  "schema": "assay-engine-export-manifest/v1",
+  "source_commit": "76e816727c249c285223635f7b7f75cf7154c901",
+  "source_tree": "22abe151f6b6639976fcf437882c5ca447ca016f",
+  "public_base": "d86aa0dd769041c23d64bfc760f7b31cc07f3af7",
+  "scope": "Complete implementation delta except this self-describing manifest; unchanged public files retained from base. Evidence-only follow-up identified separately.",
+  "files": [
+    {
+      "path": "Cargo.lock",
+      "bytes": 28428,
+      "sha256": "0a0f286e206a7c31c4f908adba84ab850cc8d3d3fe8fc5aaa7c86619a28f737e",
+      "source_sha256": "0a0f286e206a7c31c4f908adba84ab850cc8d3d3fe8fc5aaa7c86619a28f737e",
+      "source_identical": true
+    },
+    {
+      "path": "Cargo.toml",
+      "bytes": 1958,
+      "sha256": "5f686de67d1d3f292ec1b3c2853cf0e3709dc58c691ee1a7de569f0f66964e1f",
+      "source_sha256": "109b58d721aa3f0c4b84fa73e2b5e30d4cf12778662185495c4dabc07589be5f",
+      "source_identical": false
+    },
+    {
+      "path": "SEMANTICS-LOG.md",
+      "bytes": 9186,
+      "sha256": "7cc8c680fc2a398d145ded7492a84fbea0ac9a01cfe2df100e93abaa74e15ea3",
+      "source_sha256": "d1407443b20e87d1be22e00642c769aee6c79fc98b31129a517e3e9e335161ea",
+      "source_identical": false
+    },
+    {
+      "path": "THIRD-PARTY-NOTICES",
+      "bytes": 2015,
+      "sha256": "20228cee50d8f26627bf3280bbae5d1a384402b48cfa6d4bb8a7198bf0f069da",
+      "source_sha256": "7e19d94cd6d98aea145c9534cda9913d0671605295dcc4003ef3630e3b013f76",
+      "source_identical": false
+    },
+    {
+      "path": "docs/CONTRIBUTION-RESULTS.md",
+      "bytes": 5304,
+      "sha256": "acc56c77791092cf1bd7af19218753918c76837482c97eafd5c9419716a490ef",
+      "source_sha256": null,
+      "source_identical": false
+    },
+    {
+      "path": "docs/ENGINE-SNAPSHOT-QUALIFICATION.md",
+      "bytes": 5978,
+      "sha256": "0de2de6f2f1fc45341e6b863da2a90178d918c648d6a9de7677764968fc75d9c",
+      "source_sha256": null,
+      "source_identical": false
+    },
+    {
+      "path": "docs/SQL-COVERAGE.md",
+      "bytes": 7351,
+      "sha256": "c5c3bd51a2d5326bb12365f2581adbe6bb0bba42820940b817e328d63f3ba46e",
+      "source_sha256": "acb2021edbdee15de6608ff0474bc2ca421d110ae4c1267939e79b4260e7e44c",
+      "source_identical": false
+    },
+    {
+      "path": "scripts/window_ranking_reference.py",
+      "bytes": 5750,
+      "sha256": "8e36c22aba6bb9ccf1e8efacd5dd39a4a1a49dd610d553ff7c226be08a405823",
+      "source_sha256": null,
+      "source_identical": false
+    },
+    {
+      "path": "site/contribute.html",
+      "bytes": 12851,
+      "sha256": "9259076f89a1f5c566758bde988acc86c50698dd17fd8217219a5a9c59c11ad8",
+      "source_sha256": null,
+      "source_identical": false
+    },
+    {
+      "path": "src/bind.rs",
+      "bytes": 39135,
+      "sha256": "66c2c7b6fd77db427dba044c1cc4fdbe5cf16fd1eff9bd09ce9ef936ee4cf2ff",
+      "source_sha256": "66c2c7b6fd77db427dba044c1cc4fdbe5cf16fd1eff9bd09ce9ef936ee4cf2ff",
+      "source_identical": true
+    },
+    {
+      "path": "src/bind/branch_types.rs",
+      "bytes": 4910,
+      "sha256": "a22358d2e7c8c00e9ce0c4bcfe1fedf28d0b2433dcd852afeb44c583271beabd",
+      "source_sha256": "a22358d2e7c8c00e9ce0c4bcfe1fedf28d0b2433dcd852afeb44c583271beabd",
+      "source_identical": true
+    },
+    {
+      "path": "src/cte.rs",
+      "bytes": 7621,
+      "sha256": "2fb3d47db3a877b9a6ff0c3bafda780c13ef09eba6149dea7c29dfffdf9b39d7",
+      "source_sha256": "2fb3d47db3a877b9a6ff0c3bafda780c13ef09eba6149dea7c29dfffdf9b39d7",
+      "source_identical": true
+    },
+    {
+      "path": "src/execute/aggregation.rs",
+      "bytes": 63003,
+      "sha256": "41b9e1c1895c7bfcfc0e184f62797a05e5809181d0b09e564eaa81cf49df1e1a",
+      "source_sha256": "41b9e1c1895c7bfcfc0e184f62797a05e5809181d0b09e564eaa81cf49df1e1a",
+      "source_identical": true
+    },
+    {
+      "path": "src/execute/aggregation/kernel_tests.rs",
+      "bytes": 16616,
+      "sha256": "d6bb60e39cc31d1dda40dbb178d5f637d0d137476604774067ed347bedf3b3da",
+      "source_sha256": "d6bb60e39cc31d1dda40dbb178d5f637d0d137476604774067ed347bedf3b3da",
+      "source_identical": true
+    },
+    {
+      "path": "src/execute/aggregation/narrow.rs",
+      "bytes": 6055,
+      "sha256": "3d866cceca9a5caa18078b643f8a4ad889eb7bff5b1bb4f3a8cfd866ec832208",
+      "source_sha256": "3d866cceca9a5caa18078b643f8a4ad889eb7bff5b1bb4f3a8cfd866ec832208",
+      "source_identical": true
+    },
+    {
+      "path": "src/execute/aggregation/ordered_source/tests.rs",
+      "bytes": 13363,
+      "sha256": "61655b3d6eeef19c5739dbee5c3d1d63c76e49e2ca2dbd8ccb8bb1541d4391f2",
+      "source_sha256": "61655b3d6eeef19c5739dbee5c3d1d63c76e49e2ca2dbd8ccb8bb1541d4391f2",
+      "source_identical": true
+    },
+    {
+      "path": "src/execute/aggregation/small_text.rs",
+      "bytes": 1514,
+      "sha256": "8020fbc75970307388669c1581bc3bd30e6f15e02b1df03a1c4639a58b7b1d44",
+      "source_sha256": "8020fbc75970307388669c1581bc3bd30e6f15e02b1df03a1c4639a58b7b1d44",
+      "source_identical": true
+    },
+    {
+      "path": "src/expr.rs",
+      "bytes": 89008,
+      "sha256": "4a11db2ebf277200bf42409d1c05a5870cb641a119988bb316da1c5efd191ea5",
+      "source_sha256": "4a11db2ebf277200bf42409d1c05a5870cb641a119988bb316da1c5efd191ea5",
+      "source_identical": true
+    },
+    {
+      "path": "src/expr/casts.rs",
+      "bytes": 9996,
+      "sha256": "77a560ec84a5ec2df5adba37169f6e870b3ac36d7a1d13b942833180f9eaafcb",
+      "source_sha256": "77a560ec84a5ec2df5adba37169f6e870b3ac36d7a1d13b942833180f9eaafcb",
+      "source_identical": true
+    },
+    {
+      "path": "src/expr_program.rs",
+      "bytes": 17314,
+      "sha256": "254df5be1649610f94ea3c189bedded81bc02dd2a90c670292138b5c37817eb7",
+      "source_sha256": "254df5be1649610f94ea3c189bedded81bc02dd2a90c670292138b5c37817eb7",
+      "source_identical": true
+    },
+    {
+      "path": "src/join_index.rs",
+      "bytes": 36117,
+      "sha256": "d292519040dea4ac6f53bf260876fef972b7b31c8730c7282367c9947a1ed607",
+      "source_sha256": "d292519040dea4ac6f53bf260876fef972b7b31c8730c7282367c9947a1ed607",
+      "source_identical": true
+    },
+    {
+      "path": "src/join_index/owned.rs",
+      "bytes": 49671,
+      "sha256": "3e2b46ac6e5daad9e8427af8793b1c372ecdf58754c4de694de9526025525126",
+      "source_sha256": "3e2b46ac6e5daad9e8427af8793b1c372ecdf58754c4de694de9526025525126",
+      "source_identical": true
+    },
+    {
+      "path": "src/join_index/prepare.rs",
+      "bytes": 58638,
+      "sha256": "d2b5348228fb8e5b16f7dc7958c73a7231b4eaa7cf8620b829c85488a26964b1",
+      "source_sha256": "d2b5348228fb8e5b16f7dc7958c73a7231b4eaa7cf8620b829c85488a26964b1",
+      "source_identical": true
+    },
+    {
+      "path": "src/keys.rs",
+      "bytes": 28605,
+      "sha256": "3827b9025bea6fcb34f18d454edcc9c2ef9fe6b974bc5cba3f8c2ebcf058e244",
+      "source_sha256": "3827b9025bea6fcb34f18d454edcc9c2ef9fe6b974bc5cba3f8c2ebcf058e244",
+      "source_identical": true
+    },
+    {
+      "path": "src/keys/compact_tests.rs",
+      "bytes": 2708,
+      "sha256": "78b814e8b195e635d8e2a2ac79700e3e7a2e7e99a91789d7e5c852353e05b5ac",
+      "source_sha256": "78b814e8b195e635d8e2a2ac79700e3e7a2e7e99a91789d7e5c852353e05b5ac",
+      "source_identical": true
+    },
+    {
+      "path": "src/mixed_numeric.rs",
+      "bytes": 22339,
+      "sha256": "b1aa39bb6e3daa9814757f76a9665b7c4628af6aa4a3569b0e647e81005c9b6f",
+      "source_sha256": "b1aa39bb6e3daa9814757f76a9665b7c4628af6aa4a3569b0e647e81005c9b6f",
+      "source_identical": true
+    },
+    {
+      "path": "src/mixed_numeric/normalize.rs",
+      "bytes": 3134,
+      "sha256": "c579244a2d80665528fb4e2233bd7ac9029b7d13ae3439346cda51195db35c51",
+      "source_sha256": "c579244a2d80665528fb4e2233bd7ac9029b7d13ae3439346cda51195db35c51",
+      "source_identical": true
+    },
+    {
+      "path": "src/prune.rs",
+      "bytes": 13713,
+      "sha256": "3966be98fd55b29c779677e517dd171b709c2f53c0ef1dd499c642f4c19e1192",
+      "source_sha256": "3966be98fd55b29c779677e517dd171b709c2f53c0ef1dd499c642f4c19e1192",
+      "source_identical": true
+    },
+    {
+      "path": "src/rel.rs",
+      "bytes": 190554,
+      "sha256": "0be8068f0d42b651b428ba18740fde045fc68b3c46d9f959413515f0043aa951",
+      "source_sha256": "0be8068f0d42b651b428ba18740fde045fc68b3c46d9f959413515f0043aa951",
+      "source_identical": true
+    },
+    {
+      "path": "src/rel/aggregate_reuse.rs",
+      "bytes": 21184,
+      "sha256": "e80af4406aad86cccffdc67321279420ef91e696f6de9858843f8c5164b236ef",
+      "source_sha256": "e80af4406aad86cccffdc67321279420ef91e696f6de9858843f8c5164b236ef",
+      "source_identical": true
+    },
+    {
+      "path": "src/rel/build_groups.rs",
+      "bytes": 37015,
+      "sha256": "a09f81020950e9cb1900f0c28ba7a26f05f21bb444ff6f372a2f66d5f8303494",
+      "source_sha256": "a09f81020950e9cb1900f0c28ba7a26f05f21bb444ff6f372a2f66d5f8303494",
+      "source_identical": true
+    },
+    {
+      "path": "src/rel/empty_in.rs",
+      "bytes": 5213,
+      "sha256": "14d4eb2cf07972870cfb31e37de91d6539e5625fe7e56ecf43b94d685e55303b",
+      "source_sha256": "14d4eb2cf07972870cfb31e37de91d6539e5625fe7e56ecf43b94d685e55303b",
+      "source_identical": true
+    },
+    {
+      "path": "src/rel/filtered_reuse.rs",
+      "bytes": 13716,
+      "sha256": "537fae381378f1623c93e05830a9a03a0f9cefbb85973cc73acbcf07187fda21",
+      "source_sha256": "537fae381378f1623c93e05830a9a03a0f9cefbb85973cc73acbcf07187fda21",
+      "source_identical": true
+    },
+    {
+      "path": "src/rel/group_binding.rs",
+      "bytes": 9271,
+      "sha256": "1368dc2421f5cd3bf412a5b45ba9f23bc312918799eac9e1b091e69e3e5138c8",
+      "source_sha256": "1368dc2421f5cd3bf412a5b45ba9f23bc312918799eac9e1b091e69e3e5138c8",
+      "source_identical": true
+    },
+    {
+      "path": "src/rel/group_binding/facts.rs",
+      "bytes": 21257,
+      "sha256": "ccd5c1518301ee77ec7849e76f8ec1fc4f87cbbb0dda234daa5c9bf7e71923df",
+      "source_sha256": "ccd5c1518301ee77ec7849e76f8ec1fc4f87cbbb0dda234daa5c9bf7e71923df",
+      "source_identical": true
+    },
+    {
+      "path": "src/rel/left_count.rs",
+      "bytes": 33013,
+      "sha256": "e6c852d6573ce16b5f95af21d83415c2c24f85736d0826fa971545a240e7683a",
+      "source_sha256": "e6c852d6573ce16b5f95af21d83415c2c24f85736d0826fa971545a240e7683a",
+      "source_identical": true
+    },
+    {
+      "path": "src/rel/left_count/parallel.rs",
+      "bytes": 25669,
+      "sha256": "cafe1c2db60199a4e704da27e6a4f8184eb13c69ec88038a6605e864208d2fde",
+      "source_sha256": "cafe1c2db60199a4e704da27e6a4f8184eb13c69ec88038a6605e864208d2fde",
+      "source_identical": true
+    },
+    {
+      "path": "src/rel/left_count/parallel/tests.rs",
+      "bytes": 27231,
+      "sha256": "5e1df2bd8df0354dd82bcc8febb1de39cf4662663db0fc53e2aab4d4bb1a08b1",
+      "source_sha256": "5e1df2bd8df0354dd82bcc8febb1de39cf4662663db0fc53e2aab4d4bb1a08b1",
+      "source_identical": true
+    },
+    {
+      "path": "src/rel/runtime_filter.rs",
+      "bytes": 50497,
+      "sha256": "af138cfc163d0aad74f0b3c4476ded0e3e813c7de99d205345c2c42a92fce5c2",
+      "source_sha256": "af138cfc163d0aad74f0b3c4476ded0e3e813c7de99d205345c2c42a92fce5c2",
+      "source_identical": true
+    },
+    {
+      "path": "src/rel/shared_retry.rs",
+      "bytes": 12095,
+      "sha256": "39ee15102bfbb8ca54b2dd3c1bee43e53fb9d2941ab36ee152d08bcda3e00db6",
+      "source_sha256": "39ee15102bfbb8ca54b2dd3c1bee43e53fb9d2941ab36ee152d08bcda3e00db6",
+      "source_identical": true
+    },
+    {
+      "path": "src/rel/window.rs",
+      "bytes": 26483,
+      "sha256": "a1057ed847cc3090acc8b6c494cc8a434a6ec496ca3d2f14f4ad013dfc5311fe",
+      "source_sha256": "a1057ed847cc3090acc8b6c494cc8a434a6ec496ca3d2f14f4ad013dfc5311fe",
+      "source_identical": true
+    },
+    {
+      "path": "src/rel/window/sort.rs",
+      "bytes": 5722,
+      "sha256": "6207ca6561b040af568dbcdfa835f334488c86a4cd7397c44f6f7da022b0fecd",
+      "source_sha256": "6207ca6561b040af568dbcdfa835f334488c86a4cd7397c44f6f7da022b0fecd",
+      "source_identical": true
+    },
+    {
+      "path": "src/rel/window/tests.rs",
+      "bytes": 5980,
+      "sha256": "2ffa769c8c218e1fd30e33640f2494fa0b8ae74b899c72ec800afc3a1249f7de",
+      "source_sha256": "2ffa769c8c218e1fd30e33640f2494fa0b8ae74b899c72ec800afc3a1249f7de",
+      "source_identical": true
+    },
+    {
+      "path": "src/syntax.rs",
+      "bytes": 3357,
+      "sha256": "ec184fa9aee036287d3293af22c0945c3e3ff980ef103632c52b0cf98faadb65",
+      "source_sha256": "ec184fa9aee036287d3293af22c0945c3e3ff980ef103632c52b0cf98faadb65",
+      "source_identical": true
+    },
+    {
+      "path": "tests/build_group_ids.rs",
+      "bytes": 48497,
+      "sha256": "ef4e9d1f85f517af4b02445a1c96e7f9e3d06524ac272b9821a82c608933e6c1",
+      "source_sha256": "ef4e9d1f85f517af4b02445a1c96e7f9e3d06524ac272b9821a82c608933e6c1",
+      "source_identical": true
+    },
+    {
+      "path": "tests/cast_types.rs",
+      "bytes": 13214,
+      "sha256": "6bad84ff47f507aaa78c632263c677706ad1ab01b985d915dfe35aaba77f2070",
+      "source_sha256": "6bad84ff47f507aaa78c632263c677706ad1ab01b985d915dfe35aaba77f2070",
+      "source_identical": true
+    },
+    {
+      "path": "tests/clustered_leaf.rs",
+      "bytes": 19349,
+      "sha256": "4b60c20230ebd3210bc3516abf94f4c7a749dc72ef48c1ea2c5689d3c8b9b030",
+      "source_sha256": "4b60c20230ebd3210bc3516abf94f4c7a749dc72ef48c1ea2c5689d3c8b9b030",
+      "source_identical": true
+    },
+    {
+      "path": "tests/decimal_cast.rs",
+      "bytes": 8608,
+      "sha256": "f2c6aa848be5c73a78368cfa35f279ef21d521518812ee38ca0f7ed0f2fc9620",
+      "source_sha256": "f2c6aa848be5c73a78368cfa35f279ef21d521518812ee38ca0f7ed0f2fc9620",
+      "source_identical": true
+    },
+    {
+      "path": "tests/decimal_window_composition.rs",
+      "bytes": 6031,
+      "sha256": "5d47253c26365278639b806d086d8db5f7a454f91fa15c7a7a2e0742d73e81f0",
+      "source_sha256": "5d47253c26365278639b806d086d8db5f7a454f91fa15c7a7a2e0742d73e81f0",
+      "source_identical": true
+    },
+    {
+      "path": "tests/fixtures/decimal_window_phase1/README.md",
+      "bytes": 813,
+      "sha256": "16e1520d9e367e40d0ed6d8f3fcd84f66258186dbefecd634d1826d830ffa96c",
+      "source_sha256": "822ccb47a9302f7d056de7d4b739e18e1b3dce1b42d0ba44443f6e99d1044336",
+      "source_identical": false
+    },
+    {
+      "path": "tests/fixtures/decimal_window_phase1/cases.json",
+      "bytes": 4327,
+      "sha256": "1eccc530babeac8f619a97df88796fcd7a9d33f7dc142b5f491e2e7e553591b2",
+      "source_sha256": "1eccc530babeac8f619a97df88796fcd7a9d33f7dc142b5f491e2e7e553591b2",
+      "source_identical": true
+    },
+    {
+      "path": "tests/fixtures/window_ranking/README.md",
+      "bytes": 3284,
+      "sha256": "54f0a415a2726365bf7a8a9dbabb85b76b310bcb9f5bafac88e8d08521a459b2",
+      "source_sha256": "6fbdb46f5c915afb56f09245ae3ea8907fb47c80872903d59328fe27229dbc26",
+      "source_identical": false
+    },
+    {
+      "path": "tests/fixtures/window_ranking/REPRODUCE.md",
+      "bytes": 1515,
+      "sha256": "3056fff131fd7890250a7f7d89d75e021b49a7af7fb5e625e36935dfc7d95329",
+      "source_sha256": "0c29ed80d04948b26efb5b1c41ed515949e014609f048312fd55567c732c36d4",
+      "source_identical": false
+    },
+    {
+      "path": "tests/fixtures/window_ranking/cases.sql",
+      "bytes": 13065,
+      "sha256": "dab87a11f935a54e1b5a05246a8b1799a99136203194f958e94096e49b083906",
+      "source_sha256": "dab87a11f935a54e1b5a05246a8b1799a99136203194f958e94096e49b083906",
+      "source_identical": true
+    },
+    {
+      "path": "tests/fixtures/window_ranking/expected.json",
+      "bytes": 55009,
+      "sha256": "0addb76df9ab52809f0847ba0063e8026708213fa2100166da8d81ddce4d9b31",
+      "source_sha256": "0addb76df9ab52809f0847ba0063e8026708213fa2100166da8d81ddce4d9b31",
+      "source_identical": true
+    },
+    {
+      "path": "tests/fixtures/window_ranking/setup.sql",
+      "bytes": 819,
+      "sha256": "4d6a326e834dcb5992812fba4fa032a8481cd48d4485992285e0aae5f0c61c75",
+      "source_sha256": "4d6a326e834dcb5992812fba4fa032a8481cd48d4485992285e0aae5f0c61c75",
+      "source_identical": true
+    },
+    {
+      "path": "tests/left_join_count.rs",
+      "bytes": 52238,
+      "sha256": "1f1a2fc03e56b67337fe9b22e82edaddd3b40cb97f31dc614e4226439598b071",
+      "source_sha256": "1f1a2fc03e56b67337fe9b22e82edaddd3b40cb97f31dc614e4226439598b071",
+      "source_identical": true
+    },
+    {
+      "path": "tests/numeric_leaf.rs",
+      "bytes": 18343,
+      "sha256": "43a920d0e67a25b26ecaf1e5df050f4fe45d43fbb5a5961a525ce831793eb132",
+      "source_sha256": "43a920d0e67a25b26ecaf1e5df050f4fe45d43fbb5a5961a525ce831793eb132",
+      "source_identical": true
+    },
+    {
+      "path": "tests/parquet_flba_decimal.rs",
+      "bytes": 31594,
+      "sha256": "d4c18fb79ea1335cbe5be04ff6a00d7ab11964125b71b1660148a04a116c8b44",
+      "source_sha256": "d4c18fb79ea1335cbe5be04ff6a00d7ab11964125b71b1660148a04a116c8b44",
+      "source_identical": true
+    },
+    {
+      "path": "tests/parquet_zstd_errors.rs",
+      "bytes": 21581,
+      "sha256": "bef7a8d7844af35b1e5e76a0a2c69e22abb90b2bd0cc14d4b9e41f2dad5f9043",
+      "source_sha256": "bef7a8d7844af35b1e5e76a0a2c69e22abb90b2bd0cc14d4b9e41f2dad5f9043",
+      "source_identical": true
+    },
+    {
+      "path": "tests/small_group_kernels.rs",
+      "bytes": 12694,
+      "sha256": "2fc02546f8ea4d9e19dee3f64d1af7bef7db76618aba1eb46c180841b0eac3db",
+      "source_sha256": "2fc02546f8ea4d9e19dee3f64d1af7bef7db76618aba1eb46c180841b0eac3db",
+      "source_identical": true
+    },
+    {
+      "path": "tests/window_ranking.rs",
+      "bytes": 30193,
+      "sha256": "ad4c9ccecdcf7c1c479737c5ae02941b1b80ac03d248c7c570e5b01f1d943b4b",
+      "source_sha256": "ad4c9ccecdcf7c1c479737c5ae02941b1b80ac03d248c7c570e5b01f1d943b4b",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/README.md",
+      "bytes": 397,
+      "sha256": "ec1488bd196920b85363bc3289ca6779eb3f7e8acd28b10d3f203fc7529296ce",
+      "source_sha256": "7b9e29b50170d13d3bd1ad243d9435e7392a60d4c7a92ed6af12028ecc40ad4c",
+      "source_identical": false
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/ASSAY-PROVENANCE.md",
+      "bytes": 1631,
+      "sha256": "47930ebde968fe2e8d692f47e392e34212522c1ff6137862406d222d0939f5dc",
+      "source_sha256": "0f53f2843786062ca7d00ae62ec27194b6c9ba7a423e9fb021c4ce2bd64f067c",
+      "source_identical": false
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/CONTRIBUTING.md",
+      "bytes": 2729,
+      "sha256": "82832255fcf5ae17f11ddbe66e3fb0a413589017b127de5862dfcc69dcc4ab7e",
+      "source_sha256": "82832255fcf5ae17f11ddbe66e3fb0a413589017b127de5862dfcc69dcc4ab7e",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/Cargo.lock",
+      "bytes": 80022,
+      "sha256": "ce77f87e886489b3e8bef4adca08c36bace6c62df08f8abccaac4bfc39947f0f",
+      "source_sha256": "ce77f87e886489b3e8bef4adca08c36bace6c62df08f8abccaac4bfc39947f0f",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/Cargo.toml",
+      "bytes": 10380,
+      "sha256": "dfdb2c0abc0eb133fbbf7e40150e69e49753585109dbc0e25fbe439e5a9144ed",
+      "source_sha256": "dfdb2c0abc0eb133fbbf7e40150e69e49753585109dbc0e25fbe439e5a9144ed",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/Cargo.toml.orig",
+      "bytes": 9495,
+      "sha256": "5e6525774495ef1c4d19cf62644bc0e40f68a468bd51855da6de30ec10ace71d",
+      "source_sha256": "5e6525774495ef1c4d19cf62644bc0e40f68a468bd51855da6de30ec10ace71d",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/LICENSE.txt",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "source_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/NOTICE.txt",
+      "bytes": 3032,
+      "sha256": "f5b6a58f5d2082e403c49663d87566328d40cf03f16abb01f52632a09b97c55e",
+      "source_sha256": "f5b6a58f5d2082e403c49663d87566328d40cf03f16abb01f52632a09b97c55e",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/README.md",
+      "bytes": 4474,
+      "sha256": "9b92e3e3ff04a28c6b60f052aa5975b7146a1e61a5379c23756bfcc1294a37e9",
+      "source_sha256": "9b92e3e3ff04a28c6b60f052aa5975b7146a1e61a5379c23756bfcc1294a37e9",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/THRIFT.md",
+      "bytes": 16305,
+      "sha256": "4deb4090a28c5e0121352da9cb331222eee2ba62c78c69d4d4df401ba2888de9",
+      "source_sha256": "4deb4090a28c5e0121352da9cb331222eee2ba62c78c69d4d4df401ba2888de9",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/benches/arrow_reader.rs",
+      "bytes": 69911,
+      "sha256": "f585cc0298bfa5786dcba4a74ab197215ba713d3a3931e080dc18e4ee7c778f7",
+      "source_sha256": "f585cc0298bfa5786dcba4a74ab197215ba713d3a3931e080dc18e4ee7c778f7",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/benches/arrow_reader_clickbench.rs",
+      "bytes": 42298,
+      "sha256": "01a01662226adb6e0157f85eefe91fcbbafc5385b7f00a26f138192a6e46efe0",
+      "source_sha256": "01a01662226adb6e0157f85eefe91fcbbafc5385b7f00a26f138192a6e46efe0",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/benches/arrow_reader_row_filter.rs",
+      "bytes": 26924,
+      "sha256": "e66e0b0f61cb2ff610716669164026eb12a788027cd2b2536ec9d7a9164672dd",
+      "source_sha256": "e66e0b0f61cb2ff610716669164026eb12a788027cd2b2536ec9d7a9164672dd",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/benches/arrow_statistics.rs",
+      "bytes": 9560,
+      "sha256": "2e1a53fed945a5eddfbbd5aabb717779b6fef15a7ca619e90e6460468159aac1",
+      "source_sha256": "2e1a53fed945a5eddfbbd5aabb717779b6fef15a7ca619e90e6460468159aac1",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/benches/arrow_writer.rs",
+      "bytes": 14198,
+      "sha256": "5229914c0ab3cb110960c7661a760212d60bb6fe7c4643f9b3c627497d891f99",
+      "source_sha256": "5229914c0ab3cb110960c7661a760212d60bb6fe7c4643f9b3c627497d891f99",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/benches/compression.rs",
+      "bytes": 3522,
+      "sha256": "e316fdaee780d970862a66fdc62a748c081da7f762dc84df968061e62b6b9d43",
+      "source_sha256": "e316fdaee780d970862a66fdc62a748c081da7f762dc84df968061e62b6b9d43",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/benches/encoding.rs",
+      "bytes": 3805,
+      "sha256": "e0dc7244bf8e5adb6eb713384cba72d07ba8ee4ce57803d548de6ba757ec10c5",
+      "source_sha256": "e0dc7244bf8e5adb6eb713384cba72d07ba8ee4ce57803d548de6ba757ec10c5",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/benches/metadata.rs",
+      "bytes": 6711,
+      "sha256": "9dca334bff656108603edb1b5c3e9c9a6f043954f4f3abf07ae44ae0cdf8893a",
+      "source_sha256": "9dca334bff656108603edb1b5c3e9c9a6f043954f4f3abf07ae44ae0cdf8893a",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/benches/row_selector.rs",
+      "bytes": 3210,
+      "sha256": "377e5c0c5ee7abbb0d3ddce23cae26eab514d5c93d651e8055ebf5548532e075",
+      "source_sha256": "377e5c0c5ee7abbb0d3ddce23cae26eab514d5c93d651e8055ebf5548532e075",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/examples/async_read_parquet.rs",
+      "bytes": 2875,
+      "sha256": "4be838b24afd9a29bb012af8518b7c91bbd668a8581561c06b06b9920e8d4e31",
+      "source_sha256": "4be838b24afd9a29bb012af8518b7c91bbd668a8581561c06b06b9920e8d4e31",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/examples/external_metadata.rs",
+      "bytes": 9080,
+      "sha256": "d4b56df1997c263ef8fd2fcf16d3edcf072cc1ca4ac537f007af96616d9ed260",
+      "source_sha256": "d4b56df1997c263ef8fd2fcf16d3edcf072cc1ca4ac537f007af96616d9ed260",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/examples/read_parquet.rs",
+      "bytes": 1627,
+      "sha256": "2c98c4376e475b79802aaa6e4810353d07545ca01367bc934921b77262b175e9",
+      "source_sha256": "2c98c4376e475b79802aaa6e4810353d07545ca01367bc934921b77262b175e9",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/examples/read_with_rowgroup.rs",
+      "bytes": 5683,
+      "sha256": "79c6e9f42582ab5cf2b1635ca216ad74188a5ec50423c9d3106198c036604572",
+      "source_sha256": "79c6e9f42582ab5cf2b1635ca216ad74188a5ec50423c9d3106198c036604572",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/examples/write_parquet.rs",
+      "bytes": 4493,
+      "sha256": "2de9708be17539d99b8f53af09b0de34ad2baef31a0a382c84dcae9880d73f7f",
+      "source_sha256": "2de9708be17539d99b8f53af09b0de34ad2baef31a0a382c84dcae9880d73f7f",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/pytest/requirements.in",
+      "bytes": 813,
+      "sha256": "71720dc5110d9097ebff0b509c377876fd44964f7422d2084fa4ef72b8e7f5c1",
+      "source_sha256": "71720dc5110d9097ebff0b509c377876fd44964f7422d2084fa4ef72b8e7f5c1",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/pytest/requirements.txt",
+      "bytes": 11045,
+      "sha256": "09875ddcadcb2d777c6da40affe245d84aef44290a7f0babdb78841322fc9554",
+      "source_sha256": "09875ddcadcb2d777c6da40affe245d84aef44290a7f0babdb78841322fc9554",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/pytest/test_parquet_integration.py",
+      "bytes": 5822,
+      "sha256": "9f80d5f77476e3921d4b611348a6cf7f402e3702b128a7e4e5417ae4066d09bc",
+      "source_sha256": "9f80d5f77476e3921d4b611348a6cf7f402e3702b128a7e4e5417ae4066d09bc",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/regen.sh",
+      "bytes": 2364,
+      "sha256": "a2be9fc42462e3704ccffed6e5d87301f4d4a9257138f7a05c62cb5f32d9ef02",
+      "source_sha256": "a2be9fc42462e3704ccffed6e5d87301f4d4a9257138f7a05c62cb5f32d9ef02",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/array_reader/builder.rs",
+      "bytes": 18035,
+      "sha256": "74838d3197e9d244abfcb8a25fdb489b35e2e6e74f9d617f95a799b389971690",
+      "source_sha256": "74838d3197e9d244abfcb8a25fdb489b35e2e6e74f9d617f95a799b389971690",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/array_reader/byte_array.rs",
+      "bytes": 24277,
+      "sha256": "53a58ff465d7c8bc492907f31e6235f725082b39a78e94b064521c20a23492b1",
+      "source_sha256": "53a58ff465d7c8bc492907f31e6235f725082b39a78e94b064521c20a23492b1",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/array_reader/byte_array_dictionary.rs",
+      "bytes": 24968,
+      "sha256": "cdbdf9ce3487ebd697b62daaef3fc348a7a7d374644771da4f196198a346aaaf",
+      "source_sha256": "cdbdf9ce3487ebd697b62daaef3fc348a7a7d374644771da4f196198a346aaaf",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/array_reader/byte_view_array.rs",
+      "bytes": 28305,
+      "sha256": "e6bd81c51904e99b6a09dfc4b2595c6b6045dcb224131ba2d337ba623be11b02",
+      "source_sha256": "e6bd81c51904e99b6a09dfc4b2595c6b6045dcb224131ba2d337ba623be11b02",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/array_reader/cached_array_reader.rs",
+      "bytes": 29066,
+      "sha256": "e5e9c459dad6a9cf60f32fb8df5adbdfe89bdbc606672121bf31c47c71d8070b",
+      "source_sha256": "e5e9c459dad6a9cf60f32fb8df5adbdfe89bdbc606672121bf31c47c71d8070b",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/array_reader/empty_array.rs",
+      "bytes": 2782,
+      "sha256": "ccb30ef265039e1a750cb9a52d7836eeca55a658310f7f5a06d17dd5641546c8",
+      "source_sha256": "ccb30ef265039e1a750cb9a52d7836eeca55a658310f7f5a06d17dd5641546c8",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/array_reader/fixed_len_byte_array.rs",
+      "bytes": 24347,
+      "sha256": "e4d12b7478ec236fa2db251b1feb25844ad3e161576972d683356e770539f090",
+      "source_sha256": "3eff5a9299c9b9d288eb4d52776e26f3511f623734642e8ead343c0624f35c17",
+      "source_identical": false
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/array_reader/fixed_size_list_array.rs",
+      "bytes": 22045,
+      "sha256": "306bd83ff26bddff25a374da91122f0954276a3eabedd29bd6e1006b62def195",
+      "source_sha256": "306bd83ff26bddff25a374da91122f0954276a3eabedd29bd6e1006b62def195",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/array_reader/list_array.rs",
+      "bytes": 19983,
+      "sha256": "493f8347fa9c69ebc406388fa47f09f62e5011ced97eba305cc68cd8d88617eb",
+      "source_sha256": "493f8347fa9c69ebc406388fa47f09f62e5011ced97eba305cc68cd8d88617eb",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/array_reader/map_array.rs",
+      "bytes": 8225,
+      "sha256": "379c5153a62d8314503ae326581081fd7a24ce82be6e3b96b834cdec30ff7f1c",
+      "source_sha256": "379c5153a62d8314503ae326581081fd7a24ce82be6e3b96b834cdec30ff7f1c",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/array_reader/mod.rs",
+      "bytes": 8163,
+      "sha256": "e3b66f5ad747a8eccd19726928513f390f55b03e2872febc0f679ff25fa7e0de",
+      "source_sha256": "e3b66f5ad747a8eccd19726928513f390f55b03e2872febc0f679ff25fa7e0de",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/array_reader/null_array.rs",
+      "bytes": 3393,
+      "sha256": "081665ce5f90c72c563c9a6af151b35c0421e24980680ace2b581f2c0a721dfc",
+      "source_sha256": "081665ce5f90c72c563c9a6af151b35c0421e24980680ace2b581f2c0a721dfc",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/array_reader/primitive_array.rs",
+      "bytes": 39693,
+      "sha256": "bac263cf7bd1494e74ec957d4717d2417f0974b785af6d10db6b328223ab9874",
+      "source_sha256": "bac263cf7bd1494e74ec957d4717d2417f0974b785af6d10db6b328223ab9874",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/array_reader/row_group_cache.rs",
+      "bytes": 7271,
+      "sha256": "b8e04e7bdd70f56bae258ca451f35fecaa7688079fda44ad5f3a7d6ccc0fd628",
+      "source_sha256": "b8e04e7bdd70f56bae258ca451f35fecaa7688079fda44ad5f3a7d6ccc0fd628",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/array_reader/struct_array.rs",
+      "bytes": 11025,
+      "sha256": "510026c72f42fb2838158a8acab86097718ae210584b743a878b1e3a6c07ae4b",
+      "source_sha256": "510026c72f42fb2838158a8acab86097718ae210584b743a878b1e3a6c07ae4b",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/array_reader/test_util.rs",
+      "bytes": 6667,
+      "sha256": "8696e494c60ce46677747ca826de5c7656465d10c41b0a88d170ef728c7aba22",
+      "source_sha256": "8696e494c60ce46677747ca826de5c7656465d10c41b0a88d170ef728c7aba22",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/arrow_reader/filter.rs",
+      "bytes": 8113,
+      "sha256": "01176a5b0d94a2ebca288cbe1aa3b2863279f47a92dbe70cfd32c0fa27ba054e",
+      "source_sha256": "01176a5b0d94a2ebca288cbe1aa3b2863279f47a92dbe70cfd32c0fa27ba054e",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/arrow_reader/metrics.rs",
+      "bytes": 4863,
+      "sha256": "dbd85435fe323fe525d78cb00127099364a4f2de9271bb9d5ff9084674d7d12e",
+      "source_sha256": "dbd85435fe323fe525d78cb00127099364a4f2de9271bb9d5ff9084674d7d12e",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/arrow_reader/mod.rs",
+      "bytes": 187595,
+      "sha256": "330b59cecc06bc0f2677a890db4d6ce3f59fe3cce52ea0f9e4e4e7268630a500",
+      "source_sha256": "330b59cecc06bc0f2677a890db4d6ce3f59fe3cce52ea0f9e4e4e7268630a500",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/arrow_reader/read_plan.rs",
+      "bytes": 8374,
+      "sha256": "185faba3c8c749448ed27553504c79b5f022000cb1c30b34b5e63cbb2a5b3ef0",
+      "source_sha256": "185faba3c8c749448ed27553504c79b5f022000cb1c30b34b5e63cbb2a5b3ef0",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/arrow_reader/selection.rs",
+      "bytes": 46877,
+      "sha256": "c1e8538054cfd1d52176f72849a6ca268b624e28916e6e1d64068bf1c39d179c",
+      "source_sha256": "c1e8538054cfd1d52176f72849a6ca268b624e28916e6e1d64068bf1c39d179c",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/arrow_reader/statistics.rs",
+      "bytes": 67668,
+      "sha256": "0a8cba87c703f338482fc71e22431eb91c594f7018ebaf15e4e1765a5b37b6e2",
+      "source_sha256": "0a8cba87c703f338482fc71e22431eb91c594f7018ebaf15e4e1765a5b37b6e2",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/arrow_writer/byte_array.rs",
+      "bytes": 22227,
+      "sha256": "16c34875e04895d0cf73c1975c302b6fd2cb636888051cfceabc4f61c5a08996",
+      "source_sha256": "16c34875e04895d0cf73c1975c302b6fd2cb636888051cfceabc4f61c5a08996",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/arrow_writer/levels.rs",
+      "bytes": 71935,
+      "sha256": "21dbdfd7595bd35d913d13ffe98e3b977b77de56d62d0cacfaf229a062aff2b1",
+      "source_sha256": "21dbdfd7595bd35d913d13ffe98e3b977b77de56d62d0cacfaf229a062aff2b1",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/arrow_writer/mod.rs",
+      "bytes": 168497,
+      "sha256": "3f74172d2e7731309b94eb2ffe43f34c1083e7d1dc826718a34c540b4d52bd0b",
+      "source_sha256": "3f74172d2e7731309b94eb2ffe43f34c1083e7d1dc826718a34c540b4d52bd0b",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/async_reader/metadata.rs",
+      "bytes": 3805,
+      "sha256": "04215161ec9ef03fd383a0d02879c65ddb24eea58188efec7a7c9c759bd8bd6c",
+      "source_sha256": "04215161ec9ef03fd383a0d02879c65ddb24eea58188efec7a7c9c759bd8bd6c",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/async_reader/mod.rs",
+      "bytes": 104773,
+      "sha256": "4e9a947f1ca524c274688d7ff1f7004f614eaa865c704a3bca7b74722e228dd2",
+      "source_sha256": "4e9a947f1ca524c274688d7ff1f7004f614eaa865c704a3bca7b74722e228dd2",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/async_reader/store.rs",
+      "bytes": 14012,
+      "sha256": "0a165a0d4d673e0878f5e31af1210eaf9dd6003b0acbcc41d337003f9bb9d1e1",
+      "source_sha256": "0a165a0d4d673e0878f5e31af1210eaf9dd6003b0acbcc41d337003f9bb9d1e1",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/async_writer/mod.rs",
+      "bytes": 16624,
+      "sha256": "d368a6f3ea2a15c2e82e3485798e80ac27455e2342552c3a1acb25b09eebbd70",
+      "source_sha256": "d368a6f3ea2a15c2e82e3485798e80ac27455e2342552c3a1acb25b09eebbd70",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/async_writer/store.rs",
+      "bytes": 5195,
+      "sha256": "15647cba764ca27b66f8c35a7a66611c22c6704c784813c46bdbcca79b3f981c",
+      "source_sha256": "15647cba764ca27b66f8c35a7a66611c22c6704c784813c46bdbcca79b3f981c",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/buffer/bit_util.rs",
+      "bytes": 3715,
+      "sha256": "e839e96595d44ab5d72b3bbd3d7a239d577fd9e214eed39f8c6e3fb6481d9e56",
+      "source_sha256": "e839e96595d44ab5d72b3bbd3d7a239d577fd9e214eed39f8c6e3fb6481d9e56",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/buffer/dictionary_buffer.rs",
+      "bytes": 12781,
+      "sha256": "899cf8613f3a462cd514b6c01347a459fde6e7146e6cb3f9b78342681a81d4b8",
+      "source_sha256": "899cf8613f3a462cd514b6c01347a459fde6e7146e6cb3f9b78342681a81d4b8",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/buffer/mod.rs",
+      "bytes": 938,
+      "sha256": "69e08e0b3347124397dcccd7fc53044629ea93868518aceb667e94040548349c",
+      "source_sha256": "69e08e0b3347124397dcccd7fc53044629ea93868518aceb667e94040548349c",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/buffer/offset_buffer.rs",
+      "bytes": 12009,
+      "sha256": "8da00949bd7da6a3d78519030aed545b43ba66ec5b31cf0507a1720f76259066",
+      "source_sha256": "8da00949bd7da6a3d78519030aed545b43ba66ec5b31cf0507a1720f76259066",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/buffer/view_buffer.rs",
+      "bytes": 6704,
+      "sha256": "c976e116f536a03c359256170e4b8f5c5c60ab1c019b7775aefbbe75956e9d04",
+      "source_sha256": "c976e116f536a03c359256170e4b8f5c5c60ab1c019b7775aefbbe75956e9d04",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/decoder/delta_byte_array.rs",
+      "bytes": 4970,
+      "sha256": "4a227b591c6f0cf68f60d77f91ac9cf888ea926530421278be42338dbe507497",
+      "source_sha256": "4a227b591c6f0cf68f60d77f91ac9cf888ea926530421278be42338dbe507497",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/decoder/dictionary_index.rs",
+      "bytes": 4464,
+      "sha256": "81302e3798cc599e78d3d5718128c9b8817987a08c4ed2791faaff00f92a8658",
+      "source_sha256": "81302e3798cc599e78d3d5718128c9b8817987a08c4ed2791faaff00f92a8658",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/decoder/mod.rs",
+      "bytes": 1005,
+      "sha256": "7d1425a2a0818b7443dc89e0c3a749c4c6e1ab4ff1c4b1141c57deb1604ca29c",
+      "source_sha256": "7d1425a2a0818b7443dc89e0c3a749c4c6e1ab4ff1c4b1141c57deb1604ca29c",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/mod.rs",
+      "bytes": 28703,
+      "sha256": "fe4d8453eaa6b8b3223f133ec5a0792c5b9f67ceb159ff74a736d77b4e54244f",
+      "source_sha256": "fe4d8453eaa6b8b3223f133ec5a0792c5b9f67ceb159ff74a736d77b4e54244f",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/record_reader/buffer.rs",
+      "bytes": 2450,
+      "sha256": "2826d720e43169a770fac0558c03ae82b66bd6576c0ae8bd7069bfd62a7cd64d",
+      "source_sha256": "2826d720e43169a770fac0558c03ae82b66bd6576c0ae8bd7069bfd62a7cd64d",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/record_reader/definition_levels.rs",
+      "bytes": 15226,
+      "sha256": "23ee41e01da591710b40e5912fd51bb94f06af639591114b3431f1a2e3256295",
+      "source_sha256": "23ee41e01da591710b40e5912fd51bb94f06af639591114b3431f1a2e3256295",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/record_reader/mod.rs",
+      "bytes": 27657,
+      "sha256": "7388d3f6d4ee702dc42f4dd309df333213932b328d94c96672c36afec7ebcf51",
+      "source_sha256": "7388d3f6d4ee702dc42f4dd309df333213932b328d94c96672c36afec7ebcf51",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/schema/complex.rs",
+      "bytes": 22571,
+      "sha256": "83af0537a48e143532eba2f739d63bd7f41167231786718184c5d6fed3ca2ac3",
+      "source_sha256": "83af0537a48e143532eba2f739d63bd7f41167231786718184c5d6fed3ca2ac3",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/schema/extension.rs",
+      "bytes": 5337,
+      "sha256": "3ffd85af1c73cac8d1e030b78a883a3866e755067e87996524713501837f8269",
+      "source_sha256": "3ffd85af1c73cac8d1e030b78a883a3866e755067e87996524713501837f8269",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/schema/mod.rs",
+      "bytes": 85797,
+      "sha256": "1e32e292e31f18e522e915570ae713416361c5f97254324473d1a7595837b2f3",
+      "source_sha256": "1e32e292e31f18e522e915570ae713416361c5f97254324473d1a7595837b2f3",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/arrow/schema/primitive.rs",
+      "bytes": 13811,
+      "sha256": "dc301ed9cb5fb6397b499f5d2feddce79fdb627b69bcab61476151da44caa796",
+      "source_sha256": "dc301ed9cb5fb6397b499f5d2feddce79fdb627b69bcab61476151da44caa796",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/basic.rs",
+      "bytes": 88637,
+      "sha256": "0fa77862d30b377452caeaab34125b695a4eaa7a06143f532ce31df5d95e54c0",
+      "source_sha256": "0fa77862d30b377452caeaab34125b695a4eaa7a06143f532ce31df5d95e54c0",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/bin/parquet-concat.rs",
+      "bytes": 3933,
+      "sha256": "b3a573ed843d0fc72c1c38928da3b0816a90cf12161172187a0a349c28052744",
+      "source_sha256": "b3a573ed843d0fc72c1c38928da3b0816a90cf12161172187a0a349c28052744",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/bin/parquet-fromcsv-help.txt",
+      "bytes": 1757,
+      "sha256": "8a96bb57a021849802e61b0b9d07ff459acd7f7e0320330de4e77ae09a8a2e41",
+      "source_sha256": "8a96bb57a021849802e61b0b9d07ff459acd7f7e0320330de4e77ae09a8a2e41",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/bin/parquet-fromcsv.rs",
+      "bytes": 27739,
+      "sha256": "d8032fc9f3adffaaa66ce8105a68aca7309f1e149c1921f8aec5c0a8ae2f96e5",
+      "source_sha256": "d8032fc9f3adffaaa66ce8105a68aca7309f1e149c1921f8aec5c0a8ae2f96e5",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/bin/parquet-index.rs",
+      "bytes": 8050,
+      "sha256": "e0e6bf7b4b33850ec163f06762a35afe8d765e0fc397187eaa882421c3d74d3e",
+      "source_sha256": "e0e6bf7b4b33850ec163f06762a35afe8d765e0fc397187eaa882421c3d74d3e",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/bin/parquet-layout.rs",
+      "bytes": 8913,
+      "sha256": "5a8d67ac7cd767ca745d808b762983e92ce21d499827d72c0d2997e61ed8c1b7",
+      "source_sha256": "5a8d67ac7cd767ca745d808b762983e92ce21d499827d72c0d2997e61ed8c1b7",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/bin/parquet-read.rs",
+      "bytes": 3283,
+      "sha256": "a409b3b62675070d43bcddce1c1455bb417f5281a9eebb6dfe148c6f92d22ba9",
+      "source_sha256": "a409b3b62675070d43bcddce1c1455bb417f5281a9eebb6dfe148c6f92d22ba9",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/bin/parquet-rewrite.rs",
+      "bytes": 14047,
+      "sha256": "758cb548c662ad8ed8b5c9a68b0232c4f0701238003952421a63eab6b7c1a3e3",
+      "source_sha256": "758cb548c662ad8ed8b5c9a68b0232c4f0701238003952421a63eab6b7c1a3e3",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/bin/parquet-rowcount.rs",
+      "bytes": 2409,
+      "sha256": "3940ee5a39790788dd14a089c3f56528c12ab509c7dd050f2078d58741c0209e",
+      "source_sha256": "3940ee5a39790788dd14a089c3f56528c12ab509c7dd050f2078d58741c0209e",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/bin/parquet-schema.rs",
+      "bytes": 2649,
+      "sha256": "e2e679ead30cdf100c376fb462d109b6e8b0f18d57175cceeacc9eb5b1739e63",
+      "source_sha256": "e2e679ead30cdf100c376fb462d109b6e8b0f18d57175cceeacc9eb5b1739e63",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/bin/parquet-show-bloom-filter.rs",
+      "bytes": 5310,
+      "sha256": "e03778dbaa1ae51cb7c58c711763ffc303f60e14e920b25ea708f3469ad398b1",
+      "source_sha256": "e03778dbaa1ae51cb7c58c711763ffc303f60e14e920b25ea708f3469ad398b1",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/bloom_filter/mod.rs",
+      "bytes": 19705,
+      "sha256": "fb39d379cfdf5cffe65fd0b35abb9e1a0cb78e8d09e8606161e3d2531da57a9c",
+      "source_sha256": "fb39d379cfdf5cffe65fd0b35abb9e1a0cb78e8d09e8606161e3d2531da57a9c",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/column/mod.rs",
+      "bytes": 4391,
+      "sha256": "b797c4a8e23ce08b6664d03e42cfcebdb02faa8c7c1d5139d8645fd8a5dbb686",
+      "source_sha256": "b797c4a8e23ce08b6664d03e42cfcebdb02faa8c7c1d5139d8645fd8a5dbb686",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/column/page.rs",
+      "bytes": 19058,
+      "sha256": "ec7be1bd6976a2394ef0449303279e2dcd63a43e4d089188a7ecc6bf600bcecd",
+      "source_sha256": "ec7be1bd6976a2394ef0449303279e2dcd63a43e4d089188a7ecc6bf600bcecd",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/column/page_encryption.rs",
+      "bytes": 4281,
+      "sha256": "34df686273e31872bbf5f33398a58d632ee378bde4706564fb58ec5e940dfdac",
+      "source_sha256": "34df686273e31872bbf5f33398a58d632ee378bde4706564fb58ec5e940dfdac",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/column/page_encryption_disabled.rs",
+      "bytes": 1580,
+      "sha256": "71a3f095939dde8451949f3c390a6862f0224db00403759fa80d47981bf14bc8",
+      "source_sha256": "71a3f095939dde8451949f3c390a6862f0224db00403759fa80d47981bf14bc8",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/column/reader.rs",
+      "bytes": 43460,
+      "sha256": "6bf589006d68338b7608a55fa42e8e06d991c840a58fd8c57a7e5186742758b8",
+      "source_sha256": "6bf589006d68338b7608a55fa42e8e06d991c840a58fd8c57a7e5186742758b8",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/column/reader/decoder.rs",
+      "bytes": 18757,
+      "sha256": "cd51ecfa2e8f86f91b995c23fcbd2d584c2955fca58d8c1891223439a9d23190",
+      "source_sha256": "cd51ecfa2e8f86f91b995c23fcbd2d584c2955fca58d8c1891223439a9d23190",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/column/writer/encoder.rs",
+      "bytes": 13693,
+      "sha256": "01f68feec27856c98d6495052ca13e621bb8404e39c07fa8e2a1c89f584b76ca",
+      "source_sha256": "01f68feec27856c98d6495052ca13e621bb8404e39c07fa8e2a1c89f584b76ca",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/column/writer/mod.rs",
+      "bytes": 165665,
+      "sha256": "69bf5ed0d7b6537c0a835c23b886eb74d14099c4fb8bc5e2d56a80adc1eab116",
+      "source_sha256": "69bf5ed0d7b6537c0a835c23b886eb74d14099c4fb8bc5e2d56a80adc1eab116",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/compression.rs",
+      "bytes": 34505,
+      "sha256": "7828ca9d922994c0828d0ce13ee161e705e834d6e18664f67706b46259daba4c",
+      "source_sha256": "195a0cfdebf3cf1d5dca256feeb4fa2803340eb7c103285d7d4151a86a156fb8",
+      "source_identical": false
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/data_type.rs",
+      "bytes": 44971,
+      "sha256": "c28f81f52441cae9163c5483a69057258181bd1982f434758b6737d2646244e4",
+      "source_sha256": "c28f81f52441cae9163c5483a69057258181bd1982f434758b6737d2646244e4",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/encodings/decoding.rs",
+      "bytes": 70740,
+      "sha256": "7357981c0e27cbde2796e03c8a0e06850cbdf6d2705e4956750872a2d5f9e69a",
+      "source_sha256": "7357981c0e27cbde2796e03c8a0e06850cbdf6d2705e4956750872a2d5f9e69a",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/encodings/decoding/byte_stream_split_decoder.rs",
+      "bytes": 8336,
+      "sha256": "017114b443e406d29fc66be8fcbc280295a3486802170820c548ed9b3ff50c58",
+      "source_sha256": "017114b443e406d29fc66be8fcbc280295a3486802170820c548ed9b3ff50c58",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/encodings/encoding/byte_stream_split_encoder.rs",
+      "bytes": 7837,
+      "sha256": "8ea48728f12212c6fe75f705661e1deb7566a9f9e4cce0f021a411ddd2b635fa",
+      "source_sha256": "8ea48728f12212c6fe75f705661e1deb7566a9f9e4cce0f021a411ddd2b635fa",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/encodings/encoding/dict_encoder.rs",
+      "bytes": 6276,
+      "sha256": "c799a7cbff1b0f0ec837871a39d5781946ddd44782abbfe865f40f6886fbe539",
+      "source_sha256": "c799a7cbff1b0f0ec837871a39d5781946ddd44782abbfe865f40f6886fbe539",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/encodings/encoding/mod.rs",
+      "bytes": 42904,
+      "sha256": "1dbc11790a1ea8370e22c3aea6b1166cb1099902704263529f64fec6711b7dc0",
+      "source_sha256": "1dbc11790a1ea8370e22c3aea6b1166cb1099902704263529f64fec6711b7dc0",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/encodings/levels.rs",
+      "bytes": 5369,
+      "sha256": "a9ffbdbb61ce5f448d7181e345e7d08a413f06d9cca5dd1dfa37d3562f110d1f",
+      "source_sha256": "a9ffbdbb61ce5f448d7181e345e7d08a413f06d9cca5dd1dfa37d3562f110d1f",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/encodings/mod.rs",
+      "bytes": 889,
+      "sha256": "14df7b4bc46628bd874604ce22695832b012e2b59f4ea2912f590c169386821e",
+      "source_sha256": "14df7b4bc46628bd874604ce22695832b012e2b59f4ea2912f590c169386821e",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/encodings/rle.rs",
+      "bytes": 37166,
+      "sha256": "105935b74d3b47176dc0cab50a89e6fd526e23b3d1934e217e92b1e33d957e45",
+      "source_sha256": "105935b74d3b47176dc0cab50a89e6fd526e23b3d1934e217e92b1e33d957e45",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/encryption/ciphers.rs",
+      "bytes": 7019,
+      "sha256": "49f26b5cf9ce7fcb534bcaf1b58ad6fdb14c19f26401334522a60e9695e2d9bb",
+      "source_sha256": "49f26b5cf9ce7fcb534bcaf1b58ad6fdb14c19f26401334522a60e9695e2d9bb",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/encryption/decrypt.rs",
+      "bytes": 23199,
+      "sha256": "8c9e7d6e4ac19394f2e5efbcd52244b0c4f572e4f9ecd0b6a5eb6e0cd4f3e7a6",
+      "source_sha256": "8c9e7d6e4ac19394f2e5efbcd52244b0c4f572e4f9ecd0b6a5eb6e0cd4f3e7a6",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/encryption/encrypt.rs",
+      "bytes": 16245,
+      "sha256": "11e6676d3c39813bd9f43bcebc3008170be6dfffb112a6d7c5033f07bd4c921d",
+      "source_sha256": "11e6676d3c39813bd9f43bcebc3008170be6dfffb112a6d7c5033f07bd4c921d",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/encryption/mod.rs",
+      "bytes": 5045,
+      "sha256": "13822f0399262d5082eccaf5d16c2fca76e536bb28ac3077dd06d7ad3bc094e7",
+      "source_sha256": "13822f0399262d5082eccaf5d16c2fca76e536bb28ac3077dd06d7ad3bc094e7",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/encryption/modules.rs",
+      "bytes": 3390,
+      "sha256": "7c0bee268abf8efb090c4530e9461cea629b60876877b7c96b050968a72b0d31",
+      "source_sha256": "7c0bee268abf8efb090c4530e9461cea629b60876877b7c96b050968a72b0d31",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/errors.rs",
+      "bytes": 7068,
+      "sha256": "da0aa16446223b1004604c3c179232848fe12d7ef2c934c00f9800957f201e01",
+      "source_sha256": "da0aa16446223b1004604c3c179232848fe12d7ef2c934c00f9800957f201e01",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/column_crypto_metadata.rs",
+      "bytes": 2987,
+      "sha256": "b986c78dcdceafbeac0af08ab9ccd53618aefd4192477391e807a6e9fe4cddb6",
+      "source_sha256": "b986c78dcdceafbeac0af08ab9ccd53618aefd4192477391e807a6e9fe4cddb6",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/metadata/footer_tail.rs",
+      "bytes": 3825,
+      "sha256": "5dbb3ca3c621fb8bdce136c76c0ea98607e75d0969bb9277f696f55cd5722839",
+      "source_sha256": "5dbb3ca3c621fb8bdce136c76c0ea98607e75d0969bb9277f696f55cd5722839",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/metadata/memory.rs",
+      "bytes": 8874,
+      "sha256": "28f219c368806091944983eed04ab7956f9d1606b672bd2143e7f794b76e42f9",
+      "source_sha256": "28f219c368806091944983eed04ab7956f9d1606b672bd2143e7f794b76e42f9",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/metadata/mod.rs",
+      "bytes": 68039,
+      "sha256": "7430cbb89bd9e4169f5fd0ca677a95e0066c502e22b859805b1147a8d419cf6d",
+      "source_sha256": "7430cbb89bd9e4169f5fd0ca677a95e0066c502e22b859805b1147a8d419cf6d",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/metadata/parser.rs",
+      "bytes": 10886,
+      "sha256": "75653fb97248ff1e45dffc8dd907781643033165cadba9d05af3089c8d9f5d10",
+      "source_sha256": "75653fb97248ff1e45dffc8dd907781643033165cadba9d05af3089c8d9f5d10",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/metadata/push_decoder.rs",
+      "bytes": 30604,
+      "sha256": "9e5d0475db174b2b360ed13026696db52c383a808385c224c5a0b96a41d4404f",
+      "source_sha256": "9e5d0475db174b2b360ed13026696db52c383a808385c224c5a0b96a41d4404f",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/metadata/reader.rs",
+      "bytes": 57137,
+      "sha256": "ebe71e27acf81d91c36bbc2faa49f8d8f2c9c89646476cb3640ccfb5125096ba",
+      "source_sha256": "ebe71e27acf81d91c36bbc2faa49f8d8f2c9c89646476cb3640ccfb5125096ba",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/metadata/thrift/encryption.rs",
+      "bytes": 12117,
+      "sha256": "770279e74fd52728cb9a48b852d433e578a835de191d12659a0be44467ae98be",
+      "source_sha256": "770279e74fd52728cb9a48b852d433e578a835de191d12659a0be44467ae98be",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/metadata/thrift/mod.rs",
+      "bytes": 62429,
+      "sha256": "0fca62c9f339c34a12d5b845010801a0042dedad05deb13a406a8b85ba89a28e",
+      "source_sha256": "0fca62c9f339c34a12d5b845010801a0042dedad05deb13a406a8b85ba89a28e",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/metadata/writer.rs",
+      "bytes": 30799,
+      "sha256": "2e5d8de3cc8300cc6f7ff0f11022050e4506b60ff2fb771c4b391ab3b28b2197",
+      "source_sha256": "2e5d8de3cc8300cc6f7ff0f11022050e4506b60ff2fb771c4b391ab3b28b2197",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/mod.rs",
+      "bytes": 3901,
+      "sha256": "ba34930ecce907bfb7b0ecf01f2b16128498052a106b3023378adfd02a435971",
+      "source_sha256": "ba34930ecce907bfb7b0ecf01f2b16128498052a106b3023378adfd02a435971",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/page_index/column_index.rs",
+      "bytes": 26453,
+      "sha256": "68dff86cac9ed211e7d49d930133be5fcec47b3c756cbe59e13d60b71d7b0807",
+      "source_sha256": "68dff86cac9ed211e7d49d930133be5fcec47b3c756cbe59e13d60b71d7b0807",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/page_index/index_reader.rs",
+      "bytes": 7213,
+      "sha256": "c9443ef529bcd26453609a115eeeb7886bb8efae8b49f71b58284a8921749cfd",
+      "source_sha256": "c9443ef529bcd26453609a115eeeb7886bb8efae8b49f71b58284a8921749cfd",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/page_index/mod.rs",
+      "bytes": 1026,
+      "sha256": "87717035d2fbd0c8a338994d592e28f9e8e9fa502b4d3369b332ab3156ef3374",
+      "source_sha256": "87717035d2fbd0c8a338994d592e28f9e8e9fa502b4d3369b332ab3156ef3374",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/page_index/offset_index.rs",
+      "bytes": 7339,
+      "sha256": "64c6e2566e27c0b248c6e0f72dd02fea2659a8767e7c981009f61f64085c78b3",
+      "source_sha256": "64c6e2566e27c0b248c6e0f72dd02fea2659a8767e7c981009f61f64085c78b3",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/properties.rs",
+      "bytes": 64106,
+      "sha256": "c92b0eb86a84410979b56095c1e0f1ccf7a3744812a9bd9692f2a7783d625cf6",
+      "source_sha256": "c92b0eb86a84410979b56095c1e0f1ccf7a3744812a9bd9692f2a7783d625cf6",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/reader.rs",
+      "bytes": 10255,
+      "sha256": "ce108a35216fdd53a07731d3c7c754db50335302a5c68dfcf5774fe8516140e3",
+      "source_sha256": "ce108a35216fdd53a07731d3c7c754db50335302a5c68dfcf5774fe8516140e3",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/serialized_reader.rs",
+      "bytes": 102543,
+      "sha256": "cb5a3d31b8219e0751e171f96018e3db856c11075208da7734d68c381ccd8615",
+      "source_sha256": "cb5a3d31b8219e0751e171f96018e3db856c11075208da7734d68c381ccd8615",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/statistics.rs",
+      "bytes": 39620,
+      "sha256": "b26d7072de557440e7dbc9d830260820468093660466ae5d3eaa9f82f589111f",
+      "source_sha256": "b26d7072de557440e7dbc9d830260820468093660466ae5d3eaa9f82f589111f",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/file/writer.rs",
+      "bytes": 91922,
+      "sha256": "1ab0d928def94971b0f63c84e79044cdf45e3ef7b75f051d0582d1443ee367e0",
+      "source_sha256": "1ab0d928def94971b0f63c84e79044cdf45e3ef7b75f051d0582d1443ee367e0",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/format.rs",
+      "bytes": 209691,
+      "sha256": "14fa0958710481a9616e902a32991baa3e998f69a5b0d07f4002a286fa59273f",
+      "source_sha256": "14fa0958710481a9616e902a32991baa3e998f69a5b0d07f4002a286fa59273f",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/geospatial/accumulator.rs",
+      "bytes": 14950,
+      "sha256": "a5b5dba9315a21a16a0361dff2f720d981884f5c471c75be2bf07af81e6520cd",
+      "source_sha256": "a5b5dba9315a21a16a0361dff2f720d981884f5c471c75be2bf07af81e6520cd",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/geospatial/bounding_box.rs",
+      "bytes": 7816,
+      "sha256": "971e8be47f63e53d58581aec3da58ae2b50ff557a02f9467005258bff96e97b5",
+      "source_sha256": "971e8be47f63e53d58581aec3da58ae2b50ff557a02f9467005258bff96e97b5",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/geospatial/mod.rs",
+      "bytes": 2479,
+      "sha256": "e19b53bc377eab2efb21f02e9980056abf6b4a830fe364af025b4fd9a92a31d8",
+      "source_sha256": "e19b53bc377eab2efb21f02e9980056abf6b4a830fe364af025b4fd9a92a31d8",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/geospatial/statistics.rs",
+      "bytes": 2862,
+      "sha256": "824a36f14b7a07fb180208f10f2470fdeae498ad187c1a05fbdafe5538064585",
+      "source_sha256": "824a36f14b7a07fb180208f10f2470fdeae498ad187c1a05fbdafe5538064585",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/lib.rs",
+      "bytes": 8481,
+      "sha256": "cd6234c2319e6d37a71c68542128b00f5cb17d9697b9310260e2f5d445c4e54d",
+      "source_sha256": "cd6234c2319e6d37a71c68542128b00f5cb17d9697b9310260e2f5d445c4e54d",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/parquet_macros.rs",
+      "bytes": 20651,
+      "sha256": "1b227de00a4b6c8763c962d6ca98db5570820b2600cb4651cff589f7508df6a0",
+      "source_sha256": "1b227de00a4b6c8763c962d6ca98db5570820b2600cb4651cff589f7508df6a0",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/parquet_thrift.rs",
+      "bytes": 36825,
+      "sha256": "4b465dfdf0636df28b4fdf9347c0353ecaaab751ce8e6021e3229320107142ed",
+      "source_sha256": "4b465dfdf0636df28b4fdf9347c0353ecaaab751ce8e6021e3229320107142ed",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/record/api.rs",
+      "bytes": 78967,
+      "sha256": "ed20d2281ca849634d1e0b4243ff18354a9448e778b55eb999152963212c320a",
+      "source_sha256": "ed20d2281ca849634d1e0b4243ff18354a9448e778b55eb999152963212c320a",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/record/mod.rs",
+      "bytes": 1140,
+      "sha256": "b4f026402e005579250d97cb6238999e1ac22b87e2c075a3eaf311f169b35cdc",
+      "source_sha256": "b4f026402e005579250d97cb6238999e1ac22b87e2c075a3eaf311f169b35cdc",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/record/reader.rs",
+      "bytes": 71886,
+      "sha256": "5aaccc154f889d3e418e52c060703869574aaf202c5567b45bdaee8f28ddd9db",
+      "source_sha256": "5aaccc154f889d3e418e52c060703869574aaf202c5567b45bdaee8f28ddd9db",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/record/record_reader.rs",
+      "bytes": 1358,
+      "sha256": "cffc96f01028676ada1a555debafe4ba5b15d47253b7b1583b2455ee2b3db932",
+      "source_sha256": "cffc96f01028676ada1a555debafe4ba5b15d47253b7b1583b2455ee2b3db932",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/record/record_writer.rs",
+      "bytes": 1802,
+      "sha256": "41efd6c6aedeee01a3e8097c9216fcc337510ba608f3e6318658f3b916258c20",
+      "source_sha256": "41efd6c6aedeee01a3e8097c9216fcc337510ba608f3e6318658f3b916258c20",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/record/triplet.rs",
+      "bytes": 20585,
+      "sha256": "fd06f80ad735a2098f60299c8af699a740aded120e441a1fcb5588f11bfae027",
+      "source_sha256": "fd06f80ad735a2098f60299c8af699a740aded120e441a1fcb5588f11bfae027",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/schema/mod.rs",
+      "bytes": 2842,
+      "sha256": "a365a4b256a32ad1779e23f04252803c9da2f6579b77dc38d38c43fe7ec99fd4",
+      "source_sha256": "a365a4b256a32ad1779e23f04252803c9da2f6579b77dc38d38c43fe7ec99fd4",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/schema/parser.rs",
+      "bytes": 41351,
+      "sha256": "31333e1d45066540e28d84d1eda488f010ddd567fa7a4393eea3a9db3397505e",
+      "source_sha256": "31333e1d45066540e28d84d1eda488f010ddd567fa7a4393eea3a9db3397505e",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/schema/printer.rs",
+      "bytes": 42023,
+      "sha256": "a1b46deb8b7026aa60d98a31a0b17030c28516daa8b7c7a848653c179a3b5d12",
+      "source_sha256": "a1b46deb8b7026aa60d98a31a0b17030c28516daa8b7c7a848653c179a3b5d12",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/schema/types.rs",
+      "bytes": 81438,
+      "sha256": "3901b19e7dcb32b943ad62cd835385048ca38c9c7ced3dc127f562fcca8f0b43",
+      "source_sha256": "3901b19e7dcb32b943ad62cd835385048ca38c9c7ced3dc127f562fcca8f0b43",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/schema/visitor.rs",
+      "bytes": 8244,
+      "sha256": "452ff71b92d6fd42737c4da8004d0f98a6ecd805b4bf44633a19f0d3a7d31812",
+      "source_sha256": "452ff71b92d6fd42737c4da8004d0f98a6ecd805b4bf44633a19f0d3a7d31812",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/thrift.rs",
+      "bytes": 3490,
+      "sha256": "a32c6aa8cef0ef672ab650d4aaf0761f28dda852068356153e5c5560b6329389",
+      "source_sha256": "a32c6aa8cef0ef672ab650d4aaf0761f28dda852068356153e5c5560b6329389",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/util/bit_pack.rs",
+      "bytes": 4651,
+      "sha256": "ee166cc8e9c93c16ee1e54f4c5ef60f387948d5fea248b61c1bf45c953a5d5af",
+      "source_sha256": "ee166cc8e9c93c16ee1e54f4c5ef60f387948d5fea248b61c1bf45c953a5d5af",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/util/bit_util.rs",
+      "bytes": 40951,
+      "sha256": "953f53efcadfe466f2107dcc67f38ba1e73f8efd6aa0af789dd32892f072904b",
+      "source_sha256": "953f53efcadfe466f2107dcc67f38ba1e73f8efd6aa0af789dd32892f072904b",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/util/interner.rs",
+      "bytes": 3193,
+      "sha256": "f9938ddebae71ca0a6c274eb9471943cc82c8525f4aea6d441c058ddef28f0f2",
+      "source_sha256": "f9938ddebae71ca0a6c274eb9471943cc82c8525f4aea6d441c058ddef28f0f2",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/util/mod.rs",
+      "bytes": 1131,
+      "sha256": "129f0cc534ba8ccb25f962fa068b197838d5b96258f0d27c1f057ccb9885b7e9",
+      "source_sha256": "129f0cc534ba8ccb25f962fa068b197838d5b96258f0d27c1f057ccb9885b7e9",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/util/push_buffers.rs",
+      "bytes": 6627,
+      "sha256": "4191abf5eb951226ccab78889a4387544a3c6a1d1f9b8232552a38150458bb5e",
+      "source_sha256": "4191abf5eb951226ccab78889a4387544a3c6a1d1f9b8232552a38150458bb5e",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/util/test_common/file_util.rs",
+      "bytes": 1488,
+      "sha256": "f44d07d280c9e473da2780d4d0860fc45d2e72e48afcf828eaed13efb3c17a0f",
+      "source_sha256": "f44d07d280c9e473da2780d4d0860fc45d2e72e48afcf828eaed13efb3c17a0f",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/util/test_common/mod.rs",
+      "bytes": 886,
+      "sha256": "e1193f2ddb43d626d01129a5fb11ef550d93bc129e1652a9df920a91bcada13d",
+      "source_sha256": "e1193f2ddb43d626d01129a5fb11ef550d93bc129e1652a9df920a91bcada13d",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/util/test_common/page_util.rs",
+      "bytes": 9207,
+      "sha256": "741e4454eac79fa56779409c5d3096be12fcb3138388b464f4c3839088c8b7da",
+      "source_sha256": "741e4454eac79fa56779409c5d3096be12fcb3138388b464f4c3839088c8b7da",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/util/test_common/rand_gen.rs",
+      "bytes": 6432,
+      "sha256": "7fe918eceb3f21a341d483cfa8c54186e9e7536020ee01e552874be7dc6e034f",
+      "source_sha256": "7fe918eceb3f21a341d483cfa8c54186e9e7536020ee01e552874be7dc6e034f",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/util/utf8.rs",
+      "bytes": 2169,
+      "sha256": "bfa5b876a43bc5d124ece8153a18ef08da244e1621961ba8e0fc03147c881ec0",
+      "source_sha256": "bfa5b876a43bc5d124ece8153a18ef08da244e1621961ba8e0fc03147c881ec0",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/src/variant.rs",
+      "bytes": 12318,
+      "sha256": "3452befdefca1d38592434054408f0ba942fa0a31666aaa2b2c8c03afa02ed1d",
+      "source_sha256": "3452befdefca1d38592434054408f0ba942fa0a31666aaa2b2c8c03afa02ed1d",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/arrow_reader/bad_data.rs",
+      "bytes": 5659,
+      "sha256": "5cfa84e61f4c6a7a51d88ed3dfc50e902bd22b0bdb771903336b69d0d9b290a4",
+      "source_sha256": "5cfa84e61f4c6a7a51d88ed3dfc50e902bd22b0bdb771903336b69d0d9b290a4",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/arrow_reader/bad_raw_metadata.bin",
+      "bytes": 35456,
+      "sha256": "6b5ea4cf5c2c2098f59d658c65188089ab0f4db4434d3ad1176e9ec0f93b092c",
+      "source_sha256": "6b5ea4cf5c2c2098f59d658c65188089ab0f4db4434d3ad1176e9ec0f93b092c",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/arrow_reader/checksum.rs",
+      "bytes": 2918,
+      "sha256": "93a87027886fd1460dbbcf349ac32fd82efca2f3bd1c961a9e7038d7555a6044",
+      "source_sha256": "93a87027886fd1460dbbcf349ac32fd82efca2f3bd1c961a9e7038d7555a6044",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/arrow_reader/int96_stats_roundtrip.rs",
+      "bytes": 5414,
+      "sha256": "46c4ca1fe3fcc9e6f37c0e642c34ef3da81b0b14d9423d7617e9462c36d3696b",
+      "source_sha256": "46c4ca1fe3fcc9e6f37c0e642c34ef3da81b0b14d9423d7617e9462c36d3696b",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/arrow_reader/io/async_reader.rs",
+      "bytes": 17682,
+      "sha256": "08d6c238b6aa479a59d848de05aacd91181a7f4b6f135ebec5c3133b2054325b",
+      "source_sha256": "08d6c238b6aa479a59d848de05aacd91181a7f4b6f135ebec5c3133b2054325b",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/arrow_reader/io/mod.rs",
+      "bytes": 25645,
+      "sha256": "52cdd445771c7d7fe9ba035369ea508fbd7569edd1f222b002e1e23c4ec6521e",
+      "source_sha256": "52cdd445771c7d7fe9ba035369ea508fbd7569edd1f222b002e1e23c4ec6521e",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/arrow_reader/io/sync_reader.rs",
+      "bytes": 19783,
+      "sha256": "da7905203b42d820e8cca7559deaed7a564f6e0d7b871067d289ea169598c8ca",
+      "source_sha256": "da7905203b42d820e8cca7559deaed7a564f6e0d7b871067d289ea169598c8ca",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/arrow_reader/mod.rs",
+      "bytes": 41703,
+      "sha256": "49ba8c6229e29995dffff3d1bec63dce087ffc605fa3f3fb728ea5c33be32285",
+      "source_sha256": "49ba8c6229e29995dffff3d1bec63dce087ffc605fa3f3fb728ea5c33be32285",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/arrow_reader/predicate_cache.rs",
+      "bytes": 10651,
+      "sha256": "505486d6be739db92f4e8edc4cc7e744993adaaa9d29e33e778e035fe7abbdf4",
+      "source_sha256": "505486d6be739db92f4e8edc4cc7e744993adaaa9d29e33e778e035fe7abbdf4",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/arrow_reader/statistics.rs",
+      "bytes": 112985,
+      "sha256": "021219060020c81dd38eee70f87a92c5c0ece0ff4d346131205d5660a23aa7d8",
+      "source_sha256": "021219060020c81dd38eee70f87a92c5c0ece0ff4d346131205d5660a23aa7d8",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/arrow_writer_layout.rs",
+      "bytes": 19697,
+      "sha256": "e14cbee8006fde102f26aa1e2c7485b8043250d2df7fdb135e4161eaf8535f62",
+      "source_sha256": "e14cbee8006fde102f26aa1e2c7485b8043250d2df7fdb135e4161eaf8535f62",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/encryption/encryption.rs",
+      "bytes": 37950,
+      "sha256": "23b52d46c1e8a3b93690c4c30c80916f84100c6a8a3f699f0d1778e032b4ae25",
+      "source_sha256": "23b52d46c1e8a3b93690c4c30c80916f84100c6a8a3f699f0d1778e032b4ae25",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/encryption/encryption_agnostic.rs",
+      "bytes": 5555,
+      "sha256": "0dd34709216a4d21aaa23174988e296072faf5c53db8cce1dbcf380c47c23282",
+      "source_sha256": "0dd34709216a4d21aaa23174988e296072faf5c53db8cce1dbcf380c47c23282",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/encryption/encryption_async.rs",
+      "bytes": 35252,
+      "sha256": "a18f2d7c86040d902c97001d5b40b17c9583ca5e5f6f83a3ca441428843e8996",
+      "source_sha256": "a18f2d7c86040d902c97001d5b40b17c9583ca5e5f6f83a3ca441428843e8996",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/encryption/encryption_disabled.rs",
+      "bytes": 2509,
+      "sha256": "c684f55f3c5d779d862a3fe1ea0fa811acfbee98bd8e4ba5dd9d276590468757",
+      "source_sha256": "c684f55f3c5d779d862a3fe1ea0fa811acfbee98bd8e4ba5dd9d276590468757",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/encryption/encryption_util.rs",
+      "bytes": 11711,
+      "sha256": "10e8f8301edff715d7d186a2fa5681f71948ad3f561554bb1d9a75d964c2b0eb",
+      "source_sha256": "10e8f8301edff715d7d186a2fa5681f71948ad3f561554bb1d9a75d964c2b0eb",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/encryption/mod.rs",
+      "bytes": 1064,
+      "sha256": "6112316d394e4288f8f8b80572f00c21f911191c331ca10e77079b513ce5f7b6",
+      "source_sha256": "6112316d394e4288f8f8b80572f00c21f911191c331ca10e77079b513ce5f7b6",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/geospatial.rs",
+      "bytes": 16099,
+      "sha256": "77c41b1b6f3a1a62773454bcb38e10d5e5d65e99c9fab88f1020d7dbe181876c",
+      "source_sha256": "77c41b1b6f3a1a62773454bcb38e10d5e5d65e99c9fab88f1020d7dbe181876c",
+      "source_identical": true
+    },
+    {
+      "path": "vendor/parquet-57.0.0-decoder-v1/tests/variant_integration.rs",
+      "bytes": 14880,
+      "sha256": "88e3db39a4f335f2e9ee508677f155cd092fc884fb767892e0bf55f79cb024d9",
+      "source_sha256": "88e3db39a4f335f2e9ee508677f155cd092fc884fb767892e0bf55f79cb024d9",
+      "source_identical": true
+    }
+  ]
+}

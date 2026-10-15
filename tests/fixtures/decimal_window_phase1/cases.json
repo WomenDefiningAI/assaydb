@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "creation_status": "source-only; not yet executed",
+  "setup": [
+    "CREATE TABLE dw (id INTEGER, k DECIMAL(6,2), p INTEGER)",
+    "INSERT INTO dw VALUES (1,1.24,1),(2,1.25,1),(3,1.26,1),(4,-1.25,1),(5,NULL,1),(6,1.25,2)"
+  ],
+  "cases": [
+    {
+      "name": "rounded_order_peers",
+      "sql": "SELECT id,RANK() OVER (PARTITION BY p ORDER BY CAST(k AS DECIMAL(5,1)) NULLS LAST) AS r,DENSE_RANK() OVER (PARTITION BY p ORDER BY CAST(k AS DECIMAL(5,1)) NULLS LAST) AS d FROM dw ORDER BY id",
+      "rows": [[1,2,2],[2,3,3],[3,3,3],[4,1,1],[5,5,4],[6,1,1]],
+      "activation_control": true,
+      "derivation": "p1 rounded keys in order: -1.3,1.2,1.3,1.3,NULL. p2 has one row."
+    },
+    {
+      "name": "rounded_partition_coalesces",
+      "sql": "SELECT id,ROW_NUMBER() OVER (PARTITION BY k::NUMERIC(5,1) ORDER BY id) AS n FROM dw ORDER BY id",
+      "rows": [[1,1],[2,1],[3,2],[4,1],[5,1],[6,3]],
+      "derivation": "ids2,3,6 share rounded key1.3; other keys each have one row."
+    },
+    {
+      "name": "grouped_sum_cast_key",
+      "sql": "SELECT p,RANK() OVER (ORDER BY CAST(SUM(k) AS DEC(5,1))) AS r FROM dw GROUP BY p ORDER BY p",
+      "rows": [[1,2],[2,1]],
+      "derivation": "p1 sum2.50 rounds2.5; p2 sum1.25 rounds1.3."
+    },
+    {
+      "name": "cast_window_output",
+      "sql": "SELECT id,CAST(ROW_NUMBER() OVER (PARTITION BY p ORDER BY id) AS DECIMAL(3,1)) AS n FROM dw ORDER BY id",
+      "rows": [[1,"1.0"],[2,"2.0"],[3,"3.0"],[4,"4.0"],[5,"5.0"],[6,"1.0"]],
+      "derivation": "Exact rank integers convert to coefficients10,20,30,40,50,10."
+    },
+    {
+      "name": "alias_cast_before_window",
+      "sql": "SELECT id,RANK() OVER (ORDER BY rounded NULLS LAST) AS r FROM (SELECT id,CAST(k AS DECIMAL(5,1)) AS rounded FROM dw) q ORDER BY id",
+      "rows": [[1,2],[2,3],[3,3],[4,1],[5,6],[6,3]],
+      "derivation": "Global rounded order puts id4 first,id1 second,ids2,3,6 tied third,NULL sixth."
+    },
+    {
+      "name": "filtered_key_overflow_absent",
+      "sql": "SELECT id,ROW_NUMBER() OVER (ORDER BY CAST(id + 5 AS DECIMAL(1,0))) AS n FROM dw WHERE id <= 4 ORDER BY id",
+      "rows": [[1,1],[2,2],[3,3],[4,4]],
+      "derivation": "WHERE removes ids5,6 before keys are evaluated; remaining keys6..9 fit."
+    },
+    {
+      "name": "limit_does_not_hide_key_overflow",
+      "sql": "SELECT id,ROW_NUMBER() OVER (ORDER BY CAST(id + 5 AS DECIMAL(1,0))) AS n FROM dw ORDER BY id LIMIT 1",
+      "error_contains": "decimal cast precision overflow",
+      "derivation": "Window keys for id5 and6 overflow before final LIMIT."
+    },
+    {
+      "name": "case_key_masks_overflow",
+      "sql": "SELECT id,RANK() OVER (ORDER BY CASE WHEN id <= 4 THEN CAST(id + 5 AS DECIMAL(1,0)) ELSE CAST(0 AS DECIMAL(1,0)) END) AS r FROM dw ORDER BY id",
+      "rows": [[1,3],[2,4],[3,5],[4,6],[5,1],[6,1]],
+      "derivation": "CASE masks unsafe casts on ids5,6; zero keys tie first,keys6..9 rank3..6."
+    },
+    {
+      "name": "case_window_output_masks_overflow",
+      "sql": "SELECT id,CASE WHEN id <= 4 THEN CAST(ROW_NUMBER() OVER (ORDER BY id) + 5 AS DECIMAL(1,0)) ELSE CAST(0 AS DECIMAL(1,0)) END AS n FROM dw ORDER BY id",
+      "rows": [[1,"6"],[2,"7"],[3,"8"],[4,"9"],[5,"0"],[6,"0"]],
+      "derivation": "Window numbers1..6 are computed; CASE reaches the cast only for numbers1..4."
+    },
+    {
+      "name": "reached_window_output_overflow",
+      "sql": "SELECT id,CAST(ROW_NUMBER() OVER (ORDER BY id) + 5 AS DECIMAL(1,0)) AS n FROM dw ORDER BY id",
+      "error_contains": "decimal cast precision overflow",
+      "derivation": "The reached projection casts10 and11 and must fail."
+    },
+    {
+      "name": "same_scale_key_narrowing",
+      "sql": "SELECT id,RANK() OVER (ORDER BY CAST(CAST(id + 5 AS DECIMAL(3,0)) AS DECIMAL(1,0))) AS r FROM dw ORDER BY id",
+      "error_contains": "decimal cast precision overflow",
+      "derivation": "Outer same-scale precision narrowing must check10 and11."
+    },
+    {
+      "name": "null_and_nested_cast_keys",
+      "sql": "SELECT id,DENSE_RANK() OVER (PARTITION BY p ORDER BY CAST(CAST(k AS DECIMAL(5,1)) AS NUMERIC(6,2)) NULLS FIRST) AS r FROM dw ORDER BY id",
+      "rows": [[1,3],[2,4],[3,4],[4,2],[5,1],[6,1]],
+      "derivation": "p1 distinct keys with NULL first are NULL,-1.30,1.20,1.30; p2 singleton rank1."
+    }
+  ]
+}

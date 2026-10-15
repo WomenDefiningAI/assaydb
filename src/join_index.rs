@@ -49,6 +49,16 @@ impl<'a> HashIndex<'a> {
         hash_head(&self.map, self.keys, self.hash.hash_one(key), key)
     }
 
+    /// Test oracle: the first `key_row` recorded for `key`.
+    #[cfg(test)]
+    pub(crate) fn key_row(&self, key: &[u8]) -> Option<u32> {
+        self.map
+            .find(self.hash.hash_one(key), |e| {
+                self.keys.row(e.key_row as usize) == key
+            })
+            .map(|e| e.key_row)
+    }
+
     fn populate(&mut self, next: &mut [u32]) {
         let keys = self.keys;
         if let Some(numbers) = keys.numeric_values() {

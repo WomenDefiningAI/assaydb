@@ -435,17 +435,10 @@ fn clustered_barrier_error_survives_fallback_at_every_worker_and_batch_width() {
                 spill: None,
                 ..fixture.options(workers)
             };
-            // The review's numeric-literal DECIMAL cast is currently refused;
-            // the supported text-literal cast exercises the intended error race.
-            assert_eq!(
-                rel::prepare(
-                    "SELECT SUM(v) / CAST(0 AS DECIMAL(1,0)), SUM(d) FROM t GROUP BY k HAVING SUM(v) > 0",
-                    &fixture.tables,
-                    &options,
-                ).err().unwrap(),
-                "unsupported: only lossless literal casts in M1",
-            );
+            // Explicit exact DECIMAL casts now bind. Both original spellings
+            // must preserve the grouped completion error before downstream division.
             for sql in [
+                "SELECT SUM(v) / CAST(0 AS DECIMAL(1,0)), SUM(d) FROM t GROUP BY k HAVING SUM(v) > 0",
                 "SELECT SUM(v) / CAST('0' AS DECIMAL(1,0)), SUM(d) FROM t GROUP BY k HAVING SUM(v) > 0",
                 "SELECT SUM(d) FROM t GROUP BY k HAVING FALSE",
             ] {

@@ -36,6 +36,7 @@ fn raw_bigint_column(node: &Node, column: usize, remaining: usize) -> bool {
         | RelOp::Limit { input, .. }
         | RelOp::Materialize { input, .. }
         | RelOp::Scalar { input } => raw_bigint_column(input, column, next),
+        RelOp::WindowOrder { input, .. } => raw_bigint_column(input, column, next),
         RelOp::Project { input, columns } => columns
             .get(column)
             .is_some_and(|source| raw_bigint_column(input, *source, next)),
@@ -83,7 +84,9 @@ fn grouping_source<'a>(node: &'a Node, source: &Schema, remaining: usize) -> Opt
         RelOp::Unary { plan, input } if plan.aggregation => {
             std::ptr::eq(input.schema.as_ref(), source).then_some(input.as_ref())
         }
-        RelOp::Filter { input, .. }
+        RelOp::WindowOrder { input, .. }
+        | RelOp::Window { input, .. }
+        | RelOp::Filter { input, .. }
         | RelOp::Rename { input }
         | RelOp::Project { input, .. }
         | RelOp::Limit { input, .. }

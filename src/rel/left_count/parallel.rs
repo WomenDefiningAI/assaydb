@@ -36,6 +36,17 @@ fn scan_column(node: &Node, column: usize) -> Option<(&Node, usize)> {
     }
 }
 
+fn required_counts(right: &Node, columns: &[Option<usize>]) -> bool {
+    columns.iter().all(|column| {
+        column.is_none_or(|column| {
+            scan_column(right, column).is_some_and(|(scan, column)| {
+                let field = scan.schema.field(column);
+                !field.is_nullable() && field.data_type() != &arrow::datatypes::DataType::Null
+            })
+        })
+    })
+}
+
 fn expression_bytes(expr: &Expr) -> Option<usize> {
     let children = match &expr.kind {
         Kind::Binary(_, a, b) | Kind::Like(a, b, _) => {
@@ -184,12 +195,19 @@ pub(super) fn build(
         .options
         .workers
         .min(metadata.metadata().num_row_groups().max(1));
-    let width = columns.len() + 1;
+    let collapsed = required_counts(right, columns);
+    let row_bound = metadata.metadata().file_metadata().num_rows();
+    let width = if collapsed { 1 } else { columns.len() + 1 };
+    let cell_bytes = if collapsed {
+        Counts::compact_cell_bytes(row_bound)
+    } else {
+        8
+    };
     // Optional storage admission, never a key-domain assumption. Bound the
     // total replicated window, not just one owner's allocation.
     let Some(bytes) = len
         .checked_mul(width)
-        .and_then(|n| n.checked_mul(8))
+        .and_then(|n| n.checked_mul(cell_bytes))
         .and_then(|n| n.checked_mul(owners))
         .filter(|n| *n <= (budget.limit() / 4).min(512 << 20))
     else {
@@ -208,8 +226,12 @@ pub(super) fn build(
     };
     let mut slots = Vec::with_capacity(owners);
     for _ in 0..owners {
-        let lease = funding.split_off(len * width * 8)?;
-        let counts = Counts::with_window(width, base, len, lease)?;
+        let lease = funding.split_off(len * width * cell_bytes)?;
+        let counts = if collapsed {
+            Counts::with_compact_window(base, len, row_bound, lease)?
+        } else {
+            Counts::with_window(width, base, len, lease)?
+        };
         slots.push(Mutex::new(Owner {
             counts,
             rows: 0,
@@ -253,18 +275,12 @@ pub(super) fn build(
                 .iter()
                 .map(|filter| filter.eval(&input, &budget))
                 .collect::<Result<Vec<_>>>()?;
-            let selected = (0..batch.num_rows())
-                .filter(|&row| {
-                    masks.iter().all(|mask| {
-                        !is_sql_null(mask.array.as_ref(), row) && boolean(&mask.array).value(row)
-                    })
-                })
-                .count();
             let keys = BatchKeys::new(&batch, &keys, &budget)?;
             let mut owner = slots.owner()?;
-            owner
-                .counts
-                .add(&keys, &batch, &columns, &masks, &budget, &cancellation)?;
+            let selected =
+                owner
+                    .counts
+                    .add(&keys, &batch, &columns, &masks, &budget, &cancellation)?;
             owner.rows = owner
                 .rows
                 .checked_add(batch.num_rows())
@@ -447,14 +463,14 @@ impl Probe<'_> {
                     self.options.cancellation.check()?;
                 }
                 if let Some(group) = keys.group(row, counts) {
-                    for (total, count) in totals[row * width..(row + 1) * width]
+                    for (slot, total) in totals[row * width..(row + 1) * width]
                         .iter_mut()
-                        .zip(&counts.values[group * width..(group + 1) * width])
+                        .enumerate()
                     {
                         // Nonnegative local counts sum to at most the checked
                         // u32 build cardinality; still check every addition.
                         *total = total
-                            .checked_add(*count)
+                            .checked_add(counts.value(group, slot))
                             .ok_or("resource-limit: join build indices")?;
                     }
                 }

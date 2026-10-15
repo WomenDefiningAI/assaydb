@@ -115,3 +115,34 @@ The native session protocol leaves these readers disabled by default. Temporary
 materialization belongs to the query/session and is cleaned up on completion.
 Python exception guidance changes wording only; it does not widen accepted SQL.
 See the quickstart and package tests for the supported API and file behavior.
+
+## Exact DECIMAL casts and ranking windows
+
+Explicit CAST and `::DECIMAL(p,s)` accept INTEGER and DECIMAL expressions,
+including columns and aggregates. NUMERIC and DEC are target synonyms. Precision
+is 1..38, scale is 0..18 and cannot exceed precision. Integer arithmetic rounds
+scale reduction to nearest, ties away from zero; precision is checked after
+rounding, and overflow errors. NULL stays NULL and selected CASE arms retain row
+masks. Float/text-column sources and bare/precision-only targets remain unsupported.
+Literal-text conversion remains lossless. No implicit rescaling is introduced.
+
+ROW_NUMBER, RANK and DENSE_RANK admit inline OVER, optional PARTITION BY and
+ORDER BY with ASC/DESC and NULLS FIRST/LAST (default LAST). Ranking follows WHERE,
+GROUP BY and HAVING, before projection, DISTINCT, final ordering and LIMIT.
+Exact typed keys retain Decimal precision. Equal signed zeros share keys without
+changing output bits; distinct NaN payloads remain distinct, intentionally differing
+from DuckDB grouping. That difference is retained in the reference fixture.
+
+A private input ordinal resolves ranking peers and restores input order. Grouped
+and join inputs receive canonical tuple ordering; affected upstream LIMIT/partial
+sorts complete their ordering before row selection. Canonicalization required
+inside a materialized CTE is explicitly refused, including single-use CTEs inlined
+later. Frames, named WINDOW clauses, QUALIFY, aggregate windows and other analytic
+functions remain unsupported. Windows in WHERE/GROUP BY/HAVING or aggregate
+arguments are unsupported. DISTINCT ordering-only windows must also be selected.
+
+Native tests cover worker/batch/spill matrices, activation counters, cancellation,
+reservation release, schema/order preservation and explicit refusals. Engine
+reservation bounds do not include every native decoder allocation or imply a
+whole-process memory cap. See [qualification](docs/ENGINE-SNAPSHOT-QUALIFICATION.md)
+for exact test identities, incomplete prerequisites and acceptance limits.

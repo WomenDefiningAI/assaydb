@@ -292,6 +292,18 @@ fn walk<const MARKS: bool>(node: Node, mut needed: Needed) -> Result<(Node, Vec<
         // Retain their full immediate schemas while optimizing their descendants.
         op => {
             let op = match op {
+                // Complete tuple order depends on every physical column.
+                RelOp::WindowOrder { input, order } => RelOp::WindowOrder {
+                    input: barrier::<MARKS>(input)?,
+                    order,
+                },
+                RelOp::Window {
+                    input,
+                    specification,
+                } => RelOp::Window {
+                    input: barrier::<MARKS>(input)?,
+                    specification,
+                },
                 // Every reference to a CTE id must retain the same full layout.
                 RelOp::Materialize {
                     id,

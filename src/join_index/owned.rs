@@ -27,6 +27,7 @@ enum Storage {
         count: usize,
     },
     Hash(HashTable<Entry>),
+    Prepared(super::prepare::Index),
     Pair(pair::PairIndex),
 }
 
@@ -94,11 +95,8 @@ impl OwnedJoinIndex {
     ) -> std::result::Result<Self, (super::JoinIndex<'a>, Vec<u32>)> {
         assert!(keys.funded_by(budget));
         assert_eq!(keys.len(), next.len());
-        // Prepared hash admission witnesses duplicates. Production lane fusion
-        // admits unique builds only, so keep the existing borrowed fallback.
-        if matches!(index.storage, super::Storage::Prepared { .. }) {
-            return Err((index, next));
-        }
+        // Prepared (parallel-built) indexes move below with their own entries
+        // (BP3). The test-only insertion oracle keeps the borrowed fallback.
         #[cfg(test)]
         if matches!(index.storage, super::Storage::Inserted(_)) {
             return Err((index, next));
@@ -151,7 +149,11 @@ impl OwnedJoinIndex {
                         .zip(table.checked_add(links))
                         .is_some_and(|(moved, compact)| moved <= compact)
                 });
-        let bytes = if index.is_dense() || move_hash {
+        // Prepared entries already own row IDs and move with their lease (BP3).
+        let bytes = if index.is_dense()
+            || move_hash
+            || matches!(index.storage, super::Storage::Prepared { .. })
+        {
             Some(256)
         } else {
             compact_bytes
@@ -199,7 +201,15 @@ impl OwnedJoinIndex {
                     Storage::Hash(map)
                 }
             }
-            super::Storage::Prepared { .. } => unreachable!("returned borrowed fallback above"),
+            // Entries already own row IDs, and their exact key backing moves
+            // into this object. Move tables and their lease without rehashing.
+            super::Storage::Prepared {
+                index,
+                keys: source,
+            } => {
+                assert!(std::ptr::eq(source, keys.as_ref()));
+                Storage::Prepared(index)
+            }
             #[cfg(test)]
             super::Storage::Inserted(_) => unreachable!("returned test insertion oracle above"),
         };
@@ -342,6 +352,7 @@ impl OwnedJoinIndex {
                     }
                 }
                 Storage::Pair(_) => unreachable!("pair index is a completed-table handoff"),
+                Storage::Prepared(_) => unreachable!("prepared index is a completed-table handoff"),
             }
         }
         cancellation.check()?;
@@ -361,6 +372,7 @@ impl OwnedJoinIndex {
             )
             .copied(),
             Storage::Pair(pair) => pair.head(key, &self.keys),
+            Storage::Prepared(index) => index.get(key, &self.keys).copied(),
         }
     }
     /// Retain the borrowed view's exact negative test; positive bits still check key equality.
@@ -392,6 +404,7 @@ impl OwnedJoinIndex {
             Storage::Dense { count, .. } => *count,
             Storage::Hash(map) => map.len(),
             Storage::Pair(pair) => pair.len(),
+            Storage::Prepared(index) => index.len(),
         }
     }
     #[cfg(test)]

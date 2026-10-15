@@ -11,7 +11,9 @@ fn visit(node: &Node, f: &mut impl FnMut(&Node) -> Result<()>) -> Result<()> {
     f(node)?;
     match &node.op {
         RelOp::Scan { .. } | RelOp::One | RelOp::Empty => Ok(()),
-        RelOp::Unary { input, .. }
+        RelOp::WindowOrder { input, .. }
+        | RelOp::Window { input, .. }
+        | RelOp::Unary { input, .. }
         | RelOp::Filter { input, .. }
         | RelOp::Rename { input }
         | RelOp::Project { input, .. }
@@ -86,7 +88,9 @@ impl<'a> Sources<'a> {
             }
             match &node.op {
                 RelOp::Scan { .. } | RelOp::One | RelOp::Empty => Ok(()),
-                RelOp::Unary { input, .. }
+                RelOp::WindowOrder { input, .. }
+                | RelOp::Window { input, .. }
+                | RelOp::Unary { input, .. }
                 | RelOp::Filter { input, .. }
                 | RelOp::Rename { input }
                 | RelOp::Project { input, .. }

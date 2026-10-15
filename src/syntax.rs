@@ -74,6 +74,14 @@ pub fn rewrite(e: &mut s::Expr, f: &mut impl FnMut(&mut s::Expr) -> Result<bool>
                     }
                 }
             }
+            if let Some(s::WindowType::WindowSpec(spec)) = &mut fun.over {
+                for key in &mut spec.partition_by {
+                    rewrite(key, f)?;
+                }
+                for key in &mut spec.order_by {
+                    rewrite(&mut key.expr, f)?;
+                }
+            }
         }
         _ => {}
     }
@@ -105,5 +113,5 @@ pub fn and(es: Vec<s::Expr>) -> Option<s::Expr> {
     })
 }
 pub fn is_aggregate(e: &s::Expr) -> bool {
-    matches!(e,s::Expr::Function(f) if ["sum","avg","count","min","max"].contains(&f.name.to_string().to_lowercase().as_str()))
+    matches!(e,s::Expr::Function(f) if f.over.is_none() && ["sum","avg","count","min","max"].contains(&f.name.to_string().to_lowercase().as_str()))
 }

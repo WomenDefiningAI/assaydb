@@ -413,7 +413,7 @@ fn visit(e: &mut Expr, left: &mut usize, narrow_columns: &[bool]) -> Fact {
                 }
             }
         }
-        Kind::Cast(a) => {
+        Kind::Cast(a) | Kind::CastDecimal(a, _, _) => {
             let fact = visit(a, left, narrow_columns);
             if !fact.total {
                 Fact::unknown()

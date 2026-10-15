@@ -123,6 +123,70 @@ fn custom_fixture(
 }
 
 #[test]
+fn required_count_windows_keep_order_null_extension_and_nullable_fallback() {
+    for (left, right) in [(41, 83), (0, 83), (41, 0), (0, 0)] {
+        let f = Fixture::new(left, right, false);
+        for sql in [
+            "SELECT l.g,COUNT(r.g),COUNT(*),COUNT(r.tag) FROM l LEFT JOIN r ON l.k=r.k GROUP BY l.g",
+            "SELECT l.g,COUNT(r.g),COUNT(*),COUNT(r.tag) FROM l LEFT JOIN r ON l.k=r.k AND r.tag NOT LIKE '%drop%' GROUP BY l.g",
+            // One nullable counted column keeps the entire old two-count path.
+            "SELECT l.g,COUNT(r.g),COUNT(r.v),COUNT(*) FROM l LEFT JOIN r ON l.k=r.k GROUP BY l.g",
+        ] {
+            f.compare_probe_order(sql, Some(1));
+        }
+    }
+    // Identical non-NULL values with different field declarations: only the
+    // required schema can establish the compact-window proof.
+    for nullable in [false, true] {
+        let f = custom_fixture_with_nullability(
+            vec![
+                ("k", Arc::new(Int64Array::from(vec![3, 1, 3, 99, 2]))),
+                ("g", Arc::new(Int64Array::from(vec![20, 10, 20, 40, 30]))),
+            ],
+            vec![
+                ("k", Arc::new(Int64Array::from(vec![3, 3, 1, 2, 3]))),
+                ("v", Arc::new(Int64Array::from(vec![7, 8, 9, 10, 11]))),
+            ],
+            2,
+            nullable,
+        );
+        let sql = "SELECT l.g,COUNT(r.v),COUNT(*) FROM l LEFT JOIN r ON l.k=r.k GROUP BY l.g";
+        let result = f.compare_probe_order(sql, Some(1));
+        assert_eq!(
+            result
+                .column(1)
+                .as_any()
+                .downcast_ref::<Int64Array>()
+                .unwrap(),
+            &Int64Array::from(vec![6, 1, 0, 1])
+        );
+        for batch in [1, 7, 8192] {
+            let error = f.compare_error("SELECT l.g+99999999999999999999999999999999999999,COUNT(r.v) FROM l LEFT JOIN r ON l.k=r.k GROUP BY l.g", batch);
+            assert!(error.contains("overflow"), "{error}");
+            for workers in [1, 2, 4, 10] {
+                let options = f.options(workers, batch, true);
+                options.cancellation.cancel();
+                assert_eq!(
+                    f.run(sql, &options).err().unwrap(),
+                    "cancelled: query execution"
+                );
+                let options = Options {
+                    memory_bytes: 1,
+                    spill: None,
+                    ..f.options(workers, batch, true)
+                };
+                assert!(
+                    f.run(sql, &options)
+                        .err()
+                        .unwrap()
+                        .starts_with("resource-limit:")
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn left_count_keeps_duplicates_nulls_zero_groups_and_first_encounters() {
     let f = Fixture::new(8, 8, false);
     let sql = "SELECT l.g,COUNT(r.v) AS n,COUNT(*) AS all_rows,COUNT(r.z) AS z,COUNT(r.k) AS keys,COUNT(r.v) AS again FROM l LEFT JOIN r ON l.k=r.k GROUP BY l.g";
@@ -921,15 +985,21 @@ fn left_earlier_miss_error_precedes_later_residual_error() {
     for batch in [7, 8192] {
         assert_eq!(f.compare_error(sql, batch), expected);
     }
-    // Retain the existing refusal for a nonliteral DECIMAL cast; the order
-    // repair neither widens key coercions nor turns this into a new SQL path.
+    // Phase 1 accepts the exact column cast. Keep this SQL and require both
+    // the missed and matched left rows under every execution configuration.
     for batch in [1, 7, 8192] {
+        let result = f.compare(
+            "SELECT l.g FROM l LEFT JOIN r ON l.k=CAST(r.k AS DECIMAL(20,0))",
+            batch,
+            None,
+        );
         assert_eq!(
-            f.compare_error(
-                "SELECT l.g FROM l LEFT JOIN r ON l.k=CAST(r.k AS DECIMAL(20,0))",
-                batch
-            ),
-            "unsupported: only lossless literal casts in M1"
+            result
+                .column(0)
+                .as_any()
+                .downcast_ref::<Int64Array>()
+                .unwrap(),
+            &Int64Array::from(vec![0, 10]),
         );
     }
 }

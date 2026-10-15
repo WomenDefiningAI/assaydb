@@ -22,6 +22,7 @@ impl Installed {
 
 pub(super) fn traversal_bytes(node: &Node) -> usize {
     let children = match &node.op {
+        RelOp::WindowOrder { input, .. } | RelOp::Window { input, .. } => traversal_bytes(input),
         RelOp::Rename { input }
         | RelOp::Project { input, .. }
         | RelOp::Filter { input, .. }

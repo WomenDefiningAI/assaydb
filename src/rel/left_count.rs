@@ -184,7 +184,7 @@ impl BatchKeys {
             Self::Numeric(value) => {
                 let key = crate::expr::numeric(&value.array).value(row);
                 if let Some(group) = counts.window_group(key) {
-                    return (counts.values[group * counts.width] != 0).then_some(group);
+                    return (counts.value(group, 0) != 0).then_some(group);
                 }
                 counts.numeric.get(key)
             }
@@ -198,6 +198,10 @@ struct Counts {
     encoded: crate::group_lookup::EncodedGroups,
     // Slot zero is match cardinality; the other slots count each right column.
     values: Vec<u64>,
+    // Required counted columns share the match counter. A bounded scan can
+    // additionally use four-byte cells; out-of-window keys widen before growth.
+    narrow: Vec<u32>,
+    collapsed: bool,
     width: usize,
     groups: usize,
     capacity: usize,
@@ -215,6 +219,8 @@ impl Counts {
             numeric: Default::default(),
             encoded: Default::default(),
             values: Vec::new(),
+            narrow: Vec::new(),
+            collapsed: false,
             width,
             groups: 0,
             capacity: 0,
@@ -248,12 +254,64 @@ impl Counts {
         (offset < len).then_some(offset)
     }
 
+    fn compact_cell_bytes(rows: i64) -> usize {
+        if u32::try_from(rows).is_ok() { 4 } else { 8 }
+    }
+
+    fn with_compact_window(base: i128, len: usize, rows: i64, lease: Reservation) -> Result<Self> {
+        let bytes = len
+            .checked_mul(Self::compact_cell_bytes(rows))
+            .ok_or("count join capacity overflow")?;
+        if lease.bytes() < bytes {
+            return Err("internal: underfunded count window".into());
+        }
+        let mut counts = if Self::compact_cell_bytes(rows) == 4 {
+            let mut counts = Self::new(1, &lease.budget())?;
+            counts.narrow = vec![0; len];
+            counts.groups = len;
+            counts.capacity = len;
+            counts.window = Some((base, len));
+            counts.storage_lease = lease;
+            counts
+        } else {
+            Self::with_window(1, base, len, lease)?
+        };
+        counts.collapsed = true;
+        Ok(counts)
+    }
+
+    fn value(&self, group: usize, slot: usize) -> u64 {
+        if !self.narrow.is_empty() {
+            u64::from(self.narrow[group])
+        } else {
+            self.values[group * self.width + if self.collapsed { 0 } else { slot }]
+        }
+    }
+
+    fn widen(&mut self, budget: &Budget) -> Result<()> {
+        if self.narrow.is_empty() {
+            return Ok(());
+        }
+        let bytes = self
+            .narrow
+            .len()
+            .checked_mul(8)
+            .ok_or("count join capacity overflow")?;
+        // Retain the old lease until the old buffer is freed, including on denial.
+        let lease = budget.reserve(bytes)?;
+        self.values = self.narrow.iter().map(|n| u64::from(*n)).collect();
+        self.narrow = Vec::new();
+        self.storage_lease = lease;
+        Ok(())
+    }
+
     fn insert(&mut self, keys: &BatchKeys, row: usize, budget: &Budget) -> Result<usize> {
         if let BatchKeys::Numeric(value) = keys
             && let Some(group) = self.window_group(crate::expr::numeric(&value.array).value(row))
         {
             return Ok(group);
         }
+        self.widen(budget)?;
         if self.groups == self.capacity {
             let capacity = self
                 .capacity
@@ -316,27 +374,39 @@ impl Counts {
         masks: &[Value],
         budget: &Budget,
         cancellation: &crate::spill::Cancellation,
-    ) -> Result<()> {
+    ) -> Result<usize> {
         self.numeric.prepare(budget);
+        let mut selected = 0;
         for row in 0..batch.num_rows() {
             if row % 1024 == 0 {
                 cancellation.check()?;
             }
-            if !keys.valid(row)
-                || !masks.iter().all(|mask| {
-                    !is_sql_null(mask.array.as_ref(), row) && boolean(&mask.array).value(row)
-                })
-            {
+            if !masks.iter().all(|mask| {
+                !is_sql_null(mask.array.as_ref(), row) && boolean(&mask.array).value(row)
+            }) {
+                continue;
+            }
+            selected += 1; // Includes selected NULL keys, as scan accounting does.
+            if !keys.valid(row) {
                 continue;
             }
             let group = match keys.group(row, self) {
                 Some(group) => group,
                 None => self.insert(keys, row, budget)?,
             };
+            if !self.narrow.is_empty() {
+                self.narrow[group] = self.narrow[group]
+                    .checked_add(1)
+                    .ok_or("resource-limit: join build indices")?;
+                continue;
+            }
             let values = &mut self.values[group * self.width..(group + 1) * self.width];
             values[0] = values[0]
                 .checked_add(1)
                 .ok_or("resource-limit: join build indices")?;
+            if self.collapsed {
+                continue;
+            }
             for (i, column) in columns.iter().enumerate() {
                 if column.is_some_and(|column| !is_sql_null(batch.column(column).as_ref(), row)) {
                     values[i + 1] = values[i + 1]
@@ -345,7 +415,7 @@ impl Counts {
                 }
             }
         }
-        Ok(())
+        Ok(selected)
     }
 }
 

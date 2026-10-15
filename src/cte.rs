@@ -4,7 +4,9 @@ use std::collections::HashMap;
 
 fn children(node: &mut Node) -> Vec<&mut Node> {
     match &mut node.op {
-        RelOp::Unary { input, .. }
+        RelOp::WindowOrder { input, .. }
+        | RelOp::Window { input, .. }
+        | RelOp::Unary { input, .. }
         | RelOp::Filter { input, .. }
         | RelOp::Rename { input }
         | RelOp::Project { input, .. }

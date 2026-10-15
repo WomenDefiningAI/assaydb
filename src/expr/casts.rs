@@ -244,3 +244,53 @@ pub(super) fn evaluate(
     };
     Ok(Value::allocated(array, lease))
 }
+
+/// Explicit exact-numeric conversion. Implicit rescaling remains lossless.
+pub(crate) fn evaluate_decimal(
+    expr: &Expr,
+    precision: u8,
+    scale: i8,
+    input: &Input,
+    budget: &Budget,
+) -> Result<Value> {
+    let value = expr.eval(input, budget)?;
+    let lease = budget.reserve(workspace(input.len, 0)?)?;
+    let mut builder = Decimal128Builder::with_capacity(input.len)
+        .with_precision_and_scale(38, scale)
+        .map_err(|e| e.to_string())?;
+    let limit = factor(precision as i8)?;
+    // Untyped NULL has no numeric scale and never enters the conversion arm.
+    let old = if expr.ty == Type::Null {
+        scale
+    } else {
+        expr.ty.scale()?
+    };
+    let adjustment = factor((scale - old).abs())?;
+    for row in 0..input.len {
+        if is_sql_null(value.array.as_ref(), row) {
+            builder.append_null();
+            continue;
+        }
+        let n = numeric(&value.array).value(row);
+        let converted = if scale >= old {
+            n.checked_mul(adjustment)
+                .ok_or("decimal cast precision overflow")?
+        } else {
+            let divisor = adjustment;
+            let quotient = n / divisor;
+            let remainder = n % divisor;
+            // Remainders are strictly smaller than 10^38, so this comparison
+            // avoids a potentially overflowing multiply-by-two.
+            if remainder.unsigned_abs() >= (divisor / 2) as u128 {
+                quotient + n.signum()
+            } else {
+                quotient
+            }
+        };
+        if converted <= -limit || converted >= limit {
+            return Err("decimal cast precision overflow".into());
+        }
+        builder.append_value(converted);
+    }
+    Ok(Value::allocated(Arc::new(builder.finish()), lease))
+}

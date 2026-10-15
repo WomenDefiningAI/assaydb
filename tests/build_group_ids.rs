@@ -256,6 +256,299 @@ fn late_payload_memory_denial_replays_and_cancellation_does_not_emit() {
 }
 
 #[test]
+fn prepared_sparse_matching_builds_reach_owned_inner_semi_and_anti_scan_fusion() {
+    let mut fixture = Fixture::new(false, false);
+    let rows = 262_147;
+    fixture.write(
+        "b",
+        &["k"],
+        vec![Arc::new(Int64Array::from_iter(
+            (0..rows).map(|row| (row % 17 != 0).then_some(row as i64 * 1024)),
+        ))],
+        false,
+    );
+    let pattern = [Some(2048), Some(1024), None, Some(-1), Some(2048), Some(0)];
+    let probes = (0..rows + 4)
+        .map(|row| pattern[row % pattern.len()])
+        .collect::<Vec<_>>();
+    fixture.write(
+        "p",
+        &["k"],
+        vec![Arc::new(Int64Array::from(probes.clone()))],
+        false,
+    );
+    for kind in ["INNER", "SEMI", "ANTI"] {
+        let sql = format!("SELECT p.k FROM p {kind} JOIN b ON p.k=b.k");
+        let mut serial = Fixture::options(1, 8192, false);
+        serial.memory_bytes = 512 << 20;
+        // Freeze orientation and plan, then exercise only execution dispatch.
+        let plan = rel::prepare(&sql, &fixture.tables, &serial).unwrap();
+        let expected = execute(&plan, &serial).unwrap().batch;
+        let handwritten = probes
+            .iter()
+            .copied()
+            .filter(|key| matches!(key, Some(1024 | 2048)) != (kind == "ANTI"))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            expected
+                .column(0)
+                .as_any()
+                .downcast_ref::<Int64Array>()
+                .unwrap()
+                .iter()
+                .collect::<Vec<_>>(),
+            handwritten
+        );
+        for workers in [1, 2, 4, 10] {
+            for batch_size in [4093, 8192] {
+                let options = Options {
+                    workers,
+                    batch_size,
+                    relational_optimizations: true,
+                    cancellation: Default::default(),
+                    ..serial.clone()
+                };
+                let result = execute(&plan, &options).unwrap();
+                assert_eq!(result.batch, expected, "{kind}/{workers}/{batch_size}");
+                assert_eq!(
+                    result.metrics.build_prepare_index_tasks > 0,
+                    workers > 1,
+                    "population: {kind}/{workers}"
+                );
+                assert_eq!(
+                    result.metrics.lane_fused_joins > 0,
+                    workers > 1,
+                    "owned fusion: {kind}/{workers}"
+                );
+                assert!(result.metrics.peak_reserved_bytes <= options.memory_bytes);
+                assert!(result.metrics.worker_threads_peak <= workers);
+                options.cancellation.cancel();
+                assert_eq!(
+                    execute(&plan, &options).err().unwrap(),
+                    "cancelled: query execution"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn completed_dense_and_unique_builds_keep_sql_order_nulls_coercions_and_errors() {
+    let mut fixture = Fixture::new(false, false);
+    fixture.write(
+        "p",
+        &["k", "f"],
+        vec![
+            Arc::new(Int64Array::from(vec![
+                Some(2),
+                Some(1),
+                None,
+                Some(-1),
+                Some(2),
+                Some(0),
+            ])),
+            Arc::new(Float64Array::from(vec![1e308; 6])),
+        ],
+        false,
+    );
+    // Build keys: NULL every 17th row; ordered unique, dispersed duplicates
+    // (8191 is odd, so duplicate rows are spread over every chunk/partition),
+    // or a strided unique hash build. Production admits parallel population
+    // from 262,144 build rows (the exact one-row boundary is unit-tested in
+    // src/join_index/prepare.rs); here 262,147 rows is admitted and 262,143
+    // rows stays serial even when otherwise admissible.
+    let build = |fixture: &mut Fixture, rows: usize, stride: i64, duplicate: bool| {
+        fixture.write(
+            "b",
+            &["k", "ordinal"],
+            vec![
+                Arc::new(Int64Array::from_iter((0..rows).map(|row| {
+                    (row % 17 != 0).then_some(
+                        (if duplicate {
+                            row * 8191 % (rows / 3)
+                        } else {
+                            row
+                        }) as i64
+                            * stride,
+                    )
+                }))),
+                Arc::new(Int64Array::from_iter_values(
+                    (0..rows).map(|row| row as i64),
+                )),
+            ],
+            false,
+        );
+    };
+    let mut serial = Fixture::options(1, 8192, true);
+    serial.memory_bytes = 512 << 20;
+    for (rows, stride, duplicate) in [
+        (262_147, 1, false),
+        (262_147, 1, true),
+        (262_147, 1024, false),
+        (262_143, 1, true),
+    ] {
+        build(&mut fixture, rows, stride, duplicate);
+        // The first predicate stays in the exact numeric layout; the second
+        // checks the existing mixed INTEGER/REAL coercion layout and fallback.
+        for (predicate, numeric) in [("p.k=b.k", true), ("CAST(p.k AS REAL)=b.k", false)] {
+            if rows < 262_144 && !numeric {
+                continue;
+            }
+            let sql = format!("SELECT p.k,b.ordinal FROM p LEFT JOIN b ON {predicate}");
+            let prepared = rel::prepare(&sql, &fixture.tables, &serial).unwrap();
+            let expected = execute(&prepared, &serial).unwrap().batch;
+            // Batch size 1 runs on the tiny fixtures below; here 7 splits the
+            // build into odd-sized batches and 8192 is the default. The
+            // coercion layout is always serial and costs several times more
+            // per batch, so its batch 1/7 cases run on the tiny fixtures only.
+            let batch_sizes: &[usize] = if numeric { &[7, 8192] } else { &[8192] };
+            for workers in [1, 2, 4, 10] {
+                for &batch_size in batch_sizes {
+                    let options = Options {
+                        workers,
+                        batch_size,
+                        ..serial.clone()
+                    };
+                    let result = execute(&prepared, &options).unwrap();
+                    assert_eq!(
+                        result.batch, expected,
+                        "{rows}/{stride}/{duplicate}/{predicate}/{workers}/{batch_size}"
+                    );
+                    assert_eq!(
+                        result.metrics.build_prepare_index_tasks > 0,
+                        rows >= 262_144 && numeric && workers > 1 && (stride != 1 || duplicate)
+                    );
+                    assert!(result.metrics.peak_reserved_bytes <= options.memory_bytes);
+                    assert!(result.metrics.worker_threads_peak <= workers);
+                }
+            }
+        }
+    }
+    build(&mut fixture, 262_147, 1024, false);
+    let sql = "SELECT p.bad,b.bad FROM (SELECT k,f*f AS bad FROM p) p LEFT JOIN (SELECT k,ordinal*10000000000000000000000000000000000000 AS bad FROM b) b ON p.k=b.k";
+    let prepared = rel::prepare(sql, &fixture.tables, &serial).unwrap();
+    for workers in [1, 2, 4, 10] {
+        for batch_size in [7, 8192] {
+            let options = Options {
+                workers,
+                batch_size,
+                ..serial.clone()
+            };
+            assert_eq!(
+                execute(&prepared, &options).err().unwrap(),
+                "decimal precision 38 overflow"
+            );
+            let options = Options {
+                cancellation: Default::default(),
+                ..options
+            };
+            options.cancellation.cancel();
+            assert_eq!(
+                execute(&prepared, &options).err().unwrap(),
+                "cancelled: query execution"
+            );
+        }
+    }
+    // A few hundred build rows: the same shapes at batch size 1 as well,
+    // below the population threshold. Duplicates, NULL keys, misses, both
+    // predicates, build-error precedence over the failing probe, cancellation.
+    let tiny = 300;
+    for (stride, duplicate) in [(1, false), (1, true), (1024, false)] {
+        build(&mut fixture, tiny, stride, duplicate);
+        for predicate in ["p.k=b.k", "CAST(p.k AS REAL)=b.k"] {
+            let sql = format!("SELECT p.k,b.ordinal FROM p LEFT JOIN b ON {predicate}");
+            let mut reference = Fixture::options(1, 1, true);
+            reference.memory_bytes = serial.memory_bytes;
+            let prepared = rel::prepare(&sql, &fixture.tables, &reference).unwrap();
+            let expected = execute(&prepared, &reference).unwrap().batch;
+            for workers in [1, 2, 4, 10] {
+                for batch_size in [1, 7, 8192] {
+                    let options = Options {
+                        workers,
+                        batch_size,
+                        ..reference.clone()
+                    };
+                    let result = execute(&prepared, &options).unwrap();
+                    assert_eq!(
+                        result.batch, expected,
+                        "tiny/{stride}/{duplicate}/{predicate}"
+                    );
+                    assert_eq!(result.metrics.build_prepare_index_tasks, 0);
+                    assert!(result.metrics.peak_reserved_bytes <= options.memory_bytes);
+                    assert!(result.metrics.worker_threads_peak <= workers);
+                }
+            }
+        }
+        let prepared = rel::prepare(sql, &fixture.tables, &serial).unwrap();
+        for workers in [1, 2, 4, 10] {
+            for batch_size in [1, 7, 8192] {
+                let options = Options {
+                    workers,
+                    batch_size,
+                    ..serial.clone()
+                };
+                assert_eq!(
+                    execute(&prepared, &options).err().unwrap(),
+                    "decimal precision 38 overflow"
+                );
+                let options = Options {
+                    cancellation: Default::default(),
+                    ..options
+                };
+                options.cancellation.cancel();
+                assert_eq!(
+                    execute(&prepared, &options).err().unwrap(),
+                    "cancelled: query execution"
+                );
+            }
+        }
+    }
+    // Empty and all-NULL builds retain the serial path and LEFT null extension.
+    let mut serial = Fixture::options(1, 1, true);
+    serial.memory_bytes = 512 << 20;
+    for (empty_probe, empty_build, all_null) in [
+        (false, true, false),
+        (true, false, false),
+        (false, false, true),
+    ] {
+        fixture.write(
+            "b",
+            &["k"],
+            vec![Arc::new(Int64Array::from(vec![
+                if all_null { None } else { Some(1) },
+                None,
+            ]))],
+            empty_build,
+        );
+        fixture.write(
+            "p",
+            &["k"],
+            vec![Arc::new(Int64Array::from(vec![Some(1), None]))],
+            empty_probe,
+        );
+        let prepared = rel::prepare(
+            "SELECT p.k,b.k FROM p LEFT JOIN b ON p.k=b.k",
+            &fixture.tables,
+            &serial,
+        )
+        .unwrap();
+        let expected = execute(&prepared, &serial).unwrap().batch;
+        for workers in [1, 2, 4, 10] {
+            for batch_size in [1, 7, 8192] {
+                let options = Options {
+                    workers,
+                    batch_size,
+                    ..serial.clone()
+                };
+                let result = execute(&prepared, &options).unwrap();
+                assert_eq!(result.batch, expected);
+                assert_eq!(result.metrics.build_prepare_index_tasks, 0);
+            }
+        }
+    }
+}
+
+#[test]
 fn completed_hash_build_keeps_duplicate_probe_order_across_workers_and_batches() {
     let mut fixture = Fixture::new(false, false);
     let rows = 262_147;

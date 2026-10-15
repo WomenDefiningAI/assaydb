@@ -54,6 +54,10 @@ pub(super) fn preserve_projection_name(item: &mut s::SelectItem) -> Result<()> {
 
 /// Preserve the ordinary unique aggregate order while recording live uses.
 /// Repeated occurrences outside empty operands make the shared aggregate live.
+/// Window calls are not ordinary aggregates. Traversal reaches their OVER keys,
+/// however, so SUM(x) inside a ranking key belongs to the grouped input stage.
+/// Empty operands retain the same validation-only aggregate suppression there;
+/// the window planner likewise validates and discards their unused windows.
 pub(super) fn aggregate_usage(select: &s::Select) -> Result<(Vec<s::Expr>, Vec<bool>)> {
     fn visit(
         expr: &s::Expr,

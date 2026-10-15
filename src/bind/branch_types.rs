@@ -16,7 +16,11 @@ pub(crate) fn constant(expr: &Expr) -> Option<Expr> {
         *left -= 1;
         match &e.kind {
             Kind::Literal(Literal::Num(_) | Literal::Bool(_) | Literal::Null) => true,
-            Kind::Neg(a) | Kind::Not(a) | Kind::IsNull(a, _) | Kind::Cast(a) => bounded(a, left),
+            Kind::Neg(a)
+            | Kind::Not(a)
+            | Kind::IsNull(a, _)
+            | Kind::Cast(a)
+            | Kind::CastDecimal(a, _, _) => bounded(a, left),
             Kind::Binary(_, a, b) | Kind::NullIf(a, b) => bounded(a, left) && bounded(b, left),
             Kind::Function(name, a) if matches!(name.as_str(), "abs" | "factorial") => {
                 bounded(a, left)

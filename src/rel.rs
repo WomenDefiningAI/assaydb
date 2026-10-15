@@ -52,6 +52,7 @@ mod set_ops;
 mod shared_pipeline;
 mod shared_retry;
 mod sideways;
+mod window;
 
 use std::{
     collections::{HashMap, HashSet},
@@ -123,6 +124,15 @@ pub enum RelOp {
     Unary {
         plan: Plan,
         input: Box<Node>,
+    },
+    /// W1-only canonical ordering of unchanged physical output arrays.
+    WindowOrder {
+        input: Box<Node>,
+        order: Vec<bind::Sort>,
+    },
+    Window {
+        input: Box<Node>,
+        specification: window::Specification,
     },
     Filter {
         predicate: Expr,
@@ -704,6 +714,7 @@ impl Planner<'_> {
         let s::SetExpr::Select(select) = q.body.as_mut() else {
             return Err("unsupported: set operations".into());
         };
+        window::validate_select(select)?;
         let mut predicates = select
             .selection
             .take()
@@ -989,6 +1000,7 @@ impl Planner<'_> {
         let s::SetExpr::Select(select) = q.body.as_mut() else {
             unreachable!()
         };
+        window::validate_select(select)?;
         let mut correlated = Vec::new();
         let mut predicates = Vec::new();
         for mut p in select
@@ -1363,6 +1375,8 @@ impl Planner<'_> {
         let s::SetExpr::Select(select) = q.body.as_mut() else {
             unreachable!()
         };
+        let visible_columns = select.projection.len();
+        self.window_order_projection(select, &mut q.order_by)?;
         let distinct = match select.distinct.take() {
             None => false, // The parser also represents explicit SELECT ALL as None.
             Some(s::Distinct::Distinct) => true,
@@ -1384,7 +1398,17 @@ impl Planner<'_> {
             _ => return Err("unsupported: grouping".into()),
         };
         group_binding::having_aliases(select, &input.schema)?;
+        window::validate_select(select)?;
         let mut group_source_schema = None;
+        let windowed = select
+            .projection
+            .iter()
+            .try_fold(false, |found, item| match item {
+                s::SelectItem::UnnamedExpr(expr) | s::SelectItem::ExprWithAlias { expr, .. } => {
+                    Ok::<_, String>(found || window::contains(expr)?)
+                }
+                _ => Ok(found),
+            })?;
         let (aggregates, aggregate_live) = empty_in::aggregate_usage(select)?;
         if !groups.is_empty() || !aggregates.is_empty() {
             let mut inner = bind::parse("SELECT 1")?;
@@ -1410,6 +1434,21 @@ impl Planner<'_> {
             group_source_schema = Some(group_input_schema.clone());
             input = unary(&inner, input)?;
             empty_in::suppress_dead_inputs(&mut input, &aggregate_live)?;
+            if windowed && !groups.is_empty() {
+                // A complete group-key tuple uniquely identifies a group.
+                // Make the window input's physical order independent of the
+                // in-memory/partitioned aggregate emission order.
+                let RelOp::Unary { plan, .. } = &mut input.op else {
+                    unreachable!()
+                };
+                plan.order = (0..groups.len())
+                    .map(|column| bind::Sort {
+                        column,
+                        descending: false,
+                        nulls_first: false,
+                    })
+                    .collect();
+            }
             let aggregate_constants = branch_facts::aggregate_constants(&input);
             // Bound column identity is independent of qualified/unqualified
             // spelling. Only actual column grouping keys are eligible: this
@@ -1484,7 +1523,22 @@ impl Planner<'_> {
             empty_in::preserve_projection_name(p)?;
             if let s::SelectItem::UnnamedExpr(e) | s::SelectItem::ExprWithAlias { expr: e, .. } = p
             {
+                let original = e.to_string();
+                let has_window = window::contains(e)?;
+                if has_window {
+                    input =
+                        self.window_expression(e, input, ctes, group_source_schema.as_deref())?;
+                }
                 input = self.subqueries(e, input, ctes)?;
+                if has_window && matches!(p, s::SelectItem::UnnamedExpr(_)) {
+                    let s::SelectItem::UnnamedExpr(e) = p else {
+                        unreachable!()
+                    };
+                    *p = s::SelectItem::ExprWithAlias {
+                        expr: e.clone(),
+                        alias: s::Ident::with_quote('"', original),
+                    };
+                }
             }
         }
         let mut root = if let Some(source) = group_source_schema {
@@ -1492,8 +1546,35 @@ impl Planner<'_> {
         } else {
             unary(&q, input)?
         };
+        if root.schema.fields().len() > visible_columns {
+            root = Node {
+                schema: Arc::new(
+                    root.schema
+                        .project(&(0..visible_columns).collect::<Vec<_>>())
+                        .map_err(|e| e.to_string())?,
+                ),
+                estimated_rows: root.estimated_rows,
+                op: RelOp::Project {
+                    input: Box::new(root),
+                    columns: (0..visible_columns).collect(),
+                },
+            };
+        }
         if distinct {
             root = set_ops::deduplicate_projection(root)?;
+            if windowed {
+                // DISTINCT has no surviving input ordinal. Its complete visible
+                // tuple uniquely identifies each result and pins final ties.
+                let RelOp::Unary { plan, .. } = &mut root.op else {
+                    unreachable!()
+                };
+                plan.order
+                    .extend((0..root.schema.fields().len()).map(|column| bind::Sort {
+                        column,
+                        descending: false,
+                        nulls_first: false,
+                    }));
+            }
         }
         if let Some(count) = limit {
             root = Node {
@@ -2371,7 +2452,7 @@ impl Node {
                 emit(batch)
             })
         };
-        ctx.metrics.operator_profiles.push(serde_json::json!({"operator":match &self.op {RelOp::Scan{..}=>"Scan",RelOp::Join{..}=>"HashJoin",RelOp::Unary{plan,..}=>if plan.aggregation{"Aggregate"}else{"ProjectSort"},RelOp::Filter{..}=>"Filter",RelOp::Mark{..}=>"NullAwareMark",RelOp::TypedMark{..}=>"TypedNullAwareMark",RelOp::CorrelatedMark{..}=>"CorrelatedMark",RelOp::Scalar{..}=>"ScalarCardinality",RelOp::ScalarDefault{..}=>"ScalarEmptyDefault",RelOp::Rename{..}=>"Rename",RelOp::Project{..}=>"ColumnProject",RelOp::Limit{..}=>"Limit",RelOp::UnionAll{..}=>"UnionAll",RelOp::One=>"One",RelOp::Empty=>"Empty",RelOp::Materialize{shared_scan,..}=>if *shared_scan {"SharedScan"} else {"CteMaterialize"}},"estimated_rows":self.estimated_rows,"output_rows":output_rows,"inclusive_seconds":start.elapsed().as_secs_f64(),"timing_scope":"includes child execution and downstream consumer; do not sum"}));
+        ctx.metrics.operator_profiles.push(serde_json::json!({"operator":match &self.op {RelOp::Scan{..}=>"Scan",RelOp::Join{..}=>"HashJoin",RelOp::Unary{plan,..}=>if plan.aggregation{"Aggregate"}else{"ProjectSort"},RelOp::Filter{..}=>"Filter",RelOp::Mark{..}=>"NullAwareMark",RelOp::TypedMark{..}=>"TypedNullAwareMark",RelOp::CorrelatedMark{..}=>"CorrelatedMark",RelOp::Scalar{..}=>"ScalarCardinality",RelOp::ScalarDefault{..}=>"ScalarEmptyDefault",RelOp::Rename{..}=>"Rename",RelOp::Project{..}=>"ColumnProject",RelOp::Limit{..}=>"Limit",RelOp::UnionAll{..}=>"UnionAll",RelOp::One=>"One",RelOp::Empty=>"Empty",RelOp::Window{..}=>"Window",RelOp::WindowOrder{..}=>"WindowInputSort",RelOp::Materialize{shared_scan,..}=>if *shared_scan {"SharedScan"} else {"CteMaterialize"}},"estimated_rows":self.estimated_rows,"output_rows":output_rows,"inclusive_seconds":start.elapsed().as_secs_f64(),"timing_scope":"includes child execution and downstream consumer; do not sum"}));
         result
     }
     fn run_inner(
@@ -2392,6 +2473,11 @@ impl Node {
             return Ok(());
         }
         match &self.op {
+            RelOp::WindowOrder { input, order } => window::run_order(input, order, ctx, emit),
+            RelOp::Window {
+                input,
+                specification,
+            } => window::run(self, input, specification, ctx, emit),
             RelOp::CorrelatedMark {
                 left,
                 right,

@@ -4,8 +4,10 @@ The structural validator is implemented in `testing/result_contract.py`.
 Record adapters, raw-sample timing calculation and static site evidence generation
 are implemented and tested with synthetic fixtures. Integration with incoming
 full-suite collectors and maintainer acceptance remains pending; this is not an
-operating full-suite runner or hosted CI gate. TestMini execution and accepted-result publication are being
-prepared. No new run, baseline, proof or accepted measurement is claimed here.
+operating full-suite runner or hosted CI gate. PR #5 published reviewed TestMini results under an explicit infrastructure
+no-regression policy. Those accepted measurements remain bound to their recorded
+source; they do not qualify later engine changes. The site deploys committed
+evidence automatically, but does not run or accept tests automatically.
 At the 2026-10-13 workflow review, the public ruleset had no branch target;
 these requirements must not be presented as enforced merge checks. This document changes no repository or
 hosting settings.
