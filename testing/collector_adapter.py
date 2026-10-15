@@ -4,6 +4,7 @@ The protected collector must first validate complete lifecycle/provenance receip
 This adapter does not import or execute code supplied in an evidence archive.
 """
 import argparse
+import copy
 from collections import Counter
 import gzip
 import hashlib
@@ -23,6 +24,38 @@ HUNT = {'pass':'passed', 'wrong-answer':'wrong', 'native-unsupported':'unsupport
         'pending':'not-run', 'native-setup-blocked':'error', 'oracle-setup-blocked':'error',
         'native-session-failure':'error', 'oracle-session-failure':'error',
         'native-unavailable':'not-run', 'oracle-unavailable':'not-run'}
+
+
+def semantic_digest(row, kind):
+    """Retain full comparison evidence; remove only declared timing/order noise.
+
+    SLT output-hash differences still require separately reviewed full-payload
+    comparison. They are not normalized away by this function.
+    """
+    if kind == 'slt':
+        value={k:v for k,v in row.items() if k!='validated_at_elapsed_seconds'}
+        if row['status']=='engine-pass':
+            require('reply_metadata' in row, 'missing SLT reply evidence')
+            if row['kind']=='query':require('actual_sha256' in row, 'missing SLT answer evidence')
+    elif kind == 'hunt55k':
+        require(type(row['ordered']) is bool, 'invalid hunt ordering contract')
+        value=copy.deepcopy(row)
+        reply=value['native']
+        if not row['ordered'] and reply['status']=='ok' and reply.get('kind')=='query':
+            reply['result']['rows'].sort(key=lambda x:json.dumps(x,sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False))
+    else:
+        raise ValueError('unsupported semantic adapter')
+    return hashlib.sha256(json.dumps(value,sort_keys=True,separators=(',',':'),
+                                     ensure_ascii=False,allow_nan=False).encode()).hexdigest()
+
+
+def adapt_compared(row, kind, index):
+    normalized=adapt(row,kind,index)
+    if normalized['status']=='passed':
+        normalized['answer_sha256']=semantic_digest(row,kind)
+    elif normalized['status'] in ('unsupported','error'):
+        normalized['failure_signature_sha256']=semantic_digest(row,kind)
+    return normalized
 
 
 def rows(path):

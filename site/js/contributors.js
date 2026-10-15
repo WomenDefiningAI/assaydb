@@ -11,6 +11,9 @@
     return /^(src|tests)\/.+\.rs$/.test(path) ||
       /^tests\/fixtures\/.+\.(sql|json|tsv)$/.test(path) ||
       /^(benches|benchmarks)\/.+\.(rs|py|sql)$/.test(path) ||
+      /^testing\/(candidate_boundary|collector_adapter|result_contract|runtime_context|thread_metric|timing|rotated_timing|rotated_statistics)\.py$/.test(path) ||
+      /^testing\/tests\/test_(candidate_boundary|collector_adapter|result_contract|runtime_context|thread_metric|timing|public_sources|no_regression|rotated_timing)\.py$/.test(path) ||
+      /^testing\/(analysis\/.+\.sql|hunt55k\/.+\.py)$/.test(path) ||
       /^(proofs|verification)\/.+\.(rs|lean|v|smt2)$/.test(path) ||
       path === 'docs/BENCHMARK-INPUTS.md' ||
       /^bindings\/python\/(src\/.+\.rs|python\/.+\.(py|pyi)|tests\/.+\.py)$/.test(path);

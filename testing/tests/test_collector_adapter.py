@@ -5,10 +5,32 @@ import sys
 import tempfile
 import unittest
 sys.path.insert(0,str(Path(__file__).parents[1]))
-from collector_adapter import adapt,convert,digest
+from collector_adapter import adapt,adapt_compared,convert,digest,semantic_digest
 
 
 class AdapterTests(unittest.TestCase):
+    def test_slt_signatures_preserve_error_detail_and_full_answer_hash(self):
+        row=dict(file='test/a',line=1,kind='query',record_index=0,sql_sha256='a'*64,
+                 status='engine-error',detail='first error',reply_metadata={'status':'error'})
+        first=adapt_compared(row,'slt',0)
+        second=adapt_compared(dict(row,detail='different error'),'slt',0)
+        self.assertNotEqual(first['failure_signature_sha256'],second['failure_signature_sha256'])
+        good=dict(row,status='engine-pass',actual_sha256='b'*64,reply_metadata={'status':'ok'})
+        self.assertNotEqual(adapt_compared(good,'slt',0)['answer_sha256'],
+                            adapt_compared(dict(good,actual_sha256='c'*64),'slt',0)['answer_sha256'])
+        self.assertEqual(semantic_digest(good,'slt'),semantic_digest(dict(good,validated_at_elapsed_seconds=10),'slt'))
+        del good['actual_sha256']
+        with self.assertRaises(ValueError):adapt_compared(good,'slt',0)
+
+    def test_hunt_unordered_canonicalization_preserves_multiplicity_and_ordered_results(self):
+        row=dict(ordered=False,native={'status':'ok','kind':'query','result':{'rows':[[1],[2],[1]]}})
+        reordered=dict(row,native={'status':'ok','kind':'query','result':{'rows':[[1],[1],[2]]}})
+        missing=dict(row,native={'status':'ok','kind':'query','result':{'rows':[[1],[2]]}})
+        self.assertEqual(semantic_digest(row,'hunt55k'),semantic_digest(reordered,'hunt55k'))
+        self.assertNotEqual(semantic_digest(row,'hunt55k'),semantic_digest(missing,'hunt55k'))
+        self.assertNotEqual(semantic_digest(dict(row,ordered=True),'hunt55k'),
+                            semantic_digest(dict(reordered,ordered=True),'hunt55k'))
+
     def test_slt_outcomes_preserved(self):
         for original,status in [('engine-pass','passed'),('engine-wrong-answer','wrong'),('session-failure','error'),('engine-unsupported','unsupported'),('session-unavailable','not-run')]:
             row=dict(file='test/a',line=1,kind='query',record_index=0,sql_sha256='a'*64,status=original)

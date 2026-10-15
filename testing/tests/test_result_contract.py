@@ -50,9 +50,61 @@ class EvidenceTests(unittest.TestCase):
     def test_valid_structure_is_not_approval(self):
         self.assertIn('maintainer review', self.check()['qualification'])
 
+    def test_v1_cannot_silently_change_acceptance_policy(self):
+        self.policy['acceptance_policy']=c.NO_REGRESSION
+        with self.assertRaisesRegex(ValueError,'v1 requires'):
+            self.check()
+
+    def test_v2_policy_identity_and_unchanged_errors(self):
+        self.bundle.update(schema='assay-pr-evidence/v2',acceptance_policy=c.NO_REGRESSION)
+        self.policy['acceptance_policy']=c.NO_REGRESSION
+        passed=dict(self.record,original_status='passed',answer_sha256='a'*64)
+        good=self.put('passing-v2.jsonl',json.dumps(passed)+'\n')
+        for suite in self.bundle['suites'].values():
+            suite.update(records=good,baseline_records=good)
+        error=dict(self.record,status='error',original_status='engine-error',failure_signature_sha256='b'*64)
+        bad=self.put('error-v2.jsonl',json.dumps(error)+'\n')
+        self.bundle['suites']['slt'].update(records=bad,baseline_records=bad,
+            counts={s:int(s=='error') for s in c.STATUSES})
+        result=self.check()
+        self.assertEqual(result['counts']['slt']['error'],1)
+        self.assertEqual(result['nonpass_categories']['slt'],{'engine-error':1})
+        self.assertFalse(result['release_qualified'])
+        self.bundle['acceptance_policy']=c.STRICT
+        with self.assertRaisesRegex(ValueError,'policy mismatch'):self.check()
+
+    def test_standard_checks_use_explicit_pinned_expectations_not_invented_baseline(self):
+        self.bundle['schema']='assay-pr-evidence/v2'
+        self.bundle['acceptance_policy']=c.STRICT
+        expected=self.bundle['suites']['standard']['baseline_records']
+        self.policy['suites']['standard'].update(comparison_mode='candidate-checks',
+            expected_records_sha256=expected['sha256'])
+        suite=self.bundle['suites']['standard']
+        suite.update(comparison_mode='candidate-checks',expected_records=expected)
+        for key in ('baseline_records','baseline_commit','baseline_host','baseline_pacific_day','baseline_tool_manifest_sha256'):
+            del suite[key]
+        self.assertEqual(self.check()['comparison_modes']['standard'],'candidate-checks')
+        self.policy['suites']['standard']['expected_records_sha256']='0'*64
+        with self.assertRaisesRegex(ValueError,'expectation pin'):self.check()
+
     def test_full_scope_cannot_be_reduced(self):
         with self.assertRaisesRegex(ValueError, 'narrowed scope'):
             c.validate(self.bundle, self.policy, self.root)
+
+    def test_collection_manifests_remain_separate_from_bundle_inventory(self):
+        self.bundle.update(schema='assay-pr-evidence/v2', acceptance_policy=c.STRICT)
+        original = {key: self.bundle[key] for key in ('tool_manifest', 'input_manifest')}
+        self.policy['suites']['sf10-timing']['collection_manifests'] = original
+        for key in original:
+            aggregate = self.put('aggregate-' + key + '.json', json.dumps({'collection': original[key]}))
+            self.bundle[key] = aggregate
+            self.bundle[key + '_sha256'] = self.policy[key + '_sha256'] = aggregate['sha256']
+        for suite in self.bundle['suites'].values():
+            suite['baseline_tool_manifest_sha256'] = self.policy['tool_manifest_sha256']
+        self.check()
+        self.policy['suites']['sf10-timing']['collection_manifests']['tool_manifest'] = self.bundle['tool_manifest']
+        with self.assertRaisesRegex(ValueError, 'timing policy identity mismatch'):
+            self.check()
 
     def test_missing_suite(self):
         del self.bundle['suites']['slt']

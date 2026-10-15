@@ -16,14 +16,14 @@ class SiteTests(unittest.TestCase):
         self.summary=dict(candidate_commit='a'*40,candidate_tree='b'*40,base_commit='c'*40,
                           host='private-host',counts={},timing=validate_samples(path,policy))
         self.acceptance=dict(decision='accepted',bundle_sha256='d'*64,policy_sha256='e'*64,
-                             final_head='f'*40,candidate_commit='a'*40,candidate_tree='b'*40,
+                             reviewed_code_head='f'*40,candidate_commit='a'*40,candidate_tree='b'*40,
                              base_commit='c'*40,pr=1,reviewer='fixture-reviewer',
-                             raw_evidence_reviewed=True,final_delta_reviewed=True)
+                             raw_evidence_reviewed=True,generated_output_reviewed=True)
 
     def record(self):return public_record(self.summary,self.acceptance,'d'*64,'e'*64,'f'*40)
 
     def test_missing_review_and_stale_head(self):
-        for key,value in [('decision','pending'),('bundle_sha256','0'*64),('final_head','0'*40),('raw_evidence_reviewed',False),('reviewer','<script>')]:
+        for key,value in [('decision','pending'),('bundle_sha256','0'*64),('reviewed_code_head','0'*40),('raw_evidence_reviewed',False),('generated_output_reviewed',False),('reviewer','<script>')]:
             with self.subTest(key=key):
                 old=self.acceptance[key];self.acceptance[key]=value
                 with self.assertRaises(ValueError):self.record()
@@ -43,6 +43,24 @@ class SiteTests(unittest.TestCase):
         markup=render(PENDING)
         self.assertNotIn('<meter',markup)
         self.assertIn('No independently qualified',markup)
+
+    def test_rotated_evidence_preserves_method_and_excludes_private_fields(self):
+        comparison=dict(full_suite=True,denominator=22,full_suite_ratios=dict(
+            total=1.05,geomean=1.12,confidence_95={'total':[1.04,1.06],'geomean':[1.11,1.13]},
+            private_path='/private/fixture'))
+        self.summary['timing']=dict(protocol='assay-sf10-rotated-three-five/v1',
+            private_host='private-host',phases={f'{role}-timing-w{workers}':
+                {'comparisons':{'assaydb_polars':comparison,'assaydb_duckdb':comparison}}
+                for role in ('baseline','candidate') for workers in (1,10)})
+        self.summary.update(acceptance_policy='infrastructure-no-regression/v1',
+                            nonpass_categories={'hunt55k':{'native-error':1020,'oracle-error':25}})
+        record=self.record();markup=render(record)
+        self.assertNotIn('/private/',json.dumps(record));self.assertNotIn('private-host',json.dumps(record))
+        self.assertIn('three rotated rounds',markup)
+        self.assertIn('1.050000',markup);self.assertIn('1.120000',markup)
+        self.assertIn('native-error 1020',markup);self.assertIn('oracle-error 25',markup)
+        self.assertIn('not error-free release qualification',markup)
+        self.assertFalse(record['release_qualified'])
 
 
 if __name__=='__main__':unittest.main()

@@ -17,21 +17,44 @@ PENDING = {'schema':'assay-reviewed-pr-evidence/v1','status':'pending',
            'reason':'No independently qualified full-suite PR result has been accepted.'}
 
 
+def public_timing(timing):
+    if timing['protocol'] != 'assay-sf10-rotated-three-five/v1':
+        return timing
+    # Export computed numeric statistics only, never private artifact metadata.
+    phases = {}
+    for role in ('baseline', 'candidate'):
+        for workers in (1, 10):
+            name = f'{role}-timing-w{workers}'
+            comparisons = {}
+            for reference in ('polars', 'duckdb'):
+                item = timing['phases'][name]['comparisons']['assaydb_' + reference]
+                require(item['full_suite'] and item['denominator'] == 22, 'incomplete public timing')
+                stats = item['full_suite_ratios']
+                comparisons[reference] = {key:stats[key] for key in ('total', 'geomean', 'confidence_95')}
+            phases[name] = comparisons
+    return dict(protocol=timing['protocol'],phases=phases,ratio_direction='assaydb/reference',
+                rounds=3,timed_samples_per_query_per_round=5,warmups_per_query_per_round=1,
+                performance_qualified=False)
+
+
 def public_record(summary, acceptance, bundle_sha, policy_sha, expected_head):
     require(acceptance['decision']=='accepted', 'maintainer acceptance missing')
     require(acceptance['bundle_sha256']==bundle_sha and acceptance['policy_sha256']==policy_sha, 'acceptance evidence mismatch')
-    require(acceptance['final_head']==expected_head and re.fullmatch('[a-f0-9]{40}',expected_head), 'final head mismatch')
+    require(acceptance['reviewed_code_head']==expected_head and re.fullmatch('[a-f0-9]{40}',expected_head), 'reviewed code head mismatch')
     for key in ('candidate_commit','candidate_tree','base_commit'):
         require(acceptance[key]==summary[key], 'acceptance source mismatch')
     require(type(acceptance['pr']) is int and acceptance['pr']>0, 'invalid public PR')
     require(re.fullmatch('[A-Za-z0-9-]{1,39}',acceptance['reviewer']) is not None, 'invalid reviewer handle')
-    require(acceptance['raw_evidence_reviewed'] is True and acceptance['final_delta_reviewed'] is True, 'review incomplete')
+    require(acceptance['raw_evidence_reviewed'] is True and acceptance['generated_output_reviewed'] is True, 'review incomplete')
     # Explicit allowlist: no private hostnames, input locations, raw rows or logs.
     return dict(schema=PENDING['schema'],status='accepted',pr=acceptance['pr'],
                 candidate_commit=summary['candidate_commit'],candidate_tree=summary['candidate_tree'],
-                base_commit=summary['base_commit'],reviewed_head=expected_head,
+                base_commit=summary['base_commit'],reviewed_code_head=expected_head,
                 reviewer=acceptance['reviewer'],host='Test Mini',counts=summary['counts'],
-                timing=summary['timing'],bundle_sha256=bundle_sha,policy_sha256=policy_sha)
+                timing=public_timing(summary['timing']),bundle_sha256=bundle_sha,policy_sha256=policy_sha,
+                acceptance_policy=summary.get('acceptance_policy','zero-error/v1'),
+                nonpass_categories=summary.get('nonpass_categories',{}),
+                comparison_modes=summary.get('comparison_modes',{}),release_qualified=False)
 
 
 def render(record):
@@ -45,12 +68,30 @@ def render(record):
         for name,counts in record['counts'].items():
             body+='<tr><th>'+esc(name)+'</th>'+''.join('<td>'+str(int(counts[key]))+'</td>' for key in ('passed','unsupported','wrong','error','not-run','excluded'))+'</tr>'
         body+='</tbody></table>'
-        totals=record['timing']['sum_query_medians_seconds'];maximum=max(totals.values())
-        body+='<figure><figcaption>SF10: sum of 22 query medians, five timed samples per query; warmup excluded. Same-host candidate versus baseline.</figcaption>'
-        for role in ('baseline','candidate'):
-            value=totals[role]
-            body+=f'<p>{role}: {value:.6f} seconds <meter min="0" max="{maximum:.9f}" value="{value:.9f}" aria-label="{role} query time">{value:.6f}</meter></p>'
-        body+=f'<p>Candidate / baseline: {record["timing"]["total_wall_ratio"]:.6f}. This is not a comparison with another engine or an Alpha 3 release qualification.</p></figure>'
+        if record.get('comparison_modes', {}).get('standard') == 'candidate-checks':
+            body+='<p>Standard counts required command groups, not individual test assertions. These checks use pinned pass expectations rather than a native baseline execution.</p>'
+        if record.get('acceptance_policy') == 'infrastructure-no-regression/v1':
+            body+='<p>Infrastructure PR accepted under a reviewed no-regression policy. Existing errors and unsupported cases remain failures; this is not error-free release qualification.</p>'
+        for suite,categories in record.get('nonpass_categories',{}).items():
+            if categories:
+                body+='<p>'+esc(suite)+': '+', '.join(esc(k)+' '+str(int(v)) for k,v in categories.items())+'.</p>'
+        if record['timing']['protocol'] == 'assay-sf10-rotated-three-five/v1':
+            body+='<table><caption>Diagnostic SF10 ratios: Assay/reference, lower is faster. All 22 queries, three rotated rounds, five timed samples per query/round; warmups excluded. Total is the ratio of sums of 66 query-round medians; geometric mean uses all 66 paired ratios. Marginal 95% bootstrap intervals use three round clusters.</caption><thead><tr><th>Source / workers</th><th>Reference</th><th>Total (95% interval)</th><th>Geometric mean (95% interval)</th></tr></thead><tbody>'
+            for phase,comparisons in record['timing']['phases'].items():
+                for reference,stats in comparisons.items():
+                    body+='<tr><th>'+esc(phase)+'</th><td>'+esc(reference)+'</td>'
+                    for metric in ('total','geomean'):
+                        low,high=stats['confidence_95'][metric]
+                        body+=f'<td>{stats[metric]:.6f} ({low:.6f}–{high:.6f})</td>'
+                    body+='</tr>'
+            body+='</tbody></table><p>These measurements do not establish the Alpha 3 target or hardware portability. Historical charts remain separate.</p>'
+        else:
+            totals=record['timing']['sum_query_medians_seconds'];maximum=max(totals.values())
+            body+='<figure><figcaption>SF10: sum of 22 query medians, five timed samples per query; warmup excluded. Same-host candidate versus baseline.</figcaption>'
+            for role in ('baseline','candidate'):
+                value=totals[role]
+                body+=f'<p>{role}: {value:.6f} seconds <meter min="0" max="{maximum:.9f}" value="{value:.9f}" aria-label="{role} query time">{value:.6f}</meter></p>'
+            body+=f'<p>Candidate / baseline: {record["timing"]["total_wall_ratio"]:.6f}. This is not a comparison with another engine or an Alpha 3 release qualification.</p></figure>'
     return START+'<section class="section page-block" id="full-suite-evidence"><h2>Independent PR validation.</h2>'+body+'<p><a href="evidence/full-suite/latest.json">Machine-readable reviewed evidence</a></p></section>'+END
 
 

@@ -33,10 +33,23 @@ test('scope includes code, correctness, benchmark methods and proof source; excl
   for (const path of ['src/engine.rs', 'tests/null_zero.rs', 'tests/fixtures/query.sql', 'tests/fixtures/answers.json',
     'bindings/python/src/lib.rs', 'bindings/python/python/assaydb/__init__.py', 'bindings/python/tests/test_session.py',
     'benches/join.rs', 'benchmarks/compare.py', 'benchmarks/query.sql', 'docs/BENCHMARK-INPUTS.md',
-    'proofs/max.lean', 'verification/harness.rs', 'proofs/query.smt2']) assert.equal(api.enginePath(path), true, path);
+    'proofs/max.lean', 'verification/harness.rs', 'proofs/query.smt2',
+    'testing/result_contract.py', 'testing/tests/test_result_contract.py',
+    'testing/rotated_timing.py', 'testing/rotated_statistics.py', 'testing/tests/test_no_regression.py',
+    'testing/analysis/original.sql']) assert.equal(api.enginePath(path), true, path);
   for (const path of ['site/contribute.html', 'site/js/contributors.js', 'scripts/website-tests/contributors.test.cjs',
     'vercel.json', '.github/workflows/deploy.yml', 'Cargo.toml', 'Cargo.lock', 'README.md', 'proofs/README.md',
-    'benchmarks/setup.sh', 'bindings/python/scripts/stage_sdist.py', 'bindings/python/pyproject.toml', null]) assert.equal(api.enginePath(path), false, path);
+    'benchmarks/setup.sh', 'bindings/python/scripts/stage_sdist.py', 'bindings/python/pyproject.toml',
+    'testing/README.md', 'testing/results.json', 'testing/page.html', 'testing/site_evidence.py',
+    'testing/tests/test_site_evidence.py', 'testing/setup.py', null]) assert.equal(api.enginePath(path), false, path);
+});
+test('merged testing implementation earns credit without admitting website-only changes', async () => {
+  const f = fixture([{items: [pr(5)]},
+    {items: [{filename: 'testing/thread_metric.py'}, {filename: 'site/contribute.html'}]},
+    {items: [commit('alice')]}]);
+  const result = await api.load(f.fetcher);
+  assert.deepEqual(result.rows.map(row => row.number), [5]);
+  assert.equal(result.partial, false);
 });
 test('only merged public main PRs with valid identifiers qualify; no title-based category', () => {
   assert.equal(api.contribution(pr(2, {title: 'Website work'})).number, 2);

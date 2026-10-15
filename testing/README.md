@@ -12,7 +12,12 @@ claimed to be an enforced hosted check.
 `result_contract.py` validates source/base/tree and reviewer-supplied identities,
 all suite entries, hash-linked artifacts, complete ordered record streams,
 counts, baseline compatibility and no previously passing record becoming a
-failure. It rejects wrong/error/not-run records. Unsupported cases remain visible
+failure. The original v1 zero-error policy remains unchanged. The explicitly
+reviewed v2 `infrastructure-no-regression/v1` policy permits unchanged classified
+engine/reference errors for infrastructure PR acceptance; it still rejects wrong
+answers, missing execution, infrastructure failures, changed error signatures,
+changed passing answers, and previously passing records becoming failures.
+Unsupported cases remain visible
 failures; a stable unsupported case is not a wrong-answer regression. Frozen SLT
 control exclusions are counted separately and cannot silently shrink scope.
 
@@ -21,10 +26,30 @@ Hash-pinned SLT, hunt query-stream and retail adapters are implemented in
 `collector_adapter.py`. They retain original outcomes and compare every identity
 against an independently frozen scope. Unknown records and unauthorized exclusions
 fail. The original collector must still verify lifecycle, auxiliary/metamorphic
-records and build provenance before supplying streams. Wiring that boundary to
-the incoming full-suite runners remains pending. Protected collection, final-head
+records and build provenance before supplying streams. Protected collection, final-head
 delta review and maintainer acceptance remain required. A candidate-controlled receipt or `complete` flag is not proof.
 Do not use this validator alone to authorize a merge or a performance claim.
+
+The v2 policy requires full per-record answer/failure fingerprints and original
+classifications. Aggregate equality cannot establish no regression. Protected
+adapters authenticate the complete raw streams and frozen input scope before
+normalization. Unordered answers may be canonicalized only under the unchanged
+original comparator. An SLT raw-hash difference requires a separately pinned
+full-payload equivalence proof; matching rendered prefixes is insufficient.
+Future accuracy improvements are measured against this frozen baseline, retaining
+all errors and unsupported cases until they actually pass. Infrastructure
+acceptance never marks an error-free or performance-qualified release.
+
+Standard checks use an explicit `candidate-checks` comparison mode in v2: their
+command outcomes must all pass the separately pinned expectations. This does
+not invent a baseline execution of the compiler, formatter or test runner.
+SQL suites retain paired native evidence and frozen reference checks.
+
+A multi-suite v2 bundle may use aggregate tool/input inventories for packaging.
+The timing policy's `collection_manifests` then pins both original manifest
+artifacts separately. Timing samples keep their original collection identities;
+the validator checks those against the protected pins, not replacement hashes
+from the later bundle inventory.
 
 Run mechanics tests (synthetic fixtures only):
 
@@ -65,6 +90,24 @@ policy inputs, never inherited Dev Mini measurements. This versioned paired
 protocol is not a claim of compatibility with every historical benchmark method;
 the incoming runner adapter and the selected method still need review.
 
+`rotated_timing.py` separately supports `assay-sf10-rotated-three-five/v1`:
+baseline and candidate, workers 1 and 10, three rotated engine orders, all 22
+queries, one warmup and five timed samples for Assay, Polars and DuckDB. It retains
+all 4,752 samples and recomputes total and geometric-mean Assay/reference ratios
+and 10,000-draw paired round-block bootstrap intervals. It does not reinterpret
+these as paired-five results or impose an Alpha 3 target on infrastructure work.
+The retained collector has phase-completion timestamps, not individual sample
+wall-clock timestamps; the adapter preserves that distinction. Original process
+events and CPU/memory metrics stay in private evidence.
+
+`thread_metric.py` distinguishes helper permits excluding the coordinator from
+tracked live execution threads including it. A protected policy pins the entire
+versioned binding, source/tree/inventory, build receipt and binary. Unknown or
+swapped contracts, invalid numeric types and effective-worker mismatches refuse.
+This predicate does not replace memory/spill checks or measure whole-process OS
+thread counts. Rechecking retained outputs produces a separate receipt and never
+overwrites an original failure or claims fresh execution.
+
 Execution-affecting changes invalidate previous evidence. Evidence-only final-head
 changes require an explicit reviewed file-by-file delta; never relabel results.
 Keep complete logs, failed attempts and earlier evidence. All native execution
@@ -77,7 +120,8 @@ uses the shared host activity lock; measurements require a quiet host.
   622 files; 7,421,339 fixed records; 5,939,714 applicable. Retain the
   [upstream copyright notice](../docs/licenses/SQLLOGICTEST-COPYRIGHT.md), CC0 option.
   The corpus has been privately acquired and hash-verified on the test host.
-  Full execution and independent runtime review remain pending.
+  Full execution and independent runtime review have completed for the tested
+  PR candidate. Final-head acceptance and evidence integration remain separate.
 - `hunt55k/generate_v2.py` and `generate_v3.py`: original Assay generators, unchanged
   bytes under the repository MIT OR Apache-2.0 terms. The additive 5K preserves the
   original 50K prefix. The frozen plans/recipes and reference library have been privately acquired and
@@ -95,12 +139,14 @@ uses the shared host activity lock; measurements require a quiet host.
 
 ## Website integration
 
-Vercel deploys reviewed `site/` content from public main automatically. Contributor
-credit is fetched separately from GitHub. Neither mechanism executes tests.
+Vercel deploys reviewed `site/` content from public main automatically. No separate
+manual website upload is needed after merge. Contributor credit is fetched
+separately from GitHub, including the reviewed testing-code allowlist; ordinary
+website/setup-only changes remain excluded. Neither mechanism executes tests.
 `site_evidence.py` validates the private bundle, requires a separate maintainer
-acceptance record pinned to bundle/policy/source/final-head identities, and emits
+acceptance record pinned to bundle/policy/source/reviewed-code-head identities, and emits
 both `site/evidence/full-suite/latest.json` and the matching static HTML outcome
-table and timing bars. Both views come from one computed object; JavaScript is
+table and timing comparisons. Both views come from one computed object; JavaScript is
 not required. The shipped state is pending and contains no measurements.
 Historical charts are untouched. No synthetic accepted fixture is shipped.
 
@@ -116,6 +162,10 @@ The tool verifies their consistency, not the author's authority or honesty; a
 candidate-supplied acceptance file cannot authorize publication. Stage the output
 in the same PR, review the evidence-only delta to the final head, and rerun for
 any executable change. The command performs no network, merge or deployment.
+The acceptance field `reviewed_code_head` identifies the reviewed implementation
+commit; `generated_output_reviewed` attests review of the rendered output.
+The later output-only commit is checked separately at the PR head. An evidence
+file cannot embed the hash of the commit that contains that file.
 
 PR #4's scoped validation is historical, incomplete full-suite evidence. Its
 merge does not qualify its source under this gate. It must receive independent
