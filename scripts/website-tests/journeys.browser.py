@@ -29,53 +29,41 @@ with sync_playwright() as p:
         assert page.locator('#speed-journey').is_visible()
         site = Path(__file__).resolve().parents[2] / 'site'
         historic = json.loads((site / 'evidence/completed-speed-macbook-run-001.json').read_text())
-        reviewed = json.loads((site / 'evidence/full-suite/latest.json').read_text())
-        expected = [historic['lanes'][f'sf10-w{w}']['comparisons']['assaydb_polars']['total']['point'] for w in (1, 10)]
-        expected += [reviewed['timing']['phases'][f'{role}-timing-w{w}']['polars']['total'] for role in ('baseline', 'candidate') for w in (1, 10)]
-        assert page.locator('.journey-lane strong').all_text_contents() == [f'{value:.4f}×' for value in expected]
-
-        page.locator('.timing-contexts > summary').click()
-        points = page.locator('.timing-contexts .journey-points').first.locator('button')
-        points.nth(0).hover()
-        assert page.locator('#lesson-alpha2').is_visible()
-        points.nth(1).focus()
-        assert page.locator('#lesson-baseline').is_visible()
-        points.nth(2).click()
-        assert page.locator('#lesson-reviewed').is_visible()
-        page.locator('.timing-contexts > summary').click()
-        notes = page.locator('.milestone-lessons button')
-        # Choice geometry must stay stable for every selection: no staggered rows,
-        # stretched siblings or blank grid slots from expanding a selected card.
-        geometry = "els => els.map(e => ({x:e.offsetLeft,y:e.offsetTop,w:e.offsetWidth,h:e.offsetHeight}))"
-        initial = page.locator('.milestone-lessons > li').evaluate_all(geometry)
-        assert all(row['h'] == 48 for row in initial), initial
-        if width > 640:
-            assert initial[0]['w'] == 700
-            assert all(initial[i]['y'] == initial[i+1]['y'] for i in (1,3,5)), initial
-            assert initial[1]['y'] - initial[0]['y'] == 60
-            assert initial[3]['y'] - initial[1]['y'] == 60
-        else:
-            assert all(row['x'] == initial[0]['x'] for row in initial), initial
-            assert all(initial[i+1]['y'] - initial[i]['y'] == 60 for i in range(6)), initial
-        for option in notes.all():
-            option.focus()
-            assert page.locator('.milestone-lessons > li').evaluate_all(geometry) == initial
-            assert page.locator('.milestone-receipts .journey-lesson:visible').count() == 1
-        chart_bounds = page.locator('.milestone-scroll').bounding_box()
-        choices_bounds = page.locator('.milestone-lessons').bounding_box()
-        assert abs(chart_bounds['x'] - choices_bounds['x']) < 1
-        assert abs(chart_bounds['width'] - choices_bounds['width']) < 1
-
-        notes.first.focus()
-        page.keyboard.press('End')
-        assert notes.last.get_attribute('aria-pressed') == 'true'
+        for selector in ('.timing-contexts', '.milestone-lessons', '.milestone-receipts', '.provisional-milestone'):
+            assert page.locator(selector).count() == 0
+        assert page.locator('#speed-methods').get_attribute('open') is None
+        assert 'These results show our progress. We ran them at different times and sometimes on different computers, so they aren’t a direct comparison.' in page.locator('#speed-log').inner_text()
         chart = page.locator('.milestone-chart [data-milestone]')
+        popup = page.locator('#milestone-callout')
+        assert popup.is_hidden()
         chart.first.hover()
-        assert page.locator('#lesson-starting-benchmark').is_visible()
+        assert popup.is_visible()
+        assert '4.1598 times' in popup.inner_text()
+        page.keyboard.press('Escape')
+        assert popup.is_hidden()
         chart.first.focus()
         page.keyboard.press('End')
-        assert chart.last.get_attribute('aria-pressed') == 'true'
-        assert page.locator('#lesson-continuations').is_visible()
+        assert chart.last.get_attribute('aria-expanded') == 'true'
+        assert '1.087 times' in popup.inner_text()
+        page.keyboard.press('Tab')
+        assert page.locator('.milestone-close').evaluate('(e)=>e === document.activeElement')
+        page.keyboard.press('Enter')
+        assert popup.is_hidden()
+        assert chart.last.evaluate('(e)=>e === document.activeElement')
+        for point in chart.all():
+            point.scroll_into_view_if_needed()
+            point.focus()
+            point.press('Enter')
+            box = popup.bounding_box()
+            assert 0 <= box['x'] and box['x'] + box['width'] <= width
+            assert 0 <= box['y'] and box['y'] + box['height'] <= 1000
+            assert box['width'] <= 320
+            assert popup.evaluate('(e)=>getComputedStyle(e).position') == 'fixed'
+            assert point.get_attribute('data-lesson').endswith('.')
+            page.keyboard.press('Escape')
+        chart.first.click()
+        page.locator('#speed-journey-title').click()
+        assert popup.is_hidden()
         # Generated fallback and numeric data must remain byte-for-byte synchronized.
         import importlib.util
         spec = importlib.util.spec_from_file_location('journey_render', site.parent / 'scripts/render_speed_journey.py')
@@ -94,6 +82,9 @@ with sync_playwright() as p:
         page.evaluate("document.activeElement.blur(); document.querySelector('.milestone-scroll').scrollLeft = 0")
         page.screenshot(path=str(shots / f'speed-{width}.png'), full_page=True)
         page.locator('#speed-log').screenshot(path=str(shots / f'speed-log-{width}.png'))
+        chart.first.hover()
+        page.screenshot(path=str(shots / f'speed-start-hover-{width}.png'))
+        page.keyboard.press('Escape')
         page.locator('#journey-speed').focus()
         page.keyboard.press('Home')
         assert page.locator('#build-checkpoints svg').bounding_box()['width'] > 200
@@ -113,15 +104,21 @@ with sync_playwright() as p:
     page = touch.new_page()
     page.goto(BASE + '/index.html')
     page.locator('#journey-speed').tap()
-    page.locator('.milestone-lessons button').first.tap()
-    assert page.locator('#lesson-starting-benchmark').is_visible()
+    page.locator('.milestone-chart [data-milestone]').first.tap()
+    assert page.locator('#milestone-callout').is_visible()
+    page.locator('.milestone-close').tap()
+    assert page.locator('#milestone-callout').is_hidden()
+    page.locator('.milestone-chart [data-milestone]').first.tap()
+    page.locator('#speed-journey-title').tap()
+    assert page.locator('#milestone-callout').is_hidden()
     touch.close()
     context = browser.new_context(java_script_enabled=False)
     page = context.new_page()
     page.goto(BASE + '/index.html')
     assert page.locator('#build-checkpoints').is_visible()
     assert page.locator('#speed-journey').is_visible()
-    page.locator('.timing-contexts > summary').click()
+    page.locator('#speed-methods > summary').click()
+    page.get_by_text('Read every chart note', exact=True).click()
     for lesson in page.locator('.journey-lesson').all():
         assert lesson.is_visible()
     browser.close()

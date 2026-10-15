@@ -180,14 +180,14 @@ promotion. See [snapshot provenance](SNAPSHOT-PROMOTION.md).
 
 `js/journeys.js` progressively enhances the two journey panels and milestone
 lessons. Arrow keys, Home/End, focus, hover and tap work; all content remains
-visible without JavaScript. The accuracy receipt is unchanged: 99.9293% means
+readable in native disclosures without JavaScript. The accuracy receipt is unchanged: 99.9293% means
 5,935,512 / 5,939,714 applicable records, or 79.9790% of 7,421,339 fixed records.
 Its measured source is not the published Alpha 2 source; do not relabel it without
 source-equivalence evidence.
 
-Speed bars reuse the public historical M2 Pro receipt and reviewed PR5 receipt.
-They are separate host/source/configuration groups, not a controlled continuous
-trend. Both total time and geometric mean must reach the 0.95× Polars goal;
+The speed chart includes the public historical M2 Pro starting benchmark.
+Reviewed PR5 evidence lives on the contribution page. Measurements from different
+hosts, sources and configurations do not form a controlled continuous trend. Both total time and geometric mean must reach the 0.95× Polars goal;
 no Alpha 3 achievement is claimed. New draft PR6 contributes no measurements.
 `evidence/speed-journey-notes.json` contains six dated numeric development-gate
 milestones and a separate provisional M4 attempt. `scripts/render_speed_journey.py`
@@ -197,8 +197,11 @@ and other hosts. The retained historical input documentation leaves sampling
 compatibility unverified; corrected gate code is not evidence that the old runs
 satisfied its five-timed/no-warmup contract. The starting benchmark is a differently colored diamond on the same 0–4.5×
 chart scale: the M2 Pro Alpha 2-equivalent 4.1598× total run, distinct from the
-M4 4.1364× run. No line connects unlike hosts. Seven controls use a stable grid;
-the selected lesson appears below instead of expanding a grid item.
+M4 4.1364× run. No line connects unlike hosts. Seven chart points open compact overlay notes on hover, focus or tap. Escape,
+the Close button or an outside click dismisses them. Arrow keys and Home/End move
+between points; Tab enters the open note. Notes stay inside the viewport and do
+not change chart layout. Technical limits and all fallback notes remain under
+“How we tested.” There are no separate milestone choice cards or wide detail panel.
 
 The contribution page links to plain GitHub issue creation (issues enabled,
 discussions disabled) and the existing `wrong-answer.md` template. Its accuracy and speed

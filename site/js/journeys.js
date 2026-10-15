@@ -27,53 +27,67 @@
     });
   });
   select(0); bar.hidden = false;
-  const milestoneHost = document.getElementById('speed-log');
-  if (milestoneHost) {
-    const controls = [...milestoneHost.querySelectorAll('[data-milestone]')];
-    const ids = [...new Set(controls.map(control => control.dataset.milestone))];
-    function choose(id) {
-      controls.forEach(control => control.setAttribute('aria-pressed', String(control.dataset.milestone === id)));
-      ids.forEach(key => { document.getElementById('lesson-' + key).hidden = key !== id; });
-    }
-    controls.forEach(control => {
-      const id = control.dataset.milestone;
-      control.addEventListener('click', () => choose(id));
-      control.addEventListener('focus', () => choose(id));
-      control.addEventListener('pointermove', event => { if (event.pointerType !== 'touch') choose(id); });
-      control.addEventListener('keydown', event => {
-        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); choose(id); return; }
-        const i = ids.indexOf(id);
-        const next = event.key === 'Home' ? 0 : event.key === 'End' ? ids.length - 1 :
-          ['ArrowRight','ArrowDown'].includes(event.key) ? (i + 1) % ids.length :
-          ['ArrowLeft','ArrowUp'].includes(event.key) ? (i + ids.length - 1) % ids.length : null;
-        if (next !== null) {
-          event.preventDefault();
-          const peers = control.tagName.toLowerCase() === 'button' ? '.milestone-lessons ' : '.milestone-chart ';
-          milestoneHost.querySelector(peers + '[data-milestone="' + ids[next] + '"]').focus();
-        }
-      });
-    });
-    choose(ids[ids.length - 1]);
+  const host = document.getElementById('speed-log');
+  if (!host) return;
+  const controls = [...host.querySelectorAll('[data-milestone]')];
+  const popup = document.getElementById('milestone-callout');
+  let active = null;
+  let suppressFocus = false;
+  function position() {
+    if (popup.hidden || !active) return;
+    const anchor = active.getBoundingClientRect();
+    const box = popup.getBoundingClientRect();
+    const left = Math.max(12, Math.min(innerWidth - box.width - 12, anchor.left + anchor.width / 2 - box.width / 2));
+    let top = anchor.bottom + 10;
+    if (top + box.height > innerHeight - 12) top = anchor.top - box.height - 10;
+    popup.style.left = left + 'px';
+    popup.style.top = Math.max(12, Math.min(innerHeight - box.height - 12, top)) + 'px';
   }
-  document.querySelectorAll('.journey-points:not(.milestone-lessons)').forEach(list => {
-    const buttons = [...list.querySelectorAll('.journey-point')];
-    function choose(index) {
-      buttons.forEach((button, i) => {
-        button.setAttribute('aria-pressed', String(i === index));
-        document.getElementById(button.getAttribute('aria-controls')).hidden = i !== index;
-      });
-    }
-    buttons.forEach((button, i) => {
-      button.addEventListener('click', () => choose(i));
-      button.addEventListener('focus', () => choose(i));
-      button.addEventListener('pointermove', event => { if (event.pointerType !== 'touch') choose(i); });
-      button.addEventListener('keydown', event => {
-        const index = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 :
-          event.key === 'ArrowDown' || event.key === 'ArrowRight' ? (i + 1) % buttons.length :
-          event.key === 'ArrowUp' || event.key === 'ArrowLeft' ? (i + buttons.length - 1) % buttons.length : null;
-        if (index !== null) { event.preventDefault(); buttons[index].focus(); }
-      });
+  function show(control) {
+    active = control;
+    controls.forEach(item => item.setAttribute('aria-expanded', String(item === control)));
+    document.getElementById('milestone-callout-title').textContent = control.dataset.title;
+    ['date', 'result', 'lesson'].forEach(key => {
+      popup.querySelector('[data-callout-' + key + ']').textContent = control.dataset[key];
     });
-    choose(buttons.length - 1);
+    popup.hidden = false;
+    position();
+  }
+  function close(restore = false) {
+    popup.hidden = true;
+    controls.forEach(item => item.setAttribute('aria-expanded', 'false'));
+    if (restore && active && document.activeElement !== active) {
+      suppressFocus = true;
+      active.focus({preventScroll: true});
+      suppressFocus = false;
+    }
+  }
+  controls.forEach((control, i) => {
+    control.addEventListener('focus', () => { if (!suppressFocus) show(control); });
+    control.addEventListener('pointermove', event => { if (event.pointerType !== 'touch') show(control); });
+    control.addEventListener('click', () => show(control));
+    control.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); show(control); return; }
+      // Tab enters the open note so its Close button is reachable immediately.
+      if (event.key === 'Tab' && !event.shiftKey && !popup.hidden) {
+        event.preventDefault(); popup.querySelector('button').focus(); return;
+      }
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? controls.length - 1 :
+        ['ArrowRight', 'ArrowDown'].includes(event.key) ? (i + 1) % controls.length :
+        ['ArrowLeft', 'ArrowUp'].includes(event.key) ? (i + controls.length - 1) % controls.length : null;
+      if (next !== null) { event.preventDefault(); controls[next].focus(); }
+    });
   });
+  popup.querySelector('button').addEventListener('click', () => close(true));
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !popup.hidden) { event.preventDefault(); close(popup.contains(document.activeElement)); }
+  });
+  document.addEventListener('pointerdown', event => {
+    if (!popup.contains(event.target) && !controls.some(control => control.contains(event.target))) close();
+  });
+  document.addEventListener('focusin', event => {
+    if (!popup.contains(event.target) && !controls.includes(event.target)) close();
+  });
+  window.addEventListener('resize', position);
+  document.addEventListener('scroll', () => requestAnimationFrame(position), true);
 })();
