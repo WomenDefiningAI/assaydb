@@ -4,6 +4,9 @@ Collectors call this before importing their reviewed overlay and at postflight.
 It does not classify SQL, rebuild an oracle, or grant full-run authorization.
 All policies, paths and receipts are private collector artifacts, outside source.
 """
+import datetime
+import socket
+from zoneinfo import ZoneInfo
 import fcntl
 import json
 import os
@@ -47,7 +50,8 @@ def inherited_lock(path):
 
 
 class RuntimeContext:
-    def __init__(self, policy_path, policy_sha256, roots):
+    def __init__(self, policy_path, policy_sha256, roots, *, enforce_imports=False):
+        self.enforce_imports = enforce_imports
         self.path = Path(policy_path).resolve()
         self.sha = policy_sha256
         require(digest(self.path) == self.sha, 'runtime policy pin mismatch')
@@ -66,6 +70,11 @@ class RuntimeContext:
         require(digest(self.path) == self.sha, 'runtime policy changed')
         inherited_lock(Path(self.policy['host_lock']))
         p, roots = self.policy, self.roots
+        pair = p['run_pair']
+        require(bool(pair['id']) and pair['host'] == socket.gethostname(), 'run host mismatch')
+        require(pair['pacific_day'] == datetime.datetime.now(ZoneInfo('America/Los_Angeles')).date().isoformat(), 'run Pacific day mismatch')
+        if self.enforce_imports:
+            verify_import_origins(self)
         require(digest(Path(sys.executable).resolve()) == p['interpreter_sha256'], 'runtime interpreter changed')
         environment = {k:v for k,v in os.environ.items() if k.startswith(
             ('ASSAYDB_', 'POLARS_', 'RAYON_', 'DATAFUSION_', 'OMP_', 'MKL_', 'DYLD_', 'LD_'))}
@@ -86,10 +95,14 @@ class RuntimeContext:
         require(actual == set(p['overlay_files']), 'overlay inventory differs')
         adapter = Path(__file__).resolve().parent
         inventory(adapter, p['adapter_files'])
-        require({'runtime_context.py', 'runtime_launch.py', 'candidate_boundary.py', 'result_contract.py', 'timing.py'} <= set(p['adapter_files']), 'incomplete admission adapter pins')
+        require({'runtime_context.py', 'runtime_launch.py', 'runtime_launch.sh', 'candidate_boundary.py', 'result_contract.py', 'timing.py'} <= set(p['adapter_files']), 'incomplete admission adapter pins')
         return dict(boundary=boundary, expanded_inputs_sha256=inputs,
                     overlay_sha256=overlay, adapter_sha256=fingerprint(p['adapter_files']),
-                    transfer_receipts=p['transfer_receipts'], policy_sha256=self.sha,
+                    transfer_receipts=p['transfer_receipts'],
+                    boundary_policy_sha256=fingerprint(p['boundary']), run_pair=pair,
+                    host_lock=dict(path=str(Path(p['host_lock']).resolve()),
+                                   device=Path(p['host_lock']).stat().st_dev,
+                                   inode=Path(p['host_lock']).stat().st_ino),
                     interpreter_sha256=p['interpreter_sha256'],
                     engine_environment_sha256=fingerprint(environment))
 
@@ -112,8 +125,40 @@ class RuntimeContext:
         return self.initial
 
 
+def verify_import_origins(context):
+    require(sys.flags.isolated and sys.flags.no_site and sys.dont_write_bytecode,
+            'isolated interpreter without site/bytecode required')
+    require(os.environ.get('PATH') == '/usr/bin:/bin' and
+            not any(k.startswith(('PYTHON', 'DYLD_', 'LD_')) for k in os.environ),
+            'unsanitized runtime environment')
+    adapter = Path(__file__).resolve().parent
+    overlay = context.roots['overlay']
+    stdlib = Path(os.__file__).resolve().parent
+    for name, module in tuple(sys.modules.items()):
+        value = getattr(module, '__file__', None)
+        if not value:
+            spec = getattr(module, '__spec__', None)
+            require(name in sys.builtin_module_names or getattr(spec, 'origin', None) in ('built-in', 'frozen'),
+                    'unattributed loaded module: ' + name)
+            continue
+        path = Path(value).resolve()
+        if path.is_relative_to(adapter):
+            rel = path.relative_to(adapter).as_posix()
+            require(context.policy['adapter_files'].get(rel) == digest(path), 'unbound admission module: ' + name)
+        elif path.is_relative_to(overlay):
+            rel = path.relative_to(overlay).as_posix()
+            require(context.policy['overlay_files'].get(rel) == digest(path), 'unbound collector module: ' + name)
+        else:
+            require(path.is_relative_to(stdlib) and 'site-packages' not in path.parts,
+                    'ambient module origin: ' + name)
+    for name in ('candidate_boundary', 'result_contract', 'timing', 'runtime_context'):
+        module = sys.modules.get(name)
+        require(module is not None and Path(module.__file__).resolve() == adapter/(name+'.py'),
+                'admission module origin mismatch: ' + name)
+
+
 def from_environment():
     # Set only by the reviewed collector launcher, never by candidate execution.
     roots = json.loads(os.environ['ASSAY_RUNTIME_ROOTS'])
     return RuntimeContext(os.environ['ASSAY_RUNTIME_POLICY'],
-                          os.environ['ASSAY_RUNTIME_POLICY_SHA256'], roots)
+                          os.environ['ASSAY_RUNTIME_POLICY_SHA256'], roots, enforce_imports=True)

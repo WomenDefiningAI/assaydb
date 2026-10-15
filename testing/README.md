@@ -195,3 +195,23 @@ collection. Build receipts retain Cargo events and require both native artifacts
 to have `fresh: false`; changed or substituted source/binaries fail admission.
 The installed controller pin is unchanged. Full-suite qualification and merge remain
 blocked until all required evidence and independent review are complete.
+
+Production launch uses a protected directory containing exactly the six pinned
+admission files (`runtime_launch.sh`, `runtime_launch.py`, `runtime_context.py`,
+`candidate_boundary.py`, `result_contract.py`, `timing.py`). Invoke the shell entry
+point by absolute path with the absolute pinned interpreter as its first argument.
+The shell clears ambient environment and supplies `-I -S -B` before Python starts.
+The bootstrap authenticates policy and admission files before helper imports;
+a fresh isolated worker then dispatches the pinned collector. Actual loaded module
+origins must belong to pinned admission/overlay files or the host standard library.
+The SQLite oracle subprocess uses the same isolation/no-bytecode flags. This
+prevents ambient startup hooks, module paths and cached parent modules from being
+accepted as the reviewed execution. It is not an operating-system sandbox.
+
+Freeze and run use separate independently pinned invocation policies. Their stable
+runtime identity excludes the phase policy hash to avoid a receipt-hash cycle,
+but retains complete build/source/controller/input/tool/interpreter/environment
+pins, pair identity, host/Pacific day and canonical lock path/device/inode. Each
+policy file is still checked against its own externally supplied SHA on every
+admission/postflight. Phase arguments cannot change substantive provenance.
+Host/date mismatch refuses; both paired policies must name the same reviewed pair.
