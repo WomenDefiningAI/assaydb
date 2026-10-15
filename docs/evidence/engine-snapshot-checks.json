@@ -1,0 +1,137 @@
+{
+  "schema": "assay-engine-promotion-checks/v1",
+  "qualification": "incomplete; draft PR, not maintainer acceptance",
+  "tested_public_commit": "7f5b2d2ae67a0f77873afa95e289d58d96c0a714",
+  "tested_public_tree": "99cc174c875a316e12c4a791fe07c45e713ee614",
+  "public_base": "d86aa0dd769041c23d64bfc760f7b31cc07f3af7",
+  "frozen_source": "76e816727c249c285223635f7b7f75cf7154c901",
+  "build": {
+    "profile": "ordinary release; no PGO",
+    "rust": "1.90.0",
+    "debug": 0,
+    "strip": "none",
+    "binary_sha256": "d47b667c746cca84638f3e3c2e032b31fdbc97f7e5d4a718fe304103050dc248"
+  },
+  "fresh_export_checks": {
+    "rust": {
+      "passed": 871,
+      "failed": 0,
+      "ignored": 0
+    },
+    "controller_tests_passed": 113,
+    "python_staging_passed": 5,
+    "public_mechanics_passed": 85,
+    "contributor_tests_passed": 13,
+    "groups": [
+      {
+        "name": "controller-self-tests",
+        "status": "passed",
+        "log_sha256": "24238b03c70324246fbe51867bf10b15641cc02083cb5dc8ee646af91c49e721"
+      },
+      {
+        "name": "python-source-staging",
+        "status": "passed",
+        "log_sha256": "01a9685662dd091542f57d04ab773327f3b73808b6e936ae22a8c54a52bb647c"
+      },
+      {
+        "name": "format",
+        "status": "passed",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "rust-all-targets",
+        "status": "passed",
+        "log_sha256": "5e7a9b1121d878f6d6d24b78bb1f407073a183fa691d234c4233dc06c9abeecb"
+      },
+      {
+        "name": "clippy",
+        "status": "passed",
+        "log_sha256": "fbb2a7cb0e020f62eb957e7f6ca36495c8faf5c3e347f30a17316f725b2d04c1"
+      },
+      {
+        "name": "public-testing-mechanics",
+        "status": "passed",
+        "log_sha256": "0b71c471544034b9eda59f798a0a7fd58465aae57932957ed40d238d26ad3893"
+      },
+      {
+        "name": "site-contributors",
+        "status": "passed",
+        "log_sha256": "ddabdc714e0a2eb8d72e9b4b365757aaf886ba5707b522fb78c24e308c3c3c57"
+      },
+      {
+        "name": "release-binaries",
+        "status": "passed",
+        "log_sha256": "65a3075043b8749077b966cf0ab8638070246b63ed41c6958813b2f08bc9deab"
+      }
+    ],
+    "postflight": "passed"
+  },
+  "fresh_export_acceptance": {
+    "base": "d86aa0dd769041c23d64bfc760f7b31cc07f3af7",
+    "candidate": "7f5b2d2ae67a0f77873afa95e289d58d96c0a714",
+    "passed_each_role": 43,
+    "live_and_preserved_report_verification": "passed"
+  },
+  "fresh_export_retail": {
+    "passed": 64,
+    "unsupported": 0,
+    "wrong": 0,
+    "error": 0,
+    "not_run": 0,
+    "scope": "20 original real + 20 original synthetic; 11 exact-product real + 11 exact-product synthetic; 2 edge cases",
+    "references": "unchanged frozen independent answers; no fresh reference-engine run"
+  },
+  "fresh_frozen_source_capacity": {
+    "candidate": "76e816727c249c285223635f7b7f75cf7154c901",
+    "baseline": "bc576ddf610d665056c6a340f617eb0990979218",
+    "passed_each_role": 66,
+    "independently_audited": true,
+    "public_export_binary": false,
+    "limit": "engine-accounted memory/spill and versioned tracked-thread contract; not hard process memory"
+  },
+  "remaining": [
+    {
+      "check": "full-suite exact-export/current-public-base acceptance",
+      "status": "pending review",
+      "reason": "retained full SLT/55K/SF10 campaign measured frozen source and historical baseline; no automatic relabeling or fresh public-main timing claim"
+    },
+    {
+      "check": "stable error acceptance",
+      "status": "unresolved",
+      "reason": "strict zero-error compatibility not achieved; PR5 infrastructure acceptance does not transfer"
+    },
+    {
+      "check": "decoder native-memory qualification",
+      "status": "not-qualified",
+      "reason": "D04 remains open; no hard RSS or universal memory claim"
+    }
+  ],
+  "release_claims": {
+    "alpha3": false,
+    "performance_goal_0_95_established": false,
+    "package_publication": false
+  },
+  "evidence_receipts_sha256": {
+    "export_standard": "e8f8d753f268730cb16d9bf63b95876d1112bf761243df986097be15fdec1ec9",
+    "export_acceptance": "707f2990cfd4e1cd999b52e54e4d4e73df0f42627aded6c38d53729fedded29f",
+    "export_retail": "e9517b5236ec3a33ba434068fa0c9b0ad5a507a145c058a6f22a0ec8eff51dfa",
+    "fresh_capacity_audit": "32cbf0f044a864d8237248cc9d0d2353a774451bea775d7e92959f523e6594ab"
+  },
+  "fresh_ranking_reference": {
+    "status": "passed with approved disclosed reference variation",
+    "passed": true,
+    "cases": 80,
+    "sqlite_cross_checks": 60,
+    "disagreements": [],
+    "finite_zero_boundary_equal": true,
+    "nan_policy_boundary_equal": true,
+    "original_answers_unchanged": true,
+    "original_sqlite_version": "3.51.0 2025-06-12 13:14:41 f0ca7bba1c5e232e5d279fad6338121ab55af0c8c68c84cdfb18ba5114dcaapl (64-bit)",
+    "actual_sqlite_version": "3.51.0 2025-11-04 19:38:17 fb2c931ae597f8d00a37574ff67aeed3eced4e5547f9120744ae4bfa8e74527b (64-bit)",
+    "approved_variation": "official upstream 3.51.0 instead of unavailable Apple 3.51.0 executable; complete answers compared without replacement",
+    "archive_sha256": "1caf7116f2910600d04473ad69d37ec538fa62fa36adccd37b5e0e43647c98be",
+    "binary_sha256": "07b6b7ba92f10ad28528e43bd0fd0dc746a61e7d14c0fd6acb02b6c370292e4d",
+    "compiler_sha256": "1590ac950a3d627817d09ade5cb60b2115f17a72182a3141e010b4bcc482a0c9",
+    "comparison_sha256": "20fc4fde298c9d5863b16426f512ff88a62cedd9ce609b0e81051a188f1ce228"
+  }
+}

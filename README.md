@@ -2,7 +2,7 @@
 
 Assay is an experimental analytical SQL engine written in Rust, with Python
 sessions and Arrow results. This tree is a development source snapshot after
-Alpha 2; see [snapshot provenance and validation](docs/SNAPSHOT-PROMOTION.md).
+Alpha 2; see [current snapshot qualification](docs/ENGINE-SNAPSHOT-QUALIFICATION.md).
 Published packages remain Python `0.1.0a2` and Rust `0.1.0-alpha.2`.
 Unchanged version metadata does not make this tree the published package source.
 

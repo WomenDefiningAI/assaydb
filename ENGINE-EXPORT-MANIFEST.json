@@ -3,7 +3,7 @@
   "source_commit": "76e816727c249c285223635f7b7f75cf7154c901",
   "source_tree": "22abe151f6b6639976fcf437882c5ca447ca016f",
   "public_base": "d86aa0dd769041c23d64bfc760f7b31cc07f3af7",
-  "scope": "Complete implementation delta except this self-describing manifest; unchanged public files retained from base. Evidence-only follow-up identified separately.",
+  "scope": "Complete final PR delta except this self-describing manifest. Native implementation tested at tested_public_commit; final follow-up changes only documentation, evidence and this inventory.",
   "files": [
     {
       "path": "Cargo.lock",
@@ -17,6 +17,13 @@
       "bytes": 1958,
       "sha256": "5f686de67d1d3f292ec1b3c2853cf0e3709dc58c691ee1a7de569f0f66964e1f",
       "source_sha256": "109b58d721aa3f0c4b84fa73e2b5e30d4cf12778662185495c4dabc07589be5f",
+      "source_identical": false
+    },
+    {
+      "path": "README.md",
+      "bytes": 3023,
+      "sha256": "0cdf0205a7fa226fc5734b6e88924bd01f2affc6a58454809515f493a08bc2f3",
+      "source_sha256": "fe3afb8a2858af6487942a172b2215d88a82f3441faf2c46955ed37df635c7bf",
       "source_identical": false
     },
     {
@@ -42,8 +49,22 @@
     },
     {
       "path": "docs/ENGINE-SNAPSHOT-QUALIFICATION.md",
-      "bytes": 5978,
-      "sha256": "0de2de6f2f1fc45341e6b863da2a90178d918c648d6a9de7677764968fc75d9c",
+      "bytes": 7258,
+      "sha256": "2737f3d991faeb29440dcf0694d96be6955423c3b66c53f407a953a227332a4d",
+      "source_sha256": null,
+      "source_identical": false
+    },
+    {
+      "path": "docs/RELEASES.md",
+      "bytes": 3353,
+      "sha256": "95052049ecb5395e1b2128befb28159f41dae820c0d4286ae5cd144044c53898",
+      "source_sha256": null,
+      "source_identical": false
+    },
+    {
+      "path": "docs/SNAPSHOT-PROMOTION.md",
+      "bytes": 4067,
+      "sha256": "1a2ef5c9944a5f48c18c92f46564271a0cbcf00b918151359764f0b7233a9d0a",
       "source_sha256": null,
       "source_identical": false
     },
@@ -52,6 +73,13 @@
       "bytes": 7351,
       "sha256": "c5c3bd51a2d5326bb12365f2581adbe6bb0bba42820940b817e328d63f3ba46e",
       "source_sha256": "acb2021edbdee15de6608ff0474bc2ca421d110ae4c1267939e79b4260e7e44c",
+      "source_identical": false
+    },
+    {
+      "path": "docs/evidence/engine-snapshot-checks.json",
+      "bytes": 5487,
+      "sha256": "65aa36974dac8d8ecd281bc070f89e0e98c1ed86be408679ef158c774b8dd359",
+      "source_sha256": null,
       "source_identical": false
     },
     {
@@ -1699,5 +1727,6 @@
       "source_sha256": "88e3db39a4f335f2e9ee508677f155cd092fc884fb767892e0bf55f79cb024d9",
       "source_identical": true
     }
-  ]
+  ],
+  "tested_public_commit": "7f5b2d2ae67a0f77873afa95e289d58d96c0a714"
 }

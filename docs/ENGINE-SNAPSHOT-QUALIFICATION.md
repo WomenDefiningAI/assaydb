@@ -41,7 +41,7 @@ All work ran on the same test host with shared activity locking. No PGO was used
 | Retail | 64/64 passed: original, exact-product variants and edge controls against frozen independent answers |
 | Decoder controls | 303 error records, eight FLBA controls and 82 coverage records per role matched |
 | DECIMAL controls | 701 casts: 614 values and 87 expected errors; 12 composition cases: nine values and three expected errors |
-| Ranking reference regeneration | Not run: exact SQLite prerequisite unresolved; native tests used frozen answers |
+| Ranking reference regeneration | Fresh 80-case / 60 SQLite cross-check regeneration matched frozen answers, finite-zero and NaN-policy records; approved upstream 3.51.0 variation recorded separately |
 
 The 60 SLT and 354 differential output differences were investigated using full
 typed results and resolved as unordered row-order differences, not semantic
@@ -61,22 +61,37 @@ have had zero timing impact. These observations limit the timing interpretation.
 
 ## Exported-tree checks and remaining acceptance
 
-Exact exported-tree checks are pending at this implementation checkpoint.
-A subsequent evidence-only commit will record their source identity and outcomes.
-Complete qualification is not claimed and this PR must remain unmerged until
-maintainer review resolves the following boundaries:
+Fresh exported-tree checks ran against `7f5b2d2ae67a0f77873afa95e289d58d96c0a714`
+(tree `99cc174c875a316e12c4a791fe07c45e713ee614`). [Sanitized evidence](evidence/engine-snapshot-checks.json)
+records 871 Rust tests, 113 controller tests, five staging tests, 85 public
+mechanics tests and 13 contributor tests passing, plus formatting and Clippy.
+Acceptance-small passed 43 tests for each of the exact public base and candidate,
+with live and preserved-copy report verification. All 64 frozen retail checks
+passed against the fresh exported binary. No Rust tests were ignored. Subsequent
+changes are documentation/evidence only. Passing the decoder recorder tests is not
+a fresh upstream parity comparison; decoder parity remains attributed to the
+retained frozen-source campaign.
 
-- Run and review the source-bound corrected capacity checks; the original
-  candidate 0/66 result is preserved. The corrected thread contract includes
-  the coordinator, bounded by configured workers. It does not relax memory or
-  spill checks or convert old failed receipts into new passes.
-- Authenticate the SQLite 3.51 executable used for fresh ranking reference checks.
-  Frozen answers record an Apple 3.51.0 build without an executable acquisition
-  hash. An upstream build requires an explicit, documented reference-provenance
-  decision; 3.54 is not an acceptable silent substitution.
-- Review exact exported build/source equivalence before reusing any campaign
-  evidence. Changes to executable behavior invalidate affected evidence. A fresh
-  public-main paired benchmark has not been run.
+The local checks above are complete. This draft remains unmerged for maintainer
+review. Completed follow-ups and remaining review decisions are distinguished below;
+the separate Alpha3 performance target is not claimed by this source promotion.
+
+- The fresh source-bound corrected capacity run passed 66/66 per role and
+  independent raw JSON/Arrow/settings/provenance/cleanup review. It measured the
+  frozen source build, not the exported binary. The original candidate 0/66
+  result remains preserved. The corrected thread contract includes the
+  coordinator, bounded by configured workers; memory/spill checks are unchanged.
+  These passes do not close decoder native-memory accounting.
+- SQLite reference provenance is resolved for this run by explicit approval of
+  the official upstream 3.51.0 variation. Source/compiler/binary hashes are retained.
+  All 80 cases, 60 SQLite cross-checks and complete boundary records matched; only
+  the disclosed SQLite version metadata differed. Frozen answers were not replaced.
+- Independent review verified the engine/build export boundary: native engine
+  files and build configuration match the frozen source, apart from the documented
+  attribution comments. Retained full-corpus evidence is historical source-equivalent
+  evidence, not a fresh run of this binary or a full comparison against current public
+  main. Maintainers must resolve whether additional current-base checks are required.
+  No fresh public-main paired timing baseline is claimed.
 - Decide whether the retained stable engine/reference errors satisfy the chosen
   engine-PR acceptance policy. Strict zero-error compatibility is not achieved.
 
