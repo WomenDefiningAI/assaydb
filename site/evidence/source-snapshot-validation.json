@@ -1,0 +1,110 @@
+{
+  "schema": "assay-source-validation/v1",
+  "candidate": "dee9b536dc3b0fdf6a43b05e30c2ed7c5dd500e9",
+  "public_base": "e4c616fd1168115308e021615c915fe2bb26a43d",
+  "scope": "Development source promotion; not a package release or performance qualification",
+  "platform": "macOS arm64 Test Mini; Rust 1.90.0; Python 3.14.8",
+  "execution": "Serialized under shared host activity lock; fresh source-identified release binary",
+  "binary_sha256": "57eba7b5ca41914d4b1d63f2bc1c018a700e367b8bcb32ac638b12452f2a5c3e",
+  "checks": {
+    "rust_all_targets": {
+      "passed": 812,
+      "failed": 0,
+      "ignored": 1,
+      "ignored_reason": "Explicitly ignored full 16M-row demand-streaming reproducer"
+    },
+    "clippy": "passed with warnings denied",
+    "format": "passed",
+    "python_source_staging": {
+      "passed": 5
+    },
+    "contributor_feed": {
+      "passed": 12
+    },
+    "controller_self_tests": {
+      "passed": 113,
+      "initial_invocation": "Three import errors from incorrect working directory; corrected documented root invocation passed. Earlier log retained."
+    },
+    "acceptance_small": {
+      "passed": 43,
+      "live_verification": "passed",
+      "preserved_copy_verification": "passed",
+      "result_file_sha256": "9e64bf7dae8f22fc65b758080b8edea2c5875afdb737649ec9063e53b71edf75",
+      "canonical_result_sha256": "e707a5a7600221e2256093df6b701d6bbe67c9bc793c7cee3a11deeababa8e5e"
+    },
+    "site_static": "Four pages: local assets and anchors resolved; JSON parsed; JavaScript syntax passed",
+    "site_browser": "Scoped in-app browser check: contribution evidence link resolves, desktop1280 and phone390 widths have no horizontal overflow; existing feed empty state renders."
+  },
+  "retail": {
+    "counts": {
+      "original/synthetic": {
+        "passed": 9,
+        "unsupported": 11,
+        "wrong": 0,
+        "error": 0,
+        "not-run": 0
+      },
+      "original/real": {
+        "passed": 9,
+        "unsupported": 11,
+        "wrong": 0,
+        "error": 0,
+        "not-run": 0
+      },
+      "exact-product/edge": {
+        "passed": 2,
+        "unsupported": 0,
+        "wrong": 0,
+        "error": 0,
+        "not-run": 0
+      },
+      "exact-product/synthetic": {
+        "passed": 8,
+        "unsupported": 3,
+        "wrong": 0,
+        "error": 0,
+        "not-run": 0
+      },
+      "exact-product/real": {
+        "passed": 8,
+        "unsupported": 3,
+        "wrong": 0,
+        "error": 0,
+        "not-run": 0
+      }
+    },
+    "attempted": 64,
+    "comparison": "Frozen SQL, independently frozen reference answers and original exact comparator; ordered rows or multisets per case; semantic schema and exact decimal coefficients checked. Original reference evidence hash-verified before and after.",
+    "baseline_classification": "Same passed/unsupported case classifications as preserved baseline; unsupported remains failure, not a pass.",
+    "frozen_manifest_sha256": {
+      "extension-20": "31471a9e81b992aa07a3a644ef4129a13748cd17a197711be4d0fa08ee5e9cde",
+      "followup-exact-product-v1": "13c97b4667f238b23133ca49da76c95d07971540fc8e594beb00af331e4383e8"
+    },
+    "baseline_manifest_sha256": "32540e3f05c7d484b708e1ad38d46e3c6f041eb495c7dff6296ad3d8e3504ad0",
+    "attribution": "Chen, D. (2015). Online Retail. UCI Machine Learning Repository. CC BY 4.0.",
+    "source": "https://doi.org/10.24432/C5BW33",
+    "transformation": "Original workbook values were previously converted to typed Parquet; no new data transformation in this replay. No raw dataset or result rows distributed."
+  },
+  "not_run": [
+    "Full 622-file SQL logic corpus: exact full input tree unavailable",
+    "Frozen 55,000-query differential campaign: exact plans/recipes unavailable",
+    "SF10 correctness and timing: exact data/reference inputs unavailable",
+    "New installed-wheel validation: no binding implementation changes and no package publication",
+    "Full existing Playwright browser regression suite: Playwright/Chrome unavailable in the checked test environment"
+  ],
+  "limitations": [
+    "No fresh timing baseline or speedup ratio",
+    "No Alpha 3 performance qualification",
+    "No new formal proof or full-corpus correctness claim"
+  ],
+  "retained_private_evidence_sha256": {
+    "rust-tests.log": "2f4bb8f23dd1d3f9fdecaa87a3486485b8c96efeb1c80a39d85f35e94e071d25",
+    "clippy.log": "65df29376b99c6aebb45777130a8e5eeacb3aed8bc6d6f38dbe5fc54a63769da",
+    "fmt.log": "ad43feebaaee63de47a94536ed242859d3bfdad0e73630096e5676ce6ae6ca95",
+    "staging.log": "c020f43ed1dbedb8e39b7e1b24c857b868c17cf3bcb38fe506a06264a00b74e8",
+    "site-contributors.log": "31daafc84077325832186876622ddcadf8fc0bdfdbd6ef1e7ee4993e8ee15bb2",
+    "controller-self-tests.log": "3aba806285d49792e87d1c70cdf27b8ea139044d8a9dc97c8123b8dd34e1ae30",
+    "controller-self-tests-corrected.log": "1af754a21cadc85d29827afdeb5899e3630809045a9ccac4ea4d5a6d8dcb5c4c",
+    "retail/outcomes.json": "6bfa7033abbd315740a67be789db6881641536479910bb63734627e5c9d030d2"
+  }
+}

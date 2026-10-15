@@ -76,10 +76,12 @@ has been removed to eliminate contradictory configuration. It has not been
 established whether that flag suppressed deployments with Root Directory `site`;
 this cleanup is not a proven fix for the stale production deployment.
 
-Automatic production deployment after an approved main-branch merge is intended,
-but has not yet been verified by a subsequent merge. These repository changes do
-not change Vercel dashboard or GitHub settings, add a deployment workflow, or
-verify a production deployment. Deployment remains a separate maintainer action.
+GitHub deployment records show a successful Vercel production deployment for
+public main `e4c616fd1168115308e021615c915fe2bb26a43d`. The Git integration can
+deploy reviewed website content from main without a separate manual site update.
+For each promotion, verify the deployment commit and live content after merge;
+a successful historical deployment does not prove a later deployment succeeded.
+These repository changes do not alter Vercel dashboard or GitHub settings.
 
 ## Public contribution activity
 
@@ -164,3 +166,12 @@ Browser tests cover all four pages, profile links, responsive overflow, XSS,
 loading, empty/error/retry states, unavailable accounts, bot attribution and the
 no-JavaScript fallback. Synthetic contribution records exist only in tests, never
 in the shipped site's data.
+
+## Source snapshot evidence
+
+The contribution page links to `site/evidence/source-snapshot-validation.json`.
+This compact record is generated from scoped checks, reviewed and committed in
+the source promotion PR. Vercel deploys it as static repository content. The
+contributor list separately reads GitHub at page load; it does not generate test
+results or automatically accept measurements. No chart values change in this
+promotion. See [snapshot provenance](SNAPSHOT-PROMOTION.md).

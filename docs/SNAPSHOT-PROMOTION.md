@@ -30,15 +30,32 @@ material. Mandatory upstream attribution is retained.
 
 ## Validation status
 
-Validation is in progress against the exact exported candidate. No previous
-candidate's results establish this snapshot's correctness. Unsupported, wrong
-answers, errors and not-run checks remain distinct; unsupported is not a pass.
+The tested public candidate is `dee9b536dc3b0fdf6a43b05e30c2ed7c5dd500e9`.
+[Compact validation evidence](../site/evidence/source-snapshot-validation.json)
+records hashes, scope and limitations. Complete raw evidence is retained privately.
+
+| Check | Result |
+| --- | --- |
+| Rust all-targets | 812 passed, zero failed; one explicitly ignored 16M-row reproducer |
+| Clippy / formatting | Passed; warnings denied |
+| Python source staging / contributor feed | 5 / 12 passed |
+| Controller self-tests | 113 passed after correcting invocation working directory |
+| Fresh release acceptance-small | 43 passed; live and preserved-copy verification passed |
+| Original retail, real and synthetic separately | Each 9 passed / 11 unsupported |
+| Exact-product retail, real and synthetic separately | Each 8 passed / 3 unsupported |
+| Exact-decimal edge probes | 2 passed |
+
+Retail classifications match the preserved baseline. Zero wrong answers and zero
+engine errors were observed in these 64 replays. SQL, reference answers and exact
+comparison rules were unchanged. Unsupported remains failure, not a pass.
+Subsequent documentation/site-evidence-only commits require explicit final-head
+validation; any executable-source delta requires fresh checks.
 
 Full SQL logic corpus, frozen 55K plans and SF10 benchmark inputs are unavailable
-on the validation host. These gates remain pending. The minimal next step is to
-provide the exact pinned corpus/plans and licensed benchmark inputs with their
-expected hashes and references, or obtain a maintainer decision defining the
-required gates for this source-only promotion. No release-gate waiver is implied.
+on the validation host and are not run. This source-only promotion follows the
+normal public PR checks; those broader campaigns remain prerequisites for any
+claim that depends on them. To run them, provide the exact pinned corpus/plans
+and licensed benchmark inputs with expected hashes and references.
 
 ## Website and contribution evidence
 
