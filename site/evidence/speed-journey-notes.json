@@ -10,10 +10,10 @@
     "scale": "SF10 (~10 GB uncompressed)",
     "query_count": 22,
     "requested_workers": 10,
-    "protocol": "w10-five-timed-no-warmup/v1",
-    "method": "One warmup excluded; median of five timed samples per query in one round. Total is sum of Assay query medians divided by sum of retained Polars reference medians. Geometric mean is derived from rounded per-query ratios; missing geometric means remain null.",
-    "reference_scope": "Retained same-host Polars reference medians with a compatibility check; reference engines were not freshly rerun for every milestone.",
-    "limits": "Development tripwires, not full rotated comparisons or release qualification. Host-noise checks could trigger up to two retries; the gate retained the cleanest permitted run. Figures are rounded reported results, not recomputed from private raw samples."
+    "protocol": null,
+    "method": "Reported single-round development diagnostics using per-query wall medians and retained Polars references. Exact historical warmup/sample compatibility is not established by these summaries. Geometric means are reported values; missing final-run values remain null.",
+    "reference_scope": "Historical Development Mini reference medians. The retained input documentation says the sampling-compatibility audit and operator decision were outstanding; corrected collector code does not retroactively certify these runs.",
+    "limits": "Development diagnostics, not audited corrected-protocol receipts, paired gains versus main, or release qualification. The development gate allowed noise-triggered retries; values are rounded transcriptions, not recomputations from private raw samples."
   },
   "milestones": [
     {
@@ -41,7 +41,7 @@
       "total": 1.234,
       "geomean": 1.266,
       "measurement_status": "development-diagnostic",
-      "lesson": "Retain a bounded filtered result instead of rescanning. The final reviewed-fix run reported q17 at 0.251 s and total 1.234×; earlier attempts are not substituted."
+      "lesson": "Retain a bounded filtered result instead of rescanning. The final reviewed-fix run reported q17 at 0.251 s and total 1.234\u00d7; earlier attempts are not substituted."
     },
     {
       "id": "cardinality",
@@ -50,7 +50,7 @@
       "total": 1.187,
       "geomean": null,
       "measurement_status": "development-diagnostic",
-      "lesson": "Actual row counts can unlock an optimization that estimates reject. The corrected run was 1.187× total with q21 at 0.585 s; the initial 1.177× result is not the final value. Memory funding matters as much as admission."
+      "lesson": "Actual row counts can unlock an optimization that estimates reject. The corrected run was 1.187\u00d7 total with q21 at 0.585 s; the initial 1.177\u00d7 result is not the final value. Memory funding matters as much as admission."
     },
     {
       "id": "scan-claiming",
@@ -73,7 +73,7 @@
   ],
   "provisional": {
     "id": "combined",
-    "title": "Combined source · provisional M4 run",
+    "title": "Combined source \u00b7 provisional M4 run",
     "documented_at": "2026-10-15T15:01:21Z",
     "host": "Apple M4 development host",
     "configuration": "10 logical CPUs, 16 GiB RAM, macOS 26.6.2; Rust 1.90.0; no custom RUSTFLAGS. Assay 4 GiB accounted budget; Polars streaming; resource limits are not equivalent whole-process caps.",
@@ -92,7 +92,21 @@
       1.048
     ],
     "measurement_status": "provisional-one-attempt-not-accepted",
-    "lesson": "The combined source was below Polars in total time but above it in geometric mean. The 0.95× goal for both metrics was not met. This single attempt is separate from the Test Mini runs.",
+    "lesson": "The combined source was below Polars in total time but above it in geometric mean. The 0.95\u00d7 goal for both metrics was not met. This single attempt is separate from the Test Mini runs.",
     "limits": "Quiet-host admission sampled six five-second intervals before launch; the harness did not continuously record background processes. One attempt; no independent acceptance or hardware portability claim."
+  },
+  "starting_benchmark": {
+    "title": "Starting benchmark \u00b7 Alpha 2-equivalent native source",
+    "host": "Apple M2 Pro",
+    "documented_date": "2026-10-11",
+    "date_basis": "Date of published historical benchmark report, not elapsed development time.",
+    "scale": "SF10 (~10 GB uncompressed)",
+    "query_count": 22,
+    "requested_workers": 10,
+    "total": 4.159825306441633,
+    "geomean": 2.2669855097076708,
+    "source": "evidence/completed-speed-macbook-run-001.json",
+    "method": "SQL to materialized Arrow; three rounds, one warmup then five hot samples per engine/query/round. Total is ratio of sums over query-round medians; geometric mean uses paired query-round ratios.",
+    "limits": "Best-effort host with background activity; native CLI, not installed Python wheel/API. Distinct from the historical M4 4.1364\u00d7 result and later Development Mini diagnostics; no controlled cross-host gain is claimed."
   }
 }

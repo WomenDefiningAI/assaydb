@@ -192,8 +192,11 @@ no Alpha 3 achievement is claimed. New draft PR6 contributes no measurements.
 `evidence/speed-journey-notes.json` contains six dated numeric development-gate
 milestones and a separate provisional M4 attempt. `scripts/render_speed_journey.py`
 renders the static chart and lessons from that sanitized data. Recorded dates are
-proposal timestamps, not measurement completion. Single-round retained-reference
-diagnostics stay separate from rotated-protocol results and other hosts.
+proposal timestamps, not measurement completion. Reported single-round diagnostics stay separate from rotated-protocol results
+and other hosts. The retained historical input documentation leaves sampling
+compatibility unverified; corrected gate code is not evidence that the old runs
+satisfied its five-timed/no-warmup contract. The visible starting benchmark is
+the M2 Pro Alpha 2-equivalent 4.1598× total run, distinct from the M4 4.1364× run.
 
 The contribution page links to plain GitHub issue creation (issues enabled,
 discussions disabled) and the existing `wrong-answer.md` template. Its accuracy and speed

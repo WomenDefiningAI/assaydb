@@ -61,6 +61,11 @@ with sync_playwright() as p:
         data = json.loads((site / 'evidence/speed-journey-notes.json').read_text())
         assert module.render(data) in (site / 'index.html').read_text()
         assert [p['total'] for p in data['milestones']] == [1.302, 1.255, 1.234, 1.187, 1.110, 1.087]
+        assert data['group']['protocol'] is None
+        assert data['starting_benchmark']['total'] == historic['lanes']['sf10-w10']['comparisons']['assaydb_polars']['total']['point']
+        assert '4.1598×' in page.locator('.journey-start h3').inner_text()
+        assert page.locator('.journey-start').is_visible()
+        assert page.locator('.milestone-chart').bounding_box()['width'] == 700
         page.evaluate("document.activeElement.blur(); document.querySelector('.milestone-scroll').scrollLeft = 0")
         page.screenshot(path=str(shots / f'speed-{width}.png'), full_page=True)
         page.locator('#speed-log').screenshot(path=str(shots / f'speed-log-{width}.png'))

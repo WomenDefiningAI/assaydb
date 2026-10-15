@@ -25,3 +25,6 @@ body[data-page]{--color-story-accent:#e9a99b}
 @media(max-width:40rem){.milestone-lessons{grid-template-columns:1fr}}
 
 .journey-lesson{padding-top:.75rem}.milestone-scroll-hint{display:none}@media(max-width:45rem){.milestone-scroll-hint{display:block}}
+
+/* Match the prototype chart's bounded 700px typography and spacing. */
+.milestone-scroll{max-width:700px;margin:1.5rem auto}.milestone-chart{width:700px;min-width:700px;max-width:none}.milestone-grid text,.milestone-date{font-size:14px}.journey-start>h3{margin-top:0;font-size:1.4rem}.journey-start{margin-top:1.5rem}
