@@ -1,50 +1,98 @@
 {
-  "schema": "assay-speed-journey-notes/v1",
-  "status": "sanitized-development-notes",
-  "publication_scope": "Sanitized narrative summaries from development-log research; no private raw artifacts or private repository links. These notes are not accepted benchmark evidence.",
-  "configuration_status": "Host, workers and full timing protocol for intermediate milestones await confirmation; numeric development measurements are omitted.",
+  "schema": "assay-speed-journey-notes/v2",
+  "status": "reviewed-sanitized-transcription",
+  "acceptance": "Development diagnostics only; transcription review does not accept these measurements as a public release or merge gate.",
+  "date_basis": "UTC time the development milestone was first documented in its change proposal; not measurement completion time. Chart spacing follows recorded order, not elapsed duration.",
+  "group": {
+    "id": "development-gates",
+    "host": "Development Mini",
+    "hardware": "Exact model is not attested in these retained gate summaries.",
+    "scale": "SF10 (~10 GB uncompressed)",
+    "query_count": 22,
+    "requested_workers": 10,
+    "protocol": "w10-five-timed-no-warmup/v1",
+    "method": "One warmup excluded; median of five timed samples per query in one round. Total is sum of Assay query medians divided by sum of retained Polars reference medians. Geometric mean is derived from rounded per-query ratios; missing geometric means remain null.",
+    "reference_scope": "Retained same-host Polars reference medians with a compatibility check; reference engines were not freshly rerun for every milestone.",
+    "limits": "Development tripwires, not full rotated comparisons or release qualification. Host-noise checks could trigger up to two retries; the gate retained the cleanest permitted run. Figures are rounded reported results, not recomputed from private raw samples."
+  },
   "milestones": [
     {
       "id": "dense-groups",
       "title": "Dense group IDs",
-      "lesson": "Use compact group identities to avoid repeated grouping work.",
-      "measurement_status": "not-published-pending-configuration"
+      "documented_at": "2026-10-13T18:39:11Z",
+      "total": 1.302,
+      "geomean": null,
+      "measurement_status": "development-diagnostic",
+      "lesson": "Compact group IDs avoid encoding text keys for every joined row. q16 fell from 0.245 s to 0.166 s. The host was slightly busy; this was one timing round."
     },
     {
       "id": "distinct-radix",
-      "title": "COUNT DISTINCT radix",
-      "lesson": "A more suitable distinct-counting strategy reduced repeated work in a slow query.",
-      "measurement_status": "not-published-pending-configuration"
+      "title": "Radix COUNT DISTINCT",
+      "documented_at": "2026-10-13T19:21:53Z",
+      "total": 1.255,
+      "geomean": 1.293,
+      "measurement_status": "development-diagnostic",
+      "lesson": "Sorting funded (group, value) pairs replaces a hash set per group. q16 fell from 0.166 s to 0.098 s. Output ordering and memory bounds still need protection."
     },
     {
       "id": "scan-reuse",
       "title": "Reuse filtered scans",
-      "lesson": "Avoid scanning and filtering the same input repeatedly.",
-      "measurement_status": "not-published-pending-configuration"
+      "documented_at": "2026-10-13T23:13:20Z",
+      "total": 1.234,
+      "geomean": 1.266,
+      "measurement_status": "development-diagnostic",
+      "lesson": "Retain a bounded filtered result instead of rescanning. The final reviewed-fix run reported q17 at 0.251 s and total 1.234×; earlier attempts are not substituted."
     },
     {
       "id": "cardinality",
       "title": "Use actual row counts",
-      "lesson": "Optimization admission must reflect actual cardinality. Keep corrected measurements instead of choosing the first, more favorable timing.",
-      "measurement_status": "not-published-pending-configuration"
+      "documented_at": "2026-10-14T03:18:19Z",
+      "total": 1.187,
+      "geomean": null,
+      "measurement_status": "development-diagnostic",
+      "lesson": "Actual row counts can unlock an optimization that estimates reject. The corrected run was 1.187× total with q21 at 0.585 s; the initial 1.177× result is not the final value. Memory funding matters as much as admission."
     },
     {
       "id": "scan-claiming",
       "title": "Dynamic scan claiming",
-      "lesson": "Improve how workers claim scan work; worker count alone does not guarantee useful parallelism.",
-      "measurement_status": "not-published-pending-configuration"
+      "documented_at": "2026-10-14T07:12:28Z",
+      "total": 1.11,
+      "geomean": 1.157,
+      "measurement_status": "development-diagnostic",
+      "lesson": "Let workers claim row groups dynamically while retaining source order. q04 fell from 0.261 s to 0.202 s. Runnable permits and live-thread limits are different resource obligations."
     },
     {
       "id": "continuations",
       "title": "Pipeline continuations",
-      "lesson": "Scheduling changes need resource ownership and cancellation checks as well as timing. A matching committed tree does not itself prove a binary rebuild comparison.",
-      "measurement_status": "not-published-pending-configuration"
-    },
-    {
-      "id": "combined",
-      "title": "Combined development attempt",
-      "lesson": "Total time and geometric mean can disagree. A provisional near-parity total from one attempt is not an accepted release result.",
-      "measurement_status": "not-published-pending-configuration"
+      "documented_at": "2026-10-14T17:38:25Z",
+      "total": 1.087,
+      "geomean": 1.147,
+      "measurement_status": "development-diagnostic",
+      "lesson": "Workers resubmit continuations to avoid coordinator waits. q01 reached 0.761 s. The measured worktree was committed with an identical tree, but no binary rebuild/hash comparison was performed."
     }
-  ]
+  ],
+  "provisional": {
+    "id": "combined",
+    "title": "Combined source · provisional M4 run",
+    "documented_at": "2026-10-15T15:01:21Z",
+    "host": "Apple M4 development host",
+    "configuration": "10 logical CPUs, 16 GiB RAM, macOS 26.6.2; Rust 1.90.0; no custom RUSTFLAGS. Assay 4 GiB accounted budget; Polars streaming; resource limits are not equivalent whole-process caps.",
+    "query_count": 22,
+    "requested_workers": 10,
+    "scale": "SF10 (~10 GB uncompressed)",
+    "protocol": "Three rotated rounds; one warmup and five timed samples per engine/query/round. Total sums query-round medians; geometric mean uses paired query ratios.",
+    "total": 0.97,
+    "geomean": 1.046,
+    "total_confidence_95": [
+      0.967,
+      0.973
+    ],
+    "geomean_confidence_95": [
+      1.041,
+      1.048
+    ],
+    "measurement_status": "provisional-one-attempt-not-accepted",
+    "lesson": "The combined source was below Polars in total time but above it in geometric mean. The 0.95× goal for both metrics was not met. This single attempt is separate from the Test Mini runs.",
+    "limits": "Quiet-host admission sampled six five-second intervals before launch; the harness did not continuously record background processes. One attempt; no independent acceptance or hardware portability claim."
+  }
 }

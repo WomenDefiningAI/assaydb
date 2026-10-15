@@ -1,0 +1,37 @@
+"""Render sanitized speed-log facts into the static, no-JS-readable journey.
+No raw evidence is read and no measurements are executed by this script.
+"""
+from pathlib import Path
+from html import escape
+import json
+
+ROOT = Path(__file__).resolve().parents[1]
+def render(data):
+    assert data['schema'] == 'assay-speed-journey-notes/v2'
+    points = data['milestones']
+    assert len(points) == 6 and all(.9 <= p['total'] <= 1.4 for p in points)
+    svg = ['<svg class="milestone-chart" viewBox="0 0 760 315" role="group" aria-labelledby="milestone-chart-title milestone-chart-desc"><title id="milestone-chart-title">Development Mini speed milestones, October 13–14, 2026</title><desc id="milestone-chart-desc">Total Assay to Polars time ratio, lower is faster. Vertical scale zooms from 0.9 to 1.4. Six milestones in documented order; horizontal spacing is not elapsed time. The dashed target is 0.95. Each point opens its lesson.</desc>']
+    y = lambda ratio: 240 - (ratio - .9) / .5 * 200
+    for ratio in (.9, 1, 1.1, 1.2, 1.3, 1.4):
+        svg.append(f'<g class="milestone-grid"><line x1="55" x2="720" y1="{y(ratio):.1f}" y2="{y(ratio):.1f}"/><text x="43" y="{y(ratio)+4:.1f}" text-anchor="end">{ratio:.1f}×</text></g>')
+    svg.append(f'<line class="milestone-goal" x1="55" x2="720" y1="{y(.95):.1f}" y2="{y(.95):.1f}"/><text class="milestone-goal-label" x="720" y="{y(.95)-7:.1f}" text-anchor="end">0.95× goal</text>')
+    lessons = []
+    for i, point in enumerate(points):
+        x = 90 + 120*i; py = y(point['total']); date = point['documented_at']; id = point['id']
+        label = f"{point['title']}, {date[:10]} {date[11:16]} UTC, {point['total']:.3f} times Polars total"
+        svg.append(f'<g class="milestone-choice" data-milestone="{id}" role="button" tabindex="0" aria-pressed="false" aria-controls="lesson-{id}" aria-label="{escape(label)}"><circle class="milestone-hit" cx="{x}" cy="{py:.1f}" r="22"/><circle class="milestone-dot" cx="{x}" cy="{py:.1f}" r="7"/><text x="{x}" y="{py-19:.1f}" text-anchor="middle">{point["total"]:.3f}×</text></g><text class="milestone-date" x="{x}" y="268" text-anchor="middle">Oct {date[8:10]}</text><text class="milestone-date" x="{x}" y="289" text-anchor="middle">{date[11:16]} UTC</text>')
+        geo = f'{point["geomean"]:.3f}×' if point['geomean'] is not None else 'not reported for this final run'
+        lessons.append(f'<li><button class="journey-point" type="button" data-milestone="{id}" aria-controls="lesson-{id}" aria-pressed="false">{i+1}. {escape(point["title"])}</button><div class="journey-lesson" id="lesson-{id}"><p><time datetime="{date}">{date[:10]} {date[11:16]} UTC</time> · documented milestone · development diagnostic.</p><p><strong>Total: {point["total"]:.3f}× Polars.</strong> Geometric mean: {geo}.</p><p>{escape(point["lesson"])}</p><p class="note">Development Mini · SF10 · 22 queries · 10 requested workers · one round, five timed samples after a warmup; retained Polars reference medians. This is not a paired percentage improvement against main.</p></div></li>')
+    svg.append('</svg>')
+    p = data['provisional']
+    return '''<!-- speed-log:start --><div id="speed-log" class="speed-log"><h3>Speed-log milestones · October 13–14</h3><p>Development Mini · roughly 10 GB · 22 queries · 10 requested workers. The chart shows <strong>total time relative to Polars</strong>; lower is faster. Hover, focus or tap a point for its lesson and separate geometric mean.</p><p class="note">Dates mark when milestones were documented, not exact measurement completion. Points are equally spaced in recorded order. The vertical axis is zoomed to 0.9–1.4×. These single-round development diagnostics are not release-qualified measurements.</p><p class="note milestone-scroll-hint">On a narrow screen, swipe or scroll the chart to see all six points. The buttons below select the same milestones.</p><div class="milestone-scroll" role="region" aria-label="Speed-log chart; scroll horizontally on small screens" tabindex="0">'''+''.join(svg)+'''</div><ol class="journey-points milestone-lessons">'''+''.join(lessons)+'''</ol><details><summary>Development timing method and limits</summary><p>One warmup is excluded; each query uses the median of five timed samples. Total is the ratio of sums of query medians. Geometric mean is derived from rounded per-query ratios. The comparison uses retained same-host Polars references with a compatibility check, not fresh Polars execution for every milestone.</p><p>The gate could retry noisy timing up to twice and retained the cleanest permitted run. Host conditions varied; a single round cannot establish a controlled improvement trend. The exact hardware model is not attested in the retained gate summaries. Values are transcribed at their reported precision, not recomputed from raw samples.</p></details></div><div class="provisional-milestone page-block"><h3>October 15 · separate M4 protocol</h3><p class="eyebrow">Provisional · one attempt · not accepted</p><p><strong>0.970× Polars total; 1.046× geometric mean.</strong> Both must reach 0.95×; the goal remains unmet. This point is separate from the Development Mini gate chart and the Test Mini evidence.</p><p>Combined source · Apple M4 development host · 16 GiB RAM · 10 requested workers · all 22 SF10 queries. Three rotated rounds, one warmup and five timed samples per engine/query/round. Totals sum query-round medians; geometric mean uses paired ratios.</p><details><summary>Provisional run: lesson, intervals and configuration</summary><p>Less total time can coexist with a slower geometric mean. Marginal 95% intervals: total 0.967–0.973×; geometric mean 1.041–1.048×, bootstrapped over three round clusters. Fifteen samples are not fifteen independent host trials.</p><p>macOS 26.6.2, Rust 1.90.0, no custom RUSTFLAGS; Assay 4 GiB accounted budget, Polars streaming. Resource settings are not equivalent whole-process caps. Quiet-host admission sampled six five-second intervals; the harness did not continuously record background activity. This is a documented development attempt, not accepted public performance evidence.</p></details></div><p><a href="evidence/speed-journey-notes.json">Sanitized milestone data, dates and methods</a>.</p><!-- speed-log:end -->'''
+
+def main():
+    path = ROOT/'site/index.html'; page = path.read_text()
+    if '<!-- speed-log:start -->' in page:
+        start=page.index('<!-- speed-log:start -->');end=page.index('<!-- speed-log:end -->')+len('<!-- speed-log:end -->')
+    else:
+        start=page.index('<h3>Lessons from the speed log</h3>');end=page.index('<p><a href="contribute.html#full-suite-evidence">',start)
+    fragment=render(json.loads((ROOT/'site/evidence/speed-journey-notes.json').read_text()))
+    path.write_text(page[:start]+fragment+page[end:])
+if __name__=='__main__':main()

@@ -49,21 +49,23 @@ validation. The Alpha 3 goal is 0.95× Polars for both total time and geometric
 mean on the agreed 10 GB workload; it has not been achieved by the published
 reviewed evidence. Merge, chart acceptance and package release are separate decisions.
 
-## Credit and proposed contribution metrics
+## Credit and contribution metrics
 
 The website lists merged engine and meaningful testing PRs with author, title,
 number and merge date. Website-only PRs are excluded. Credit is not certification.
 
-Pending Helen’s feedback, the proposed accuracy metric is new wrong answers
-versus the tested main baseline; the proposed speed metric is paired suite
-wall-time percentage change against that same main baseline on the same host
-and configuration. Negative percentages mean less time. Missing reviewed
-measurements display **Not measured**. Neither a ratio to Polars nor a historical
-baseline comparison establishes a PR’s change against main. Zero new wrong
-answers does not establish coverage; applicable pass counts and unsupported/error
-outcomes remain in the linked full-suite evidence. The existing
-[result contract](docs/CONTRIBUTION-RESULTS.md) remains authoritative for evidence
-structure; these proposed display metrics do not change acceptance policy.
+Accuracy is the percentage of applicable SQL tests passed, alongside passed/total
+counts and an expandable wrong/unsupported/error/not-run breakdown. The suite and
+measured source stay explicit; exclusions are outside the applicable denominator.
+Speed is paired suite wall-time percentage change against tested public main on
+the same host and configuration: a negative change means less time (faster), a
+positive change means more time (slower). No reviewed evidence means **Not measured**.
+
+PR5 has reviewed SLT accuracy evidence. Its timing compares a historical source,
+not the tested public main baseline required by this display metric, so its speed
+field remains Not measured. A ratio to Polars is not a PR improvement against main.
+The [result contract](docs/CONTRIBUTION-RESULTS.md) preserves evidence requirements;
+these display definitions do not change acceptance policy.
 
 ## Wrong answers and security
 

@@ -140,3 +140,25 @@ test('unlinked non-merge authors are noted without disclosing raw identity field
   assert.ok(!JSON.stringify(result).includes('private@example.com'));
   assert.ok(!JSON.stringify(result).includes('Private name'));
 });
+
+test('reviewed accuracy uses applicable denominator and retains nonpasses; never infers speed', () => {
+  const data = require('../../site/evidence/contribution-metrics.json');
+  const record = api.displayMetrics(data).get(5);
+  assert.equal(record.accuracy.passed, 5937073);
+  assert.equal(record.accuracy.applicable, 5939714);
+  assert.equal(record.accuracy.unsupported, 640);
+  assert.equal(record.accuracy.error, 2001);
+  assert.equal(record.speed, undefined);
+  assert.match(record.source, /\/blob\/d86aa0dd769041c23d64bfc760f7b31cc07f3af7\//);
+  for (const change of [
+    r => { r.status = 'provisional'; },
+    r => { r.accuracy.applicable -= 1; },
+    r => { r.accuracy.wrong = -1; },
+    r => { r.evidence_path = 'javascript:alert(1)'; },
+    r => { r.evidence_commit = 'main'; }
+  ]) {
+    const altered = structuredClone(data); change(altered.records[0]);
+    assert.equal(api.displayMetrics(altered).size, 0);
+  }
+  assert.equal(api.displayMetrics({}).size, 0);
+});

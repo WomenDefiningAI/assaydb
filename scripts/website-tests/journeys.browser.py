@@ -34,18 +34,36 @@ with sync_playwright() as p:
         expected += [reviewed['timing']['phases'][f'{role}-timing-w{w}']['polars']['total'] for role in ('baseline', 'candidate') for w in (1, 10)]
         assert page.locator('.journey-lane strong').all_text_contents() == [f'{value:.4f}×' for value in expected]
 
-        points = page.locator('#speed-journey > .journey-points').first.locator('button')
+        page.locator('.timing-contexts > summary').click()
+        points = page.locator('.timing-contexts .journey-points').first.locator('button')
         points.nth(0).hover()
         assert page.locator('#lesson-alpha2').is_visible()
         points.nth(1).focus()
         assert page.locator('#lesson-baseline').is_visible()
         points.nth(2).click()
         assert page.locator('#lesson-reviewed').is_visible()
-        notes = page.locator('.journey-notes button')
+        page.locator('.timing-contexts > summary').click()
+        notes = page.locator('.milestone-lessons button')
         notes.first.focus()
         page.keyboard.press('End')
         assert notes.last.get_attribute('aria-pressed') == 'true'
+        chart = page.locator('.milestone-chart [data-milestone]')
+        chart.first.hover()
+        assert page.locator('#lesson-dense-groups').is_visible()
+        chart.first.focus()
+        page.keyboard.press('End')
+        assert chart.last.get_attribute('aria-pressed') == 'true'
+        assert page.locator('#lesson-continuations').is_visible()
+        # Generated fallback and numeric data must remain byte-for-byte synchronized.
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('journey_render', site.parent / 'scripts/render_speed_journey.py')
+        module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+        data = json.loads((site / 'evidence/speed-journey-notes.json').read_text())
+        assert module.render(data) in (site / 'index.html').read_text()
+        assert [p['total'] for p in data['milestones']] == [1.302, 1.255, 1.234, 1.187, 1.110, 1.087]
+        page.evaluate("document.activeElement.blur(); document.querySelector('.milestone-scroll').scrollLeft = 0")
         page.screenshot(path=str(shots / f'speed-{width}.png'), full_page=True)
+        page.locator('#speed-log').screenshot(path=str(shots / f'speed-log-{width}.png'))
         page.locator('#journey-speed').focus()
         page.keyboard.press('Home')
         assert page.locator('#build-checkpoints svg').bounding_box()['width'] > 200
@@ -65,7 +83,7 @@ with sync_playwright() as p:
     page = touch.new_page()
     page.goto(BASE + '/index.html')
     page.locator('#journey-speed').tap()
-    page.locator('.journey-notes button').first.tap()
+    page.locator('.milestone-lessons button').first.tap()
     assert page.locator('#lesson-dense-groups').is_visible()
     touch.close()
     context = browser.new_context(java_script_enabled=False)
@@ -73,6 +91,7 @@ with sync_playwright() as p:
     page.goto(BASE + '/index.html')
     assert page.locator('#build-checkpoints').is_visible()
     assert page.locator('#speed-journey').is_visible()
+    page.locator('.timing-contexts > summary').click()
     for lesson in page.locator('.journey-lesson').all():
         assert lesson.is_visible()
     browser.close()

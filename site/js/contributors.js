@@ -117,6 +117,25 @@
     rows.sort((a, b) => b.mergedAt.localeCompare(a.mergedAt) || b.number - a.number);
     return {rows, partial};
   }
+  // Only explicit reviewed display data can supply metrics, never PR prose.
+  function displayMetrics(data) {
+    const result = new Map();
+    if (data?.schema !== 'assay-contribution-display/v1' || !Array.isArray(data.records)) return result;
+    for (const row of data.records) {
+      if (row.status !== 'accepted' || !Number.isSafeInteger(row.pr) || row.pr < 1 ||
+          !/^[a-f0-9]{40}$/.test(row.evidence_commit) || !/^[a-f0-9]{40}$/.test(row.measured_source) ||
+          row.evidence_path !== 'site/evidence/full-suite/latest.json') continue;
+      const a = row.accuracy, categories = ['passed','unsupported','wrong','error','not-run','excluded'];
+      if (!a || a.suite !== 'SQLLogicTest' || !Number.isSafeInteger(a.applicable) || a.applicable <= 0 ||
+          categories.some(key => !Number.isSafeInteger(a[key]) || a[key] < 0) ||
+          categories.filter(key => key !== 'excluded').reduce((n, key) => n + a[key], 0) !== a.applicable) continue;
+      // No speed record is currently accepted. Supporting one requires a reviewed
+      // schema extension with paired main identity, scope and timing fields.
+      result.set(row.pr, {accuracy: a, measuredSource: row.measured_source,
+        source: repoURL + '/blob/' + row.evidence_commit + '/' + row.evidence_path});
+    }
+    return result;
+  }
   function render(doc, result) {
     const list = doc.getElementById('contribution-list'); list.replaceChildren();
     const add = (parent, tag, text) => {
@@ -136,9 +155,18 @@
       const author = add(item, 'p', 'PR author: ');
       if (row.author) userLink(author, row.author); else add(author, 'span', 'GitHub account unavailable');
       const metrics = add(item, 'dl'); metrics.className = 'contribution-metrics';
-      add(metrics, 'dt', 'Accuracy · new wrong answers');
-      add(metrics, 'dd', 'Not measured against the tested main baseline.');
-      add(metrics, 'dt', 'Speed · paired suite wall time');
+      const evidence = result.metrics?.get(row.number);
+      add(metrics, 'dt', 'Accuracy · applicable SQL tests passed');
+      if (evidence) {
+        const a = evidence.accuracy, fmt = n => n.toLocaleString('en-US');
+        add(metrics, 'dd', (100 * a.passed / a.applicable).toFixed(4) + '% · ' + fmt(a.passed) + ' / ' + fmt(a.applicable));
+        const details = add(item, 'details');
+        add(details, 'summary', 'SQLLogicTest scope and failure breakdown');
+        add(details, 'p', fmt(a.wrong) + ' wrong; ' + fmt(a.unsupported) + ' unsupported; ' + fmt(a.error) + ' errors; ' + fmt(a['not-run']) + ' not run. ' + fmt(a.excluded) + ' excluded control records are outside the applicable denominator.');
+        add(details, 'p', 'Measured source ' + evidence.measuredSource.slice(0, 8) + '. Retained reviewed evidence, not a fresh run of the merged PR head.');
+        const link = add(details, 'a', 'Reviewed evidence and limits'); link.href = evidence.source;
+      } else add(metrics, 'dd', 'Not measured · no reviewed applicable-suite result.');
+      add(metrics, 'dt', 'Speed · paired suite wall time versus main');
       add(metrics, 'dd', 'Not measured against the same main baseline and host/configuration.');
       for (const [kind, label] of [['user', 'Other commit authors'], ['bot', 'Bot commit authors'], ['unknown', 'Other accounts with commits']]) {
         const accounts = row.authors.filter(a => a.kind === kind);
@@ -163,16 +191,21 @@
   async function enhance(doc, fetcher) {
     const host = doc.getElementById('engine-contributions'); if (!host) return;
     const retry = doc.getElementById('contribution-retry'); retry.hidden = false;
+    let metrics = new Map();
+    try {
+      const response = await fetcher('evidence/contribution-metrics.json', {credentials: 'omit', referrerPolicy: 'no-referrer'});
+      if (response.ok) metrics = displayMetrics(await response.json());
+    } catch (_) { /* Missing display evidence remains explicitly not measured. */ }
     async function refresh() {
       retry.disabled = true; host.setAttribute('aria-busy', 'true');
       doc.getElementById('contribution-status').textContent = 'Checking public merged engine contributions on GitHub…';
-      try { render(doc, await load(fetcher)); }
+      try { render(doc, {...await load(fetcher), metrics}); }
       catch (_) { render(doc, {rows: [], partial: true}); }
       finally { retry.disabled = false; host.setAttribute('aria-busy', 'false'); }
     }
     retry.addEventListener('click', refresh); await refresh();
   }
-  const api = {enginePath, account, contribution, commitAuthors, load, render, enhance};
+  const api = {enginePath, account, contribution, commitAuthors, load, displayMetrics, render, enhance};
   if (typeof module === 'object' && module.exports) module.exports = api;
   else { root.AssayContributors = api; enhance(root.document, root.fetch.bind(root)); }
 })(typeof window === 'object' ? window : globalThis);

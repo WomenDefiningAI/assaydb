@@ -27,7 +27,35 @@
     });
   });
   select(0); bar.hidden = false;
-  document.querySelectorAll('.journey-points').forEach(list => {
+  const milestoneHost = document.getElementById('speed-log');
+  if (milestoneHost) {
+    const controls = [...milestoneHost.querySelectorAll('[data-milestone]')];
+    const ids = [...new Set(controls.map(control => control.dataset.milestone))];
+    function choose(id) {
+      controls.forEach(control => control.setAttribute('aria-pressed', String(control.dataset.milestone === id)));
+      ids.forEach(key => { document.getElementById('lesson-' + key).hidden = key !== id; });
+    }
+    controls.forEach(control => {
+      const id = control.dataset.milestone;
+      control.addEventListener('click', () => choose(id));
+      control.addEventListener('focus', () => choose(id));
+      control.addEventListener('pointermove', event => { if (event.pointerType !== 'touch') choose(id); });
+      control.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); choose(id); return; }
+        const i = ids.indexOf(id);
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? ids.length - 1 :
+          ['ArrowRight','ArrowDown'].includes(event.key) ? (i + 1) % ids.length :
+          ['ArrowLeft','ArrowUp'].includes(event.key) ? (i + ids.length - 1) % ids.length : null;
+        if (next !== null) {
+          event.preventDefault();
+          const peers = control.tagName.toLowerCase() === 'button' ? '.milestone-lessons ' : '.milestone-chart ';
+          milestoneHost.querySelector(peers + '[data-milestone="' + ids[next] + '"]').focus();
+        }
+      });
+    });
+    choose(ids[ids.length - 1]);
+  }
+  document.querySelectorAll('.journey-points:not(.milestone-lessons)').forEach(list => {
     const buttons = [...list.querySelectorAll('.journey-point')];
     function choose(index) {
       buttons.forEach((button, i) => {

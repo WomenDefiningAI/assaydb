@@ -1,0 +1,28 @@
+{
+  "schema": "assay-contribution-display/v1",
+  "definitions": {
+    "accuracy": "Applicable SQLLogicTest records passed / all applicable records; unsupported and errors remain nonpasses.",
+    "speed": "Paired suite wall-time percentage change versus tested public main on the same host and configuration. Negative change means less time (faster)."
+  },
+  "records": [
+    {
+      "pr": 5,
+      "status": "accepted",
+      "evidence_commit": "d86aa0dd769041c23d64bfc760f7b31cc07f3af7",
+      "evidence_path": "site/evidence/full-suite/latest.json",
+      "measured_source": "b5e8f49f081a52afc9a00841acd1c21f964255f6",
+      "accuracy": {
+        "suite": "SQLLogicTest",
+        "applicable": 5939714,
+        "passed": 5937073,
+        "unsupported": 640,
+        "wrong": 0,
+        "error": 2001,
+        "not-run": 0,
+        "excluded": 1481625
+      },
+      "speed": null,
+      "speed_absence": "No accepted paired suite wall-time comparison against tested public main. The retained historical baseline is not that main baseline."
+    }
+  ]
+}
