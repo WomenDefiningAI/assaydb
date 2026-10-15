@@ -15,6 +15,16 @@ class AdapterTests(unittest.TestCase):
             result=adapt(row,'slt',0)
             self.assertEqual(result['status'],status);self.assertEqual(result['original_status'],original)
 
+    def test_resource_internal_and_float_errors_remain_errors(self):
+        for status in ('engine-resource','engine-internal','engine-error'):
+            row=dict(file='test/a',line=1,kind='query',record_index=0,
+                     sql_sha256='a'*64,status=status,detail='expected numeric type, got Float')
+            result=adapt(row,'slt',0)
+            self.assertEqual(result['status'],'error')
+            self.assertEqual(result['original_status'],status)
+            # No message-based downgrade of historical Float errors.
+            self.assertIn('original_record_sha256',result)
+
     def test_unknown_and_auxiliary_refused(self):
         with self.assertRaises(ValueError):adapt(dict(kind='metamorphic'),'hunt55k',0)
         with self.assertRaises(KeyError):adapt(dict(status='surprise'),'slt',0)

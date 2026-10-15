@@ -15,7 +15,8 @@ from result_contract import STATUSES, digest, require
 
 SLT = {'engine-pass':'passed', 'engine-wrong-answer':'wrong',
        'engine-unsupported':'unsupported', 'runner-unsupported':'unsupported',
-       'engine-error':'error', 'session-failure':'error', 'session-unavailable':'not-run',
+       'engine-error':'error', 'engine-resource':'error', 'engine-internal':'error',
+       'session-failure':'error', 'session-unavailable':'not-run',
        'conditional-not-executed':'excluded', 'control-only':'excluded', 'after-halt':'excluded'}
 HUNT = {'pass':'passed', 'wrong-answer':'wrong', 'native-unsupported':'unsupported',
         'native-error':'error', 'oracle-error':'error', 'invalid-domain':'error',
