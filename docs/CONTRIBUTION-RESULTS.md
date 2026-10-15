@@ -1,8 +1,10 @@
 # Contribution result contract and implementation status
 
 The structural validator is implemented in `testing/result_contract.py`.
-Collector adapters, independent timing calculation, acceptance and chart publishing
-remain incomplete; it is not an operating full-suite runner or hosted CI gate. TestMini execution and accepted-result publication are being
+Record adapters, raw-sample timing calculation and static site evidence generation
+are implemented and tested with synthetic fixtures. Integration with incoming
+full-suite collectors and maintainer acceptance remains pending; this is not an
+operating full-suite runner or hosted CI gate. TestMini execution and accepted-result publication are being
 prepared. No new run, baseline, proof or accepted measurement is claimed here.
 At the 2026-10-13 workflow review, the public ruleset had no branch target;
 these requirements must not be presented as enforced merge checks. This document changes no repository or

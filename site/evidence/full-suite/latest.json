@@ -1,0 +1,5 @@
+{
+  "schema": "assay-reviewed-pr-evidence/v1",
+  "status": "pending",
+  "reason": "No independently qualified full-suite PR result has been accepted."
+}

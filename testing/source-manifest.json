@@ -1,7 +1,7 @@
 {
   "schema": "assay-test-sources/v1",
   "files": {
-    "README.md": "3a1fd640a9a7813dfa10a8f6bad1e6ff5acc393ebe182141727e8997aa744330",
+    "README.md": "620d8bffbae6553619c124fb6aafd6c9afead9a7c3f496a9aada7f983df54b92",
     "analysis/README.md": "09a1ef5ee31f383bcd6e85ff23416db9c1f37ce87c4d59389a13ccee808c3a91",
     "analysis/exact-product/01.sql": "77e969e541e95609c4fa86fde40cde63e61c74f969ed990e1c32044291bcd8b4",
     "analysis/exact-product/03.sql": "54f3d5a765f33eebccc7e3840716c9b8705b0abcf6e8e4b88ca939290da7ac54",
@@ -35,12 +35,19 @@
     "analysis/original/19.sql": "3043f69bbfdec1e641efe0054661217f81b7450a593347fc15ff7713585b9743",
     "analysis/original/20.sql": "dd37a1fda91c69da75b8a862cc7808d43ee987f55b032390a7a321aa47ce4ff8",
     "analysis/sql-manifest.json": "a23be117f7208cac51adbe2fec3a74fef7db55c034480a3dbaf6d6de6e17d196",
+    "collector_adapter.py": "1b128a9f37361ab30cfa8718e2bce1ba0e34ea2ad64354e5f0decbdae765c989",
     "hunt55k/generate_v2.py": "29d69c4f752d55b1c1481b8f25249be0c1fb2916b56e89f8caae8a4c49f4544b",
     "hunt55k/generate_v3.py": "720c15f3562613d89f403945ec732169b73ada7cac60ddbf2d3d49294337149f",
-    "result_contract.py": "8222b831f7fee2949755afad2ad5b26192c632578c63c4834576a11dcd5b69f0",
+    "result_contract.py": "33c0796c671067b28b6cfb59bd34fda2a49a2f696333505bfb6c9231c4a883f1",
+    "site_evidence.py": "fa3eb7883792fc4a53726783579bce7cb8d5b0f660da2f8c1887811539da516d",
     "slt/full-scope.json": "c242173d74838548e12a266eed76b1155f068de9561e4583191e470528b91ee5",
+    "tests/test_collector_adapter.py": "39f54dad8cf7fdbd89da3de321e294358168fd43c13fcf66d5565bc556cf64f7",
     "tests/test_public_sources.py": "745aa3a18f7fad32213317e88c9e52a86761d13410a97511d1f0dec78d5036a4",
-    "tests/test_result_contract.py": "502268c098890834350f4d4dc4977ce01a58aad7aa9b38cb4f6f1b4507d98080"
+    "tests/test_result_contract.py": "a190108123d399b1b94b02cfa7ac125b48999963fd371dbb9ac496cda948037e",
+    "tests/test_site_evidence.py": "9cb90d36c055815dafd558c7b717fc1f835d5abe5d7f697b94038d746d2c4cb1",
+    "tests/test_timing.py": "7bec8221bf86b74f7cca8c247c9925bbcf64e3f310de8b85ac709089877c1b9c",
+    "tests/timing_fixture.py": "e880880e4ca3d9676d31b392a1e191fe6680526f86004e4a7da0c48cf4bff5d9",
+    "timing.py": "7db2c6e55e06d3225587bf4c20247cb8162c823e9a8e2be249c246b1e717a001"
   },
   "scope": "Original generators, frozen SQL and corpus inventory; no dataset or raw evidence",
   "license": "Assay original code and SQL: MIT OR Apache-2.0; SQLite corpus notice retained separately"

@@ -30,11 +30,16 @@ class EvidenceTests(unittest.TestCase):
                            tool_manifest=tools, input_manifest=inputs, suites={})
         self.record = dict(index=0, id='fixture', sql_sha256=hashlib.sha256(b'SELECT 1').hexdigest(), status='passed')
         rows = put('records.jsonl', json.dumps(self.record)+'\n')
-        raw = put('samples.jsonl', '{}\n')
-        timing = put('timing.json', json.dumps(dict(protocol='fixture/v1', host=self.policy['host'], candidate_commit='a'*40, base_commit='c'*40, complete=True, regression_gate_passed=True, raw_samples=raw)))
+        from timing_fixture import fixture
+        timing_policy, timing_rows, timing_path = fixture(self.root)
+        for key in ('tool_manifest_sha256', 'input_manifest_sha256'):
+            timing_policy[key] = self.policy[key]
+            for row in timing_rows:
+                row[key] = self.policy[key]
+        timing_samples = put(timing_path.name, ''.join(json.dumps(row)+'\n' for row in timing_rows))
         for name in c.REQUIRED:
-            self.policy['suites'][name] = dict(version='fixture/v1', scope_sha256='d'*64, reference_version='fixture', total=1, excluded=0, timing_protocol='fixture/v1')
-            self.bundle['suites'][name] = dict(self.policy['suites'][name], host=self.policy['host'], baseline_host=self.policy['host'], pacific_day='2026-01-01', baseline_pacific_day='2026-01-01', baseline_commit='c'*40, baseline_tool_manifest_sha256=tools['sha256'], records=rows, baseline_records=rows, timing=timing, counts={s:int(s=='passed') for s in c.STATUSES})
+            self.policy['suites'][name] = dict(version='fixture/v1', scope_sha256='d'*64, reference_version='fixture', total=1, excluded=0, timing_policy=timing_policy)
+            self.bundle['suites'][name] = dict(self.policy['suites'][name], host=self.policy['host'], baseline_host=self.policy['host'], pacific_day='2026-01-01', baseline_pacific_day='2026-01-01', baseline_commit='c'*40, baseline_tool_manifest_sha256=tools['sha256'], records=rows, baseline_records=rows, timing_samples=timing_samples, counts={s:int(s=='passed') for s in c.STATUSES})
 
     def check(self):
         # Tiny synthetic fixtures test validation mechanics, never a suite result.

@@ -10,6 +10,10 @@ import itertools
 import json
 from pathlib import Path
 import re
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from timing import validate_samples
 
 STATUSES = ('passed', 'unsupported', 'wrong', 'error', 'not-run', 'excluded')
 REQUIRED = ('slt', 'hunt55k', 'sf10-correctness', 'sf10-timing',
@@ -91,18 +95,20 @@ def validate(bundle, policy, root):
         require(dict(counts) == suite['counts'], name + ': reported counts differ from records')
         require(counts['excluded'] == expected['excluded'], name + ': changed exclusion denominator')
         if name == 'sf10-timing':
-            # The private timing adapter must retain every raw sample. No scalar
-            # from another host or an older campaign is a substitute.
-            timing = json.loads(artifact(root, suite['timing']).read_text())
-            require(timing['protocol'] == expected['timing_protocol'], 'timing protocol mismatch')
-            require(timing['host'] == policy['host'], 'timing host mismatch')
-            require(timing['candidate_commit'] == policy['candidate_commit'] and timing['base_commit'] == policy['base_commit'], 'timing source mismatch')
-            require(timing['complete'] is True and timing['regression_gate_passed'] is True, 'timing gate incomplete or failed')
-            artifact(root, timing['raw_samples'])
+            timing_policy = dict(expected['timing_policy'])
+            for key, value in {
+                'host': policy['host'], 'candidate_commit': policy['candidate_commit'],
+                'baseline_commit': policy['base_commit'],
+                'tool_manifest_sha256': policy['tool_manifest_sha256'],
+                'input_manifest_sha256': policy['input_manifest_sha256'],
+                'pacific_day': suite['pacific_day'],
+            }.items():
+                require(timing_policy[key] == value, 'timing policy identity mismatch: ' + key)
+            timing_summary = validate_samples(artifact(root, suite['timing_samples']), timing_policy)
         summaries[name] = dict(counts)
     return {'schema': bundle['schema'], 'candidate_commit': bundle['candidate_commit'],
             'candidate_tree': bundle['candidate_tree'], 'base_commit': bundle['base_commit'],
-            'host': bundle['host'], 'counts': summaries,
+            'host': bundle['host'], 'counts': summaries, 'timing': timing_summary,
             'qualification': 'structurally-valid; maintainer review of raw evidence required'}
 
 

@@ -17,9 +17,13 @@ failures; a stable unsupported case is not a wrong-answer regression. Frozen SLT
 control exclusions are counted separately and cannot silently shrink scope.
 
 This is structural validation, not a trusted runner or automated acceptance.
-Adapters from the existing collectors, timing sample/protocol verification,
-protected collection, final-head delta review and maintainer acceptance are still
-required. A candidate-controlled receipt or `complete` flag is not proof.
+Hash-pinned SLT, hunt query-stream and retail adapters are implemented in
+`collector_adapter.py`. They retain original outcomes and compare every identity
+against an independently frozen scope. Unknown records and unauthorized exclusions
+fail. The original collector must still verify lifecycle, auxiliary/metamorphic
+records and build provenance before supplying streams. Wiring that boundary to
+the incoming full-suite runners remains pending. Protected collection, final-head
+delta review and maintainer acceptance remain required. A candidate-controlled receipt or `complete` flag is not proof.
 Do not use this validator alone to authorize a merge or a performance claim.
 
 Run mechanics tests (synthetic fixtures only):
@@ -40,8 +44,13 @@ index, stable identity, SQL hash and status. Candidate and baseline streams must
 have equal identities in equal order; suite counts must equal those streams.
 Record exact tool/input manifests, reference versions, scope hashes, host, base
 and candidate commits, and the candidate tree. Collect baseline and candidate on
-the same host and Pacific day with identical tools. Timing also needs the reviewed
-protocol, complete raw samples and independent review of the calculation.
+the same host and Pacific day with identical tools. Timing is recomputed by `timing.py` from both complete 22-query sample sets:
+one warmup and five timed samples per query, medians excluding warmup, maximum
+timed memory and zero spill retries. Host/source/tool/input/request/resource/day
+identities must match reviewed policy. Per-query and total limits are explicit
+policy inputs, never inherited Dev Mini measurements. This versioned paired
+protocol is not a claim of compatibility with every historical benchmark method;
+the incoming runner adapter and the selected method still need review.
 
 Execution-affecting changes invalidate previous evidence. Evidence-only final-head
 changes require an explicit reviewed file-by-file delta; never relabel results.
@@ -73,11 +82,25 @@ uses the shared host activity lock; measurements require a quiet host.
 
 Vercel deploys reviewed `site/` content from public main automatically. Contributor
 credit is fetched separately from GitHub. Neither mechanism executes tests.
-The validated, privacy-reviewed summary and maintainer acceptance should be part
-of the same reviewed PR as the change. The current validator deliberately emits
-no accepted status or chart ratios. Existing historical charts remain unchanged
-until the full evidence and calculation adapter are reviewed. Automatic chart
-consumption of this new contract is not implemented yet.
+`site_evidence.py` validates the private bundle, requires a separate maintainer
+acceptance record pinned to bundle/policy/source/final-head identities, and emits
+both `site/evidence/full-suite/latest.json` and the matching static HTML outcome
+table and timing bars. Both views come from one computed object; JavaScript is
+not required. The shipped state is pending and contains no measurements.
+Historical charts are untouched. No synthetic accepted fixture is shipped.
+
+```sh
+python3 testing/site_evidence.py PRIVATE_RESULTS/bundle.json \
+  --policy PRIVATE_RESULTS/reviewer-policy.json \
+  --acceptance PRIVATE_RESULTS/acceptance.json --expected-head REVIEWED_HEAD \
+  --site site
+```
+
+Acceptance records must be produced in the maintainer-controlled review process.
+The tool verifies their consistency, not the author's authority or honesty; a
+candidate-supplied acceptance file cannot authorize publication. Stage the output
+in the same PR, review the evidence-only delta to the final head, and rerun for
+any executable change. The command performs no network, merge or deployment.
 
 PR #4's scoped validation is historical, incomplete full-suite evidence. Its
 merge does not qualify its source under this gate. It must receive independent
