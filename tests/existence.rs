@@ -343,3 +343,214 @@ fn no_equality_key_and_small_budgets_keep_exact_results_or_resource_errors() {
         }
     }
 }
+
+#[test]
+fn reverse_lane_membership_preserves_exact_order_types_nulls_and_duplicates() {
+    let l = Fixture::new(2, true);
+    let r = Fixture::new(4, false);
+    let tables = HashMap::from([("l".into(), l.0.clone()), ("r".into(), r.0.clone())]);
+    for key in [
+        "a.k=b.k",
+        "a.k=b.k AND a.k2=b.k2",
+        "a.small=b.small",
+        "a.d=b.d",
+        "a.day=b.day",
+        "a.flag=b.flag",
+        "a.txt=b.txt",
+        "a.f=b.f",
+    ] {
+        for not in ["", "NOT "] {
+            let sql = format!(
+                "SELECT a.id FROM l a WHERE {not}EXISTS (SELECT 1 FROM r b WHERE {key} AND b.id<19)"
+            );
+            let off = Options {
+                relational_optimizations: false,
+                ..Options::default()
+            };
+            let expected = execute(&prepare(&sql, &tables, &off).unwrap(), &off)
+                .unwrap()
+                .batch;
+            for batch_size in [1, 7, 8192] {
+                let mut plan = prepare(&sql, &tables, &Options::default()).unwrap();
+                orientation(plan.relational.as_mut().unwrap(), true);
+                for workers in [1, 2, 4, 10] {
+                    let on = Options {
+                        workers,
+                        batch_size,
+                        ..Options::default()
+                    };
+                    let actual = execute(&plan, &on).unwrap();
+                    assert_eq!(
+                        actual.batch, expected,
+                        "{sql}, workers={workers}, batch={batch_size}"
+                    );
+                    assert_eq!(actual.metrics.reverse_existence_joins, 1, "{sql}");
+                    let direct = matches!(key, "a.k=b.k" | "a.small=b.small" | "a.d=b.d");
+                    assert_eq!(
+                        actual.metrics.reverse_existence_lane_joins,
+                        usize::from(workers > 1 && direct),
+                        "{sql}"
+                    );
+                    if workers > 1 && direct {
+                        assert!(actual.metrics.reverse_existence_lane_batches > 0, "{sql}");
+                    }
+                    assert!(actual.metrics.worker_threads_peak <= workers);
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn reverse_text_keys_decline_lanes_under_a_tight_budget() {
+    let l = Fixture::new(2, true);
+    let r = Fixture::new(4, false);
+    let tables = HashMap::from([("l".into(), l.0.clone()), ("r".into(), r.0.clone())]);
+    for not in ["", "NOT "] {
+        let sql = format!(
+            "SELECT a.id FROM l a WHERE {not}EXISTS (SELECT 1 FROM r b WHERE a.txt=b.txt AND b.id<19)"
+        );
+        for batch_size in [1, 7, 8192] {
+            let serial = Options {
+                batch_size,
+                memory_bytes: 64 << 10,
+                parquet_cache_bytes: None,
+                ..Options::default()
+            };
+            let mut plan = prepare(&sql, &tables, &serial).unwrap();
+            orientation(plan.relational.as_mut().unwrap(), true);
+            let expected = execute(&plan, &serial).unwrap();
+            // Keep room for parallel reader bookkeeping, but use the same tight
+            // budget as the successful serial probe at every worker count.
+            let memory_bytes = serial.memory_bytes;
+            for workers in [1, 2, 4, 10] {
+                let options = Options {
+                    workers,
+                    memory_bytes,
+                    ..serial.clone()
+                };
+                let actual = execute(&plan, &options).unwrap();
+                assert_eq!(actual.batch, expected.batch, "{sql}, workers={workers}");
+                assert_eq!(actual.metrics.reverse_existence_joins, 1);
+                assert_eq!(actual.metrics.reverse_existence_lane_joins, 0);
+                assert_eq!(actual.metrics.reverse_existence_lane_batches, 0);
+                assert!(actual.metrics.peak_reserved_bytes <= memory_bytes);
+            }
+        }
+    }
+}
+
+#[test]
+fn reverse_lane_empty_inputs_coercions_and_errors_match_serial() {
+    let l = Fixture::new(1, true);
+    let r = Fixture::new(3, false);
+    let tables = HashMap::from([("l".into(), l.0.clone()), ("r".into(), r.0.clone())]);
+    for condition in [
+        "a.k=b.k AND b.id<0", // Empty probe after filtering.
+        "a.k=b.k AND a.id<0", // Empty retained side after filtering.
+        "a.k=b.k AND b.n IS NULL",
+        "a.small=b.n", // Physical Int32/Int64 normalize to the same integer keys.
+        "a.d=b.n",     // Mixed scales retain their existing coercion path.
+        "a.k+1=b.k",   // Computed keys decline lane admission.
+        "a.k=b.k AND a.n<>b.n", // Residuals retain the serial reverse path.
+        "a.k=b.k AND b.f*CAST('1e308' AS REAL)>0.0", // Required child overflow.
+    ] {
+        for not in ["", "NOT "] {
+            let sql = format!(
+                "SELECT a.id FROM l a WHERE {not}EXISTS(SELECT 1 FROM r b WHERE {condition})"
+            );
+            let mut plan = prepare(&sql, &tables, &Options::default()).unwrap();
+            orientation(plan.relational.as_mut().unwrap(), true);
+            let expected = execute(
+                &plan,
+                &Options {
+                    batch_size: 1,
+                    ..Options::default()
+                },
+            )
+            .map(|r| r.batch);
+            for batch_size in [1, 7, 8192] {
+                for workers in [1, 2, 4, 10] {
+                    let options = Options {
+                        workers,
+                        batch_size,
+                        ..Options::default()
+                    };
+                    let actual = execute(&plan, &options);
+                    if condition.contains("1e308") {
+                        assert_eq!(
+                            actual.as_ref().err().map(String::as_str),
+                            Some("floating arithmetic overflow"),
+                            "{sql}"
+                        );
+                    }
+                    assert_eq!(
+                        actual.map(|r| r.batch),
+                        expected,
+                        "{sql}, workers={workers}, batch={batch_size}"
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn reverse_lane_source_completion_precedes_fallible_output() {
+    let l = Fixture::new(2, true);
+    let r = Fixture::new(3, false);
+    let tables = HashMap::from([("l".into(), l.0.clone()), ("r".into(), r.0.clone())]);
+    let sql =
+        "SELECT a.f*CAST('1e308' AS REAL) FROM l a WHERE EXISTS(SELECT 1 FROM r b WHERE a.k=b.k)";
+    let mut plan = prepare(sql, &tables, &Options::default()).unwrap();
+    orientation(plan.relational.as_mut().unwrap(), true);
+    let expected = execute(&plan, &Options::default()).err().unwrap();
+    assert_eq!(expected, "floating arithmetic overflow");
+    for batch_size in [1, 7, 8192] {
+        for workers in [1, 2, 4, 10] {
+            let options = Options {
+                workers,
+                batch_size,
+                ..Options::default()
+            };
+            assert_eq!(execute(&plan, &options).err().unwrap(), expected);
+        }
+    }
+}
+
+#[test]
+fn reverse_numeric_bitmap_dispatch_preserves_semi_and_anti_occurrences() {
+    let l = Fixture::new(2, true);
+    let r = Fixture::new(4, false);
+    let tables = HashMap::from([("l".into(), l.0.clone()), ("r".into(), r.0.clone())]);
+    for (condition, bounded) in [
+        ("a.k=b.k AND b.id<19", true),
+        ("a.n=b.n AND b.id<19", false), // i64 extrema decline the bounded range.
+        ("a.k=b.k AND a.k2=b.k2 AND b.id<19", false),
+    ] {
+        for not in ["", "NOT "] {
+            let sql = format!(
+                "SELECT a.id FROM l a WHERE {not}EXISTS(SELECT 1 FROM r b WHERE {condition})"
+            );
+            let mut plan = prepare(&sql, &tables, &Options::default()).unwrap();
+            orientation(plan.relational.as_mut().unwrap(), true);
+            let expected = execute(&plan, &Options::default()).unwrap().batch;
+            for workers in [1, 2, 4, 10] {
+                for batch_size in [1, 7, 8192] {
+                    let options = Options {
+                        workers,
+                        batch_size,
+                        ..Options::default()
+                    };
+                    let result = execute(&plan, &options).unwrap();
+                    assert_eq!(result.batch, expected, "{sql}: {workers}/{batch_size}");
+                    assert_eq!(
+                        result.metrics.reverse_existence_numeric_lane_joins,
+                        usize::from(bounded && workers > 1),
+                        "{sql}"
+                    );
+                }
+            }
+        }
+    }
+}

@@ -47,12 +47,18 @@ fn project(input: Node, columns: Vec<usize>) -> Result<Node> {
 }
 pub(crate) fn prune(node: Node) -> Result<Node> {
     let needed = all(&node);
-    Ok(walk(node, needed)?.0)
+    Ok(walk::<false>(node, needed)?.0)
 }
-fn barrier(child: Box<Node>) -> Result<Box<Node>> {
-    Ok(Box::new(prune(*child)?))
+/// Scoped liveness for the private build-group plan; ordinary plans keep their barriers.
+pub(crate) fn prune_build_groups(node: Node) -> Result<Node> {
+    let needed = all(&node);
+    Ok(walk::<true>(node, needed)?.0)
 }
-fn walk(node: Node, mut needed: Needed) -> Result<(Node, Vec<usize>)> {
+fn barrier<const MARKS: bool>(child: Box<Node>) -> Result<Box<Node>> {
+    let needed = all(&child);
+    Ok(Box::new(walk::<MARKS>(*child, needed)?.0))
+}
+fn walk<const MARKS: bool>(node: Node, mut needed: Needed) -> Result<(Node, Vec<usize>)> {
     // Keep a physical column for row counts if a parent only needs cardinality.
     // This avoids introducing zero-column batches into existing sort/join paths.
     if needed.is_empty() && !node.schema.fields().is_empty() {
@@ -80,7 +86,7 @@ fn walk(node: Node, mut needed: Needed) -> Result<(Node, Vec<usize>)> {
             },
         },
         RelOp::Rename { input } => {
-            let (input, _) = walk(*input, needed)?;
+            let (input, _) = walk::<MARKS>(*input, needed)?;
             Node {
                 schema: narrowed,
                 estimated_rows: rows,
@@ -90,7 +96,7 @@ fn walk(node: Node, mut needed: Needed) -> Result<(Node, Vec<usize>)> {
             }
         }
         RelOp::Limit { input, count } => {
-            let (input, _) = walk(*input, needed)?;
+            let (input, _) = walk::<MARKS>(*input, needed)?;
             Node {
                 schema: narrowed,
                 estimated_rows: rows,
@@ -102,7 +108,8 @@ fn walk(node: Node, mut needed: Needed) -> Result<(Node, Vec<usize>)> {
         }
         RelOp::Project { input, columns } => {
             let width = input.schema.fields().len();
-            let (input, child_kept) = walk(*input, kept.iter().map(|i| columns[*i]).collect())?;
+            let (input, child_kept) =
+                walk::<MARKS>(*input, kept.iter().map(|i| columns[*i]).collect())?;
             let map = mapping(width, &child_kept);
             project(
                 input,
@@ -117,7 +124,7 @@ fn walk(node: Node, mut needed: Needed) -> Result<(Node, Vec<usize>)> {
         } => {
             let mut child_needed = needed;
             predicate.columns(&mut child_needed);
-            let (input, child_kept) = walk(*input, child_needed)?;
+            let (input, child_kept) = walk::<MARKS>(*input, child_needed)?;
             let map = mapping(old_width, &child_kept);
             predicate.remap_columns(&map)?;
             let filtered = Node {
@@ -139,7 +146,8 @@ fn walk(node: Node, mut needed: Needed) -> Result<(Node, Vec<usize>)> {
             let width = input.schema.fields().len();
             // Retain all computed outputs, including sort keys and expressions
             // that can raise errors. Their source columns define child liveness.
-            let (input, child_kept) = walk(*input, plan.columns.iter().copied().collect())?;
+            let (input, child_kept) =
+                walk::<MARKS>(*input, plan.columns.iter().copied().collect())?;
             let map = mapping(width, &child_kept);
             if let Some(expr) = &mut plan.filter {
                 expr.remap_columns(&map)?;
@@ -198,8 +206,8 @@ fn walk(node: Node, mut needed: Needed) -> Result<(Node, Vec<usize>)> {
                 a.columns(&mut left_needed);
                 b.columns(&mut right_needed);
             }
-            let (left, left_kept) = walk(*left, left_needed)?;
-            let (right, right_kept) = walk(*right, right_needed)?;
+            let (left, left_kept) = walk::<MARKS>(*left, left_needed)?;
+            let (right, right_kept) = walk::<MARKS>(*right, right_needed)?;
             let left_map = mapping(left_width, &left_kept);
             let right_map = mapping(right_width, &right_kept);
             for (a, b) in &mut keys {
@@ -241,6 +249,45 @@ fn walk(node: Node, mut needed: Needed) -> Result<(Node, Vec<usize>)> {
                     .collect::<Result<_>>()?,
             )?
         }
+        RelOp::Mark {
+            left,
+            right,
+            mut value,
+            negated,
+        } if MARKS => {
+            // Membership still evaluates both children and its value, even if
+            // the marker is unselected. Only unused carried payload is removed.
+            let width = left.schema.fields().len();
+            let mut left_needed = needed.iter().copied().filter(|i| *i < width).collect();
+            value.columns(&mut left_needed);
+            let (left, left_kept) = walk::<MARKS>(*left, left_needed)?;
+            let mut map = mapping(width, &left_kept);
+            value.remap_columns(&map)?;
+            map.push(Some(left_kept.len()));
+            let fields = left
+                .schema
+                .fields()
+                .iter()
+                .cloned()
+                .chain([old_schema.fields()[width].clone()])
+                .collect::<Vec<_>>();
+            let marked = Node {
+                schema: Arc::new(Schema::new(fields)),
+                estimated_rows: rows,
+                op: RelOp::Mark {
+                    left: Box::new(left),
+                    right: barrier::<MARKS>(right)?,
+                    value,
+                    negated,
+                },
+            };
+            project(
+                marked,
+                kept.iter()
+                    .map(|i| index(&map, *i))
+                    .collect::<Result<_>>()?,
+            )?
+        }
         // These nodes add synthetic values, coerce types or enforce cardinality.
         // Retain their full immediate schemas while optimizing their descendants.
         op => {
@@ -252,11 +299,11 @@ fn walk(node: Node, mut needed: Needed) -> Result<(Node, Vec<usize>)> {
                     shared_scan,
                 } => RelOp::Materialize {
                     id,
-                    input: barrier(input)?,
+                    input: barrier::<MARKS>(input)?,
                     shared_scan,
                 },
                 RelOp::Scalar { input } => RelOp::Scalar {
-                    input: barrier(input)?,
+                    input: barrier::<MARKS>(input)?,
                 },
                 RelOp::ScalarDefault {
                     input,
@@ -264,8 +311,8 @@ fn walk(node: Node, mut needed: Needed) -> Result<(Node, Vec<usize>)> {
                     value,
                     marker,
                 } => RelOp::ScalarDefault {
-                    input: barrier(input)?,
-                    fallback: barrier(fallback)?,
+                    input: barrier::<MARKS>(input)?,
+                    fallback: barrier::<MARKS>(fallback)?,
                     value,
                     marker,
                 },
@@ -275,8 +322,8 @@ fn walk(node: Node, mut needed: Needed) -> Result<(Node, Vec<usize>)> {
                     value,
                     negated,
                 } => RelOp::Mark {
-                    left: barrier(left)?,
-                    right: barrier(right)?,
+                    left: barrier::<MARKS>(left)?,
+                    right: barrier::<MARKS>(right)?,
                     value,
                     negated,
                 },
@@ -286,14 +333,14 @@ fn walk(node: Node, mut needed: Needed) -> Result<(Node, Vec<usize>)> {
                     value,
                     negated,
                 } => RelOp::TypedMark {
-                    left: barrier(left)?,
-                    right: barrier(right)?,
+                    left: barrier::<MARKS>(left)?,
+                    right: barrier::<MARKS>(right)?,
                     value,
                     negated,
                 },
                 RelOp::UnionAll { left, right } => RelOp::UnionAll {
-                    left: barrier(left)?,
-                    right: barrier(right)?,
+                    left: barrier::<MARKS>(left)?,
+                    right: barrier::<MARKS>(right)?,
                 },
                 RelOp::CorrelatedMark {
                     left,
@@ -301,8 +348,8 @@ fn walk(node: Node, mut needed: Needed) -> Result<(Node, Vec<usize>)> {
                     predicate,
                     marker,
                 } => RelOp::CorrelatedMark {
-                    left: barrier(left)?,
-                    right: barrier(right)?,
+                    left: barrier::<MARKS>(left)?,
+                    right: barrier::<MARKS>(right)?,
                     predicate,
                     marker,
                 },

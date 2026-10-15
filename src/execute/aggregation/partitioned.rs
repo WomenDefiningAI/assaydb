@@ -158,14 +158,33 @@ impl Partitioned {
                 .ok_or("partition growth overflow")?;
             route.push(partition);
         }
+        if source.numeric_group_keys.is_some() {
+            let mut additions = vec![0usize; self.partitions.len()];
+            for &partition in &route {
+                additions[partition] += 1;
+            }
+            for ((partition, bytes), additional) in
+                self.partitions.iter().zip(&mut growth).zip(additions)
+            {
+                // Keep the established admission floor, but also prepay a
+                // capacity boundary crossed by even a one-group fragment.
+                // Only actual capacity and ordering charges survive the merge.
+                let needed = partition
+                    .state
+                    .numeric_merge_headroom(expressions, additional)?
+                    .checked_add(additional * ORDER_BYTES_PER_GROUP)
+                    .ok_or("partition growth overflow")?;
+                *bytes = (*bytes).max(needed);
+            }
+        }
         // Acquire every partition's complete allowance before any mutation.
         // On failure, already acquired allowances drop without changing state.
         let funding = growth
             .iter()
             .map(|bytes| self.budget.reserve(*bytes))
             .collect::<Result<Vec<_>>>()?;
-        for (partition, bytes) in self.partitions.iter_mut().zip(&growth) {
-            partition.state.add_merge_credit(*bytes);
+        for (partition, lease) in self.partitions.iter_mut().zip(funding) {
+            partition.state.add_merge_credit(lease);
         }
         let result = (|| {
             // Insert all groups first; preserve ordinary state/row update priority.
@@ -211,8 +230,8 @@ impl Partitioned {
             Ok(())
         })();
         // Keep any consumed growth even on a partially applied error.
-        for ((partition, lease), bytes) in self.partitions.iter_mut().zip(funding).zip(growth) {
-            partition.state.retain_merge_credit(lease, bytes);
+        for partition in &mut self.partitions {
+            partition.state.retain_merge_credit();
         }
         if result.is_ok() {
             self.next_ordinal = next;

@@ -33,6 +33,10 @@ use std::{
 
 mod constraints;
 
+/// Read-only catalog access; absent from default execution/builds.
+#[cfg(feature = "verified-hooks")]
+pub mod catalog_view;
+
 pub const MAX_SQL_BYTES: usize = 1024 * 1024;
 static NEXT: AtomicU64 = AtomicU64::new(0);
 

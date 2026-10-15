@@ -125,6 +125,7 @@ fn serial_partition_stream_output_keeps_chunks_and_releases_query_credits() {
     )
     .unwrap();
     let prepared = Prepared {
+        auto_simple: None,
         internal_output: false,
         plan,
         schema: schema.clone(),

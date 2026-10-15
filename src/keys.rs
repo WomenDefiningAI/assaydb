@@ -13,6 +13,8 @@ use arrow::{
 };
 use std::sync::Arc;
 
+pub(crate) mod partitioned;
+
 // Keep tiny field copies inline instead of dispatching a variable-size memcpy
 // for every row component. The canonical length-prefixed bytes stay identical.
 #[inline]
@@ -78,6 +80,16 @@ impl Keys {
             )
             .ok_or("key buffer size overflow")?;
         let lease = budget.reserve(estimate)?;
+        Self::with_credit(values, len, compact, lease)
+    }
+
+    // Private to the encoder and its funded partition constructor.
+    fn with_credit(
+        values: &[Value],
+        len: usize,
+        compact: bool,
+        lease: Reservation,
+    ) -> Result<Self> {
         if values.len() == 1
             && let Some(array) = values[0].array.as_any().downcast_ref::<Decimal128Array>()
         {
@@ -282,6 +294,10 @@ impl Keys {
     }
     pub fn numeric_values(&self) -> Option<&[i128]> {
         self.numeric.as_ref().map(|b| b.typed_data())
+    }
+    /// Expose only the typed two-numeric equality layout, never arbitrary row bytes.
+    pub(crate) fn numeric_pairs(&self) -> Option<&[[u8; 34]]> {
+        self.numeric_pair.as_deref()
     }
     pub fn row(&self, i: usize) -> &[u8] {
         if let Some(values) = &self.numeric {

@@ -27,6 +27,7 @@ mod join_index;
 
 mod equivalence;
 mod membership;
+mod parallel_prepare;
 mod parallel_scan;
 mod parquet_scan;
 
@@ -49,3 +50,27 @@ mod external_sort;
 mod spill_partition;
 
 mod pipeline_runtime;
+
+/// Read-only catalog access for the separately built verified crate.
+#[cfg(feature = "verified-hooks")]
+pub mod verified_hooks {
+    pub use crate::dialect::QueryDialect;
+    pub use crate::session::catalog_view::*;
+
+    /// Shrinks a memory reservation to the bytes a verified result still holds.
+    pub fn release_excess(reservation: &mut crate::memory::Reservation, retained_bytes: usize) {
+        reservation.release_excess(retained_bytes);
+    }
+
+    /// Builds an execution result without reservations, for comparator controls in tests.
+    #[doc(hidden)]
+    pub fn synthetic_execution(
+        batch: arrow::record_batch::RecordBatch,
+    ) -> crate::execute::Execution {
+        crate::execute::Execution {
+            batch,
+            metrics: Default::default(),
+            _reservations: Vec::new(),
+        }
+    }
+}

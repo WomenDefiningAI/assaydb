@@ -40,15 +40,10 @@ impl Failure {
     pub(crate) fn sql(message: String) -> Self {
         // Current SQL evaluation uses string errors. Unknown errors deliberately
         // remain terminal rather than making invariant/decode failures replayable.
-        match message.as_str() {
-            "division by zero"
-            | "floating arithmetic overflow"
-            | "numeric overflow"
-            | "decimal precision 38 overflow"
-            | "FACTORIAL argument outside 0..20"
-            | "date out of range"
-            | "BIGINT overflow" => Self::Sql(message),
-            _ => Self::from(message),
+        if crate::execute::error_replay::semantic_error(&message) {
+            Self::Sql(message)
+        } else {
+            Self::from(message)
         }
     }
     pub(crate) fn message(&self) -> &str {
@@ -233,6 +228,15 @@ pub(crate) fn execute(prepared: &Prepared, options: &Options, budget: Budget) ->
     report.peak_reserved_bytes = budget.peak();
     report.peak_workers = budget.peak_workers();
     #[cfg(test)]
+    if let Some(target) = &options.test_pipeline_interruption {
+        let mut interruption = target.lock().unwrap();
+        if interruption.budget.is_some() && interruption.attempt_report.is_none() {
+            // Preserve the interrupted direct attempt before the outer forced
+            // relational retry replaces the ordinary last-attempt report.
+            interruption.attempt_report = Some(report.clone());
+        }
+    }
+    #[cfg(test)]
     if let Some(target) = &options.test_pipeline_report {
         *target.lock().unwrap() = report;
     }
@@ -310,7 +314,7 @@ fn execute_reported(
             result.metrics.pipeline_candidate_sql_error = sql;
             result.metrics.execution_seconds = started.elapsed().as_secs_f64();
             result.metrics.peak_reserved_bytes = budget.peak();
-            result.metrics.worker_threads_peak = budget.peak_workers();
+            result.metrics.worker_threads_peak = budget.peak_threads();
             Ok(result)
         }
     }

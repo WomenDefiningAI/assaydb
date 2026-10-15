@@ -13,6 +13,17 @@ pub(in crate::execute) trait AggregateOutput {
         schema: &SchemaRef,
         range: Range<usize>,
     ) -> Result<RecordBatch>;
+    /// The default retains the existing owner finalization and total filtering.
+    fn having_batch(
+        &self,
+        plan: &Plan,
+        expressions: &crate::expr_program::ExpressionProgram,
+        schema: &SchemaRef,
+        range: Range<usize>,
+        having: &having::Having,
+    ) -> Result<RecordBatch> {
+        having.filter(self.output_batch(plan, expressions, schema, range)?)
+    }
     fn output_bytes(
         &self,
         plan: &Plan,
@@ -35,6 +46,24 @@ impl AggregateOutput for Aggregation {
         range: Range<usize>,
     ) -> Result<RecordBatch> {
         Aggregation::output_batch(self, plan, expressions, schema, range)
+    }
+    /// Ordinary groups are visited in their unchanged encounter order.
+    fn having_batch(
+        &self,
+        plan: &Plan,
+        expressions: &crate::expr_program::ExpressionProgram,
+        schema: &SchemaRef,
+        range: Range<usize>,
+        having: &having::Having,
+    ) -> Result<RecordBatch> {
+        having::batch(
+            || range.clone().map(move |group| (self, group)),
+            range.len(),
+            plan,
+            expressions,
+            schema,
+            having,
+        )
     }
     fn output_bytes(
         &self,
@@ -107,6 +136,22 @@ impl AggregateOutput for Backend {
         range: Range<usize>,
     ) -> Result<RecordBatch> {
         Backend::output_batch(self, plan, expressions, schema, range)
+    }
+    /// Test backends use the same ordinary kernel or retain partition finalization.
+    fn having_batch(
+        &self,
+        plan: &Plan,
+        expressions: &crate::expr_program::ExpressionProgram,
+        schema: &SchemaRef,
+        range: Range<usize>,
+        having: &having::Having,
+    ) -> Result<RecordBatch> {
+        match self {
+            Self::Single(state) => state.having_batch(plan, expressions, schema, range, having),
+            Self::Partitioned { .. } => {
+                having.filter(self.output_batch(plan, expressions, schema, range)?)
+            }
+        }
     }
     fn output_bytes(
         &self,

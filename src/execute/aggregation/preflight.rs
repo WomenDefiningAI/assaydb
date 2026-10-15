@@ -115,13 +115,10 @@ impl Aggregation {
                     Ok(bytes)
                 }
             })?;
-        // Mirror update_inner's charged all-new-group upper bound. Do not
-        // subtract already funded slack: ignoring it only makes admission safer.
+        // Prepay replacement capacities for an all-new numeric batch, including
+        // old/new overlap at a growth boundary. Encoded accounting is unchanged.
         let growth = if numeric {
-            mul(
-                batch.rows,
-                add(128, mul(4, add(std::mem::size_of::<i128>(), state_bytes)?)?)?,
-            )?
+            self.numeric_merge_headroom(expressions, batch.rows)?
         } else {
             let base = add(
                 512,

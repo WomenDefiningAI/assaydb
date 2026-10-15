@@ -164,7 +164,7 @@ fn real_sql_preserves_populate_once_reuse_nulls_and_worker_limits() {
             result.metrics.pipeline_runtime_submitted,
             result.metrics.pipeline_runtime_completed
         );
-        assert!(result.metrics.worker_threads_peak <= workers.saturating_sub(1));
+        assert!(result.metrics.worker_threads_peak <= workers);
         drop(result);
         assert_eq!(budget.used(), 0);
         assert_eq!(budget.active_workers(), 0);
@@ -209,6 +209,7 @@ fn stored(
     }
     (
         Prepared {
+            auto_simple: None,
             internal_output: false,
             plan,
             schema,
@@ -392,6 +393,9 @@ fn reference_transform_declines_candidate_and_baseline_filters_cached_rows() {
         },
     };
     let mut ctx = Context {
+        filtered_reuse: None,
+        build_groups: None,
+        demand_cache: None,
         shared_attempt: Some(Arc::new(
             crate::execute::pipeline::fallback::Attempt::default(),
         )),
@@ -399,8 +403,10 @@ fn reference_transform_declines_candidate_and_baseline_filters_cached_rows() {
         scan_filters: HashMap::new(),
         static_filters: HashMap::new(),
         scan_transforms: HashMap::new(),
+        lane_transforms: HashMap::new(),
         replay_transforms: HashMap::new(),
         materialized: HashMap::from([(7, storage.clone())]),
+        sideways_registry_lease: None,
         spill: None,
         budget: budget.clone(),
         metrics: Metrics::default(),

@@ -73,12 +73,21 @@ impl Default for SpillOptions {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct Cancellation(Arc<AtomicBool>, Option<&'static AtomicBool>);
+pub struct Cancellation(
+    Arc<AtomicBool>,
+    Option<&'static AtomicBool>,
+    #[cfg(test)] pub(crate) Arc<crate::parallel_prepare::testing::Hooks>,
+);
 impl Cancellation {
     /// Observe an application-owned signal flag as well as explicit cancellation.
     /// The signal handler must only set the flag; query code performs cleanup.
     pub fn with_signal_flag(flag: &'static AtomicBool) -> Self {
-        Self(Arc::default(), Some(flag))
+        Self(
+            Arc::default(),
+            Some(flag),
+            #[cfg(test)]
+            Arc::default(),
+        )
     }
     pub fn cancel(&self) {
         self.0.store(true, Ordering::Release);

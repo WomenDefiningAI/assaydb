@@ -55,13 +55,24 @@ impl<'a> JoinFilter<'a> {
 }
 
 /// Supported flat types need at most sixteen data bytes + validity per row,
-/// except strings, whose selected byte lengths must include repeated indices.
+/// except strings/binary, whose selected byte lengths include repeated indices.
 /// Reserve before Arrow allocates and retain the lease with the gathered array.
 pub(crate) fn gather(
     array: &ArrayRef,
     indices: &UInt32Array,
     budget: &Budget,
 ) -> Result<(ArrayRef, Reservation)> {
+    #[cfg(test)]
+    tests::gather_checkpoint(array, indices, budget, false);
+    let lease = budget.reserve(gather_bytes(array, indices)?)?;
+    let gathered = take(array, indices, None).map_err(|e| e.to_string())?;
+    #[cfg(test)]
+    tests::gather_checkpoint(array, indices, budget, true);
+    Ok((gathered, lease))
+}
+
+/// Bound the same flat Arrow take buffers, including every repeated string index.
+pub(crate) fn gather_bytes(array: &ArrayRef, indices: &UInt32Array) -> Result<usize> {
     let mut bytes = indices
         .len()
         .checked_mul(17)
@@ -77,15 +88,40 @@ pub(crate) fn gather(
             }
         }
     }
-    let lease = budget.reserve(bytes)?;
-    let array = take(array, indices, None).map_err(|e| e.to_string())?;
-    Ok((array, lease))
+    if let Some(binary) = array.as_any().downcast_ref::<BinaryArray>() {
+        for i in indices.iter().flatten() {
+            let row = i as usize;
+            if binary.is_valid(row) {
+                bytes = bytes
+                    .checked_add(binary.value(row).len())
+                    .ok_or("join gather size overflow")?;
+            }
+        }
+    }
+    Ok(bytes)
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use std::sync::Arc;
+    type GatherHook = Box<dyn FnMut(&ArrayRef, &UInt32Array, &Budget, bool)>;
+    thread_local! {
+        pub(crate) static GATHER_HOOK: std::cell::RefCell<Option<GatherHook>> =
+            const { std::cell::RefCell::new(None) };
+    }
+    pub(super) fn gather_checkpoint(
+        array: &ArrayRef,
+        indices: &UInt32Array,
+        budget: &Budget,
+        allocated: bool,
+    ) {
+        GATHER_HOOK.with_borrow_mut(|hook| {
+            if let Some(hook) = hook {
+                hook(array, indices, budget, allocated);
+            }
+        });
+    }
     #[test]
     fn repeated_string_indices_are_reserved_and_nullable_gathers_match_arrow() {
         let long = "é雪".repeat(16384);
@@ -98,6 +134,11 @@ mod tests {
             Arc::new(Int64Array::from(vec![Some(i64::MIN), None, Some(i64::MAX)])),
             Arc::new(BooleanArray::from(vec![Some(true), None, Some(false)])),
             Arc::new(NullArray::new(3)),
+            Arc::new(BinaryArray::from(vec![
+                Some(long.as_bytes()),
+                None,
+                Some(&b"x"[..]),
+            ])),
         ];
         let indices = UInt32Array::from(vec![Some(0), Some(0), None, Some(1), Some(2)]);
         let budget = Budget::new(1 << 20);

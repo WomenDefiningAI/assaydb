@@ -3,13 +3,13 @@
 use super::*;
 
 pub(super) struct Index {
-    table: String,
+    pub(super) table: String,
     bytes: usize,
     // Preserve source column order/direction even though execution ignores
     // this optional access path. Repeated columns are legal nonunique keys.
-    _columns: Vec<(String, Option<bool>)>,
-    unique: bool,
-    key: Vec<usize>,
+    pub(super) _columns: Vec<(String, Option<bool>)>,
+    pub(super) unique: bool,
+    pub(super) key: Vec<usize>,
     _metadata: Reservation,
 }
 

@@ -2,7 +2,7 @@
 use crate::{
     Result,
     execute::Options,
-    memory::{Budget, Reservation, Workers},
+    memory::{Budget, Reservation, ScanReaders, Workers},
     parquet_scan::{BatchTransform, FilterFactory, Reader},
     spill::Cancellation,
 };
@@ -14,7 +14,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         Arc, Condvar, Mutex,
-        atomic::{AtomicBool, AtomicU8, Ordering},
+        atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering},
         mpsc::{self, Receiver, RecvTimeoutError, TryRecvError},
     },
     thread::{self, JoinHandle},
@@ -38,24 +38,45 @@ pub(crate) struct Statistics {
 }
 #[derive(Default)]
 struct Lane {
-    pending: Mutex<(usize, usize)>,
+    pending: Mutex<(usize, usize, usize)>,
     ready: Condvar,
+    #[cfg(test)]
+    waiting: AtomicBool,
 }
 impl Lane {
-    fn wait(&self, target: usize, stop: &AtomicBool, cancel: &Cancellation) -> Result<()> {
+    fn wait(
+        &self,
+        target: usize,
+        new_group: bool,
+        stop: &AtomicBool,
+        cancel: &Cancellation,
+        permit: &mut Option<Workers>,
+    ) -> Result<()> {
         let mut pending = self.pending.lock().unwrap();
         // Each lane keeps the old two-batch progress allowance, even if one
         // decoded batch exceeds its target. Later groups cannot consume the
         // current group's credit. The overshoot is at most one decoded batch
         // beyond the target, or two batches when the target is smaller.
-        while pending.0 >= 2 && pending.1 >= target && !stop.load(Ordering::Acquire) {
+        while ((pending.0 >= 2 && pending.1 >= target)
+            || (new_group && pending.2 >= LOOKAHEAD_GROUPS))
+            && !stop.load(Ordering::Acquire)
+        {
+            // This lane cannot decode until its consumer returns credit.
+            *permit = None;
             cancel.check()?;
+            #[cfg(test)]
+            {
+                self.waiting.store(true, Ordering::Release);
+                self.ready.notify_all();
+            }
             pending = self
                 .ready
                 .wait_timeout(pending, Duration::from_millis(20))
                 .unwrap()
                 .0;
         }
+        #[cfg(test)]
+        self.waiting.store(false, Ordering::Release);
         cancel.check()
     }
 }
@@ -103,14 +124,49 @@ struct Batch {
 enum Message {
     Batch(usize, Batch),
     End(usize),
-    Error(String),
+    Error(usize, String),
 }
 
-// An unstarted group has exactly one owner. Background lanes keep their
-// strided assignments; the already-counted caller may steal only before open.
-const UNCLAIMED: u8 = 0;
-const BACKGROUND: u8 = 1;
-const CALLER: u8 = 2;
+// Every claim uses one monotone counter. Each lane's FIFO therefore contains
+// increasing group ordinals, even when faster lanes claim more work. Publication
+// wakes the coordinator; it never guesses an owner from the group ordinal.
+const UNCLAIMED: u8 = u8::MAX;
+const CALLER: u8 = u8::MAX - 1;
+const LOOKAHEAD_GROUPS: usize = 3;
+struct Claims {
+    next: AtomicUsize,
+    ownership: Vec<AtomicU8>,
+    publishing: Mutex<()>,
+    ready: Condvar,
+}
+impl Claims {
+    fn claim(&self, owner: u8) -> Option<usize> {
+        let group = self
+            .next
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |next| {
+                (next < self.ownership.len()).then_some(next + 1)
+            })
+            .ok()?;
+        let _publishing = self.publishing.lock().unwrap();
+        self.ownership[group].store(owner, Ordering::Release);
+        self.ready.notify_one();
+        Some(group)
+    }
+    fn wait(&self, group: usize, stop: &AtomicBool, cancel: &Cancellation) -> Result<()> {
+        let mut publishing = self.publishing.lock().unwrap();
+        while self.ownership[group].load(Ordering::Acquire) == UNCLAIMED
+            && !stop.load(Ordering::Acquire)
+        {
+            cancel.check()?;
+            publishing = self
+                .ready
+                .wait_timeout(publishing, Duration::from_millis(20))
+                .unwrap()
+                .0;
+        }
+        cancel.check()
+    }
+}
 struct CallerConfig {
     path: PathBuf,
     metadata: ArrowReaderMetadata,
@@ -131,7 +187,7 @@ struct CallerGroup {
 
 pub(crate) struct ParallelReader {
     receivers: Vec<Receiver<Message>>,
-    handles: Vec<JoinHandle<()>>,
+    handles: Vec<crate::memory::Joined<JoinHandle<()>>>,
     lanes: Vec<Arc<Lane>>,
     stop: Arc<AtomicBool>,
     cancel: Cancellation,
@@ -139,14 +195,13 @@ pub(crate) struct ParallelReader {
     group: usize,
     groups: usize,
     delivered: Option<Reservation>,
-    ownership: Arc<Vec<AtomicU8>>,
+    claims: Arc<Claims>,
     caller_config: CallerConfig,
     caller: Option<Box<CallerGroup>>,
     caller_lane: Arc<Lane>,
-    claim_cursor: usize,
     done: bool,
     _metadata: Reservation,
-    _workers: Workers,
+    _readers: ScanReaders,
 }
 impl ParallelReader {
     #[allow(clippy::too_many_arguments)]
@@ -158,9 +213,10 @@ impl ParallelReader {
         transform: Option<BatchTransform>,
         options: &Options,
         budget: &Budget,
-        workers: Workers,
+        workers: ScanReaders,
     ) -> Result<Self> {
         let slots = workers.count;
+        let worker_limit = options.workers - 1;
         // Ordered delivery needs enough lookahead to overlap whole row groups.
         // Bound message count independently of bytes; metadata sizes cannot
         // bound Arrow allocations (dictionary/RLE expansion can be enormous).
@@ -173,10 +229,13 @@ impl ParallelReader {
             .unwrap_or(1)
             .clamp(1, 32);
         let participants = slots + 1;
+        // This is a backpressure threshold, not prepaid payload credit. Both
+        // lanes and caller reserve returned payload after reader.next(); the
+        // existing third-party decoder memory exemption still applies.
         let lane_bytes = (budget.limit().saturating_sub(budget.used()) / 32).min(64 * 1024 * 1024)
             / participants;
         let groups = metadata.metadata().num_row_groups();
-        let metadata_lease = budget.reserve(
+        let mut metadata_lease = budget.reserve(
             participants
                 .checked_mul(4096 + (queue_slots + 1) * 128)
                 .and_then(|n| {
@@ -186,11 +245,25 @@ impl ParallelReader {
                 })
                 .ok_or("worker metadata overflow")?,
         )?;
-        let ownership = Arc::new(
-            (0..groups)
-                .map(|_| AtomicU8::new(UNCLAIMED))
-                .collect::<Vec<_>>(),
-        );
+        // Larger queues are optional. Keep the original allocation/byte limits
+        // for tight budgets, and fund added message slots before creating them.
+        // Like the existing byte target, metadata growth uses at most 1/32 of
+        // remaining headroom; it must not crowd out the current decoder.
+        let expanded_slots = (queue_slots + 1) * LOOKAHEAD_GROUPS;
+        let extra = participants * (expanded_slots - queue_slots) * 128;
+        let expand = extra <= budget.limit().saturating_sub(budget.used()) / 32
+            && metadata_lease.try_grow(extra);
+        let (queue_slots, lane_bytes) = if expand {
+            (expanded_slots, lane_bytes * LOOKAHEAD_GROUPS)
+        } else {
+            (queue_slots, lane_bytes)
+        };
+        let claims = Arc::new(Claims {
+            next: AtomicUsize::new(0),
+            ownership: (0..groups).map(|_| AtomicU8::new(UNCLAIMED)).collect(),
+            publishing: Mutex::new(()),
+            ready: Condvar::new(),
+        });
         let stop = Arc::new(AtomicBool::new(false));
         let transform = transform.map(|transform| {
             let stop = stop.clone();
@@ -218,7 +291,7 @@ impl ParallelReader {
             group: 0,
             groups: metadata.metadata().num_row_groups(),
             delivered: None,
-            ownership: ownership.clone(),
+            claims: claims.clone(),
             caller_config: CallerConfig {
                 path: path.to_owned(),
                 metadata: metadata.clone(),
@@ -232,10 +305,9 @@ impl ParallelReader {
             },
             caller: None,
             caller_lane: Arc::new(Lane::default()),
-            claim_cursor: 0,
             done: false,
             _metadata: metadata_lease,
-            _workers: workers,
+            _readers: workers,
         };
         for slot in 0..slots {
             // Independent opens are essential: File::try_clone shares the seek
@@ -253,26 +325,31 @@ impl ParallelReader {
             let transform = transform.clone();
             let stats = result.stats.clone();
             let options = local_options.clone();
-            let ownership = ownership.clone();
+            let claims = claims.clone();
+            let live = budget.thread_started();
             let handle = thread::Builder::new()
                 .name(format!("assaydb-scan-{slot}"))
                 .spawn(move || {
-                    let work = || -> Result<()> {
-                        for group in (slot..metadata.metadata().num_row_groups()).step_by(slots) {
+                    let mut current_group = None;
+                    let mut work = || -> Result<()> {
+                        loop {
+                            let wait = Instant::now();
+                            let mut permit = None;
+                            lane.wait(lane_bytes, true, &stop, &options.cancellation, &mut permit)?;
+                            stats.lock().unwrap().backpressure_seconds +=
+                                wait.elapsed().as_secs_f64();
                             if stop.load(Ordering::Acquire) {
                                 return Ok(());
                             }
-                            options.cancellation.check()?;
-                            if ownership[group]
-                                .compare_exchange(
-                                    UNCLAIMED,
-                                    BACKGROUND,
-                                    Ordering::AcqRel,
-                                    Ordering::Acquire,
-                                )
-                                .is_err()
-                            {
-                                continue;
+                            let Some(group) = claims.claim(slot as u8) else {
+                                return Ok(());
+                            };
+                            current_group = Some(group);
+                            lane.pending.lock().unwrap().2 += 1;
+                            permit =
+                                budget.scan_worker(worker_limit, &stop, &options.cancellation)?;
+                            if permit.is_none() {
+                                return Ok(());
                             }
                             let start = Instant::now();
                             let mut reader = Reader::filtered_group(
@@ -292,11 +369,29 @@ impl ParallelReader {
                                 }
                                 options.cancellation.check()?;
                                 let wait = Instant::now();
-                                lane.wait(lane_bytes, &stop, &options.cancellation)?;
+                                // Keep the permit across ready steps, but release it before
+                                // byte/group credit or channel backpressure can block.
+                                lane.wait(
+                                    lane_bytes,
+                                    false,
+                                    &stop,
+                                    &options.cancellation,
+                                    &mut permit,
+                                )?;
                                 stats.lock().unwrap().backpressure_seconds +=
                                     wait.elapsed().as_secs_f64();
                                 if stop.load(Ordering::Acquire) {
                                     return Ok(());
+                                }
+                                if permit.is_none() {
+                                    permit = budget.scan_worker(
+                                        worker_limit,
+                                        &stop,
+                                        &options.cancellation,
+                                    )?;
+                                    if permit.is_none() {
+                                        return Ok(());
+                                    }
                                 }
                                 let start = Instant::now();
                                 let next = reader.next();
@@ -322,8 +417,15 @@ impl ParallelReader {
                                     },
                                 );
                                 let wait = Instant::now();
-                                if send.send(message).is_err() {
-                                    return Ok(());
+                                match send.try_send(message) {
+                                    Ok(()) => {}
+                                    Err(mpsc::TrySendError::Full(message)) => {
+                                        permit = None;
+                                        if send.send(message).is_err() {
+                                            return Ok(());
+                                        }
+                                    }
+                                    Err(mpsc::TrySendError::Disconnected(_)) => return Ok(()),
                                 }
                                 let mut s = stats.lock().unwrap();
                                 s.batches += 1;
@@ -340,21 +442,26 @@ impl ParallelReader {
                                 stats.reader.2 += metrics.2;
                                 stats.reader.3 += metrics.3;
                             }
+                            drop(permit);
                             let wait = Instant::now();
                             if send.send(Message::End(group)).is_err() {
                                 return Ok(());
                             }
                             stats.lock().unwrap().backpressure_seconds +=
                                 wait.elapsed().as_secs_f64();
+                            current_group = None;
                         }
-                        Ok(())
                     };
-                    if let Err(error) = work() {
-                        let _ = send.send(Message::Error(error));
+                    if let Err(error) = work()
+                        && let Some(group) = current_group
+                    {
+                        let _ = send.send(Message::Error(group, error));
                     }
                 })
                 .map_err(|e| format!("parallel scan spawn: {e}"))?;
-            result.handles.push(handle);
+            result
+                .handles
+                .push(crate::memory::Joined::new(handle, live));
         }
         Ok(result)
     }
@@ -363,6 +470,7 @@ impl ParallelReader {
     }
     fn shutdown(&mut self) {
         self.stop.store(true, Ordering::Release);
+        self.claims.ready.notify_all();
         // Disconnect first: a producer can be waiting to send into a full queue.
         self.receivers.clear();
         self.caller = None;
@@ -382,24 +490,15 @@ impl ParallelReader {
         if self.stop.load(Ordering::Acquire) {
             return false;
         }
-        if self.caller.is_none() {
-            self.claim_cursor = self.claim_cursor.max(self.group);
-            while self.claim_cursor < self.groups {
-                let group = self.claim_cursor;
-                self.claim_cursor += 1;
-                if self.ownership[group]
-                    .compare_exchange(UNCLAIMED, CALLER, Ordering::AcqRel, Ordering::Acquire)
-                    .is_ok()
-                {
-                    self.caller = Some(Box::new(CallerGroup {
-                        group,
-                        reader: None,
-                        queue: VecDeque::with_capacity(self.caller_config.queue_slots + 1),
-                        complete: false,
-                    }));
-                    break;
-                }
-            }
+        if self.caller.is_none()
+            && let Some(group) = self.claims.claim(CALLER)
+        {
+            self.caller = Some(Box::new(CallerGroup {
+                group,
+                reader: None,
+                queue: VecDeque::with_capacity(self.caller_config.queue_slots + 1),
+                complete: false,
+            }));
         }
         let Some(caller) = &mut self.caller else {
             return false;
@@ -408,7 +507,7 @@ impl ParallelReader {
             return false;
         }
         let cfg = &self.caller_config;
-        let (count, bytes) = *self.caller_lane.pending.lock().unwrap();
+        let (count, bytes, _) = *self.caller_lane.pending.lock().unwrap();
         // Never wait on caller-owned credit: only ordered consumption can free
         // it. Leave a one-decoded-batch overshoot and two-batch progress allowance.
         if caller.queue.len() >= cfg.queue_slots || (count >= 2 && bytes >= cfg.lane_bytes) {
@@ -471,7 +570,7 @@ impl ParallelReader {
                         stats.caller_tasks += 1;
                         caller.queue.push_back(Message::End(caller.group));
                     }
-                    Err(error) => caller.queue.push_back(Message::Error(error)),
+                    Err(error) => caller.queue.push_back(Message::Error(caller.group, error)),
                     Ok(Some(_)) => unreachable!(),
                 }
             }
@@ -485,13 +584,20 @@ impl ParallelReader {
             if self.stop.load(Ordering::Acquire) {
                 return Err("cancelled: parallel scan stopped".into());
             }
-            let message = if self.ownership[self.group].load(Ordering::Acquire) == CALLER {
+            let owner = self.claims.ownership[self.group].load(Ordering::Acquire);
+            if owner == UNCLAIMED {
+                if !self.help_once() {
+                    self.claims.wait(self.group, &self.stop, &self.cancel)?;
+                }
+                continue;
+            }
+            let message = if owner == CALLER {
                 if self.caller.as_ref().unwrap().queue.is_empty() {
                     assert!(self.help_once(), "current caller group can always progress");
                 }
                 self.caller.as_mut().unwrap().queue.pop_front().unwrap()
             } else {
-                let slot = self.group % self.receivers.len();
+                let slot = usize::from(owner);
                 match self.receivers[slot].try_recv() {
                     Ok(message) => message,
                     Err(TryRecvError::Empty) => {
@@ -533,12 +639,21 @@ impl ParallelReader {
                     if group != self.group {
                         return Err("parallel scan end order violated".into());
                     }
-                    if self.ownership[group].load(Ordering::Acquire) == CALLER {
+                    if owner == CALLER {
                         self.caller = None;
+                    } else {
+                        let lane = &self.lanes[usize::from(owner)];
+                        lane.pending.lock().unwrap().2 -= 1;
+                        lane.ready.notify_one();
                     }
                     self.group += 1;
                 }
-                Message::Error(error) => return Err(error),
+                Message::Error(group, error) => {
+                    if group != self.group {
+                        return Err("parallel scan error order violated".into());
+                    }
+                    return Err(error);
+                }
             }
         }
         self.shutdown();
@@ -708,10 +823,10 @@ mod tests {
             let Reader::Parallel(parallel) = &mut reader else {
                 panic!("parallel reader required");
             };
-            assert_eq!(parallel.ownership[0].load(Ordering::Acquire), BACKGROUND);
+            assert_eq!(parallel.claims.ownership[0].load(Ordering::Acquire), 0);
             assert!(parallel.help_once());
             assert_eq!(parallel.caller.as_ref().unwrap().group, 1);
-            assert_eq!(parallel.ownership[1].load(Ordering::Acquire), CALLER);
+            assert_eq!(parallel.claims.ownership[1].load(Ordering::Acquire), CALLER);
             while parallel.help_once() {}
             assert!(
                 parallel.caller.as_ref().unwrap().queue.len() <= parallel.caller_config.queue_slots
@@ -786,10 +901,12 @@ mod tests {
             let mut reader = fixture
                 .reader(&options, &budget, Arc::new(|_| None))
                 .unwrap();
-            full_queues(&reader, 24);
-            assert_eq!(budget.peak_workers(), 3);
+            full_queues(&reader, 72);
+            // Permits now measure runnable decoding, rather than the number
+            // of persistent reader lanes admitted before any work starts.
+            assert!((1..=3).contains(&budget.peak_workers()));
             // A second scan shares the same query limit instead of spawning
-            // another pool while the first reader still owns its permits.
+            // another pool while the first reader still owns its reader capacity.
             let mut nested = fixture
                 .reader(&options, &budget, Arc::new(|_| None))
                 .unwrap();
@@ -1006,5 +1123,339 @@ mod tests {
         drop(reader);
         assert_eq!(budget.used(), 0);
         assert!(budget.peak() <= 32768);
+    }
+
+    #[test]
+    fn slow_group_does_not_pin_other_lanes_to_a_stride_or_allow_unbounded_claims() {
+        let fixture = Fixture::new(64);
+        for workers in [4, 10] {
+            for (cancel, empty) in [(false, false), (true, false), (false, true), (true, true)] {
+                let budget = Budget::new(16 << 20);
+                let options = Options {
+                    workers,
+                    batch_size: 8,
+                    parquet_cache_bytes: None,
+                    ..Options::default()
+                };
+                let (started, receive) = mpsc::channel();
+                let (release, wait) = mpsc::channel();
+                let wait = Mutex::new(wait);
+                let transform: BatchTransform = {
+                    let budget = budget.clone();
+                    Arc::new(move |batch| {
+                        let first = batch
+                            .column(0)
+                            .as_any()
+                            .downcast_ref::<Int64Array>()
+                            .unwrap()
+                            .value(0);
+                        if first == 0 {
+                            started.send(()).unwrap();
+                            wait.lock()
+                                .unwrap()
+                                .recv_timeout(Duration::from_secs(5))
+                                .map_err(|e| e.to_string())?;
+                        }
+                        let batch = if empty && first != 0 {
+                            batch.slice(0, 0)
+                        } else {
+                            batch
+                        };
+                        let lease = budget.reserve(batch.get_array_memory_size())?;
+                        Ok(crate::parquet_scan::TransformedBatch {
+                            batch,
+                            lease,
+                            preserve_empty: false,
+                        })
+                    })
+                };
+                let file = File::open(&fixture.0).unwrap();
+                let metadata = ArrowReaderMetadata::load(&file, Default::default()).unwrap();
+                let mut reader = Reader::with_transform(
+                    &fixture.0,
+                    file,
+                    metadata,
+                    ProjectionMask::all(),
+                    Arc::new(|_| None),
+                    Some(transform),
+                    &options,
+                    &budget,
+                )
+                .unwrap();
+                receive.recv_timeout(Duration::from_secs(5)).unwrap();
+                let Reader::Parallel(parallel) = &reader else {
+                    panic!("parallel reader required")
+                };
+                let slow = parallel.claims.ownership[0].load(Ordering::Acquire);
+                for (slot, lane) in parallel.lanes.iter().enumerate() {
+                    if slot == usize::from(slow) {
+                        continue;
+                    }
+                    let (pending, timeout) = lane
+                        .ready
+                        .wait_timeout_while(
+                            lane.pending.lock().unwrap(),
+                            Duration::from_secs(5),
+                            |_| !lane.waiting.load(Ordering::Acquire),
+                        )
+                        .unwrap();
+                    assert!(!timeout.timed_out());
+                    assert_eq!(pending.2, LOOKAHEAD_GROUPS);
+                    assert_eq!(pending.0, if empty { 0 } else { LOOKAHEAD_GROUPS });
+                }
+                // Each fast lane finished three groups, including ordinals that
+                // static striding would have left behind the deliberately slow lane.
+                assert_eq!(
+                    parallel.claims.next.load(Ordering::Acquire),
+                    1 + (workers - 2) * LOOKAHEAD_GROUPS
+                );
+                assert_eq!(budget.active_workers(), 1);
+                assert!(parallel.claims.ownership[workers - 1].load(Ordering::Acquire) != slow);
+                if cancel {
+                    options.cancellation.cancel();
+                }
+                release.send(()).unwrap();
+                if cancel {
+                    assert!(
+                        reader
+                            .next()
+                            .unwrap()
+                            .unwrap_err()
+                            .starts_with("cancelled:")
+                    );
+                } else {
+                    for group in 0..if empty { 1 } else { 32 } {
+                        let batch = reader.next().unwrap().unwrap();
+                        assert_eq!(batch.num_rows(), 8);
+                        assert_eq!(
+                            batch
+                                .column(0)
+                                .as_any()
+                                .downcast_ref::<Int64Array>()
+                                .unwrap(),
+                            &Int64Array::from_iter_values(group * 8..group * 8 + 8)
+                        );
+                    }
+                    assert!(reader.next().is_none());
+                }
+                drop(reader);
+                assert_eq!(budget.used(), 0);
+                assert_eq!(budget.active_workers(), 0);
+                assert_eq!(
+                    budget.scan_readers(workers - 1, workers - 1).count,
+                    workers - 1
+                );
+                assert!(budget.peak() <= budget.limit());
+            }
+        }
+    }
+
+    #[test]
+    fn stalled_scan_lanes_and_downstream_build_wave_obey_live_thread_limit() {
+        let fixture = Fixture::new(64);
+        for workers in [2, 4, 10] {
+            for scan_slots in [workers - 1, (workers - 2).max(1)] {
+                for cancel in [false, true] {
+                    let budget = Budget::new(16 << 20);
+                    let options = Options {
+                        workers,
+                        batch_size: 8,
+                        parquet_cache_bytes: None,
+                        ..Options::default()
+                    };
+                    let file = File::open(&fixture.0).unwrap();
+                    let metadata = ArrowReaderMetadata::load(&file, Default::default()).unwrap();
+                    let mut reader = ParallelReader::new(
+                        &fixture.0,
+                        metadata,
+                        ProjectionMask::all(),
+                        Arc::new(|_| None),
+                        None,
+                        &options,
+                        &budget,
+                        budget.scan_readers(scan_slots, workers - 1),
+                    )
+                    .unwrap();
+                    // Do not consume: every lane reaches group-credit backpressure.
+                    // Synchronize on the wait hook, never on elapsed time or polling.
+                    for lane in &reader.lanes {
+                        let (pending, timeout) = lane
+                            .ready
+                            .wait_timeout_while(
+                                lane.pending.lock().unwrap(),
+                                Duration::from_secs(5),
+                                |_| !lane.waiting.load(Ordering::Acquire),
+                            )
+                            .unwrap();
+                        assert!(!timeout.timed_out());
+                        assert_eq!(pending.2, LOOKAHEAD_GROUPS);
+                    }
+                    assert_eq!(budget.active_workers(), 0);
+                    assert_eq!(budget.live_threads(), scan_slots + 1);
+                    let has_room = scan_slots < workers - 1;
+                    let (started, wait_started) = mpsc::sync_channel(0);
+                    let wait_started = Mutex::new(wait_started);
+                    let (release, wait_release) = mpsc::sync_channel(0);
+                    let wait_release = Mutex::new(wait_release);
+                    // Use the production join-build wave scheduler. Its helper
+                    // stays live until the coordinator has measured the overlap.
+                    let (results, background) =
+                        crate::parallel_prepare::map(2, workers, &budget, |index| {
+                            if has_room {
+                                if index == 0 {
+                                    let live = wait_started
+                                        .lock()
+                                        .unwrap()
+                                        .recv_timeout(Duration::from_secs(5))
+                                        .unwrap();
+                                    assert_eq!(live, workers);
+                                    assert_eq!(budget.live_threads(), workers);
+                                    release.send(()).unwrap();
+                                } else {
+                                    started.send(budget.live_threads()).unwrap();
+                                    wait_release
+                                        .lock()
+                                        .unwrap()
+                                        .recv_timeout(Duration::from_secs(5))
+                                        .unwrap();
+                                }
+                            }
+                            Ok(index)
+                        })
+                        .unwrap();
+                    assert_eq!(results, vec![0, 1]);
+                    assert_eq!(background, usize::from(has_room));
+                    assert_eq!(budget.live_threads(), scan_slots + 1);
+                    assert_eq!(budget.peak_threads(), workers);
+                    let error = crate::parallel_prepare::map::<()>(2, workers, &budget, |i| {
+                        Err(format!("build error {i}"))
+                    })
+                    .unwrap_err();
+                    assert_eq!(error, "build error 0");
+                    if cancel {
+                        options.cancellation.cancel();
+                        assert_eq!(
+                            reader.next().unwrap().unwrap_err(),
+                            "cancelled: query execution"
+                        );
+                    } else {
+                        let mut rows = Vec::new();
+                        for batch in reader.by_ref() {
+                            let batch = batch.unwrap();
+                            rows.extend_from_slice(
+                                batch
+                                    .column(0)
+                                    .as_any()
+                                    .downcast_ref::<Int64Array>()
+                                    .unwrap()
+                                    .values(),
+                            );
+                        }
+                        assert_eq!(rows, (0..256).collect::<Vec<i64>>());
+                    }
+                    drop(reader);
+                    assert_eq!(budget.live_threads(), 1);
+                    assert!(budget.peak_threads() <= workers);
+                    assert_eq!(budget.active_workers(), 0);
+                    assert_eq!(budget.used(), 0);
+                    assert_eq!(budget.workers(workers - 1, workers - 1).count, workers - 1);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn dynamic_batches_match_serial_group_decoding_and_earliest_error() {
+        let fixture = Fixture::new(64);
+        for batch_size in [1, 7, 8192] {
+            let base = Options {
+                batch_size,
+                workers: 1,
+                parquet_cache_bytes: None,
+                ..Options::default()
+            };
+            // Preserve the exact existing per-group batches, including the short
+            // final batch. Serial whole-file iteration may span group boundaries.
+            let oracle_budget = Budget::new(16 << 20);
+            let file = File::open(&fixture.0).unwrap();
+            let metadata = ArrowReaderMetadata::load(&file, Default::default()).unwrap();
+            let factory: FilterFactory = Arc::new(|_| None);
+            let mut expected = Vec::new();
+            for group in 0..32 {
+                expected.extend(
+                    Reader::filtered_group(
+                        file.try_clone().unwrap(),
+                        metadata.clone(),
+                        ProjectionMask::all(),
+                        &factory,
+                        None,
+                        &base,
+                        &oracle_budget,
+                        group,
+                    )
+                    .unwrap()
+                    .map(Result::unwrap),
+                );
+            }
+            for workers in [1, 2, 4, 10] {
+                let options = Options {
+                    workers,
+                    ..base.clone()
+                };
+                let budget = Budget::new(16 << 20);
+                let mut reader = fixture.reader(&options, &budget, factory.clone()).unwrap();
+                let actual = reader.by_ref().collect::<Result<Vec<_>>>().unwrap();
+                if workers > 1 {
+                    assert_eq!(actual, expected);
+                }
+                assert_eq!(
+                    arrow::compute::concat_batches(&expected[0].schema(), &actual).unwrap(),
+                    arrow::compute::concat_batches(&expected[0].schema(), &expected).unwrap()
+                );
+                drop(reader);
+                assert_eq!(budget.used(), 0);
+
+                let transform: BatchTransform = {
+                    let budget = budget.clone();
+                    Arc::new(move |batch| {
+                        let ids = batch
+                            .column(0)
+                            .as_any()
+                            .downcast_ref::<Int64Array>()
+                            .unwrap();
+                        for id in ids.values() {
+                            if *id >= 8 {
+                                return Err(format!("error in group {}", id / 8));
+                            }
+                        }
+                        let lease = budget.reserve(batch.get_array_memory_size())?;
+                        Ok(crate::parquet_scan::TransformedBatch {
+                            batch,
+                            lease,
+                            preserve_empty: true,
+                        })
+                    })
+                };
+                let mut reader = Reader::with_transform(
+                    &fixture.0,
+                    File::open(&fixture.0).unwrap(),
+                    metadata.clone(),
+                    ProjectionMask::all(),
+                    factory.clone(),
+                    Some(transform),
+                    &options,
+                    &budget,
+                )
+                .unwrap();
+                assert_eq!(
+                    reader.by_ref().collect::<Result<Vec<_>>>().unwrap_err(),
+                    "error in group 1"
+                );
+                assert!(reader.next().is_none());
+                drop(reader);
+                assert_eq!(budget.used(), 0);
+                assert_eq!(budget.active_workers(), 0);
+            }
+        }
     }
 }

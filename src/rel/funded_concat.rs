@@ -72,6 +72,22 @@ pub(super) fn for_join(
         _credit: credit,
     })
 }
+
+/// Only completed flat builds use column tasks. Every task concatenates the
+/// same input sequence; no key, predicate, or upstream expression is moved.
+pub(super) fn for_join_parallel(
+    schema: &SchemaRef,
+    batches: &[RecordBatch],
+    budget: &Budget,
+    cancel: &Cancellation,
+    workers: usize,
+) -> Result<(JoinBuild, usize)> {
+    if !admitted(schema) || workers <= 1 {
+        return for_join(schema, batches, budget, cancel).map(|batch| (batch, 0));
+    }
+    concat_impl(schema, batches, budget, cancel, workers)
+        .map(|(batch, tasks)| (JoinBuild::Funded(batch), tasks))
+}
 fn add(a: usize, b: usize) -> Result<usize> {
     a.checked_add(b)
         .ok_or_else(|| "join concat size overflow".into())
@@ -127,12 +143,23 @@ pub(super) fn concat(
     budget: &Budget,
     cancel: &Cancellation,
 ) -> Result<FundedBatch> {
+    concat_impl(schema, batches, budget, cancel, 1).map(|(batch, _)| batch)
+}
+
+fn concat_impl(
+    schema: &SchemaRef,
+    batches: &[RecordBatch],
+    budget: &Budget,
+    cancel: &Cancellation,
+    workers: usize,
+) -> Result<(FundedBatch, usize)> {
     cancel.check()?;
     // These are the proven flat payload types, not every physical column that
     // the borrowed production join may carry without evaluating. Other shapes
     // use for_join's legacy path rather than receiving an unproven receipt.
     // Arrow concat either uses exact logical lengths or shares full backing of
-    // its sole input; source footprints plus per-column slack cover both paths.
+    // its sole input. Validity buffers need separate credit: a nullable input
+    // can force a bitmap covering rows from otherwise bitmap-free inputs too.
     if !admitted(schema) {
         return Err("unsupported: funded join concat physical type".into());
     }
@@ -152,8 +179,18 @@ pub(super) fn concat(
         rows = add(rows, batch.num_rows())?;
         data = add(data, batch.get_array_memory_size())?;
     }
+    let null_columns = (0..schema.fields().len())
+        .filter(|&column| {
+            batches
+                .iter()
+                .any(|batch| batch.column(column).null_count() > 0)
+        })
+        .count();
+    // Prepay full-length validity, rounded to Arrow's 64-byte alignment, in
+    // addition to source footprints. Existing per-column slack covers headers.
+    let validity = mul(null_columns, mul(rows.div_ceil(512), 64)?)?;
     let retained = add(
-        add(data, envelope(schema.fields().len())?)?,
+        add(add(data, validity)?, envelope(schema.fields().len())?)?,
         mul(schema.fields().len(), 512)?,
     )?;
     // Arrow concat_batches materializes input and per-column reference vectors;
@@ -179,13 +216,56 @@ pub(super) fn concat(
     )?;
     let credit = budget.reserve(retained)?;
     let _scratch = budget.reserve(scratch)?;
-    let batch = concat_batches(schema, batches).map_err(|e| e.to_string())?;
+    // Serial scratch covers one column at a time. Prepay all concurrent Arrow
+    // reference vectors plus task/result descriptors; refusal is a serial miss.
+    let parallel_credit = (workers > 1
+        && rows >= 32_768
+        && data >= 1 << 20
+        && batches.len() > 1
+        && schema.fields().len() > 1)
+        .then(|| {
+            scratch
+                .checked_add(4096)?
+                .checked_mul(schema.fields().len())
+                .and_then(|bytes| budget.reserve(bytes).ok())
+        })
+        .flatten();
+    let (batch, tasks) = if parallel_credit.is_some() {
+        let (columns, tasks) =
+            crate::parallel_prepare::map(schema.fields().len(), workers, budget, |column| {
+                #[cfg(test)]
+                let _task = cancel.2.task();
+                cancel.check()?;
+                let arrays = batches
+                    .iter()
+                    .map(|b| b.column(column).as_ref())
+                    .collect::<Vec<_>>();
+                let array = arrow::compute::concat(&arrays).map_err(|e| e.to_string())?;
+                #[cfg(test)]
+                if column == 0 {
+                    cancel.2.checkpoint("concat allocated", cancel, budget);
+                }
+                cancel.check()?;
+                Ok(array)
+            })?;
+        (
+            RecordBatch::try_new(schema.clone(), columns).map_err(|e| e.to_string())?,
+            tasks,
+        )
+    } else {
+        (
+            concat_batches(schema, batches).map_err(|e| e.to_string())?,
+            0,
+        )
+    };
+    #[cfg(test)]
+    cancel.2.checkpoint("concat merge", cancel, budget);
     let owned = FundedBatch::from_prepaid(batch, credit, budget)?;
     if owned.batch.num_rows() != rows {
         return Err("join concat row count mismatch".into());
     }
     cancel.check()?;
-    Ok(owned)
+    Ok((owned, tasks))
 }
 
 #[cfg(test)]
@@ -222,6 +302,30 @@ mod tests {
         )
         .unwrap()
     }
+    #[test]
+    fn midflight_cancellation_drops_columns_and_assembled_batch() {
+        let input = fixture();
+        let batches = vec![input; 8193];
+        let schema = batches[0].schema();
+        let budget = Budget::new(128 << 20);
+        let source = budget
+            .reserve(batches.iter().map(RecordBatch::get_array_memory_size).sum())
+            .unwrap();
+        let baseline = budget.used();
+        for workers in [2, 4, 10] {
+            for point in ["concat allocated", "concat merge"] {
+                let cancel = Cancellation::default();
+                cancel.2.arm(point);
+                let result = for_join_parallel(&schema, &batches, &budget, &cancel, workers);
+                assert_eq!(result.err().unwrap(), "cancelled: query execution");
+                cancel.2.assert_drained(&budget, baseline);
+            }
+        }
+        drop(batches);
+        drop(source);
+        assert_eq!(budget.used(), 0);
+    }
+
     #[test]
     fn real_concat_preserves_empty_unicode_nulls_and_sliced_backing() {
         let budget = Budget::new(1 << 20);
@@ -333,5 +437,72 @@ mod tests {
         assert_eq!(budget.used(), 0);
         assert!(add(usize::MAX, 1).is_err());
         assert!(mul(usize::MAX, 2).is_err());
+    }
+
+    #[test]
+    fn parallel_columns_preserve_batch_order_and_fall_back_on_scratch_refusal() {
+        let rows = 32_775;
+        for batch_size in [1, 7, 8192] {
+            let batches = (0..rows)
+                .step_by(batch_size)
+                .map(|start| {
+                    let end = (start + batch_size).min(rows);
+                    let arrays: Vec<ArrayRef> = vec![
+                        Arc::new(Int64Array::from_iter(
+                            (start..end).map(|i| (i % 11 != 0).then_some((i % 97) as i64)),
+                        )),
+                        Arc::new(StringArray::from_iter((start..end).map(|i| {
+                            if i % 13 == 0 {
+                                None
+                            } else {
+                                Some("boundary é\0雪 and payload")
+                            }
+                        }))),
+                        Arc::new(Int64Array::from_iter_values((start..end).map(|i| i as i64))),
+                    ];
+                    let schema = Arc::new(Schema::new(vec![
+                        Field::new("k", DataType::Int64, true),
+                        Field::new("s", DataType::Utf8, true),
+                        Field::new("ordinal", DataType::Int64, false),
+                    ]));
+                    RecordBatch::try_new(schema, arrays).unwrap()
+                })
+                .collect::<Vec<_>>();
+            let schema = batches[0].schema();
+            let source_bytes = batches.iter().map(RecordBatch::get_array_memory_size).sum();
+            let budget = Budget::new(128 << 20);
+            let source = budget.reserve(source_bytes).unwrap();
+            let cancel = Cancellation::default();
+            let expected = concat(&schema, &batches, &budget, &cancel).unwrap();
+            let baseline_peak = budget.peak();
+            for workers in [1, 2, 4, 10] {
+                let (actual, tasks) =
+                    for_join_parallel(&schema, &batches, &budget, &cancel, workers).unwrap();
+                assert_eq!(actual.batch(), expected.batch());
+                assert_eq!(tasks > 0, workers > 1);
+                assert_eq!(budget.active_workers(), 0);
+                assert!(budget.peak_workers() < workers);
+            }
+            // A budget that admits exactly the serial peak cannot fund optional
+            // concurrent scratch; it must still produce the identical batch.
+            let tight = Budget::new(baseline_peak);
+            let _source = tight.reserve(source_bytes).unwrap();
+            let (actual, tasks) =
+                for_join_parallel(&schema, &batches, &tight, &cancel, 10).unwrap();
+            assert_eq!(tasks, 0);
+            assert_eq!(actual.batch(), expected.batch());
+            drop(actual);
+            assert_eq!(tight.used(), source_bytes);
+            cancel.cancel();
+            assert_eq!(
+                for_join_parallel(&schema, &batches, &budget, &cancel, 10)
+                    .err()
+                    .unwrap(),
+                "cancelled: query execution"
+            );
+            drop(expected);
+            drop(source);
+            assert_eq!(budget.used(), 0);
+        }
     }
 }

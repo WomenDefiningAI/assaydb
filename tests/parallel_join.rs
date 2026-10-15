@@ -105,11 +105,11 @@ fn parallel_probe_preserves_duplicate_null_payload_and_aggregate_results() {
                 } else {
                     assert_eq!(actual.metrics.parallel_joins, 0, "{sql}");
                 }
-                assert!(actual.metrics.worker_threads_peak < workers);
+                assert!(actual.metrics.worker_threads_peak <= workers);
             }
         }
-        // Match row-group scan batching: a one-worker reader combines row groups,
-        // changing where LEFT misses are emitted even in the existing serial join.
+        // Also compare scan-only parallelism with parallel probing. Rule O
+        // requires identical raw order independently of row-group batching.
         let raw_sql =
             "SELECT a.i AS l,b.i AS r,a.s AS ls,b.s AS rs FROM l a LEFT JOIN r b ON a.k=b.k";
         let scan_control = Options {

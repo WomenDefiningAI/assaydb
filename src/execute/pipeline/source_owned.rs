@@ -177,6 +177,12 @@ pub(crate) fn try_execute(
     emit: &mut dyn FnMut(RecordBatch) -> Result<()>,
 ) -> Result<Option<Metrics>> {
     let start = Instant::now();
+    // Cached and streaming owners share one optional index allowance, even
+    // when downstream execution starts while earlier output still owns state.
+    let dense_allowance = budget.source_dense_allowance(DENSE_ALLOWANCE);
+    if dense_allowance.bytes < DENSE_ALLOWANCE {
+        return Ok(None);
+    }
     let mut report = ReportOwner {
         report: Report::default(),
         #[cfg(test)]

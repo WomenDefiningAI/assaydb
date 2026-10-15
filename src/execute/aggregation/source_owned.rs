@@ -3,6 +3,18 @@
 use super::*;
 use crate::spill::Cancellation;
 
+/// A monotone owner's extrema are its endpoint groups; indexed owners retain exact lookup otherwise.
+fn endpoint_group(state: &Aggregation, key: i128) -> Option<usize> {
+    let keys = state.numeric_group_keys.as_ref()?;
+    if keys.first() == Some(&key) {
+        Some(0)
+    } else if keys.last() == Some(&key) {
+        Some(keys.len() - 1)
+    } else {
+        state.numeric_map.get(key)
+    }
+}
+
 pub(in crate::execute) fn new_state(
     plan: &Plan,
     expressions: &crate::expr_program::ExpressionProgram,
@@ -33,6 +45,7 @@ pub(in crate::execute) struct SourceOwned {
     _metadata: Arc<Reservation>,
 }
 impl SourceOwned {
+    /// Exact endpoint IDs merge boundary duplicates into their first owner; global finalization order is unchanged.
     pub(in crate::execute) fn finish(
         states: Vec<Aggregation>,
         domains: &[Option<(i128, i128)>],
@@ -90,14 +103,8 @@ impl SourceOwned {
             if let Some((lo, hi)) = *domain {
                 if lo > hi
                     || state.group_count == 0
-                    || state
-                        .numeric_map
-                        .get(lo)
-                        .is_none_or(|id| id >= state.group_count)
-                    || state
-                        .numeric_map
-                        .get(hi)
-                        .is_none_or(|id| id >= state.group_count)
+                    || endpoint_group(state, lo).is_none_or(|id| id >= state.group_count)
+                    || endpoint_group(state, hi).is_none_or(|id| id >= state.group_count)
                 {
                     return Err("source owned domain endpoints mismatch".into());
                 }
@@ -159,15 +166,9 @@ impl SourceOwned {
                 } else {
                     continue;
                 };
-                let to = output.owners[prior]
-                    .state
-                    .numeric_map
-                    .get(key)
+                let to = endpoint_group(&output.owners[prior].state, key)
                     .ok_or("source boundary missing in earliest owner")?;
-                let from = output.owners[current]
-                    .state
-                    .numeric_map
-                    .get(key)
+                let from = endpoint_group(&output.owners[current].state, key)
                     .ok_or("source boundary missing in later owner")?;
                 if to >= output.owners[prior].state.group_count
                     || from >= output.owners[current].state.group_count
@@ -359,6 +360,27 @@ impl super::AggregateOutput for SourceOwned {
         range: std::ops::Range<usize>,
     ) -> Result<RecordBatch> {
         SourceOwned::output_batch(self, plan, expressions, schema, range)
+    }
+    /// Global chunk traversal preserves boundary skips and column/error order.
+    fn having_batch(
+        &self,
+        plan: &Plan,
+        expressions: &crate::expr_program::ExpressionProgram,
+        schema: &SchemaRef,
+        range: std::ops::Range<usize>,
+        having: &having::Having,
+    ) -> Result<RecordBatch> {
+        if range.start > range.end || range.end > self.groups {
+            return Err("source owned output range".into());
+        }
+        having::batch(
+            || self.rows(range.clone()),
+            range.len(),
+            plan,
+            expressions,
+            schema,
+            having,
+        )
     }
     fn output_bytes(
         &self,

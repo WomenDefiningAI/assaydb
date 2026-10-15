@@ -54,6 +54,7 @@ impl Projection {
         plan.columns = (0..fields.len()).collect();
         Self {
             prepared: Prepared {
+                auto_simple: None,
                 internal_output: original.internal_output,
                 plan,
                 schema: Arc::new(Schema::new(fields)),
@@ -231,6 +232,7 @@ impl Processor<'_> {
     // checks occur at finalization under aggregate semantic v2.
     fn deduplicate(&self, mut partition: Partition) -> Result<(Partition, Prepared)> {
         let mut prepared = Prepared {
+            auto_simple: None,
             internal_output: self.prepared.internal_output,
             plan: self.prepared.plan.clone(),
             schema: self.prepared.schema.clone(),

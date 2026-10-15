@@ -2,6 +2,10 @@
 //! Payload buffers retain their operator-owned leases; this layer prepays queue,
 //! completion, closure, and thread metadata. It never interprets operator errors.
 #[cfg(test)]
+mod concurrent_tests;
+#[cfg(test)]
+mod continuation_tests;
+#[cfg(test)]
 mod retry_tests;
 use crate::{
     Result,
@@ -35,6 +39,8 @@ impl JobKind {
 /// Counts actual task starts, not requested workers or the thread returning a
 /// producer's final result. Array order is Morsel, Partition, Finalize. These
 /// counts do not estimate CPU time or a query's serial wall-time fraction.
+/// Each continuation dispatch counts separately, even while retaining one JobId
+/// and one outstanding slot until its final completion.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) struct Statistics {
     pub submitted: [usize; 3],
@@ -61,10 +67,15 @@ pub(crate) struct Rejected<F> {
     pub work: F,
 }
 type Work<T> = Box<dyn FnOnce(&Cancellation) -> Result<T> + Send>;
+type Continuation<T> = Box<dyn FnMut(&Cancellation, bool) -> Result<Option<T>> + Send>;
+enum Task<T> {
+    Once(Option<Work<T>>),
+    Continuation(Continuation<T>),
+}
 struct Queued<T> {
     id: JobId,
     kind: JobKind,
-    work: Work<T>,
+    work: Task<T>,
     // Keep funding alive until the closure/captures have been destroyed.
     _funding: Reservation,
 }
@@ -92,7 +103,7 @@ struct Shared<T> {
 }
 pub(crate) struct Runtime<T: Send + 'static> {
     shared: Arc<Shared<T>>,
-    handles: Vec<JoinHandle<()>>,
+    handles: Vec<crate::memory::Joined<JoinHandle<()>>>,
     budget: Budget,
     next_id: u64,
     // Explicitly taken only after all worker handles have joined.
@@ -140,7 +151,8 @@ impl<T: Send + 'static> Runtime<T> {
         };
         for lane in 0..runtime.permits.as_ref().unwrap().count {
             let shared = runtime.shared.clone();
-            runtime.handles.push(
+            let live = budget.thread_started();
+            runtime.handles.push(crate::memory::Joined::new(
                 thread::Builder::new()
                     .name(format!("assaydb-pipeline-{lane}"))
                     .spawn(move || {
@@ -157,11 +169,12 @@ impl<T: Send + 'static> Runtime<T> {
                                     state = shared.changed.wait(state).unwrap();
                                 }
                             };
-                            run(&shared, job);
+                            run(&shared, job, true);
                         }
                     })
                     .map_err(|e| format!("pipeline worker spawn: {e}"))?,
-            );
+                live,
+            ));
         }
         Ok(runtime)
     }
@@ -176,6 +189,30 @@ impl<T: Send + 'static> Runtime<T> {
     where
         F: FnOnce(&Cancellation) -> Result<T> + Send + 'static,
     {
+        self.try_submit_owned(kind, work, |work| Task::Once(Some(Box::new(work))))
+    }
+
+    /// `None` yields the exclusively owned continuation back to this same slot.
+    /// Its closure allocation, funding and job identity survive every dispatch;
+    /// only a final value or error is delivered to the coordinator. The boolean
+    /// identifies background execution so caller work can use a smaller quantum.
+    pub fn try_submit_continuation<F>(
+        &mut self,
+        kind: JobKind,
+        work: F,
+    ) -> std::result::Result<JobId, Rejected<F>>
+    where
+        F: FnMut(&Cancellation, bool) -> Result<Option<T>> + Send + 'static,
+    {
+        self.try_submit_owned(kind, work, |work| Task::Continuation(Box::new(work)))
+    }
+
+    fn try_submit_owned<F>(
+        &mut self,
+        kind: JobKind,
+        work: F,
+        boxed: impl FnOnce(F) -> Task<T>,
+    ) -> std::result::Result<JobId, Rejected<F>> {
         let mut state = self.shared.state.lock().unwrap();
         if state.stopping {
             return Err(Rejected {
@@ -207,7 +244,7 @@ impl<T: Send + 'static> Runtime<T> {
         state.slots[index] = Slot::Queued(Queued {
             id,
             kind,
-            work: Box::new(work),
+            work: boxed(work),
             _funding: funding,
         });
         state.queue.push_back(index);
@@ -222,17 +259,22 @@ impl<T: Send + 'static> Runtime<T> {
     }
 
     /// The single caller is the already-counted final execution participant.
+    #[cfg(test)]
     pub fn help_one(&mut self) -> bool {
+        self.help(false)
+    }
+
+    fn help(&mut self, yield_to_ready: bool) -> bool {
         let job = {
             let mut state = self.shared.state.lock().unwrap();
-            if state.stopping {
+            if state.stopping || (yield_to_ready && !state.ready.is_empty()) {
                 None
             } else {
                 claim(&mut state, false)
             }
         };
         if let Some(job) = job {
-            run(&self.shared, job);
+            run(&self.shared, job, false);
             true
         } else {
             false
@@ -261,11 +303,13 @@ impl<T: Send + 'static> Runtime<T> {
             if self.shared.state.lock().unwrap().outstanding == 0 {
                 return None;
             }
-            if self.help_one() {
+            // Check ready receipts atomically with claiming caller work. A
+            // continuation yields after its caller quantum before we help again.
+            if self.help(true) {
                 continue;
             }
             let state = self.shared.state.lock().unwrap();
-            if state.ready.is_empty() && state.outstanding > 0 {
+            if state.ready.is_empty() && state.queue.is_empty() && state.outstanding > 0 {
                 drop(
                     self.shared
                         .changed
@@ -282,6 +326,22 @@ impl<T: Send + 'static> Runtime<T> {
     }
     pub fn statistics(&self) -> Statistics {
         self.shared.state.lock().unwrap().statistics.clone()
+    }
+
+    #[cfg(test)]
+    pub fn test_wait_ready(&self, count: usize) {
+        let (state, _) = self
+            .shared
+            .changed
+            .wait_timeout_while(
+                self.shared.state.lock().unwrap(),
+                Duration::from_secs(10),
+                |state| state.ready.len() < count,
+            )
+            .unwrap();
+        let ready = state.ready.len();
+        drop(state);
+        assert_eq!(ready, count, "background completion deadline");
     }
 
     /// Abandon this candidate attempt without cancelling the caller's token.
@@ -333,7 +393,9 @@ impl<T: Send + 'static> Runtime<T> {
                 }
             };
             // Operator abandonment guards and leases never run under our mutex.
-            drop(discard);
+            if drop_panicked(discard) {
+                self.shared.state.lock().unwrap().panicked = true;
+            }
         }
         self.shared.changed.notify_all();
         let mut join_failed = false;
@@ -357,20 +419,81 @@ fn claim<T>(state: &mut State<T>, background: bool) -> Option<(usize, Queued<T>)
     }
     Some((index, job))
 }
-fn run<T>(shared: &Shared<T>, (index, job): (usize, Queued<T>)) {
+// A caught payload can itself panic on destruction. Contain that destruction
+// once, then abandon any nested payload: recursively dropping arbitrary panic
+// payloads cannot guarantee either termination or a no-unwind boundary.
+fn dispose_panic_payload(payload: Box<dyn std::any::Any + Send>) {
+    if let Err(nested) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(payload))) {
+        std::mem::forget(nested);
+    }
+}
+// Destruction is a separate unwind boundary: a continuation may retain a
+// panicking capture even after its invocation has already unwound.
+fn drop_panicked<T>(value: T) -> bool {
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(value))) {
+        Ok(()) => false,
+        Err(payload) => {
+            dispose_panic_payload(payload);
+            true
+        }
+    }
+}
+fn run<T>(shared: &Shared<T>, (index, job): (usize, Queued<T>), background: bool) {
     let Queued {
         id,
         kind,
-        work,
+        mut work,
         _funding,
     } = job;
     // A job panic is a completion, never a lost worker or an unfilled slot.
-    let (result, panicked) =
-        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| work(&shared.cancel))) {
+    let (mut result, mut panicked) =
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| match &mut work {
+            Task::Once(work) => work.take().expect("unstarted job")(&shared.cancel).map(Some),
+            Task::Continuation(work) => work(&shared.cancel, background),
+        })) {
             Ok(result) => (result, false),
-            Err(_) => (Err("pipeline job panicked".into()), true),
+            Err(payload) => {
+                dispose_panic_payload(payload);
+                (Err("pipeline job panicked".into()), true)
+            }
         };
+    if matches!(result, Ok(None)) {
+        let mut state = shared.state.lock().unwrap();
+        state.statistics.completed[kind.index()] += 1;
+        if state.stopping {
+            state.slots[index] = Slot::Empty;
+            state.outstanding -= 1;
+            drop(state);
+            // Destroy captured operator owners before releasing closure funding,
+            // and never run their destructors while holding the scheduler lock.
+            if drop_panicked(work) {
+                shared.state.lock().unwrap().panicked = true;
+            }
+            drop(_funding);
+        } else {
+            state.slots[index] = Slot::Queued(Queued {
+                id,
+                kind,
+                work,
+                _funding,
+            });
+            state.queue.push_back(index);
+            state.statistics.submitted[kind.index()] += 1;
+            state.statistics.peak_queued = state.statistics.peak_queued.max(state.queue.len());
+            drop(state);
+        }
+        shared.changed.notify_all();
+        return;
+    }
+    if drop_panicked(work) {
+        // Discard a successful payload under containment too, before replacing
+        // it with the infrastructure error. Funding still covers the captures.
+        drop_panicked(result);
+        result = Err("pipeline job panicked".into());
+        panicked = true;
+    }
     drop(_funding);
+    let result = result.map(|value| value.expect("completed job"));
     let completion = Completion { id, kind, result };
     let mut state = shared.state.lock().unwrap();
     state.panicked |= panicked;
@@ -379,7 +502,9 @@ fn run<T>(shared: &Shared<T>, (index, job): (usize, Queued<T>)) {
         state.slots[index] = Slot::Empty;
         state.outstanding -= 1;
         drop(state);
-        drop(completion);
+        if drop_panicked(completion) {
+            shared.state.lock().unwrap().panicked = true;
+        }
     } else {
         state.slots[index] = Slot::Ready(completion);
         state.ready.push_back(index);

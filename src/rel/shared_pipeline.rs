@@ -126,6 +126,7 @@ pub(super) fn try_execute(
         plan.columns = (0..child.schema.fields().len()).collect();
     }
     let prepared = Prepared {
+        auto_simple: None,
         internal_output: true,
         plan,
         schema: child.schema.clone(),
@@ -154,6 +155,7 @@ pub(super) fn try_execute(
     )
 }
 pub(super) fn merge_metrics(a: &mut Metrics, b: &Metrics) {
+    a.clustered_row_groups += b.clustered_row_groups;
     // Original physical scan already accounted rows/bytes; ordinary rel::merge
     // handles replay aggregate batches and operator work without counting scan rows.
     a.source_domain_proof_seconds += b.source_domain_proof_seconds;

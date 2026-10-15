@@ -1,17 +1,128 @@
 //! Equality join indexing: direct addressing for dense numeric key ranges,
-//! borrowed-key hashing otherwise. Duplicate chains remain owned by the join.
-#[cfg(test)]
+//! row-ID hashing otherwise. Duplicate chains remain owned by the join.
 pub(crate) mod owned;
+mod prepare;
 use crate::{
     Result,
     keys::Keys,
     memory::{Budget, Reservation},
 };
-use std::{cell::Cell, collections::HashMap};
+use hashbrown::{HashTable, hash_table::Entry as TableEntry};
+use std::cell::Cell;
+
+#[derive(Clone, Copy)]
+struct Entry {
+    key_row: u32,
+    head: u32,
+}
+
+// Every stored key_row names a valid build key. Select its physical layout
+// once per lookup, rather than rechecking layout and NULLs at each candidate.
+fn hash_head<'a>(map: &'a HashTable<Entry>, keys: &Keys, hash: u64, key: &[u8]) -> Option<&'a u32> {
+    let entry = if let Some(numbers) = keys.numeric_values() {
+        let number = i128::from_ne_bytes(key.try_into().ok()?);
+        map.find(hash, |e| numbers[e.key_row as usize] == number)
+    } else if let Some(pairs) = keys.numeric_pairs() {
+        let pair: &[u8; 34] = key.try_into().ok()?;
+        map.find(hash, |e| &pairs[e.key_row as usize] == pair)
+    } else {
+        map.find(hash, |e| keys.row(e.key_row as usize) == key)
+    };
+    entry.map(|e| &e.head)
+}
+
+/// The exact same table and hash seed are used before and after ownership transfer.
+struct HashIndex<'a> {
+    map: HashTable<Entry>,
+    keys: &'a Keys,
+    hash: ahash::RandomState,
+}
+impl<'a> HashIndex<'a> {
+    fn new(keys: &'a Keys, rows: usize) -> Self {
+        Self {
+            map: HashTable::with_capacity(rows),
+            keys,
+            hash: ahash::RandomState::new(),
+        }
+    }
+    fn get(&self, key: &[u8]) -> Option<&u32> {
+        hash_head(&self.map, self.keys, self.hash.hash_one(key), key)
+    }
+
+    fn populate(&mut self, next: &mut [u32]) {
+        let keys = self.keys;
+        if let Some(numbers) = keys.numeric_values() {
+            self.populate_rows(next, |row| numbers[row].to_ne_bytes());
+        } else if let Some(pairs) = keys.numeric_pairs() {
+            self.populate_rows(next, |row| &pairs[row]);
+        } else {
+            self.populate_rows(next, |row| keys.row(row));
+        }
+    }
+
+    // The typed readers produce exactly Keys::row's bytes for valid rows.
+    // Hash slices (not arrays/integers), preserving the probe hash contract.
+    fn populate_rows<K: AsRef<[u8]> + PartialEq>(
+        &mut self,
+        next: &mut [u32],
+        key_at: impl Fn(usize) -> K,
+    ) {
+        assert_eq!(next.len(), self.keys.len());
+        let mut put = |row: usize, link: &mut u32| {
+            let key = key_at(row);
+            match self.map.entry(
+                self.hash.hash_one(key.as_ref()),
+                |e| key_at(e.key_row as usize) == key,
+                |e| self.hash.hash_one(key_at(e.key_row as usize).as_ref()),
+            ) {
+                TableEntry::Occupied(mut e) => {
+                    *link = std::mem::replace(&mut e.get_mut().head, row as u32);
+                }
+                TableEntry::Vacant(e) => {
+                    e.insert(Entry {
+                        key_row: row as u32,
+                        head: row as u32,
+                    });
+                }
+            }
+        };
+        if self.keys.all_valid() {
+            for (row, link) in next.iter_mut().enumerate() {
+                put(row, link);
+            }
+        } else {
+            for (row, link) in next.iter_mut().enumerate() {
+                if self.keys.valid(row) {
+                    put(row, link);
+                }
+            }
+        }
+    }
+    fn remove(&mut self, key: &[u8]) -> Option<u32> {
+        self.map
+            .find_entry(self.hash.hash_one(key), |e| {
+                self.keys.row(e.key_row as usize) == key
+            })
+            .ok()
+            .map(|e| e.remove().0.head)
+    }
+    fn len(&self) -> usize {
+        self.map.len()
+    }
+    fn is_empty(&self) -> bool {
+        self.map.is_empty()
+    }
+}
 
 pub(crate) struct JoinIndex<'a> {
     storage: Storage<'a>,
     numeric: bool,
+    // Present only while the index still contains precisely this completed build.
+    // Borrow its already-funded rows instead of repeatedly chasing hash keys.
+    populated_keys: Option<&'a Keys>,
+    // Bounds from dense admission remain valid for this immutable completed
+    // build even when its domain is too sparse for dense slots.
+    numeric_bounds: Option<(i128, i128)>,
     rejection: Option<crate::membership::NumericMembership>,
     probes: Cell<usize>,
     rejected: Cell<usize>,
@@ -24,7 +135,15 @@ enum Storage<'a> {
         count: usize,
         keys: &'a Keys,
     },
-    Hash(HashMap<&'a [u8], u32, ahash::RandomState>),
+    Hash(HashIndex<'a>),
+    // The legacy mutation oracle permits synthetic keys/row IDs outside Keys.
+    // Production only inserts rows of the immutable completed build.
+    #[cfg(test)]
+    Inserted(std::collections::HashMap<&'a [u8], u32, ahash::RandomState>),
+    Prepared {
+        index: prepare::Index,
+        keys: &'a Keys,
+    },
 }
 #[derive(Clone, Copy)]
 pub(crate) struct View<'v, 'k> {
@@ -58,18 +177,13 @@ impl Storage<'_> {
                 heads.get(slot(key, *base)?).filter(|v| **v != u32::MAX)
             }
             Storage::Hash(map) => map.get(key),
+            #[cfg(test)]
+            Storage::Inserted(map) => map.get(key),
+            Storage::Prepared { index, keys } => index.get(key, keys),
         }
     }
 }
-fn dense_range(keys: &Keys, rows: usize) -> Option<(i128, usize)> {
-    let numbers = keys.numeric_values()?;
-    let mut valid = numbers
-        .iter()
-        .enumerate()
-        .filter(|(i, _)| keys.valid(*i))
-        .map(|(_, n)| *n);
-    let first = valid.next()?;
-    let (min, max) = valid.fold((first, first), |(lo, hi), n| (lo.min(n), hi.max(n)));
+fn dense_range((min, max): (i128, i128), rows: usize) -> Option<(i128, usize)> {
     let range = usize::try_from(max.checked_sub(min)?.checked_add(1)?).ok()?;
     // Four bytes per direct slot plus five per build row remains below the
     // hash path's 64-byte/row allowance at a range/build-row ratio of twelve.
@@ -88,7 +202,10 @@ impl<'a> JoinIndex<'a> {
     }
 
     pub fn new(keys: &'a Keys, rows: usize, budget: &Budget, allow_dense: bool) -> Result<Self> {
-        let range = allow_dense.then(|| dense_range(keys, rows)).flatten();
+        let numeric_bounds = allow_dense
+            .then(|| crate::membership::numeric_bounds(keys))
+            .flatten();
+        let range = numeric_bounds.and_then(|bounds| dense_range(bounds, rows));
         // Include duplicate chains and reverse-existence match flags in the
         // reservation, as the previous hash-table accounting did.
         let bytes = if let Some((_, len)) = range {
@@ -110,14 +227,13 @@ impl<'a> JoinIndex<'a> {
                 keys,
             }
         } else {
-            Storage::Hash(HashMap::with_capacity_and_hasher(
-                rows,
-                ahash::RandomState::new(),
-            ))
+            Storage::Hash(HashIndex::new(keys, rows))
         };
         Ok(Self {
             storage,
             numeric: keys.numeric_values().is_some(),
+            populated_keys: None,
+            numeric_bounds,
             rejection: None,
             probes: Cell::new(0),
             rejected: Cell::new(0),
@@ -128,6 +244,7 @@ impl<'a> JoinIndex<'a> {
     /// on index representation once, rather than for every build row.
     pub fn populate(&mut self, keys: &'a Keys, next: &mut [u32]) {
         assert!(self.is_empty());
+        self.populated_keys = None;
         self.rejection = None;
         match &mut self.storage {
             Storage::Dense {
@@ -161,29 +278,116 @@ impl<'a> JoinIndex<'a> {
                 }
             }
             Storage::Hash(map) => {
-                for (row, link) in next.iter_mut().enumerate() {
-                    if keys.valid(row)
-                        && let Some(previous) = map.insert(keys.row(row), row as u32)
-                    {
-                        *link = previous;
-                    }
-                }
+                assert!(std::ptr::eq(map.keys, keys));
+                map.populate(next);
             }
+            Storage::Prepared { .. } => unreachable!("already populated build"),
+            #[cfg(test)]
+            Storage::Inserted(_) => unreachable!("test insertion oracle"),
+        }
+        self.populated_keys = Some(keys);
+    }
+
+    /// The completed build's non-NULL keys define the same optional scan bitmap as the exact index.
+    pub(crate) fn scan_membership(
+        &self,
+        budget: &Budget,
+    ) -> Option<crate::membership::NumericMembership> {
+        if !self.numeric {
+            return None;
+        }
+        if let Some(keys) = self.populated_keys
+            && keys.len() <= self.len().saturating_mul(2)
+        {
+            return self.numeric_membership(keys, 8 << 20, budget);
+        }
+        crate::membership::NumericMembership::from_keys(|| self.keys(), budget)
+    }
+
+    /// Fund only the component whose scan guards have already passed.
+    pub(crate) fn scan_pair_membership(
+        &self,
+        component: usize,
+        budget: &Budget,
+    ) -> Option<crate::membership::NumericMembership> {
+        if component >= 2 {
+            return None;
+        }
+        if let Some(keys) = self.populated_keys
+            && keys.numeric_pairs().is_some()
+            && keys.len() <= self.len().saturating_mul(2)
+        {
+            return crate::membership::NumericMembership::from_pair_rows(
+                keys,
+                [component == 0, component == 1],
+                budget,
+            )[component]
+                .take();
+        }
+        crate::membership::NumericMembership::from_pair_keys(|| self.keys(), component, budget)
+    }
+
+    fn numeric_membership(
+        &self,
+        keys: &Keys,
+        max_bytes: usize,
+        budget: &Budget,
+    ) -> Option<crate::membership::NumericMembership> {
+        if let Some(bounds) = self.numeric_bounds {
+            crate::membership::NumericMembership::from_numeric_keys_in_range(
+                keys, bounds, max_bytes, budget,
+            )
+        } else {
+            crate::membership::NumericMembership::from_numeric_keys(keys, max_bytes, budget)
+        }
+    }
+
+    /// Reverse populate's newest-first duplicate chains into build-row order.
+    /// Each chain is disjoint, so existing heads and links suffice without any
+    /// additional allocation or changes to key membership.
+    pub fn restore_build_order(&mut self, next: &mut [u32]) {
+        let mut reverse = |head: &mut u32| {
+            let mut row = *head;
+            let mut previous = u32::MAX;
+            while row != u32::MAX {
+                let following = std::mem::replace(&mut next[row as usize], previous);
+                previous = row;
+                row = following;
+            }
+            *head = previous;
+        };
+        match &mut self.storage {
+            Storage::Dense { heads, .. } => heads.iter_mut().for_each(&mut reverse),
+            Storage::Hash(map) => map.map.iter_mut().for_each(|e| reverse(&mut e.head)),
+            #[cfg(test)]
+            Storage::Inserted(map) => map.values_mut().for_each(reverse),
+            Storage::Prepared { index, .. } => index.heads_mut().for_each(reverse),
         }
     }
 
     // Optional rejection only: positive bits still require exact map lookup.
     // Use this after build completion and only without an equivalent scan mask.
     pub fn enable_rejection(&mut self, estimated_probes: usize, budget: &Budget) -> bool {
-        let Storage::Hash(map) = &self.storage else {
-            return false;
-        };
-        if !self.numeric || map.len() < 8 || estimated_probes < map.len().saturating_mul(4) {
+        if self.is_dense() {
             return false;
         }
-        let mut values = map
+        let count = self.len();
+        if !self.numeric || count < 8 || estimated_probes < count.saturating_mul(4) {
+            return false;
+        }
+        // Two sequential passes over the funded build replace four passes over
+        // hash keys (range, layout, range again, population). With heavy
+        // duplication, keep walking distinct keys instead. Both sources contain
+        // the same non-NULL values, and the byte/selectivity guards are unchanged.
+        if let Some(keys) = self.populated_keys
+            && keys.len() <= count.saturating_mul(2)
+        {
+            self.rejection = self.numeric_membership(keys, count.saturating_mul(16), budget);
+            return self.rejection.is_some();
+        }
+        let mut values = self
             .keys()
-            .map(|k| i128::from_ne_bytes((*k).try_into().unwrap()));
+            .map(|k| i128::from_ne_bytes(k.try_into().unwrap()));
         let first = values.next().unwrap();
         let (lo, hi) = values.fold((first, first), |(lo, hi), n| (lo.min(n), hi.max(n)));
         let Some(bytes) = hi
@@ -196,11 +400,10 @@ impl<'a> JoinIndex<'a> {
         };
         // Construction and cache footprint must be small relative to the map;
         // probe estimates influence optional costing only, never correctness.
-        if bytes > map.len().saturating_mul(16) {
+        if bytes > count.saturating_mul(16) {
             return false;
         }
-        self.rejection =
-            crate::membership::NumericMembership::from_keys(|| map.keys().copied(), budget);
+        self.rejection = crate::membership::NumericMembership::from_keys(|| self.keys(), budget);
         self.rejection.is_some()
     }
     pub fn rejection_stats(&self) -> (usize, usize, usize) {
@@ -231,6 +434,9 @@ impl<'a> JoinIndex<'a> {
         match &self.storage {
             Storage::Dense { count, .. } => *count,
             Storage::Hash(map) => map.len(),
+            #[cfg(test)]
+            Storage::Inserted(map) => map.len(),
+            Storage::Prepared { index, .. } => index.len(),
         }
     }
     pub fn is_empty(&self) -> bool {
@@ -239,7 +445,26 @@ impl<'a> JoinIndex<'a> {
     #[cfg(test)]
     pub fn insert(&mut self, key: &'a [u8], row: u32) -> Option<u32> {
         // A later insert can introduce a key outside the original bitmap.
+        self.populated_keys = None;
         self.rejection = None;
+        if let Storage::Hash(old) = &self.storage {
+            // Fund the oracle replacement peak without weakening production or
+            // the existing arbitrary-key mutation tests.
+            let credit = self
+                ._lease
+                .budget()
+                .reserve((old.len() + 1) * 64 + 256)
+                .unwrap();
+            let mut map = std::collections::HashMap::with_capacity_and_hasher(
+                old.len() + 1,
+                ahash::RandomState::new(),
+            );
+            for e in &old.map {
+                map.insert(old.keys.row(e.key_row as usize), e.head);
+            }
+            self.storage = Storage::Inserted(map);
+            self._lease.absorb(credit);
+        }
         match &mut self.storage {
             Storage::Dense {
                 base, heads, count, ..
@@ -253,7 +478,9 @@ impl<'a> JoinIndex<'a> {
                     Some(old)
                 }
             }
-            Storage::Hash(map) => map.insert(key, row),
+            Storage::Inserted(map) => map.insert(key, row),
+            Storage::Hash(_) => unreachable!("converted to test insertion oracle"),
+            Storage::Prepared { .. } => unreachable!("completed build"),
         }
     }
     pub fn get(&self, key: &[u8]) -> Option<&u32> {
@@ -267,6 +494,7 @@ impl<'a> JoinIndex<'a> {
             return None;
         }
         // Stale positive bits after removal are safe; the exact map decides.
+        self.populated_keys = None;
         match &mut self.storage {
             Storage::Dense {
                 base, heads, count, ..
@@ -279,6 +507,9 @@ impl<'a> JoinIndex<'a> {
                 Some(std::mem::replace(head, u32::MAX))
             }
             Storage::Hash(map) => map.remove(key),
+            #[cfg(test)]
+            Storage::Inserted(map) => map.remove(key),
+            Storage::Prepared { index, keys } => index.remove(key, keys),
         }
     }
     pub fn keys(&self) -> Box<dyn Iterator<Item = &[u8]> + '_> {
@@ -289,7 +520,14 @@ impl<'a> JoinIndex<'a> {
                     .filter(|row| **row != u32::MAX)
                     .map(|row| keys.row(*row as usize)),
             ),
-            Storage::Hash(map) => Box::new(map.keys().copied()),
+            Storage::Hash(map) => {
+                Box::new(map.map.iter().map(|e| map.keys.row(e.key_row as usize)))
+            }
+            #[cfg(test)]
+            Storage::Inserted(map) => Box::new(map.keys().copied()),
+            Storage::Prepared { index, keys } => {
+                Box::new(index.key_rows().map(|row| keys.row(row as usize)))
+            }
         }
     }
 }
@@ -300,6 +538,52 @@ mod tests {
     use crate::expr::Value;
     use arrow::array::Decimal128Array;
     use std::sync::Arc;
+
+    #[test]
+    fn admitted_numeric_bounds_keep_sparse_extreme_and_mutated_memberships_exact() {
+        for base in [i128::MIN, -512, i128::MAX - 1024] {
+            for copies in [1, 4] {
+                let budget = Budget::new(1 << 20);
+                let mut numbers = vec![None];
+                for _ in 0..copies {
+                    numbers.extend([Some(base), Some(base + 512), Some(base + 1024)]);
+                }
+                let rows = numbers.len();
+                let value =
+                    Value::adopt(Arc::new(Decimal128Array::from(numbers)), &budget).unwrap();
+                let keys = Keys::new(&[value], rows, &budget).unwrap();
+                let mut index = JoinIndex::new(&keys, rows, &budget, true).unwrap();
+                assert!(!index.is_dense());
+                assert_eq!(index.numeric_bounds, Some((base, base + 1024)));
+                index.populate(&keys, &mut vec![u32::MAX; rows]);
+                // A refused bitmap keeps the already completed index intact.
+                let used = budget.used();
+                let held = budget.reserve(budget.limit() - used).unwrap();
+                assert!(index.scan_membership(&budget).is_none());
+                assert_eq!(
+                    index.get(&base.to_ne_bytes()),
+                    Some(&(1 + (copies - 1) * 3))
+                );
+                drop(held);
+                let bitmap = index.scan_membership(&budget).unwrap();
+                assert_eq!(bitmap.cardinality(), 3);
+                for offset in 0..=1024 {
+                    assert_eq!(bitmap.contains(base + offset), offset % 512 == 0);
+                }
+                drop(bitmap);
+                index.remove(&base.to_ne_bytes()).unwrap();
+                assert!(index.populated_keys.is_none());
+                let bitmap = index.scan_membership(&budget).unwrap();
+                assert_eq!(bitmap.cardinality(), 2);
+                assert!(!bitmap.contains(base));
+                assert!(bitmap.contains(base + 1024));
+                drop(bitmap);
+                drop(index);
+                drop(keys);
+                assert_eq!(budget.used(), 0);
+            }
+        }
+    }
 
     #[test]
     fn immutable_views_share_lookups_but_keep_worker_counters_local() {
@@ -410,6 +694,69 @@ mod tests {
         drop(index);
         drop(keys);
         assert_eq!(budget.used(), 0);
+    }
+
+    #[test]
+    fn populated_rejection_matches_hash_keys_with_nulls_duplicates_and_mutation() {
+        for copies in [1, 4] {
+            let budget = Budget::new(1 << 20);
+            let mut numbers = (0..copies)
+                .flat_map(|_| (0..64).map(|i| Some(1024 + i * 64)))
+                .collect::<Vec<_>>();
+            numbers.extend([None, Some(1024)]);
+            let rows = numbers.len();
+            let value = Value::adopt(Arc::new(Decimal128Array::from(numbers)), &budget).unwrap();
+            let keys = Keys::new(&[value], rows, &budget).unwrap();
+            let late = 999_999_i128.to_ne_bytes();
+            let mut populated = JoinIndex::new(&keys, rows, &budget, false).unwrap();
+            let mut inserted = JoinIndex::new(&keys, rows, &budget, false).unwrap();
+            let mut next = vec![u32::MAX; rows];
+            populated.populate(&keys, &mut next);
+            for row in 0..rows {
+                if keys.valid(row) {
+                    inserted.insert(keys.row(row), row as u32);
+                }
+            }
+            // Exercise both the sequential-build choice and the duplicate-heavy
+            // distinct-key fallback, without changing the admitted bitmap.
+            assert_eq!(rows <= populated.len() * 2, copies == 1);
+            assert!(populated.populated_keys.is_some());
+            assert!(inserted.populated_keys.is_none());
+            let exhausted = Budget::new(0);
+            assert!(!populated.enable_rejection(8192, &exhausted));
+            assert_eq!(exhausted.used(), 0);
+            assert!(populated.enable_rejection(8192, &budget));
+            assert!(inserted.enable_rejection(8192, &budget));
+            assert_eq!(populated.rejection_stats().0, inserted.rejection_stats().0);
+            let scan = populated.scan_membership(&budget).unwrap();
+            assert!(populated.scan_membership(&exhausted).is_none());
+            for n in (0_i128..6000).chain([i128::MIN, i128::MAX]) {
+                assert_eq!(
+                    populated.get(&n.to_ne_bytes()),
+                    inserted.get(&n.to_ne_bytes())
+                );
+                assert_eq!(scan.contains(n), inserted.get(&n.to_ne_bytes()).is_some());
+            }
+            let removed = 1024_i128.to_ne_bytes();
+            assert_eq!(populated.remove(&removed), inserted.remove(&removed));
+            assert!(populated.populated_keys.is_none());
+            assert_eq!(populated.get(&removed), None);
+            assert!(!populated.scan_membership(&budget).unwrap().contains(1024));
+            assert_eq!(populated.insert(&late, 99), inserted.insert(&late, 99));
+            assert_eq!(populated.rejection_stats().0, 0);
+            assert_eq!(populated.get(&late), Some(&99));
+            assert!(
+                populated
+                    .scan_membership(&budget)
+                    .unwrap()
+                    .contains(999_999)
+            );
+            drop(scan);
+            drop(populated);
+            drop(inserted);
+            drop(keys);
+            assert_eq!(budget.used(), 0);
+        }
     }
 
     #[test]

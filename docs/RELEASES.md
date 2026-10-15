@@ -5,7 +5,8 @@
 | Alpha 1 | 0.1.0a1 | 0.1.0-alpha.1 | 44b5ab5ede4504649217ee9909f9c265b44b31b7 |
 | Alpha 2 | 0.1.0a2 | 0.1.0-alpha.2 | 17b575b7c556c47ccc461209f02d28e6a5cf6045 |
 
-This tree is the sanitized Alpha 2 snapshot, not current development main.
+The historical Alpha 2 export is preserved in Git history. The current development
+source promotion is described in [SNAPSHOT-PROMOTION](SNAPSHOT-PROMOTION.md).
 EXPORT-MANIFEST.json records each exported path, upstream Git blob identity when
 applicable, sanitization notes, and SHA-256 of the exported bytes.
 Export commits will have different identities from their original sources.
@@ -33,7 +34,8 @@ This establishes the Rust source independently of the PyPI publication record.
 
 Historical package checks are not new tests of this sanitized export.
 No repository scripts, builds, SQL, package tests, or proof campaigns were run
-during export review. This export has not been published.
+during the historical Alpha 1/2 export review. Current snapshot checks are recorded
+separately. The development snapshot has not been published as a package.
 
 ## Release differences
 

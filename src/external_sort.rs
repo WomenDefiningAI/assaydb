@@ -15,7 +15,142 @@ use arrow::{
     record_batch::RecordBatch,
     row::{RowConverter, Rows, SortField},
 };
-use std::{collections::VecDeque, time::Instant};
+use std::{cmp::Ordering, collections::VecDeque, time::Instant};
+#[cfg(test)]
+mod top_k_tests;
+
+/// Select a completed sort's prefix with O(k) indices. The max heap is ordered
+/// by (the same Arrow typed comparator, input ordinal); no input is skipped.
+/// Arrow's legacy full sort is unstable on ties. Until that separate contract
+/// changes, decline if ties in/at the prefix could make its bytes differ from
+/// the stable selection. Ties strictly after the prefix cannot affect it.
+pub(crate) fn try_top_k_indices(
+    columns: &[SortColumn],
+    rows: usize,
+    k: usize,
+    budget: &Budget,
+    cancel: &Cancellation,
+) -> Result<Option<(UInt32Array, Reservation)>> {
+    use arrow::{compute::kernels::sort::LexicographicalComparator, datatypes::DataType};
+    cancel.check()?;
+    if k == 0 || k > 4096 || k.saturating_mul(4) >= rows || rows > u32::MAX as usize {
+        return Ok(None);
+    }
+    // Flat arrays share their payloads/null buffers when the comparator is
+    // constructed. Do not admit nested/dictionary types with hidden workspace.
+    if columns.iter().any(|column| {
+        column.values.len() != rows
+            || !matches!(
+                column.values.data_type(),
+                DataType::Null
+                    | DataType::Boolean
+                    | DataType::Int32
+                    | DataType::Int64
+                    | DataType::UInt32
+                    | DataType::Float64
+                    | DataType::Decimal128(_, _)
+                    | DataType::Date32
+                    | DataType::Utf8
+                    | DataType::Binary
+            )
+    }) {
+        return Ok(None);
+    }
+    let Some(bytes) = columns
+        .len()
+        .checked_mul(1024)
+        .and_then(|n| k.checked_mul(16).and_then(|k| n.checked_add(k)))
+        .and_then(|n| n.checked_add(1024))
+    else {
+        return Ok(None);
+    };
+    // Reservation denial is an optimization miss. The existing full-sort
+    // workspace remains available, and no partial output has escaped.
+    let Ok(credit) = budget.reserve(bytes) else {
+        return Ok(None);
+    };
+    let columns = columns
+        .iter()
+        .filter(|column| column.values.data_type() != &DataType::Null)
+        .cloned()
+        .collect::<Vec<_>>();
+    let comparator = LexicographicalComparator::try_new(&columns).map_err(|e| e.to_string())?;
+    let compare = |a: u32, b: u32| {
+        comparator
+            .compare(a as usize, b as usize)
+            .then_with(|| a.cmp(&b))
+    };
+    let mut heap = Vec::<u32>::new();
+    if heap.try_reserve_exact(k).is_err() {
+        return Ok(None);
+    }
+    let mut best_discarded: Option<u32> = None;
+    for row in 0..rows as u32 {
+        #[cfg(test)]
+        top_k_tests::checkpoint(row, cancel);
+        if row % 1024 == 0 {
+            cancel.check()?;
+        }
+        if heap.len() < k {
+            heap.push(row);
+            let mut child = heap.len() - 1;
+            while child > 0 {
+                let parent = (child - 1) / 2;
+                if compare(heap[parent], heap[child]) != Ordering::Less {
+                    break;
+                }
+                heap.swap(parent, child);
+                child = parent;
+            }
+        } else {
+            let discarded = if compare(row, heap[0]) == Ordering::Less {
+                let discarded = std::mem::replace(&mut heap[0], row);
+                sift_down(&mut heap, &compare);
+                discarded
+            } else {
+                row
+            };
+            if best_discarded.is_none_or(|old| compare(discarded, old) == Ordering::Less) {
+                best_discarded = Some(discarded);
+            }
+        }
+    }
+    heap.sort_unstable_by(|a, b| compare(*a, *b));
+    if heap
+        .windows(2)
+        .any(|pair| comparator.compare(pair[0] as usize, pair[1] as usize) == Ordering::Equal)
+        || best_discarded.is_some_and(|discarded| {
+            comparator.compare(heap[k - 1] as usize, discarded as usize) == Ordering::Equal
+        })
+    {
+        return Ok(None);
+    }
+    cancel.check()?;
+    // Charge both the index vector and Arrow's conversion/replacement peak.
+    Ok(Some((UInt32Array::from(heap), credit)))
+}
+
+/// Restores a max heap after replacing its root; length/capacity never change.
+fn sift_down(heap: &mut [u32], compare: &impl Fn(u32, u32) -> Ordering) {
+    let mut parent = 0;
+    loop {
+        let left = parent * 2 + 1;
+        if left >= heap.len() {
+            break;
+        }
+        let right = left + 1;
+        let child = if right < heap.len() && compare(heap[left], heap[right]) == Ordering::Less {
+            right
+        } else {
+            left
+        };
+        if compare(heap[parent], heap[child]) != Ordering::Less {
+            break;
+        }
+        heap.swap(parent, child);
+        parent = child;
+    }
+}
 
 /// Arrow's comparator does not order NullArray. A statically NULL sort key
 /// ties every row, so omit it without changing any remaining key's priority.

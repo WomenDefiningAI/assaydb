@@ -222,6 +222,8 @@ mod tests {
             .map(|n| n.to_ne_bytes().to_vec().into_boxed_slice())
             .collect();
         ScanKeyFilter {
+            previous: None,
+            optional_total: false,
             expressions: vec![Expr {
                 kind: Kind::Column(0),
                 ty: Type::Int,
@@ -574,13 +576,18 @@ mod tests {
         };
         let budget = Budget::new(8 << 20);
         let mut ctx = Context {
+            filtered_reuse: None,
+            build_groups: None,
+            demand_cache: None,
             shared_attempt: None,
             options: &options,
             scan_filters: HashMap::new(),
             static_filters: HashMap::new(),
             scan_transforms: HashMap::new(),
+            lane_transforms: HashMap::new(),
             replay_transforms: HashMap::new(),
             materialized: HashMap::new(),
+            sideways_registry_lease: None,
             spill: None,
             budget: budget.clone(),
             metrics: Default::default(),

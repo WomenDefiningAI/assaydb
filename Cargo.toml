@@ -10,8 +10,12 @@ description = "Experimental analytical SQL engine with Arrow results and a JSON 
 readme = "docs/CRATE-README.md"
 keywords = ["sql", "analytics", "arrow"]
 categories = ["database-implementations", "command-line-utilities"]
-include = ["/src/**", "/tests/*.rs", "/tests/fixtures/**", "/docs/CRATE-README.md", "/Cargo.toml", "/Cargo.lock", "/rust-toolchain.toml", "/LICENSE-MIT", "/LICENSE-APACHE", "/THIRD-PARTY-NOTICES", "/THIRD-PARTY-LICENSES"]
+include = ["/src/**", "/tests/*.rs", "/tests/fixtures/**", "/tests/support/**", "/tests/left_join_count/**", "/docs/CRATE-README.md", "/Cargo.toml", "/Cargo.lock", "/rust-toolchain.toml", "/LICENSE-MIT", "/LICENSE-APACHE", "/THIRD-PARTY-NOTICES", "/THIRD-PARTY-LICENSES"]
 default-run = "assaydb"
+
+[features]
+default = []
+verified-hooks = []
 
 [dependencies]
 arrow = { version = "=57.0.0", default-features = false, features = ["ipc"] }
