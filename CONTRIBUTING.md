@@ -24,8 +24,8 @@ or expensive benchmark work with maintainers before implementation.
    cargo fmt --all -- --check
    ```
    Add a regression for the behavior, including relevant NULLs, empty inputs,
-   duplicates, boundaries, and refusals. Documentation-only changes need link,
-   example, and privacy review. Python changes need fresh installed-package
+   duplicates, boundaries, and refusals. Documentation changes also need link, example, and privacy review; these
+   local checks do not exempt a PR from the full independent merge gate. Python changes need fresh installed-package
    checks following [BUILDING](bindings/python/BUILDING.md).
 3. Review every proposed commit for private data, credentials, session links,
    personal contact details, and upstream licensing. Use a GitHub noreply email
@@ -44,22 +44,24 @@ never benchmark a busy host or take independent nested locks.
 
 ## Maintainer verification and current availability
 
-The intended path is a focused draft PR, local checks, maintainer review,
-scope-appropriate TestMini correctness and benchmark evidence, reviewed acceptance,
-and then approval and merge. TestMini execution and accepted-result publication
-are being prepared; this repository does not yet provide operating public
-automation for that path. No fresh TestMiniM4 Alpha 1/2 baseline is available.
-Leave unavailable checks and acceptance marked **pending**, rather than claiming
-a pass or implying that a platform merge check enforces this process.
+Every PR considered for merge requires independent Test Mini full SLT, frozen
+55K differential, SF10 correctness and timing, real-world original and variant
+analysis, standard checks and acceptance-small evidence. Missing inputs or runs
+block merge. There is no automatic documentation-only exemption. See
+[the full-suite setup and current blockers](testing/README.md).
 
-Maintainers agree on the required checks and compare the tested source revision
-with the current PR head and base. Results must be attached or linked to the PR,
-include failures and limitations, and be accepted before the change is approved.
-Any execution-affecting change invalidates old results and requires a rerun.
-Documentation-only changes receive link, example, privacy and presentation checks
-suited to their scope; they do not automatically require native benchmarks.
-Evidence-only commits need explicit final-head validation as described in the
-[planned result contract](docs/CONTRIBUTION-RESULTS.md).
+Open a focused draft PR, collect evidence against the exact candidate and base,
+and attach or link all results for maintainer review. Keep passed, unsupported,
+wrong, error, excluded and not-run outcomes distinct. Use fresh same-host baseline
+and candidate measurements with identical pinned tools and inputs. Changes that
+affect execution invalidate prior results. Evidence-only changes require explicit
+final-head delta review; never relabel an old result as a new run.
+
+Public automation does not yet enforce this complete gate. The result-contract
+prototype performs structural validation; trusted collector integration and raw
+measurement review remain required. GitHub checks and merged-PR attribution alone
+are not full-suite qualification. PR #4 was merged without full SLT, 55K or SF10
+runs and remains unqualified under this requirement.
 
 For performance work, start with a small slow-query reproduction using data you
 can redistribute. Agree on the workload, baseline and timing method before an

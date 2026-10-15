@@ -1,7 +1,8 @@
-# Planned contribution result contract
+# Contribution result contract and implementation status
 
-This is a design for maintainer verification, not an implemented runner, CI gate
-or result publisher. TestMini execution and accepted-result publication are being
+The structural validator is implemented in `testing/result_contract.py`.
+Collector adapters, independent timing calculation, acceptance and chart publishing
+remain incomplete; it is not an operating full-suite runner or hosted CI gate. TestMini execution and accepted-result publication are being
 prepared. No new run, baseline, proof or accepted measurement is claimed here.
 At the 2026-10-13 workflow review, the public ruleset had no branch target;
 these requirements must not be presented as enforced merge checks. This document changes no repository or
@@ -11,8 +12,9 @@ hosting settings.
 
 The intended sequence is draft PR → local checks → maintainer review and agreed
 scope → appropriate TestMini correctness/benchmark runs → evidence attached or
-linked to the PR → maintainer acceptance → approval and merge. Documentation-only
-changes use checks appropriate to their scope. Package publication remains a
+linked to the PR → maintainer acceptance → approval and merge. Every considered PR requires full independent Test Mini SLT, 55K, SF10 and
+real-world evidence plus standard checks. Missing required results block merge;
+there is no automatic documentation-only exemption. Package publication remains a
 separate release action. A merged PR earns attribution, not a correctness
 certificate or an automatic benchmark endorsement.
 
@@ -70,7 +72,8 @@ pushes or base changes, and merge only the reviewed head.
 
 A protected, versioned acceptance record must link the accepted result hashes,
 tested source, final head, base, scope, limitations and maintainer decision.
-The accepted chart-data update belongs to the reviewed merge; the intended site deployment then publishes that version from main. Automatic deployment is not yet verified. Future charts
+The accepted chart-data update belongs to the reviewed merge; the intended site deployment then publishes that version from main. Automatic Vercel deployment from public main was verified for PR #4;
+that deployment did not qualify its source under the full-suite gate. Future charts
 and their no-JavaScript fallbacks must derive from the same versioned accepted
 data, never from PR prose or the contribution-credit list. Until that path exists
 and new measurements are accepted, retain all current historical chart JSON,

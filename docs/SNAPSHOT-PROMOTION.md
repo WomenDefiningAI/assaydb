@@ -52,9 +52,10 @@ Subsequent documentation/site-evidence-only commits require explicit final-head
 validation; any executable-source delta requires fresh checks.
 
 Full SQL logic corpus, frozen 55K plans and SF10 benchmark inputs are unavailable
-on the validation host and are not run. This source-only promotion follows the
-normal public PR checks; those broader campaigns remain prerequisites for any
-claim that depends on them. To run them, provide the exact pinned corpus/plans
+on the validation host and are not run. PR #4 merged with these campaigns not run. The owner subsequently clarified
+that every considered PR requires the full independent Test Mini gate. This
+snapshot remains unqualified under that gate; its smaller checks are not a
+substitute. To run them, provide the exact pinned corpus/plans
 and licensed benchmark inputs with expected hashes and references.
 
 ## Website and contribution evidence
