@@ -17,7 +17,9 @@ PACKAGE = Path("bindings/python")
 PACKAGE_DIRS = ("src", "python", "tests", "notebooks")
 PACKAGE_FILES = ("Cargo.toml", "Cargo.lock", "pyproject.toml", "README.md", "BUILDING.md", "LICENSE-MIT", "LICENSE-APACHE", "THIRD-PARTY-NOTICES", "THIRD-PARTY-LICENSES")
 ENGINE_FILES = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "LICENSE-MIT", "LICENSE-APACHE", "THIRD-PARTY-NOTICES", "THIRD-PARTY-LICENSES", "docs/CRATE-README.md")
-ENGINE_FIXTURES = ("tests/fixtures/sqlite-real-conversion.tsv", "tests/fixtures/exact-ratio-rounding.json")
+ENGINE_FIXTURES = ("tests/fixtures/sqlite-real-conversion.tsv", "tests/fixtures/exact-ratio-rounding.json",
+                   "tests/fixtures/auto-spill-pipeline.sql", "tests/support/auto_spill.rs",
+                   "tests/left_join_count/fixture.rs")
 
 
 def git(root: Path, *args: str) -> bytes:

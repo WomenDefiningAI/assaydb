@@ -2,6 +2,8 @@
 //! encounter order independent of the index representation. NULL stays outside.
 //! Dense slots compact representable IDs; wider IDs remain exact in hashing.
 use crate::memory::{Budget, Reservation};
+use hashbrown::HashMap as NumericMap;
+#[cfg(test)]
 use std::collections::HashMap;
 
 struct Dense {
@@ -10,7 +12,7 @@ struct Dense {
     _lease: Reservation,
 }
 pub(crate) struct NumericGroups {
-    hash: HashMap<i128, usize, ahash::RandomState>,
+    hash: NumericMap<i128, usize, ahash::RandomState>,
     dense: Option<Dense>,
     bounds: Option<(i128, i128)>,
     // Only compact IDs contribute to dense admission and key-domain bounds.
@@ -21,7 +23,7 @@ pub(crate) struct NumericGroups {
 impl Default for NumericGroups {
     fn default() -> Self {
         Self {
-            hash: HashMap::with_hasher(ahash::RandomState::new()),
+            hash: NumericMap::with_hasher(ahash::RandomState::new()),
             dense: None,
             bounds: None,
             count: 0,
@@ -60,6 +62,77 @@ fn grown_slots(old: Option<&Dense>, base: i128, len: usize) -> Vec<u32> {
     slots
 }
 impl NumericGroups {
+    pub(crate) fn allocation_bytes(&self) -> usize {
+        self.hash.allocation_size()
+    }
+
+    pub(crate) fn hash_len(&self) -> usize {
+        self.hash.len()
+    }
+
+    pub(crate) fn needs_hash(&self, key: i128, group: usize) -> bool {
+        compact_id(group).is_none()
+            || self
+                .dense
+                .as_ref()
+                .is_none_or(|dense| offset(key, dense.base).is_none_or(|i| i >= dense.slots.len()))
+    }
+
+    /// hashbrown 0.16 uses power-of-two buckets, 7/8 occupancy (one empty
+    /// bucket for tiny tables), and at most 16 trailing control bytes. The
+    /// (i128, usize) bucket stride is a multiple of its control alignment.
+    pub(crate) fn growth_bytes(&self, entries: usize) -> crate::Result<usize> {
+        if entries <= self.hash.capacity() {
+            return Ok(0);
+        }
+        let buckets = if entries < 4 {
+            4
+        } else if entries < 8 {
+            8
+        } else if entries < 15 {
+            16
+        } else {
+            entries
+                .checked_mul(8)
+                .and_then(|n| (n / 7).checked_next_power_of_two())
+                .ok_or("numeric hash capacity overflow")?
+        };
+        buckets
+            .checked_mul(std::mem::size_of::<(i128, usize)>() + 1)
+            .and_then(|n| n.checked_add(16))
+            .ok_or_else(|| "numeric hash capacity overflow".into())
+    }
+
+    pub(crate) fn grow(
+        &mut self,
+        entries: usize,
+        retained: &mut Reservation,
+        credit: &mut Reservation,
+    ) -> crate::Result<()> {
+        let bytes = self.growth_bytes(entries)?;
+        if bytes == 0 {
+            return Ok(());
+        }
+        let old = self.hash.allocation_size();
+        let old_allocation = retained.split_off(old)?;
+        let mut allocation = match credit.split_off(bytes) {
+            Ok(allocation) => allocation,
+            Err(error) => {
+                retained.absorb(old_allocation);
+                return Err(error);
+            }
+        };
+        let mut next = NumericMap::with_capacity_and_hasher(entries, self.hash.hasher().clone());
+        let actual = next.allocation_size();
+        assert!(actual <= bytes);
+        next.extend(self.hash.drain());
+        self.hash = next; // Free old buckets before returning their credit.
+        credit.absorb(old_allocation);
+        credit.absorb(allocation.split_off(bytes - actual)?);
+        retained.absorb(allocation);
+        Ok(())
+    }
+
     /// The source-domain proof has already established all keys lie in this
     /// exact window and that every local group ID fits below the u32 sentinel.
     pub(crate) fn with_proven_window(
@@ -121,6 +194,18 @@ impl NumericGroups {
     /// domain assumptions. Sparse outliers remain in hashing indefinitely.
     /// Returns true only when a new dense allocation was installed.
     pub fn prepare(&mut self, budget: &Budget) -> bool {
+        self.prepare_inner(budget, None)
+    }
+
+    pub(crate) fn prepare_accounted(
+        &mut self,
+        budget: &Budget,
+        retained: &mut Reservation,
+    ) -> bool {
+        self.prepare_inner(budget, Some(retained))
+    }
+
+    fn prepare_inner(&mut self, budget: &Budget, retained: Option<&mut Reservation>) -> bool {
         if self.pending_dense == 0 {
             return false;
         }
@@ -151,7 +236,7 @@ impl NumericGroups {
         else {
             return false;
         };
-        // The existing hash accounting allows 96 key/index bytes per group.
+        // Dense admission uses a conservative per-key density threshold.
         // Bound this optional extra allocation even under very large budgets.
         // A portable 32 MiB payload cap bounds the compact table to 2^23 slots;
         // a smaller slot must not automatically double optional domain coverage.
@@ -164,6 +249,7 @@ impl NumericGroups {
         let base = min.checked_sub(((len - span) / 2) as i128).unwrap_or(min);
         // Hold old and new reservations simultaneously throughout copying.
         let mut slots = grown_slots(self.dense.as_ref(), base, len);
+        let old_hash_bytes = self.hash.allocation_size();
         if self.has_wide_ids {
             // Wide IDs keep exact usize values in hashing. Remove migrated
             // entries, then shrink the remainder under the ordinary old/new
@@ -177,13 +263,25 @@ impl NumericGroups {
                     true
                 }
             });
-            self.hash.shrink_to_fit();
+            if retained.is_some() {
+                // Shrinking may allocate another table. Keep the old table
+                // funded and skip this optional copy if its credit is refused.
+                if let Ok(_copy) = budget.reserve(old_hash_bytes) {
+                    self.hash.shrink_to_fit();
+                }
+            } else {
+                self.hash.shrink_to_fit();
+            }
         } else {
             for (key, group) in &self.hash {
                 // Every inserted ID fits and differs from the sentinel.
                 slots[offset(*key, base).unwrap()] = *group as u32;
             }
-            self.hash = HashMap::with_hasher(ahash::RandomState::new());
+            self.hash = NumericMap::with_hasher(ahash::RandomState::new());
+        }
+        if let Some(retained) = retained {
+            retained
+                .release_excess(retained.bytes() - (old_hash_bytes - self.hash.allocation_size()));
         }
         self.dense = Some(Dense {
             base,
@@ -207,6 +305,47 @@ fn compact_id(group: usize) -> Option<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn numeric_hash_failed_credit_split_preserves_table_and_funding() {
+        for missing_old in [false, true] {
+            let budget = Budget::new(4096);
+            let mut retained = budget.reserve(0).unwrap();
+            let mut credit = budget.reserve(1024).unwrap();
+            let mut index = NumericGroups::default();
+            index.grow(3, &mut retained, &mut credit).unwrap();
+            for n in 0..3 {
+                index.insert(n, n as usize);
+            }
+            let backing = if missing_old {
+                Some(retained.split_off(retained.bytes()).unwrap())
+            } else {
+                credit.release_excess(0);
+                None
+            };
+            let before = (
+                index.allocation_bytes(),
+                retained.bytes(),
+                credit.bytes(),
+                budget.used(),
+            );
+            assert!(index.grow(4, &mut retained, &mut credit).is_err());
+            assert_eq!(
+                (
+                    index.allocation_bytes(),
+                    retained.bytes(),
+                    credit.bytes(),
+                    budget.used()
+                ),
+                before
+            );
+            for n in 0..3 {
+                assert_eq!(index.get(n), Some(n as usize));
+            }
+            drop(index);
+            drop(backing);
+        }
+    }
 
     #[test]
     fn dense_slots_charge_their_compact_width() {

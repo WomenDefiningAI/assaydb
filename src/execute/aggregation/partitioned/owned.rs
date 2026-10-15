@@ -44,7 +44,6 @@ pub(in crate::execute) struct OwnedJob {
     raw: Arc<RawPartial>,
     groups: Vec<usize>,
     funding: Option<Reservation>,
-    growth: usize,
     state_bytes: usize,
     slot: usize,
     generation: u64,
@@ -185,7 +184,7 @@ impl OwnedPartitions {
     }
     fn submit_routed_inner(
         &mut self,
-        routed: RoutedPartial,
+        mut routed: RoutedPartial,
         cancellation: &crate::spill::Cancellation,
     ) -> Result<Vec<OwnedJob>> {
         self.check_admission(cancellation)?;
@@ -197,6 +196,16 @@ impl OwnedPartitions {
         // Keep the owning fragment intact across every fallible reservation,
         // so routing buffers always drop before their prepaid metadata credit.
         // No partition moves and no destination mutates until every lease exists.
+        if routed.raw.numeric_group_keys.is_some() {
+            for (slot, groups) in routed.groups.iter().enumerate() {
+                let state = &self.slots[slot].as_ref().expect("idle partition").state;
+                let needed = state
+                    .numeric_merge_headroom_sources(routed.plan.state_sources(), groups.len())?
+                    .checked_add(groups.len() * ORDER_BYTES_PER_GROUP)
+                    .ok_or("partition growth overflow")?;
+                routed.growth[slot] = routed.growth[slot].max(needed);
+            }
+        }
         let funding = routed
             .growth
             .iter()
@@ -205,7 +214,7 @@ impl OwnedPartitions {
         let routing::RoutedPartial {
             raw,
             groups,
-            growth,
+            growth: _,
             plan,
             credit,
         } = routed;
@@ -217,9 +226,7 @@ impl OwnedPartitions {
         });
         let count = groups.iter().filter(|g| !g.is_empty()).count();
         let mut jobs = Vec::with_capacity(count);
-        for (slot, ((groups, growth), funding)) in
-            groups.into_iter().zip(growth).zip(funding).enumerate()
-        {
+        for (slot, (groups, funding)) in groups.into_iter().zip(funding).enumerate() {
             if groups.is_empty() {
                 continue;
             }
@@ -231,7 +238,6 @@ impl OwnedPartitions {
                 raw: raw.clone(),
                 groups,
                 funding: Some(funding),
-                growth,
                 state_bytes,
                 slot,
                 generation: self.generation,
@@ -353,7 +359,9 @@ impl OwnedJob {
         cancellation: &crate::spill::Cancellation,
     ) -> OwnedCompletion {
         let partition = self.partition.as_mut().unwrap();
-        partition.state.add_merge_credit(self.growth);
+        partition
+            .state
+            .add_merge_credit(self.funding.take().unwrap());
         let mut destinations = Vec::with_capacity(self.groups.len());
         let mut error = self
             .receipt
@@ -430,9 +438,7 @@ impl OwnedJob {
                 }
             }
         }
-        partition
-            .state
-            .retain_merge_credit(self.funding.take().unwrap(), self.growth);
+        partition.state.retain_merge_credit();
         self.armed = false;
         OwnedCompletion {
             partition: self.partition.take(),

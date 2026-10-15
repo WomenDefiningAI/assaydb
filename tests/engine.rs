@@ -1488,41 +1488,45 @@ fn composite_scan_filter_costs_use_joint_domains_without_changing_answers() {
             false,
         ),
     ] {
-        for batch_size in [1, 31, 8192] {
-            let on = Options {
-                batch_size,
-                ..Options::default()
-            };
-            let off = Options {
-                relational_optimizations: false,
-                ..on.clone()
-            };
-            let mut p = prepare(sql, &f.tables(), &on).unwrap();
-            actual_domains(p.relational.as_mut().unwrap());
-            let actual = execute(&p, &on).unwrap();
-            let expected = execute(&prepare(sql, &f.tables(), &off).unwrap(), &off).unwrap();
-            assert_eq!(actual.batch, expected.batch);
-            assert_eq!(
-                actual.metrics.dynamic_scan_filters > 0,
-                expects_filter,
-                "{sql}"
-            );
-            if expects_filter {
-                assert!(actual.metrics.cached_scan_filters > 0);
-            }
-            if pair {
-                assert!(actual.metrics.numeric_pair_scan_filters > 0);
-            } else {
-                assert_eq!(actual.metrics.bitmap_scan_filters > 0, expects_filter);
-                let sync = Options {
-                    parquet_cache_bytes: None,
+        for workers in [1, 2, 4, 10] {
+            for batch_size in [1, 31, 8192] {
+                let on = Options {
+                    workers,
+                    batch_size,
+                    ..Options::default()
+                };
+                let off = Options {
+                    workers: 1,
+                    relational_optimizations: false,
                     ..on.clone()
                 };
-                let mut p = prepare(sql, &f.tables(), &sync).unwrap();
+                let mut p = prepare(sql, &f.tables(), &on).unwrap();
                 actual_domains(p.relational.as_mut().unwrap());
-                let prior = execute(&p, &sync).unwrap();
-                assert_eq!(prior.batch, expected.batch);
-                assert_eq!(prior.metrics.dynamic_scan_filters, 0);
+                let actual = execute(&p, &on).unwrap();
+                let expected = execute(&prepare(sql, &f.tables(), &off).unwrap(), &off).unwrap();
+                assert_eq!(actual.batch, expected.batch);
+                assert_eq!(
+                    actual.metrics.dynamic_scan_filters > 0,
+                    expects_filter,
+                    "{sql}"
+                );
+                if expects_filter {
+                    assert!(actual.metrics.cached_scan_filters > 0);
+                }
+                if pair {
+                    assert!(actual.metrics.numeric_pair_scan_filters > 0);
+                } else {
+                    assert_eq!(actual.metrics.bitmap_scan_filters > 0, expects_filter);
+                    let sync = Options {
+                        parquet_cache_bytes: None,
+                        ..on.clone()
+                    };
+                    let mut p = prepare(sql, &f.tables(), &sync).unwrap();
+                    actual_domains(p.relational.as_mut().unwrap());
+                    let prior = execute(&p, &sync).unwrap();
+                    assert_eq!(prior.batch, expected.batch);
+                    assert_eq!(prior.metrics.dynamic_scan_filters, 0);
+                }
             }
         }
     }

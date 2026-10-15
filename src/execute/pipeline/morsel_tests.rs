@@ -20,13 +20,19 @@ fn physical_row_group_morsels_preserve_sql_batches_and_reduce_dispatches() {
         let actual = execute(&prepared, &new, budget.clone()).unwrap();
         assert_eq!(actual.batch, expected.batch);
         assert_eq!(actual.metrics.pipeline_source_batches, 32);
-        assert_eq!(actual.metrics.pipeline_step_jobs, 4);
-        assert_eq!(actual.metrics.pipeline_runtime_submitted[0], 4);
+        // Helpers still dispatch whole group morsels; caller dispatches yield
+        // after one batch (and may need a separate dispatch to observe EOF).
+        assert!((4..=36).contains(&actual.metrics.pipeline_step_jobs));
+        assert_eq!(
+            actual.metrics.pipeline_runtime_submitted[0],
+            actual.metrics.pipeline_step_jobs
+        );
         assert_eq!(
             actual.metrics.pipeline_runtime_submitted,
             actual.metrics.pipeline_runtime_completed
         );
         if workers == 1 {
+            assert_eq!(actual.metrics.pipeline_step_jobs, 36);
             assert_eq!(actual.metrics.pipeline_runtime_background, [0; 3]);
         }
         drop(actual);

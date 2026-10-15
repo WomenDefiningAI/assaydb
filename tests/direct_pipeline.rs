@@ -121,7 +121,7 @@ fn default_ten_worker_pipeline_matches_serial_results_and_encounter_order() {
             );
         }
         assert!(metrics.pipeline_runtime_peak_outstanding <= 20);
-        assert!(metrics.worker_threads_peak < parallel.workers);
+        assert!(metrics.worker_threads_peak <= parallel.workers);
         assert!(metrics.pipeline_background_routes <= metrics.pipeline_source_routes);
         assert!(parallel.cancellation.check().is_ok());
     }
@@ -188,7 +188,7 @@ fn default_low_memory_candidate_replays_baseline_once_without_cancelling_caller(
         output.metrics.peak_reserved_bytes >= output.metrics.pipeline_candidate_peak_reserved_bytes
     );
     assert!(output.metrics.peak_reserved_bytes <= constrained.memory_bytes);
-    assert!(output.metrics.worker_threads_peak < constrained.workers);
+    assert!(output.metrics.worker_threads_peak <= constrained.workers);
     assert!(constrained.cancellation.check().is_ok());
 }
 

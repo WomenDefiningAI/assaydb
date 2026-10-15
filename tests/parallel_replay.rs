@@ -73,7 +73,7 @@ fn shared_scan_aliases_subset_first_and_optimizer_controls_match() {
                         result.batch, expected.batch,
                         "{sql} workers{workers} batch{batch_size} pushdown{projection_pushdown}"
                     );
-                    assert!(result.metrics.worker_threads_peak < workers);
+                    assert!(result.metrics.worker_threads_peak <= workers);
                     if workers == 1 {
                         assert_eq!(result.metrics.parallel_replays, 0);
                     }

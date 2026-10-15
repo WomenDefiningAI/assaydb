@@ -1,13 +1,17 @@
-//! Test-only owned build/probe composition using the existing join kernel.
+//! Owned build/probe composition using the existing join kernel.
+//! Production lanes admit only unique builds. Test-only duplicate chains and
+//! their borrowed comparison oracle remain newest-first; these tests certify
+//! ownership, accounting and kernel equivalence, not LEFT build-insertion order.
 use super::*;
 use crate::{
     expr::Expr, join_index::owned::OwnedJoinIndex, memory::Reservation, spill::Cancellation,
 };
+#[cfg(test)]
 use std::sync::Arc;
 
 impl Index for &OwnedJoinIndex {
-    fn head(&self, key: &[u8], _counts: &mut ProbeCounts) -> Option<u32> {
-        OwnedJoinIndex::head(self, key)
+    fn head(&self, key: &[u8], counts: &mut ProbeCounts) -> Option<u32> {
+        OwnedJoinIndex::probe(self, key, counts)
     }
 }
 /// Build payload and keys remain immutable and charged until the last task drops.
@@ -16,17 +20,20 @@ pub(in crate::rel) struct OwnedBuild {
     budget: Budget,
     payload: crate::rel::funded_concat::FundedBatch,
 }
+#[cfg(test)]
 pub(in crate::rel) struct OutputBatch {
     pub batch: RecordBatch,
     // Transferred gather credits; the kernel reserves before Arrow allocation.
-    _credits: Vec<Reservation>,
+    pub(in crate::rel) _credits: Vec<Reservation>,
 }
+#[cfg(test)]
 pub(in crate::rel) struct ProbeBatch {
     batch: RecordBatch,
     budget: Budget,
     _payload: Reservation,
     _envelope: Option<Reservation>,
 }
+#[cfg(test)]
 impl ProbeBatch {
     pub fn adopt(batch: RecordBatch, budget: &Budget) -> Result<Self> {
         let credit = budget.reserve(batch.get_array_memory_size().saturating_add(256))?;
@@ -39,6 +46,7 @@ impl ProbeBatch {
     }
     /// Transfer a decoded batch's existing payload charge into the probe task.
     /// The caller retains source-position tokens before moving the batch here.
+    #[cfg(test)]
     pub fn from_scan(
         scan: crate::parquet_scan::cursor::ScanBatch,
         budget: &Budget,
@@ -59,6 +67,59 @@ impl ProbeBatch {
     }
 }
 impl OwnedBuild {
+    /// Admission proves a unique equality build; fund scratch and input through one ordered gather.
+    pub fn probe_unique(
+        &self,
+        batch: RecordBatch,
+        keys: &[(Expr, Expr)],
+        kind: JoinKind,
+        output_schema: SchemaRef,
+        cancel: &Cancellation,
+    ) -> Result<(RecordBatch, Reservation, Statistics)> {
+        cancel.check()?;
+        if batch.num_rows() > u32::MAX as usize {
+            return Err("invalid owned probe row/batch limit".into());
+        }
+        let workspace = batch
+            .num_rows()
+            .checked_mul(32)
+            .and_then(|n| n.checked_add(output_schema.fields().len().checked_mul(256)?))
+            .and_then(|n| n.checked_add(keys.len().checked_mul(128)?))
+            .and_then(|n| n.checked_add(batch.get_array_memory_size()))
+            .and_then(|n| n.checked_add(1280))
+            .ok_or("join candidate size overflow")?;
+        let _workspace = self.budget.reserve(workspace)?;
+        Kernel {
+            map: &self.index,
+            build: self.payload.batch(),
+            next: self.index.links(),
+            keys,
+            kind,
+            residual: None,
+            residual_program: None,
+            combined_schema: output_schema.clone(),
+            output_schema,
+            right_schema: self.payload.batch().schema(),
+            budget: &self.budget,
+            compact_text: true,
+            batch_size: batch.num_rows().max(1),
+            reserve_gathers: true,
+        }
+        .unique(batch, &|| cancel.check())
+    }
+    /// Adopt the same fully built keys and prepaid payload used by the serial join.
+    pub fn from_index(
+        payload: crate::rel::funded_concat::FundedBatch,
+        index: OwnedJoinIndex,
+        budget: &Budget,
+    ) -> Self {
+        Self {
+            index,
+            budget: budget.clone(),
+            payload,
+        }
+    }
+    #[cfg(test)]
     pub fn new(
         batch: RecordBatch,
         keys: &[Expr],
@@ -69,6 +130,7 @@ impl OwnedBuild {
         let funded = crate::rel::funded_concat::concat(&batch.schema(), &[batch], budget, cancel)?;
         Self::from_funded(funded, keys, budget, compact, cancel)
     }
+    #[cfg(test)]
     pub fn from_funded(
         payload: crate::rel::funded_concat::FundedBatch,
         keys: &[Expr],
@@ -109,6 +171,7 @@ impl OwnedBuild {
             payload,
         })
     }
+    #[cfg(test)]
     #[allow(clippy::too_many_arguments)]
     pub fn probe(
         &self,
@@ -238,6 +301,251 @@ mod tests {
     fn key_pairs() -> Vec<(Expr, Expr)> {
         vec![(column(0), column(0))]
     }
+
+    fn review_sparse_wide_fixture() -> (RecordBatch, RecordBatch) {
+        use arrow::array::StringArray;
+        let probe = RecordBatch::try_new(
+            fixture(false).schema(),
+            vec![
+                Arc::new(Int64Array::from(vec![1])),
+                Arc::new(Int64Array::from(vec![1])),
+            ],
+        )
+        .unwrap();
+        let mut fields = fixture(true).schema().fields().to_vec();
+        fields.push(Arc::new(Field::new("payload", DataType::Utf8, false)));
+        let build = RecordBatch::try_new(
+            Arc::new(Schema::new(fields)),
+            vec![
+                Arc::new(Int64Array::from(vec![1; 49])),
+                Arc::new(Int64Array::from_iter_values(
+                    (0..49).map(|i| if i % 7 == 0 { 0 } else { 2 }),
+                )),
+                Arc::new(StringArray::from_iter_values((0..49).map(|i| {
+                    if i % 7 == 0 {
+                        char::from(b'A' + (i / 7) as u8).to_string().repeat(1 << 20)
+                    } else {
+                        String::new()
+                    }
+                }))),
+            ],
+        )
+        .unwrap();
+        (probe, build)
+    }
+
+    #[test]
+    fn left_sparse_wide_review_counterexample_keeps_unfused_success() {
+        use arrow::array::StringArray;
+        // The INNER kernel retains c0e3dd6da's candidate-chunk behavior. Here
+        // every probe matches, so it is also a resource-admission control for
+        // that unfused LEFT path (the owned harness uses newest-first links).
+        for kind in [JoinKind::Inner, JoinKind::Left] {
+            let budget = Budget::new(64 << 20);
+            let (probe, build) = review_sparse_wide_fixture();
+            let schema = combined(&probe, &build);
+            let cancel = Cancellation::default();
+            let owned = OwnedBuild::new(build, &[column(0)], &budget, true, &cancel).unwrap();
+            let blocker = budget
+                .reserve(budget.limit() - budget.used() - (2 << 20))
+                .unwrap();
+            let before = budget.used();
+            let mut ids = Vec::new();
+            let stats = owned
+                .probe(
+                    ProbeBatch::adopt(probe, &budget).unwrap(),
+                    &key_pairs(),
+                    kind,
+                    Some(&residual()),
+                    schema.clone(),
+                    schema,
+                    true,
+                    7,
+                    &cancel,
+                    &mut |output| {
+                        assert_eq!(output.batch.num_rows(), 1);
+                        assert!(
+                            output
+                                ._credits
+                                .iter()
+                                .map(Reservation::bytes)
+                                .sum::<usize>()
+                                >= output.batch.get_array_memory_size()
+                        );
+                        let text = output
+                            .batch
+                            .column(4)
+                            .as_any()
+                            .downcast_ref::<StringArray>()
+                            .unwrap();
+                        assert_eq!(text.value(0).len(), 1 << 20);
+                        ids.push(text.value(0).as_bytes()[0]);
+                        Ok(())
+                    },
+                )
+                .unwrap();
+            assert_eq!(ids.as_slice(), b"GFEDCBA");
+            assert_eq!(stats.output_rows, 7);
+            assert_eq!(stats.residual_rows, 49);
+            assert_eq!(budget.used(), before);
+            assert!(budget.peak() <= budget.limit());
+            drop(blocker);
+            drop(owned);
+            assert_eq!(budget.used(), 0);
+        }
+    }
+
+    #[test]
+    fn left_wide_row_spans_three_funded_output_chunks() {
+        use arrow::array::StringArray;
+        let budget = Budget::new(64 << 20);
+        let (probe, build) = review_sparse_wide_fixture();
+        let schema = combined(&probe, &build);
+        let cancel = Cancellation::default();
+        let owned = OwnedBuild::new(build, &[column(0)], &budget, true, &cancel).unwrap();
+        let blocker = budget
+            .reserve(budget.limit() - budget.used() - (16 << 20))
+            .unwrap();
+        let before = budget.used();
+        let mut chunks = Vec::new();
+        let mut ids = Vec::new();
+        let stats = owned
+            .probe(
+                ProbeBatch::adopt(probe, &budget).unwrap(),
+                &key_pairs(),
+                JoinKind::Left,
+                Some(&residual()),
+                schema.clone(),
+                schema,
+                true,
+                7,
+                &cancel,
+                &mut |output| {
+                    chunks.push(output.batch.num_rows());
+                    let credit = output
+                        ._credits
+                        .iter()
+                        .map(Reservation::bytes)
+                        .sum::<usize>();
+                    assert!(credit >= output.batch.get_array_memory_size());
+                    assert!(credit < 4 << 20);
+                    let text = output
+                        .batch
+                        .column(4)
+                        .as_any()
+                        .downcast_ref::<StringArray>()
+                        .unwrap();
+                    for row in 0..output.batch.num_rows() {
+                        assert_eq!(text.value(row).len(), 1 << 20);
+                        ids.push(text.value(row).as_bytes()[0]);
+                    }
+                    Ok(())
+                },
+            )
+            .unwrap();
+        assert_eq!(chunks, [3, 3, 1]);
+        assert_eq!(ids.as_slice(), b"GFEDCBA");
+        assert_eq!(stats.output_rows, 7);
+        assert_eq!(stats.residual_rows, 49);
+        assert_eq!(budget.used(), before);
+        drop(blocker);
+        drop(owned);
+        assert_eq!(budget.used(), 0);
+    }
+
+    #[test]
+    fn left_validation_and_suffix_cancellation_release_bounded_ids() {
+        use std::cell::Cell;
+        for phase in 0..3 {
+            let budget = Budget::new(8 << 20);
+            let rows = 16384;
+            let build = RecordBatch::try_new(
+                fixture(true).schema(),
+                vec![
+                    Arc::new(Int64Array::from(vec![1; rows])),
+                    Arc::new(Int64Array::from_iter_values(0..rows as i64)),
+                ],
+            )
+            .unwrap();
+            let probe = RecordBatch::try_new(
+                fixture(false).schema(),
+                vec![
+                    Arc::new(Int64Array::from(vec![1])),
+                    Arc::new(Int64Array::from(vec![rows as i64 + 1])),
+                ],
+            )
+            .unwrap();
+            let schema = combined(&probe, &build);
+            let cancel = Cancellation::default();
+            let owned = OwnedBuild::new(build, &[column(0)], &budget, true, &cancel).unwrap();
+            let probe_lease = budget.reserve(probe.get_array_memory_size()).unwrap();
+            let blocker = budget
+                .reserve(budget.limit() - budget.used() - (32 << 10))
+                .unwrap();
+            let before = budget.used();
+            let keys = key_pairs();
+            let residual = residual();
+            let kernel = Kernel {
+                map: &owned.index,
+                build: owned.payload.batch(),
+                next: owned.index.links(),
+                keys: &keys,
+                kind: JoinKind::Left,
+                residual: Some(&residual),
+                // Exercise the unoptimized residual-column selection too.
+                residual_program: None,
+                combined_schema: schema.clone(),
+                output_schema: schema,
+                right_schema: owned.payload.batch().schema(),
+                budget: &budget,
+                compact_text: true,
+                batch_size: 7,
+                reserve_gathers: true,
+            };
+            let checks = Cell::new(0);
+            let mut outputs = 0;
+            let error = kernel
+                .run_with_credits(
+                    probe,
+                    &mut |batch, credits| {
+                        outputs += 1;
+                        assert_eq!(batch.num_rows(), 7);
+                        assert!(
+                            credits.iter().map(Reservation::bytes).sum::<usize>()
+                                >= batch.get_array_memory_size()
+                        );
+                        if outputs == 2 {
+                            if phase == 2 {
+                                return Err("downstream deliberate failure".into());
+                            }
+                            cancel.cancel();
+                        }
+                        Ok(())
+                    },
+                    &|| {
+                        checks.set(checks.get() + 1);
+                        if phase == 0 && checks.get() == 6 {
+                            cancel.cancel();
+                        }
+                        cancel.check()
+                    },
+                )
+                .err()
+                .unwrap();
+            assert_eq!(outputs, if phase == 0 { 0 } else { 2 });
+            if phase == 2 {
+                assert_eq!(error, "downstream deliberate failure");
+            } else {
+                assert!(error.starts_with("cancelled:"), "{error}");
+            }
+            assert_eq!(budget.used(), before);
+            drop(blocker);
+            drop(probe_lease);
+            drop(owned);
+            assert_eq!(budget.used(), 0);
+        }
+    }
+
     #[test]
     fn scan_payload_moves_into_probe_without_a_second_payload_charge() {
         use crate::parquet_scan::{FilterFactory, cursor::ScanCursor};
@@ -370,6 +678,8 @@ mod tests {
         let encoded = crate::keys::Keys::new(&values, build.num_rows(), &budget).unwrap();
         let mut map = JoinIndex::new(&encoded, build.num_rows(), &budget, true).unwrap();
         let mut next = vec![u32::MAX; build.num_rows()];
+        // Deliberately matches the owned index's legacy chain orientation.
+        // This self-comparison is not a rule-O order oracle (see module docs).
         map.populate(&encoded, &mut next);
         let program = residual.map(|e| crate::join_filter::JoinFilter::new(e, &combined).unwrap());
         let kernel = Kernel {
@@ -605,6 +915,133 @@ mod tests {
         drop(outputs);
         assert_eq!(budget.used(), 0);
     }
+    #[test]
+    fn left_residual_skew_uses_bounded_scratch_and_releases_it_on_cancellation() {
+        for cancel_after_output in [false, true] {
+            let rows = 16384;
+            let budget = Budget::new(8 << 20);
+            let build = RecordBatch::try_new(
+                fixture(true).schema(),
+                vec![
+                    Arc::new(Int64Array::from(vec![1; rows])),
+                    Arc::new(Int64Array::from_iter_values(0..rows as i64)),
+                ],
+            )
+            .unwrap();
+            let probe = RecordBatch::try_new(
+                fixture(false).schema(),
+                vec![
+                    Arc::new(Int64Array::from(vec![1])),
+                    Arc::new(Int64Array::from(vec![rows as i64 + 1])),
+                ],
+            )
+            .unwrap();
+            let schema = combined(&probe, &build);
+            let cancel = Cancellation::default();
+            let owned = OwnedBuild::new(build, &[column(0)], &budget, true, &cancel).unwrap();
+            let retained = budget.used();
+            let blocker = budget
+                .reserve(budget.limit() - retained - 32 * 1024)
+                .unwrap();
+            let before = budget.used();
+            // Even one additional row ID per match cannot fit. The seven-row
+            // workspace must suffice, including evaluation and output peaks.
+            assert!(budget.reserve(rows * std::mem::size_of::<u32>()).is_err());
+            let mut emitted = 0;
+            let result = owned.probe(
+                ProbeBatch::adopt(probe, &budget).unwrap(),
+                &key_pairs(),
+                JoinKind::Left,
+                Some(&residual()),
+                schema.clone(),
+                schema,
+                true,
+                7,
+                &cancel,
+                &mut |output| {
+                    assert!(output.batch.num_rows() <= 7);
+                    assert!(
+                        output
+                            ._credits
+                            .iter()
+                            .map(Reservation::bytes)
+                            .sum::<usize>()
+                            >= output.batch.get_array_memory_size()
+                    );
+                    emitted += output.batch.num_rows();
+                    if cancel_after_output {
+                        cancel.cancel();
+                    }
+                    Ok(())
+                },
+            );
+            if cancel_after_output {
+                assert!(result.err().unwrap().starts_with("cancelled:"));
+                assert_eq!(emitted, 7);
+            } else {
+                let stats = result.unwrap();
+                assert_eq!(emitted, rows);
+                assert_eq!(stats.output_rows, rows);
+                // Validation plus the unbuffered suffix, with no third pass.
+                assert_eq!(stats.residual_rows, rows + rows - 7);
+            }
+            assert_eq!(budget.used(), before);
+            assert!(budget.peak() <= budget.limit());
+            drop(blocker);
+            assert_eq!(budget.used(), retained);
+            drop(owned);
+            assert_eq!(budget.used(), 0);
+        }
+    }
+
+    #[test]
+    fn left_order_cancellation_after_output_releases_scratch_and_keeps_payload_funded() {
+        for size in [1, 7, 8192] {
+            let budget = Budget::new(8 << 20);
+            let build = fixture(true);
+            let probe = fixture(false);
+            let schema = combined(&probe, &build);
+            let cancel = Cancellation::default();
+            let owned = OwnedBuild::new(build, &[column(0)], &budget, true, &cancel).unwrap();
+            let before = budget.used();
+            let mut outputs = Vec::new();
+            let error = owned
+                .probe(
+                    ProbeBatch::adopt(probe, &budget).unwrap(),
+                    &key_pairs(),
+                    JoinKind::Left,
+                    Some(&residual()),
+                    schema.clone(),
+                    schema,
+                    true,
+                    size,
+                    &cancel,
+                    &mut |output| {
+                        assert!(
+                            output
+                                ._credits
+                                .iter()
+                                .map(Reservation::bytes)
+                                .sum::<usize>()
+                                >= output.batch.get_array_memory_size()
+                        );
+                        outputs.push(output);
+                        cancel.cancel();
+                        Ok(())
+                    },
+                )
+                .err()
+                .unwrap();
+            assert!(error.starts_with("cancelled:"), "{error}");
+            assert_eq!(outputs.len(), 1);
+            assert!(budget.used() > before);
+            drop(outputs);
+            assert_eq!(budget.used(), before);
+            drop(owned);
+            assert_eq!(budget.used(), 0);
+        }
+    }
+
     #[test]
     fn funded_concat_transfers_large_payload_without_a_second_charge() {
         use arrow::array::StringArray;

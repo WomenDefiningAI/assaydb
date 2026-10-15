@@ -18,6 +18,205 @@ use std::{
     },
 };
 static NEXT: AtomicU64 = AtomicU64::new(0);
+
+#[test]
+fn top_k_matches_full_sort_across_workers_batches_and_completed_groups() {
+    let fixture = Fixture::new(257, false);
+    for (sql, admitted) in [
+        (
+            "SELECT id,k,s,d,f FROM t ORDER BY k NULLS FIRST,s DESC,id LIMIT 7",
+            true,
+        ),
+        (
+            "SELECT id,k,s FROM t ORDER BY s DESC NULLS LAST,id LIMIT 20",
+            true,
+        ),
+        (
+            "SELECT id,CASE WHEN id=0 THEN 1 ELSE 9223372036854775808 END AS v FROM t ORDER BY id LIMIT 1",
+            true,
+        ),
+        (
+            "SELECT k,COUNT(*) n FROM t GROUP BY k ORDER BY n DESC,k LIMIT 3",
+            true,
+        ),
+        ("SELECT id,k FROM t ORDER BY k LIMIT 7", false),
+        ("SELECT id,NULL n FROM t ORDER BY n LIMIT 7", false),
+        ("SELECT id FROM t WHERE id<0 ORDER BY id LIMIT 7", false),
+        ("SELECT id FROM t ORDER BY id LIMIT 0", false),
+    ] {
+        let serial = Options {
+            relational_optimizations: false,
+            batch_size: 1,
+            ..Options::default()
+        };
+        let expected = execute(&prepare(sql, &fixture.tables, &serial).unwrap(), &serial).unwrap();
+        for workers in [1, 2, 4, 10] {
+            for batch_size in [1, 7, 8192] {
+                let options = Options {
+                    workers,
+                    batch_size,
+                    ..Options::default()
+                };
+                let result =
+                    execute(&prepare(sql, &fixture.tables, &options).unwrap(), &options).unwrap();
+                assert_eq!(result.batch, expected.batch, "{sql}/{workers}/{batch_size}");
+                assert_eq!(
+                    result.metrics.top_k_sorts > 0,
+                    admitted,
+                    "{sql}/{workers}/{batch_size}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn top_k_never_hides_late_projection_or_group_errors() {
+    let fixture = Fixture::new(257, false);
+    for sql in [
+        "SELECT id,bad FROM (SELECT id,CAST('1e308' AS REAL)*CAST(id+2 AS REAL) bad FROM t) q ORDER BY id LIMIT 0",
+        "SELECT id,10000000000000000000000000000000000000 * id AS bad FROM t ORDER BY id LIMIT 1",
+        "SELECT k,SUM(10000000000000000000000000000000000000 * id) AS bad FROM t GROUP BY k ORDER BY k LIMIT 1",
+    ] {
+        let serial = Options {
+            relational_optimizations: false,
+            batch_size: 1,
+            ..Options::default()
+        };
+        let expected = execute(&prepare(sql, &fixture.tables, &serial).unwrap(), &serial)
+            .err()
+            .unwrap();
+        assert!(expected.contains("overflow"), "{expected}");
+        for workers in [1, 2, 4, 10] {
+            for batch_size in [1, 7, 8192] {
+                let options = Options {
+                    workers,
+                    batch_size,
+                    ..Options::default()
+                };
+                let error = execute(&prepare(sql, &fixture.tables, &options).unwrap(), &options)
+                    .err()
+                    .unwrap();
+                assert_eq!(error, expected, "{sql}/{workers}/{batch_size}");
+            }
+        }
+    }
+}
+#[test]
+fn top_k_complete_key_ties_and_large_limits_match_the_full_sort_prefix() {
+    let fixture = Fixture::new(257, false);
+    for order in ["k NULLS FIRST", "s DESC NULLS LAST", "k,s", "n"] {
+        let full_sql = format!("SELECT id,k,s,NULL n FROM t ORDER BY {order}");
+        let serial = Options {
+            workers: 1,
+            batch_size: 1,
+            relational_optimizations: false,
+            ..Options::default()
+        };
+        let full = execute(
+            &prepare(&full_sql, &fixture.tables, &serial).unwrap(),
+            &serial,
+        )
+        .unwrap();
+        assert_eq!(full.metrics.top_k_sorts, 0);
+        for limit in [7, 257, 300] {
+            let sql = format!("{full_sql} LIMIT {limit}");
+            for workers in [1, 2, 4, 10] {
+                for batch_size in [1, 7, 8192] {
+                    let options = Options {
+                        workers,
+                        batch_size,
+                        ..Options::default()
+                    };
+                    let actual =
+                        execute(&prepare(&sql, &fixture.tables, &options).unwrap(), &options)
+                            .unwrap();
+                    assert_eq!(
+                        actual.batch,
+                        full.batch.slice(0, limit.min(257)),
+                        "{sql}/{workers}/{batch_size}"
+                    );
+                    assert_eq!(
+                        actual.metrics.top_k_sorts, 0,
+                        "{sql}/{workers}/{batch_size}"
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn top_k_sort_key_errors_are_row_major_and_limit_zero_consumes_input() {
+    let fixture = Fixture::new(257, false);
+    // Row zero, second key fails before row one's first key. Reversing
+    // expression slots on row zero also distinguishes the two error causes.
+    for (order, expected) in [
+        (
+            "CASE WHEN id=1 THEN CAST('1e308' AS REAL)*CAST(id+1 AS REAL) ELSE 1.0 END, CASE WHEN id=0 THEN 60000000000000000000000000000000000000*(id+2) ELSE 1 END",
+            "decimal precision 38 overflow",
+        ),
+        (
+            "CAST('1e308' AS REAL)*CAST(id+2 AS REAL), 60000000000000000000000000000000000000*(id+2)",
+            "floating arithmetic overflow",
+        ),
+        (
+            "60000000000000000000000000000000000000*(id+2), CAST('1e308' AS REAL)*CAST(id+2 AS REAL)",
+            "decimal precision 38 overflow",
+        ),
+    ] {
+        let full_sql = format!("SELECT id,{order} FROM t ORDER BY 2,3");
+        let serial = Options {
+            workers: 1,
+            batch_size: 1,
+            relational_optimizations: false,
+            ..Options::default()
+        };
+        assert_eq!(
+            execute(
+                &prepare(&full_sql, &fixture.tables, &serial).unwrap(),
+                &serial
+            )
+            .err()
+            .unwrap(),
+            expected
+        );
+        for limit in [0, 1, 300] {
+            let sql = format!("{full_sql} LIMIT {limit}");
+            for workers in [1, 2, 4, 10] {
+                for batch_size in [1, 7, 8192] {
+                    let options = Options {
+                        workers,
+                        batch_size,
+                        ..Options::default()
+                    };
+                    let actual =
+                        execute(&prepare(&sql, &fixture.tables, &options).unwrap(), &options)
+                            .err()
+                            .unwrap();
+                    assert_eq!(actual, expected, "{sql}/{workers}/{batch_size}");
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn top_k_offset_rejection_matches_parent_even_for_zero_offset() {
+    let fixture = Fixture::new(257, false);
+    for offset in [0, 1, 300] {
+        let sql = format!("SELECT id FROM t ORDER BY id LIMIT 7 OFFSET {offset}");
+        for relational_optimizations in [false, true] {
+            let options = Options {
+                relational_optimizations,
+                ..Options::default()
+            };
+            let error = prepare(&sql, &fixture.tables, &options).err().unwrap();
+            assert_eq!(error, "unsupported: LIMIT/OFFSET");
+        }
+    }
+}
+
 struct Fixture {
     root: PathBuf,
     tables: HashMap<String, PathBuf>,

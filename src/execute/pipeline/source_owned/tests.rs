@@ -64,6 +64,7 @@ pub(super) fn stored(
     let storage = Arc::new(crate::rel::Materialized::from_test_batches(batches, budget).unwrap());
     (
         Prepared {
+            auto_simple: None,
             internal_output: false,
             plan,
             schema,
@@ -158,7 +159,7 @@ fn source_owned_preserves_unsorted_local_encounters_boundaries_and_dense_budget(
                     );
                     assert_eq!(metrics.dense_group_batches, chunks.len());
                     assert!(metrics.dense_group_index_peak_bytes <= DENSE_ALLOWANCE);
-                    assert!(metrics.worker_threads_peak < workers);
+                    assert!(metrics.worker_threads_peak <= workers);
                     let report = report.lock().unwrap();
                     assert!(report.admitted);
                     assert_eq!(report.dense_bytes, metrics.dense_group_index_peak_bytes);

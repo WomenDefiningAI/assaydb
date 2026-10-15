@@ -2,7 +2,7 @@
 use sqlparser::dialect::{Dialect, GenericDialect};
 
 #[derive(Debug)]
-pub(crate) struct QueryDialect;
+pub struct QueryDialect;
 macro_rules! generic_flags {
     ($($name:ident),* $(,)?) => { $(
         fn $name(&self) -> bool { GenericDialect.$name() }

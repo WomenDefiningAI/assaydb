@@ -1,4 +1,4 @@
-//! Whole probe batches preserve duplicate order and vector flush boundaries.
+//! Probe rows retain build insertion order; LEFT misses occupy their probe position.
 use super::{JoinKind, input};
 use crate::{
     Result,
@@ -14,9 +14,12 @@ use arrow::{
 };
 use std::time::Instant;
 
-#[cfg(test)]
+mod lane_keys;
+pub(super) use lane_keys::{Numbers, ProbeKeys};
+mod left;
 pub(super) mod owned;
 pub(super) mod parallel;
+mod unique;
 
 /// Static dispatch preserves the existing probe loop for borrowed and owned maps.
 pub(super) trait Index: Copy {
@@ -112,6 +115,11 @@ impl<I: Index> Kernel<'_, I> {
             budget,
             compact_text,
         )?;
+        if kind == JoinKind::Left {
+            let mut stats = self.run_left(&probe, &probe_encoded, emit, check)?;
+            stats.seconds = start.elapsed().as_secs_f64();
+            return Ok(stats);
+        }
         let mut li = Vec::with_capacity(batch_size);
         let mut ri = Vec::with_capacity(batch_size);
         let mut matched = vec![false; probe.num_rows()];

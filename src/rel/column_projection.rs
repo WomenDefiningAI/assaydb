@@ -297,6 +297,7 @@ mod tests {
             let budget = Budget::new(1 << 20);
             let (actual, lease) = project(&batch, &selected, schema.clone(), &budget).unwrap();
             let prepared = Prepared {
+                auto_simple: None,
                 internal_output: false,
                 plan: plan.clone(),
                 schema: source.clone(),

@@ -1,11 +1,14 @@
 //! Batched execution with bounded scan workers and query-wide spill selection.
 mod aggregate_workers;
 mod aggregation;
+pub(crate) use aggregation::SORTED_DISTINCT_DECLINED;
+pub(crate) use aggregation::having::Having;
 use aggregation::{AggregateOutput, States};
 #[cfg(not(test))]
 type OrdinaryAggregation = aggregation::Aggregation;
 #[cfg(test)]
 type OrdinaryAggregation = aggregation::Backend;
+pub(crate) mod error_replay;
 pub(crate) mod pipeline;
 mod scan_projection;
 use crate::{
@@ -21,12 +24,17 @@ use arrow::{
     datatypes::{Field, Schema, SchemaRef},
     record_batch::RecordBatch,
 };
+pub use error_replay::{ErrorReplay, ErrorReplayMetrics};
 use parquet::arrow::{ProjectionMask, arrow_reader::ParquetRecordBatchReaderBuilder};
 use serde::Serialize;
 use std::{collections::HashMap, fs::File, path::PathBuf, sync::Arc, time::Instant};
 
 #[derive(Clone)]
 pub struct Options {
+    #[cfg(test)]
+    pub(crate) test_scan_observer: Option<Arc<crate::parquet_scan::test_support::Observer>>,
+    /// Cumulative error-only replay diagnostics, including unsuccessful replays.
+    pub error_replay: ErrorReplay,
     #[cfg(test)]
     pub(crate) test_source_owned_pipeline: bool,
     #[cfg(test)]
@@ -53,6 +61,12 @@ pub struct Options {
     pub(crate) test_pipeline_fallback: bool,
     #[cfg(test)]
     pub(crate) test_pipeline_report: Option<Arc<std::sync::Mutex<PipelineAttemptReport>>>,
+    /// Refuse decoder reservations after a live producer yields, tests only.
+    #[cfg(test)]
+    pub(crate) test_pipeline_interruption: Option<Arc<std::sync::Mutex<PipelineInterruption>>>,
+    /// Synchronize real autonomous dispatches without changing their quantum.
+    #[cfg(test)]
+    pub(crate) test_pipeline_continuation: Option<Arc<pipeline::continuation_tests::Hooks>>,
     /// Total execution thread limit, including the calling/coordinator thread.
     pub workers: usize,
     pub batch_size: usize,
@@ -68,6 +82,9 @@ pub struct Options {
 impl Default for Options {
     fn default() -> Self {
         Self {
+            #[cfg(test)]
+            test_scan_observer: None,
+            error_replay: ErrorReplay::default(),
             #[cfg(test)]
             test_source_owned_pipeline: false,
             #[cfg(test)]
@@ -88,6 +105,10 @@ impl Default for Options {
             test_pipeline_fallback: false,
             #[cfg(test)]
             test_pipeline_report: None,
+            #[cfg(test)]
+            test_pipeline_interruption: None,
+            #[cfg(test)]
+            test_pipeline_continuation: None,
             workers: 1,
             batch_size: 8192,
             memory_bytes: 256 * 1024 * 1024,
@@ -99,8 +120,17 @@ impl Default for Options {
         }
     }
 }
+#[cfg(test)]
+#[derive(Default)]
+pub(crate) struct PipelineInterruption {
+    pub budget: Option<Budget>,
+    pub queued_sources: usize,
+    pub aggregated_rows: usize,
+    pub attempt_report: Option<PipelineAttemptReport>,
+}
 /// Attempt diagnostics also survive an unsuccessful baseline replay.
 #[derive(Debug, Default)]
+#[cfg_attr(test, derive(Clone))]
 pub(crate) struct PipelineAttemptReport {
     pub candidate_attempts: usize,
     pub fallback_attempts: usize,
@@ -115,6 +145,15 @@ pub(crate) struct PipelineAttemptReport {
 }
 #[derive(Debug, Default, Serialize)]
 pub struct Metrics {
+    /// Completed sorts whose exact prefix was selected by the bounded heap.
+    pub top_k_sorts: usize,
+    /// Dictionary group payload restored only after a completed ORDER BY/LIMIT.
+    pub late_payload_sorts: usize,
+    pub late_payload_rows: usize,
+    /// Wide scan builds restricted by a complete retained probe membership.
+    pub demand_filtered_scans: usize,
+    /// Row groups aggregated with validated non-decreasing Parquet intervals.
+    pub clustered_row_groups: usize,
     pub pipeline_producers: usize,
     pub pipeline_background_producers: usize,
     pub pipeline_source_batches: usize,
@@ -147,6 +186,7 @@ pub struct Metrics {
     pub auto_spill_initial_seconds: f64,
     pub auto_spill_initial_peak_reserved_bytes: usize,
     pub auto_spill_initial_error: Option<String>,
+    /// Live execution threads, including the coordinator and blocked workers.
     pub worker_threads_peak: usize,
     pub parallel_scan_tasks: usize,
     pub parallel_scan_batches: usize,
@@ -166,6 +206,10 @@ pub struct Metrics {
     pub replay_exact_filter_batches: usize,
     pub replay_pending_batches_peak: usize,
     pub replay_pending_bytes_peak: usize,
+    /// Unique-build joins composed into ordered scan-lane transforms.
+    pub lane_fused_joins: usize,
+    /// A qualifying grouped SUM replaced a second scan of the same input.
+    pub aggregate_scan_reuses: usize,
     pub parallel_joins: usize,
     pub parallel_join_tasks: usize,
     pub parallel_join_batches: usize,
@@ -220,6 +264,9 @@ pub struct Metrics {
     pub cte_materializations: usize,
     pub cte_reuses: usize,
     pub scan_reuses: usize,
+    pub filtered_scan_materializations: usize,
+    pub filtered_scan_reuses: usize,
+    pub paired_existence_scans: usize,
     pub scan_materializations: usize,
     pub cached_scan_filters: usize,
     pub buffered_parquet_scans: usize,
@@ -227,6 +274,8 @@ pub struct Metrics {
     pub parquet_uncached_column_rows: usize,
     pub buffered_compressed_bytes_read: usize,
     pub output_sort_seconds: f64,
+    pub having_input_groups: usize,
+    pub having_output_groups: usize,
     pub execution_seconds: f64,
     pub rows_read: usize,
     pub rows_after_filter: usize,
@@ -240,8 +289,35 @@ pub struct Metrics {
     pub residual_candidate_rows: usize,
     pub residual_gathered_bytes: usize,
     pub join_build_rows: usize,
+    /// Completed-build phases exclude upstream collection and downstream probes.
+    pub build_prepare_concat_seconds: f64,
+    pub build_prepare_key_seconds: f64,
+    pub build_prepare_index_seconds: f64,
+    pub build_prepare_column_tasks: usize,
+    pub build_prepare_index_tasks: usize,
+    pub build_group_dictionary_seconds: f64,
+    pub build_group_parallel_dictionaries: usize,
+    pub build_group_id_aggregates: usize,
+    pub build_group_id_rows: usize,
+    pub build_group_id_groups: usize,
+    pub build_group_id_fallbacks: usize,
+    pub sorted_distinct_aggregates: usize,
+    pub sorted_distinct_pairs: usize,
+    pub sorted_distinct_fallbacks: usize,
+    pub fused_left_count_joins: usize,
+    pub fused_left_count_rows: usize,
+    pub fused_left_count_serial_retries: usize,
     pub reverse_existence_joins: usize,
+    pub reverse_existence_lane_joins: usize,
+    pub reverse_existence_numeric_lane_joins: usize,
+    pub reverse_existence_lane_batches: usize,
+    /// Summed membership work in decoder lanes; overlaps scan worker time.
+    pub reverse_existence_probe_seconds: f64,
+    pub reverse_existence_merge_seconds: f64,
+    pub reverse_existence_emit_seconds: f64,
     pub dynamic_scan_filters: usize,
+    pub sideways_prepared_builds: usize,
+    pub sideways_scan_filters: usize,
     pub static_scan_filters: usize,
     pub post_decode_scan_filters: usize,
     pub post_decode_filter_batches: usize,
@@ -258,6 +334,9 @@ pub struct Metrics {
     pub join_output_rows: usize,
 }
 pub struct Prepared {
+    /// Optional direct plan for auto spill's in-memory attempt. The relational
+    /// plan remains authoritative for nonadmission and the forced-spill retry.
+    pub(crate) auto_simple: Option<Box<Prepared>>,
     /// Internal relational results retain precision-38 INTEGER values.
     pub(crate) internal_output: bool,
     pub plan: Plan,
@@ -275,8 +354,19 @@ pub fn prepare(
     options: &Options,
 ) -> Result<Prepared> {
     validate_prepare_options(options)?;
-    if options.spill.is_some() {
-        return crate::rel::prepare(sql, tables, options);
+    if let Some(spill) = &options.spill {
+        let mut prepared = crate::rel::prepare(sql, tables, options)?;
+        if spill.mode == crate::spill::SpillMode::Auto
+            && let Ok(mut simple) = prepare_simple(sql, tables, options)
+            && simple.plan.types == prepared.plan.types
+        {
+            // The binders can use different display names for unaliased
+            // expressions. Auto mode has always exposed the relational names.
+            // Copy metadata only; all execution buffers still use one Budget.
+            simple.plan.names.clone_from(&prepared.plan.names);
+            prepared.auto_simple = Some(Box::new(simple));
+        }
+        return Ok(prepared);
     }
     prepare_simple(sql, tables, options).or_else(|_| crate::rel::prepare(sql, tables, options))
 }
@@ -352,6 +442,7 @@ fn prepare_simple(
     let plan = bind::bind(&query, &schema, path, options.projection_pushdown)?;
     crate::mixed_numeric::validate_plan(&plan, &schema)?;
     Ok(Prepared {
+        auto_simple: None,
         internal_output: false,
         plan,
         schema,
@@ -601,6 +692,24 @@ impl<'a, A> Executor<'a, A> {
     }
 }
 impl<A: AggregateOutput> Executor<'_, A> {
+    /// A breaker completes before downstream consumers. Check its completed
+    /// rows in encounter order, then columns, without retaining a second result
+    /// or applying any aggregate contribution twice. Only replay calls this.
+    fn canonical_finalize(&mut self, options: &Options) -> Result<()> {
+        if !self.prepared.plan.aggregation {
+            return Ok(());
+        }
+        self.aggregation.finish_updates()?;
+        for row in 0..self.aggregation.group_count() {
+            options.cancellation.check()?;
+            let range = row..row + 1;
+            let _lease = self
+                .budget
+                .reserve(self.aggregate_output_bytes(range.clone())?)?;
+            let _batch = self.aggregate_batch(range)?;
+        }
+        Ok(())
+    }
     fn aggregate_batch(&self, range: std::ops::Range<usize>) -> Result<RecordBatch> {
         self.aggregation.output_batch(
             &self.prepared.plan,
@@ -619,6 +728,9 @@ impl<A: AggregateOutput> Executor<'_, A> {
         options: &Options,
         emit: &mut dyn FnMut(RecordBatch) -> Result<()>,
     ) -> Result<Metrics> {
+        if options.error_replay.canonical() {
+            self.canonical_finalize(options)?;
+        }
         self.aggregation.finish_updates()?;
         debug_assert!(self.prepared.plan.aggregation && self.prepared.plan.order.is_empty());
         // Retain all group state until input has completed. Only the output is
@@ -640,10 +752,64 @@ impl<A: AggregateOutput> Executor<'_, A> {
         self.metrics.execution_seconds = start.elapsed().as_secs_f64();
         self.metrics.peak_reserved_bytes = self.budget.peak();
         self.metrics.workers = options.workers;
-        self.metrics.worker_threads_peak = self.budget.peak_workers();
+        self.metrics.worker_threads_peak = self.budget.peak_threads();
         Ok(self.metrics)
     }
-    fn finish(mut self, start: Instant) -> Result<Execution> {
+    /// Selection changes only materialization; chunk and output check order stay fixed.
+    fn finish_having_batches(
+        mut self,
+        start: Instant,
+        options: &Options,
+        having: Option<&Having>,
+        emit: &mut dyn FnMut(RecordBatch) -> Result<()>,
+    ) -> Result<Metrics> {
+        let Some(having) = having else {
+            return self.finish_batches(start, options, emit);
+        };
+        if options.error_replay.canonical() {
+            self.canonical_finalize(options)?;
+        }
+        self.aggregation.finish_updates()?;
+        debug_assert!(self.prepared.plan.aggregation && self.prepared.plan.order.is_empty());
+        // Retain all group state until input has completed. Only the output is
+        // chunked, preserving encounter order; SUM range checks occur per output.
+        // A downstream filter/join may consume and release each chunk immediately.
+        for offset in (0..self.aggregation.group_count().max(1)).step_by(options.batch_size) {
+            options.cancellation.check()?;
+            let range = offset..(offset + options.batch_size).min(self.aggregation.group_count());
+            let output_start = Instant::now();
+            let mut lease = self
+                .budget
+                .reserve(self.aggregate_output_bytes(range.clone())?)?;
+            let batch = self.aggregation.having_batch(
+                &self.prepared.plan,
+                &self.expressions,
+                &self.output_schema,
+                range.clone(),
+                having,
+            )?;
+            self.metrics.having_input_groups += range.len();
+            self.metrics.having_output_groups += batch.num_rows();
+            lease.release_excess(batch.get_array_memory_size().saturating_add(1024));
+            self.metrics.output_sort_seconds += output_start.elapsed().as_secs_f64();
+            // The replaced Filter does not emit empty chunks to its consumer.
+            if batch.num_rows() > 0 {
+                emit(batch)?;
+            }
+        }
+        options.cancellation.check()?;
+        self.metrics.execution_seconds = start.elapsed().as_secs_f64();
+        self.metrics.peak_reserved_bytes = self.budget.peak();
+        self.metrics.workers = options.workers;
+        self.metrics.worker_threads_peak = self.budget.peak_threads();
+        Ok(self.metrics)
+    }
+    fn finish(
+        mut self,
+        start: Instant,
+        top_k: Option<usize>,
+        options: &Options,
+    ) -> Result<Execution> {
         self.aggregation.finish_updates()?;
         let output_start = Instant::now();
         let p = &self.prepared.plan;
@@ -687,7 +853,27 @@ impl<A: AggregateOutput> Executor<'_, A> {
                     }),
                 })
                 .collect::<Vec<_>>();
-            let indices = crate::external_sort::sort_indices(columns, batch.num_rows())?;
+            let selected = top_k
+                .map(|k| {
+                    crate::external_sort::try_top_k_indices(
+                        &columns,
+                        batch.num_rows(),
+                        k,
+                        &self.budget,
+                        &options.cancellation,
+                    )
+                })
+                .transpose()?
+                .flatten();
+            self.metrics.top_k_sorts += usize::from(selected.is_some());
+            let (indices, _top_k_credit) = if let Some((indices, credit)) = selected {
+                (indices, Some(credit))
+            } else {
+                (
+                    crate::external_sort::sort_indices(columns, batch.num_rows())?,
+                    None,
+                )
+            };
             let arrays = batch
                 .columns()
                 .iter()
@@ -862,8 +1048,11 @@ pub fn execute(prepared: &Prepared, options: &Options) -> Result<Execution> {
     if options.spill.is_some() && prepared.relational.is_none() {
         return Err("spill execution requires a plan prepared with spill options".into());
     }
-    execution_policy(options, |options, budget| {
+    let original = execution_policy(options, |options, budget| {
         execute_in_budget(prepared, options, budget)
+    });
+    error_replay::select(original, options, |canonical, budget| {
+        execute_in_budget(prepared, canonical, budget)
     })
 }
 pub(crate) fn execution_policy(
@@ -911,7 +1100,7 @@ pub(crate) fn execution_policy(
             result.metrics.worker_threads_peak = result
                 .metrics
                 .worker_threads_peak
-                .max(memory.peak_workers());
+                .max(memory.peak_threads());
             result.metrics.execution_seconds = started.elapsed().as_secs_f64();
             Ok(result)
         }
@@ -919,6 +1108,65 @@ pub(crate) fn execution_policy(
     }
 }
 fn execute_in_budget(prepared: &Prepared, options: &Options, budget: Budget) -> Result<Execution> {
+    if options.error_replay.canonical() {
+        if let Some(root) = &prepared.relational {
+            return crate::rel::execute_in_budget(root, options, budget, prepared.internal_output);
+        }
+        error_replay::admit_aggregate(&prepared.plan)?;
+        // The same immutable Prepared owns the direct plan on both attempts.
+        let source = prepared
+            .plan
+            .path
+            .as_ref()
+            .map(|path| {
+                pipeline::fallback::Source::capture_checked(path, &|| options.cancellation.check())
+            })
+            .transpose()?;
+        let result = execute_baseline(prepared, options, budget);
+        if let Some(source) = source {
+            source.verify_checked(prepared.plan.path.as_ref().unwrap(), &|| {
+                options.cancellation.check()
+            })?;
+        }
+        return result;
+    }
+    // execution_policy removes auto spill only for the in-memory attempt.
+    // Force retains its spill options, so it must reach the relational plan.
+    if options.spill.is_none()
+        && let Some(simple) = &prepared.auto_simple
+        && pipeline::eligible(simple, options)
+        && budget.active_workers() == 0
+    {
+        let started = Instant::now();
+        let entry_used = budget.used();
+        match pipeline::execute(simple, options, budget.clone()) {
+            Err(error)
+                if matches!(
+                    pipeline::fallback::Failure::sql(error.clone()),
+                    pipeline::fallback::Failure::Sql(_)
+                ) =>
+            {
+                // The direct plan narrows each partition's public columns
+                // before later aggregates finish. The relational plan keeps
+                // INTEGERs wide until the public query boundary. Replay SQL
+                // failures there to preserve its error precedence (and LIMIT
+                // behavior). Successful direct results need no extra work.
+                // Resource and terminal failures retain their existing policy.
+                if budget.used() != entry_used || budget.active_workers() != 0 {
+                    return Err("auto direct SQL replay: attempt retained ownership".into());
+                }
+                let root = prepared
+                    .relational
+                    .as_ref()
+                    .ok_or("auto direct plan lacks relational plan")?;
+                let mut result =
+                    crate::rel::execute_in_budget(root, options, budget, prepared.internal_output)?;
+                result.metrics.execution_seconds = started.elapsed().as_secs_f64();
+                return Ok(result);
+            }
+            result => return result,
+        }
+    }
     if let Some(root) = &prepared.relational {
         return crate::rel::execute_in_budget(root, options, budget, prepared.internal_output);
     }
@@ -931,7 +1179,11 @@ fn execute_in_budget(prepared: &Prepared, options: &Options, budget: Budget) -> 
 fn execute_baseline(prepared: &Prepared, options: &Options, budget: Budget) -> Result<Execution> {
     let start = Instant::now();
     let p = &prepared.plan;
-    let mut executor = executor(prepared, budget.clone(), options.relational_optimizations)?;
+    let mut executor = executor(
+        prepared,
+        budget.clone(),
+        options.relational_optimizations && !options.error_replay.canonical(),
+    )?;
     #[cfg(test)]
     executor.aggregation.force_partitioned(
         &prepared.plan,
@@ -1112,9 +1364,12 @@ fn execute_baseline(prepared: &Prepared, options: &Options, budget: Budget) -> R
         })?;
     }
     options.cancellation.check()?;
-    let mut result = executor.finish(start)?;
+    if options.error_replay.canonical() {
+        executor.canonical_finalize(options)?;
+    }
+    let mut result = executor.finish(start, None, options)?;
     result.metrics.workers = options.workers;
-    result.metrics.worker_threads_peak = budget.peak_workers();
+    result.metrics.worker_threads_peak = budget.peak_threads();
     options.cancellation.check()?;
     Ok(result)
 }
@@ -1162,11 +1417,27 @@ pub(crate) fn execute_stream(
     budget: Budget,
     produce: impl FnOnce(&mut dyn FnMut(RecordBatch) -> Result<()>) -> Result<()>,
 ) -> Result<Execution> {
+    execute_stream_top_k(prepared, options, budget, None, produce)
+}
+
+/// LIMIT changes only the completed sort's materialization, never production,
+/// expression evaluation, accumulation or finalization.
+pub(crate) fn execute_stream_top_k(
+    prepared: &Prepared,
+    options: &Options,
+    budget: Budget,
+    top_k: Option<usize>,
+    produce: impl FnOnce(&mut dyn FnMut(RecordBatch) -> Result<()>) -> Result<()>,
+) -> Result<Execution> {
     if options.batch_size == 0 || options.batch_size > 131072 {
         return Err("batch size must be 1..131072".into());
     }
     let start = Instant::now();
-    let mut executor = executor(prepared, budget.clone(), options.relational_optimizations)?;
+    let mut executor = executor(
+        prepared,
+        budget.clone(),
+        options.relational_optimizations && !options.error_replay.canonical(),
+    )?;
     #[cfg(test)]
     executor.aggregation.force_partitioned(
         &prepared.plan,
@@ -1176,9 +1447,12 @@ pub(crate) fn execute_stream(
     )?;
     fill_from_stream(&mut executor, prepared, options, &budget, produce)?;
     options.cancellation.check()?;
-    let mut result = executor.finish(start)?;
+    if options.error_replay.canonical() {
+        executor.canonical_finalize(options)?;
+    }
+    let mut result = executor.finish(start, top_k, options)?;
     result.metrics.workers = options.workers;
-    result.metrics.worker_threads_peak = budget.peak_workers();
+    result.metrics.worker_threads_peak = budget.peak_threads();
     options.cancellation.check()?;
     Ok(result)
 }
@@ -1228,7 +1502,11 @@ pub(crate) fn execute_aggregate_stream(
         return Err("batch size must be 1..131072".into());
     }
     let start = Instant::now();
-    let mut executor = executor(prepared, budget.clone(), options.relational_optimizations)?;
+    let mut executor = executor(
+        prepared,
+        budget.clone(),
+        options.relational_optimizations && !options.error_replay.canonical(),
+    )?;
     #[cfg(test)]
     executor.aggregation.force_partitioned(
         &prepared.plan,
@@ -1240,10 +1518,217 @@ pub(crate) fn execute_aggregate_stream(
     executor.finish_batches(start, options, emit)
 }
 
+/// Only the build-ID owner calls this boundary: it can discard the entire
+/// attempt and replay the original child before any output on a cap refusal.
+pub(crate) fn execute_bounded_distinct_stream(
+    prepared: &Prepared,
+    options: &Options,
+    budget: Budget,
+    row_limit: usize,
+    produce: impl FnOnce(&mut dyn FnMut(RecordBatch) -> Result<()>) -> Result<()>,
+    emit: &mut dyn FnMut(RecordBatch) -> Result<()>,
+) -> Result<Metrics> {
+    if options.batch_size == 0 || options.batch_size > 131072 {
+        return Err("batch size must be 1..131072".into());
+    }
+    let start = Instant::now();
+    let mut executor = executor(prepared, budget.clone(), options.relational_optimizations)?;
+    #[cfg(test)]
+    executor.aggregation.force_partitioned(
+        &prepared.plan,
+        &executor.expressions,
+        budget.clone(),
+        options,
+    )?;
+    executor.metrics.sorted_distinct_aggregates = usize::from(
+        executor
+            .aggregation
+            .enable_sorted_distinct(&prepared.plan, row_limit, options),
+    );
+    fill_from_stream(&mut executor, prepared, options, &budget, produce)?;
+    executor.finish_batches(start, options, emit)
+}
+
+/// Keep ordinary streams on their original path; admitted HAVING only changes output.
+pub(crate) fn execute_having_stream(
+    prepared: &Prepared,
+    options: &Options,
+    budget: Budget,
+    having: Option<&Having>,
+    produce: impl FnOnce(&mut dyn FnMut(RecordBatch) -> Result<()>) -> Result<()>,
+    emit: &mut dyn FnMut(RecordBatch) -> Result<()>,
+) -> Result<Metrics> {
+    if having.is_none() {
+        return execute_aggregate_stream(prepared, options, budget, produce, emit);
+    }
+    if options.batch_size == 0 || options.batch_size > 131072 {
+        return Err("batch size must be 1..131072".into());
+    }
+    let start = Instant::now();
+    let mut executor = executor(prepared, budget.clone(), options.relational_optimizations)?;
+    #[cfg(test)]
+    executor.aggregation.force_partitioned(
+        &prepared.plan,
+        &executor.expressions,
+        budget.clone(),
+        options,
+    )?;
+    fill_from_stream(&mut executor, prepared, options, &budget, produce)?;
+    executor.finish_having_batches(start, options, having, emit)
+}
+
+/// Feed total left-side group expressions and exact COUNT contributions through
+/// the ordinary encounter-ordered state/output owner. This entry never starts
+/// aggregate helpers, so upstream scans retain the entire worker allowance.
+pub(crate) fn execute_counted_stream(
+    prepared: &Prepared,
+    groups: &[crate::expr::Expr],
+    options: &Options,
+    budget: Budget,
+    produce: impl FnOnce(&mut dyn FnMut(Input, Vec<Value>) -> Result<()>) -> Result<()>,
+    emit: &mut dyn FnMut(RecordBatch) -> Result<()>,
+) -> Result<Metrics> {
+    let start = Instant::now();
+    let executor = executor(prepared, budget.clone(), true)?;
+    #[cfg(not(test))]
+    let mut executor = executor;
+    // Even test-only partitioned backends must retain the single ordinary owner:
+    // weighted inputs are not ordinary COUNT partials until they are consumed.
+    #[cfg(test)]
+    let mut executor = {
+        let aggregation = aggregation::Aggregation::new(
+            &prepared.plan,
+            &executor.expressions,
+            budget.clone(),
+            true,
+        )?;
+        executor.with_aggregation(aggregation)
+    };
+    produce(&mut |input, weights| {
+        options.cancellation.check()?;
+        let expression_start = Instant::now();
+        let keys = groups
+            .iter()
+            .map(|e| e.eval(&input, &budget))
+            .collect::<Result<Vec<_>>>()?;
+        executor.metrics.expression_seconds += expression_start.elapsed().as_secs_f64();
+        executor.metrics.rows_after_filter += input.len;
+        executor.metrics.batches += 1;
+        executor.aggregation.update_counted(
+            &prepared.plan,
+            &executor.expressions,
+            &mut executor.metrics,
+            aggregation::EvaluatedBatch {
+                rows: input.len,
+                keys,
+                values: weights.into_iter().map(Some).collect(),
+                prepared_keys: None,
+            },
+        )
+    })?;
+    executor.finish_batches(start, options, emit)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use arrow::datatypes::i256;
+    #[test]
+    fn counted_groups_keep_zero_and_existing_count_overflow_errors() {
+        let group = crate::expr::Expr {
+            ty: Type::Int,
+            kind: crate::expr::Kind::Column(0),
+        };
+        let prepared = Prepared {
+            auto_simple: None,
+            internal_output: false,
+            relational: None,
+            schema: Arc::new(Schema::new(vec![Type::Int.field("g", false)])),
+            plan: Plan {
+                table: None,
+                path: None,
+                columns: vec![0],
+                filter: None,
+                groups: vec![group.clone()],
+                aggregates: vec![bind::Agg {
+                    function: Aggregate::Count,
+                    input: None,
+                    ty: Type::Int,
+                    distinct: false,
+                }],
+                output: vec![Output::Group(0), Output::Aggregate(0)],
+                names: vec!["g".into(), "n".into()],
+                types: vec![Type::Int, Type::Int],
+                order: vec![],
+                aggregation: true,
+                projection_pushdown: true,
+            },
+        };
+        for (weights, error) in [
+            (vec![0, 0], None),
+            (vec![u64::MAX], Some("BIGINT overflow")),
+            (vec![u64::MAX, 1], Some("aggregate count overflow")),
+        ] {
+            for workers in [1, 2, 4, 10] {
+                let budget = Budget::new(1 << 20);
+                let options = Options {
+                    workers,
+                    ..Options::default()
+                };
+                let mut output = Vec::new();
+                let result = execute_counted_stream(
+                    &prepared,
+                    std::slice::from_ref(&group),
+                    &options,
+                    budget.clone(),
+                    |send| {
+                        for weight in &weights {
+                            let input = Input {
+                                len: 1,
+                                columns: vec![Some(Value::adopt(
+                                    Arc::new(
+                                        Decimal128Array::from(vec![7])
+                                            .with_precision_and_scale(38, 0)
+                                            .unwrap(),
+                                    ),
+                                    &budget,
+                                )?)],
+                            };
+                            send(
+                                input,
+                                vec![Value::adopt(
+                                    Arc::new(UInt64Array::from(vec![*weight])),
+                                    &budget,
+                                )?],
+                            )?;
+                        }
+                        Ok(())
+                    },
+                    &mut |batch| {
+                        output.push(batch);
+                        Ok(())
+                    },
+                );
+                if let Some(error) = error {
+                    assert_eq!(result.err().unwrap(), error);
+                } else {
+                    result.unwrap();
+                    assert_eq!(
+                        output[0]
+                            .column(1)
+                            .as_any()
+                            .downcast_ref::<Int64Array>()
+                            .unwrap()
+                            .value(0),
+                        0
+                    );
+                }
+                drop(output);
+                assert_eq!(budget.used(), 0);
+                assert_eq!(budget.peak_workers(), 0);
+            }
+        }
+    }
     #[test]
     fn integer_output_retains_only_its_known_value_length() {
         for nullable in [false, true] {
@@ -1551,3 +2036,9 @@ mod tests {
 
 #[cfg(test)]
 mod partitioned_sql_tests;
+
+#[cfg(test)]
+mod auto_spill_tests;
+
+#[cfg(test)]
+mod left_count_budget_tests;

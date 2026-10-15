@@ -18,12 +18,20 @@ use arrow::{
     datatypes::{SchemaRef, i256},
     record_batch::RecordBatch,
 };
-use std::{collections::HashSet, sync::Arc, time::Instant};
+use hashbrown::HashSet;
+use std::{sync::Arc, time::Instant};
+pub(super) mod having;
 mod output;
 pub(super) use output::{AggregateOutput, PartitionOutput};
+mod capacity;
+pub(super) mod clustered;
+mod heap;
 mod ordered_source;
 mod preflight;
+mod runs;
+mod sorted_distinct;
 pub(super) use ordered_source::SourceBatch;
+pub(crate) use sorted_distinct::DECLINED as SORTED_DISTINCT_DECLINED;
 
 pub(super) struct EvaluatedBatch {
     pub rows: usize,
@@ -39,6 +47,8 @@ pub(super) struct States {
     pub(super) extremes: Option<Vec<Option<Key>>>,
     #[allow(clippy::type_complexity, clippy::box_collection)]
     pub(super) distinct: Option<Vec<Option<Box<HashSet<Key, ahash::RandomState>>>>>,
+    // Payloads and tables drop before their backing lease, including raw exports.
+    heap_lease: Option<Reservation>,
 }
 impl States {
     pub(super) fn update_plain(
@@ -157,6 +167,7 @@ impl States {
             sums: matches!(aggregate.function, Aggregate::Sum | Aggregate::Avg).then(Vec::new),
             extremes: matches!(aggregate.function, Aggregate::Min | Aggregate::Max).then(Vec::new),
             distinct: aggregate.distinct.then(Vec::new),
+            heap_lease: None,
         }
     }
     pub(super) fn bytes_per_group(&self) -> usize {
@@ -219,11 +230,19 @@ pub(super) struct Aggregation {
     // Join helpers before dropping their state and the accounting leases.
     aggregate_workers: Option<aggregate_workers::Workers>,
     pub(super) states: Vec<States>,
+    sorted_distinct: Option<sorted_distinct::Pairs>,
     state_slack: usize,
+    precise_numeric: bool,
     map: crate::group_lookup::EncodedGroups,
     numeric_map: crate::group_index::NumericGroups,
     null_group: Option<usize>,
     state_leases: Vec<Reservation>,
+    // Outer vectors have fixed capacities and outlive neither this lease nor
+    // its counterpart in RawPartial. Their credit is never growth slack.
+    metadata_lease: Reservation,
+    numeric_lease: Reservation,
+    numeric_slack: Option<Reservation>,
+    merge_credit: Option<Reservation>,
 }
 /// Immutable ownership boundary for partition-routing jobs. In particular this
 /// contains no worker receivers or mutable lookup indexes. Buffers precede both
@@ -237,6 +256,8 @@ pub(super) struct RawPartial {
     encoded: Vec<Option<Box<[u8]>>>,
     encounters: Vec<EncounterToken>,
     _state_leases: Vec<Reservation>,
+    _metadata_lease: Reservation,
+    _numeric_lease: Reservation,
     funding: RawFunding,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -324,8 +345,14 @@ impl Aggregation {
         if !ORDERED {
             self.last_ordered_batch = None;
         }
-        let result =
-            self.update_inner::<true, ORDERED>(p, expressions, metrics, batch, tokens, source);
+        let result = self.update_inner::<true, ORDERED, false>(
+            p,
+            expressions,
+            metrics,
+            batch,
+            tokens,
+            source,
+        );
         // Even a failed update can have grown the token vector. Retain that
         // storage's credit until the failed state is dropped; do not publish it.
         let added =
@@ -408,6 +435,15 @@ impl Aggregation {
         } else {
             std::mem::take(&mut state.encounters)
         };
+        // The immutable partial keeps vectors, but no numeric lookup index.
+        // Free that index before returning its capacity credit.
+        if state.precise_numeric {
+            let bytes = state.numeric_map.allocation_bytes();
+            state.numeric_map = crate::group_index::NumericGroups::default();
+            state
+                .numeric_lease
+                .release_excess(state.numeric_lease.bytes() - bytes);
+        }
         let Export { state, funding } = export;
         Ok(RawPartial {
             group_count: state.group_count,
@@ -418,6 +454,8 @@ impl Aggregation {
             encoded,
             encounters,
             _state_leases: state.state_leases,
+            _metadata_lease: state.metadata_lease,
+            _numeric_lease: state.numeric_lease,
             funding,
         })
     }
@@ -427,6 +465,39 @@ impl Aggregation {
         budget: Budget,
         optimizations: bool,
     ) -> Result<Self> {
+        let metadata_bytes = p
+            .groups
+            .len()
+            .checked_mul(std::mem::size_of::<Vec<Key>>())
+            .and_then(|bytes| {
+                p.aggregates
+                    .len()
+                    .checked_mul(std::mem::size_of::<States>())
+                    .and_then(|states| bytes.checked_add(states))
+            })
+            .and_then(|bytes| {
+                // Preserve the numeric path's small-allocation allowance in
+                // addition to, rather than instead of, the actual metadata.
+                let overhead = if optimizations
+                    && p.groups.len() == 1
+                    && matches!(p.groups[0].ty, Type::Int | Type::Decimal(_))
+                {
+                    2048
+                } else {
+                    0
+                };
+                bytes.checked_add(overhead)
+            })
+            .ok_or("aggregate metadata size overflow")?;
+        let metadata_lease = budget.reserve(metadata_bytes)?;
+        // Explicit capacities make the funded size independent of collect's
+        // allocation strategy. Neither outer vector grows after construction.
+        let mut group_keys = Vec::with_capacity(p.groups.len());
+        group_keys.resize_with(p.groups.len(), Vec::new);
+        let mut states = Vec::with_capacity(p.aggregates.len());
+        states.extend(p.aggregates.iter().map(States::new));
+        assert_eq!(group_keys.capacity(), p.groups.len());
+        assert_eq!(states.capacity(), p.aggregates.len());
         let mut state = Self {
             #[cfg(test)]
             export_drop_audit: None,
@@ -436,25 +507,22 @@ impl Aggregation {
             last_ordered_batch: None,
             budget: budget.clone(),
             group_count: 0,
-            group_keys: p.groups.iter().map(|_| Vec::new()).collect(),
+            group_keys,
             numeric_group_keys: None,
             aggregate_workers: None,
-            states: p.aggregates.iter().map(States::new).collect(),
+            states,
+            sorted_distinct: None,
             state_slack: 0,
+            precise_numeric: true,
             map: crate::group_lookup::EncodedGroups::default(),
             numeric_map: crate::group_index::NumericGroups::default(),
             null_group: None,
             state_leases: Vec::new(),
+            metadata_lease,
+            numeric_lease: budget.reserve(0)?,
+            numeric_slack: None,
+            merge_credit: None,
         };
-        if optimizations
-            && p.groups.len() == 1
-            && matches!(p.groups[0].ty, Type::Int | Type::Decimal(_))
-        {
-            // Fixed headers, the minimum small hash table and vector capacities
-            // must be covered even when chunked state reservation falls back to
-            // charging just one group under a very small budget.
-            state.state_leases.push(budget.reserve(2048)?);
-        }
         if p.aggregation && p.groups.is_empty() {
             // Scalar vectors also grow to minimum capacity on their first push.
             // Wide totals require 32 bytes per cell, in addition to counts and
@@ -485,14 +553,17 @@ impl Aggregation {
     pub(super) fn disable_dense(&mut self) {
         self.allow_dense = false;
     }
-    pub(super) fn add_merge_credit(&mut self, bytes: usize) {
-        self.state_slack += bytes;
+    pub(super) fn add_merge_credit(&mut self, lease: Reservation) {
+        assert!(self.merge_credit.is_none());
+        self.state_slack += lease.bytes();
+        self.merge_credit = Some(lease);
     }
-    pub(super) fn retain_merge_credit(&mut self, mut lease: Reservation, bytes: usize) {
-        let unused = bytes.min(self.state_slack);
+    pub(super) fn retain_merge_credit(&mut self) {
+        let mut lease = self.merge_credit.take().expect("active merge credit");
+        let unused = lease.bytes().min(self.state_slack);
         self.state_slack -= unused;
-        lease.release_excess(bytes - unused);
-        if unused != bytes {
+        lease.release_excess(lease.bytes() - unused);
+        if lease.bytes() != 0 {
             self.state_leases.push(lease);
         }
     }
@@ -525,8 +596,13 @@ impl Aggregation {
         let group = if let Some(id) = found {
             id
         } else {
-            let bytes = if numeric.is_some() {
-                128 + 4 * (16 + state_bytes) + extra_per_group
+            let bytes = if let Some(numeric) = numeric {
+                if self.precise_numeric {
+                    self.grow_numeric(expressions, (!is_null).then_some(numeric))?;
+                    extra_per_group
+                } else {
+                    128 + 4 * (std::mem::size_of::<i128>() + state_bytes) + extra_per_group
+                }
             } else {
                 512 + encoded.unwrap().len() * 6
                     + 4 * (p.groups.len() * std::mem::size_of::<Key>() + state_bytes)
@@ -598,6 +674,11 @@ impl Aggregation {
         expressions: &crate::expr_program::ExpressionProgram,
         options: &Options,
     ) -> Result<()> {
+        // Already populated capacity-funded vectors cannot switch to the
+        // asynchronous helpers' legacy per-group reservation scheme.
+        if self.precise_numeric && self.numeric_group_keys.is_some() {
+            return Ok(());
+        }
         self.aggregate_workers = aggregate_workers::Workers::new(
             &mut self.states,
             &p.aggregates,
@@ -606,11 +687,17 @@ impl Aggregation {
             options,
             &self.budget,
         )?;
+        // Helper-owned vectors are resized asynchronously and retain the
+        // existing conservative per-group funding, even after helpers join.
+        self.precise_numeric &= self.aggregate_workers.is_none();
         Ok(())
     }
     pub(super) fn finish_updates(&mut self) -> Result<()> {
         if let Some(workers) = self.aggregate_workers.take() {
             workers.finish(&mut self.states)?;
+        }
+        if let Some(pairs) = self.sorted_distinct.take() {
+            pairs.finish(&mut self.states[0].counts)?;
         }
         Ok(())
     }
@@ -621,10 +708,28 @@ impl Aggregation {
         metrics: &mut Metrics,
         batch: EvaluatedBatch,
     ) -> Result<()> {
-        self.update_inner::<false, false>(p, expressions, metrics, batch, None, None)
+        self.update_inner::<false, false, false>(p, expressions, metrics, batch, None, None)
+    }
+    /// Only the fused LEFT-count producer supplies these non-NULL u64 weights.
+    /// Group discovery is unchanged; a weight replaces that many unit COUNT
+    /// additions. Nonnegative checked addition has the same overflow boundary.
+    pub(super) fn update_counted(
+        &mut self,
+        p: &Plan,
+        expressions: &crate::expr_program::ExpressionProgram,
+        metrics: &mut Metrics,
+        batch: EvaluatedBatch,
+    ) -> Result<()> {
+        debug_assert!(self.aggregate_workers.is_none());
+        debug_assert!(
+            p.aggregates
+                .iter()
+                .all(|a| matches!(a.function, Aggregate::Count) && !a.distinct)
+        );
+        self.update_inner::<false, false, true>(p, expressions, metrics, batch, None, None)
     }
     #[allow(clippy::too_many_arguments)]
-    fn update_inner<const TRACK_ENCOUNTERS: bool, const ORDERED: bool>(
+    fn update_inner<const TRACK_ENCOUNTERS: bool, const ORDERED: bool, const COUNTED: bool>(
         &mut self,
         p: &Plan,
         expressions: &crate::expr_program::ExpressionProgram,
@@ -652,7 +757,13 @@ impl Aggregation {
         };
         let allow_dense = self.allow_dense;
         if numeric_keys.is_some() && allow_dense {
-            metrics.dense_group_rebuilds += usize::from(self.numeric_map.prepare(&self.budget));
+            let rebuilt = if self.precise_numeric {
+                self.numeric_map
+                    .prepare_accounted(&self.budget, &mut self.numeric_lease)
+            } else {
+                self.numeric_map.prepare(&self.budget)
+            };
+            metrics.dense_group_rebuilds += usize::from(rebuilt);
             let bytes = self.numeric_map.dense_bytes();
             metrics.dense_group_batches += usize::from(bytes > 0);
             metrics.dense_group_index_peak_bytes = metrics.dense_group_index_peak_bytes.max(bytes);
@@ -725,15 +836,19 @@ impl Aggregation {
                     if let Some(i) = existing {
                         i
                     } else {
-                        // Numeric groups use an inline i128 index and one compact
-                        // i128 output column, with a separate NULL group. They own
-                        // neither boxed encoded keys nor a Vec<Key> output column.
-                        // 128 index bytes/group covers buckets, controls and a
-                        // simultaneous rehash; fourfold vector allowances cover
-                        // old/new capacities during growth. Dense slots reserve
-                        // their own additional allocation in NumericGroups.
-                        let allocation = if numeric_keys.is_some() {
-                            128 + 4 * (std::mem::size_of::<i128>() + state_bytes)
+                        // Numeric storage is charged on capacity growth, including
+                        // old plus new buffers while copying. Helpers retain their
+                        // separately prepaid asynchronous vector-growth allowance.
+                        let allocation = if let Some(keys) = numeric_keys {
+                            if self.precise_numeric {
+                                self.grow_numeric(
+                                    expressions,
+                                    keys.is_valid(row).then(|| keys.value(row)),
+                                )?;
+                                0
+                            } else {
+                                128 + 4 * (std::mem::size_of::<i128>() + state_bytes)
+                            }
                         } else {
                             // Encoded bytes also cover decoded string payloads.
                             512 + bytes.unwrap().len() * 6
@@ -842,6 +957,12 @@ impl Aggregation {
             metrics.aggregate_seconds += start.elapsed().as_secs_f64();
             return Ok(());
         }
+        if let Some(pairs) = &mut self.sorted_distinct {
+            metrics.sorted_distinct_pairs +=
+                pairs.append(&group_ids, values[0].as_ref().expect("distinct column"))?;
+            metrics.aggregate_seconds += start.elapsed().as_secs_f64();
+            return Ok(());
+        }
         if let Some(workers) = &mut self.aggregate_workers {
             let (bounded, seconds) = workers.update(
                 &mut self.states,
@@ -865,6 +986,24 @@ impl Aggregation {
             if expressions.state_sources[index] != index {
                 continue;
             }
+            if COUNTED {
+                let weights = value
+                    .as_ref()
+                    .expect("counted input")
+                    .array
+                    .as_any()
+                    .downcast_ref::<UInt64Array>()
+                    .expect("counted u64 weights");
+                debug_assert_eq!(weights.null_count(), 0);
+                debug_assert_eq!(weights.len(), group_ids.len());
+                for (row, group) in group_ids.iter().enumerate() {
+                    let count = &mut self.states[index].counts[*group];
+                    *count = count
+                        .checked_add(weights.value(row))
+                        .ok_or("aggregate count overflow")?;
+                }
+                continue;
+            }
             if !agg.distinct
                 && matches!(
                     agg.function,
@@ -882,10 +1021,10 @@ impl Aggregation {
                 continue;
             }
             // DISTINCT and MIN/MAX retain the general typed-key path.
-            let _binary_scratch = value
-                .as_ref()
-                .map(|value| super::binary_key_scratch(value, &self.budget))
-                .transpose()?;
+            let state = &mut self.states[index];
+            if state.heap_lease.is_none() {
+                state.heap_lease = Some(self.budget.reserve(0)?);
+            }
             for (row, group) in group_ids.iter().enumerate() {
                 let state = &mut self.states[index];
                 if value
@@ -894,25 +1033,19 @@ impl Aggregation {
                 {
                     continue;
                 }
-                let k = || {
-                    key(
-                        value.as_ref().unwrap(),
-                        &agg.input.as_ref().unwrap().ty,
-                        row,
-                    )
-                };
                 if agg.distinct {
                     if value.is_none() {
                         return Err("unsupported: DISTINCT wildcard".into());
                     }
-                    let k = k();
-                    let distinct = &mut state.distinct.as_mut().unwrap()[*group];
-                    if distinct.as_ref().is_some_and(|set| set.contains(&k)) {
+                    if !heap::insert_distinct(
+                        &mut state.distinct.as_mut().unwrap()[*group],
+                        state.heap_lease.as_mut().unwrap(),
+                        value.as_ref().unwrap(),
+                        &agg.input.as_ref().unwrap().ty,
+                        row,
+                    )? {
                         continue;
                     }
-                    let bytes = 128 + k.payload_bytes();
-                    self.state_leases.push(self.budget.reserve(bytes)?);
-                    distinct.get_or_insert_with(Default::default).insert(k);
                 }
                 state.counts[*group] = state.counts[*group]
                     .checked_add(1)
@@ -920,23 +1053,14 @@ impl Aggregation {
                 match agg.function {
                     Aggregate::Count => {}
                     Aggregate::Min | Aggregate::Max => {
-                        let k = k();
-                        let extreme = &mut state.extremes.as_mut().unwrap()[*group];
-                        let replace = extreme.as_ref().is_none_or(|old| {
-                            let cmp = if let (Key::Float(a), Key::Float(b)) = (&k, old) {
-                                f64::from_bits(*a).total_cmp(&f64::from_bits(*b))
-                            } else {
-                                k.cmp(old)
-                            };
-                            if matches!(agg.function, Aggregate::Min) {
-                                cmp.is_lt()
-                            } else {
-                                cmp.is_gt()
-                            }
-                        });
-                        if replace {
-                            *extreme = Some(k);
-                        }
+                        heap::update_extreme(
+                            &mut state.extremes.as_mut().unwrap()[*group],
+                            state.heap_lease.as_mut().unwrap(),
+                            value.as_ref().unwrap(),
+                            &agg.input.as_ref().unwrap().ty,
+                            row,
+                            matches!(agg.function, Aggregate::Min),
+                        )?;
                     }
                     _ => {
                         let v = numeric(&value.as_ref().unwrap().array).value(row);
@@ -1112,6 +1236,18 @@ pub(super) enum Backend {
 }
 #[cfg(test)]
 impl Backend {
+    pub(super) fn enable_sorted_distinct(
+        &mut self,
+        p: &Plan,
+        row_limit: usize,
+        options: &Options,
+    ) -> bool {
+        match self {
+            Self::Single(state) => state.enable_sorted_distinct(p, row_limit, options),
+            Self::Partitioned { .. } => false,
+        }
+    }
+
     pub(super) fn from_owned_partitions(
         state: OwnedPartitions,
         _budget: Budget,

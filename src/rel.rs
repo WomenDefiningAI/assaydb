@@ -24,19 +24,34 @@ use sqlparser::{
     dialect::GenericDialect,
     tokenizer::{Token, Tokenizer},
 };
+mod aggregate_reuse;
 mod branch_facts;
+mod build_groups;
 mod column_projection;
 mod correlated;
+mod demand_filter;
 mod empty_in;
+mod filtered_reuse;
 mod funded_concat;
 mod group_binding;
+mod having_output;
 mod in_subquery;
+mod lane_fusion;
+mod left_count;
+mod membership_safety;
+mod numeric_leaf;
 mod ordered_batches;
+mod paired_existence;
+#[cfg(test)]
+mod planner_safety_tests;
 mod probe;
 mod replay;
+mod reverse_lanes;
+mod runtime_filter;
 mod set_ops;
 mod shared_pipeline;
 mod shared_retry;
+mod sideways;
 
 use std::{
     collections::{HashMap, HashSet},
@@ -284,6 +299,7 @@ pub(crate) fn prepare_with_local_files(
     let plan = identity(&root.schema)?;
     crate::mixed_numeric::validate_node(&root)?;
     Ok(Prepared {
+        auto_simple: None,
         internal_output: false,
         schema: root.schema.clone(),
         plan,
@@ -723,18 +739,56 @@ impl Planner<'_> {
             );
             select.projection = bind::expand_wildcards(&select.projection, &logical_schema, None)?;
         }
-        // Single-relation predicates are legal below inner joins. LEFT JOIN nodes
-        // are treated as barriers: a WHERE predicate stays above that entire node.
+        // Comma-join predicates reach the same join below. Moving a local term
+        // early must not evaluate it on unmatched rows or hide a fallible key /
+        // residual. Unbound terms (e.g. subqueries) are handled after these joins
+        // in both plans and are not crossed here.
+        let multiple_relations = relations.len() > 1;
+        let local_pushdown_is_total = if multiple_relations {
+            let mut scope = relations[0].clone();
+            for right in &relations[1..] {
+                scope = Node {
+                    schema: combined(&scope.schema, &right.schema),
+                    estimated_rows: 0,
+                    op: RelOp::Join {
+                        left: Box::new(scope),
+                        right: Box::new(right.clone()),
+                        kind: JoinKind::Inner,
+                        keys: Vec::new(),
+                        residual: None,
+                    },
+                };
+            }
+            predicates
+                .iter()
+                .filter(|p| binder(&scope.schema).expr(p).is_ok())
+                .all(|p| {
+                    bind_node_expression(&scope, p)
+                        .is_ok_and(|e| membership_safety::expression_is_total(&e, &scope))
+                })
+        } else {
+            true
+        };
+        // LEFT JOIN nodes remain barriers: WHERE stays above that entire node.
         for node in &mut relations {
-            if !self.options.relational_optimizations {
+            if !self.options.relational_optimizations || !local_pushdown_is_total {
                 continue;
             }
             let local = predicates
                 .iter()
                 .filter_map(|p| local_condition(p, &node.schema))
+                // An OR containing a subquery may not bind as a whole while
+                // still yielding a local necessary condition. Check that moved
+                // expression too, on every row of its destination input.
+                .filter(|p| {
+                    !multiple_relations
+                        || bind_node_expression(node, p)
+                            .is_ok_and(|e| membership_safety::expression_is_total(&e, node))
+                })
                 .collect::<Vec<_>>();
-            // Fully local predicates are already present in `local` above.
-            predicates.retain(|p| binder(&node.schema).expr(p).is_err());
+            // Remove only whole predicates actually admitted above; extracted
+            // necessary conditions retain their original predicate as well.
+            predicates.retain(|p| !local.contains(p));
             if let Some(p) = syntax::and(local) {
                 let expr = bind_node_expression(node, &p)?.simplify_boolean();
                 *node = filtered(node.clone(), expr, self.options.relational_optimizations)?;
@@ -821,25 +875,48 @@ impl Planner<'_> {
         let all = combined(&left.schema, &right.schema);
         let mut keys = Vec::new();
         let mut residual = Vec::new();
-        let mut left_filters = Vec::new();
-        let mut right_filters = Vec::new();
         for p in predicates {
             // Validate in the original scope before testing one side; otherwise
             // an ambiguous unqualified name could become accidentally accepted.
             binder(&all).expr(&p)?;
             if let Some(k) = join_key_nodes(&p, &left, &right) {
                 keys.push(k);
-            } else if self.options.relational_optimizations
-                && binder(&right.schema).expr(&p).is_ok()
-            {
+            } else {
+                residual.push(p);
+            }
+        }
+        // Check the original, complete ON condition before moving any term.
+        // Total moved terms cannot create phantom errors; total keys and other
+        // residual terms cannot lose required errors when rows are removed.
+        let can_push = self.options.relational_optimizations && {
+            let scope = Node {
+                schema: all.clone(),
+                estimated_rows: 0,
+                op: RelOp::Join {
+                    left: Box::new(left.clone()),
+                    right: Box::new(right.clone()),
+                    kind,
+                    keys: keys.clone(),
+                    residual: syntax::and(residual.clone())
+                        .map(|e| bind_pair_expression(&left, &right, &e))
+                        .transpose()?,
+                },
+            };
+            membership_safety::join_conditions_are_total(&scope)
+        };
+        let mut left_filters = Vec::new();
+        let mut right_filters = Vec::new();
+        let mut retained = Vec::new();
+        for p in residual {
+            if can_push && binder(&right.schema).expr(&p).is_ok() {
                 right_filters.push(p);
-            } else if self.options.relational_optimizations
+            } else if can_push
                 && matches!(kind, JoinKind::Inner | JoinKind::Semi)
                 && binder(&left.schema).expr(&p).is_ok()
             {
                 left_filters.push(p);
             } else {
-                residual.push(p);
+                retained.push(p);
             }
         }
         if let Some(p) = syntax::and(left_filters) {
@@ -853,7 +930,7 @@ impl Planner<'_> {
         if self.options.relational_optimizations {
             crate::equivalence::reduce_join_keys(&left, &right, &mut keys);
         }
-        let residual = syntax::and(residual)
+        let residual = syntax::and(retained)
             .map(|e| bind_pair_expression(&left, &right, &e))
             .transpose()?;
         let schema = if matches!(kind, JoinKind::Semi | JoinKind::Anti) {
@@ -1435,6 +1512,8 @@ impl Planner<'_> {
 // supplies its value. The filtered side keeps exactly the same schema, so the
 // surrounding equality/residual expressions retain their bound column indices.
 fn membership(left: Node, right: Node, mut value: Expr) -> Result<Node> {
+    let can_cross = membership_safety::can_move_membership_across(&left)
+        && membership_safety::expression_is_total(&value, &left);
     let mut columns = std::collections::BTreeSet::new();
     value.columns(&mut columns);
     let Node {
@@ -1443,7 +1522,7 @@ fn membership(left: Node, right: Node, mut value: Expr) -> Result<Node> {
         op,
     } = left;
     let op = match op {
-        RelOp::Rename { input } => {
+        RelOp::Rename { input } if can_cross => {
             return Ok(Node {
                 schema,
                 estimated_rows: (estimated_rows / 4).max(1),
@@ -1452,7 +1531,7 @@ fn membership(left: Node, right: Node, mut value: Expr) -> Result<Node> {
                 },
             });
         }
-        RelOp::Filter { input, predicate } => {
+        RelOp::Filter { input, predicate } if can_cross => {
             return Ok(Node {
                 schema,
                 estimated_rows: (estimated_rows / 4).max(1),
@@ -1468,9 +1547,12 @@ fn membership(left: Node, right: Node, mut value: Expr) -> Result<Node> {
             kind: JoinKind::Inner,
             keys,
             residual,
-        } if !columns.is_empty() => {
+        } if can_cross && !columns.is_empty() => {
             let width = a.schema.fields().len();
-            if columns.iter().all(|i| *i < width) {
+            // The enclosing join builds b before running its probe. Moving
+            // the semijoin into a would move the IN build after b; only a
+            // total b may change that evaluation order.
+            if columns.iter().all(|i| *i < width) && membership_safety::input_is_total(&b) {
                 return Ok(Node {
                     schema,
                     estimated_rows: (estimated_rows / 4).max(1),
@@ -1628,12 +1710,32 @@ fn join_key(p: &s::Expr, left: &Schema, right: &Schema) -> Option<(Expr, Expr)> 
 #[derive(Clone)]
 struct ScanKeyFilter {
     expressions: Vec<Expr>,
+    previous: Option<Arc<ScanKeyFilter>>,
+    // New predicates are proven total and may decline if scan metadata is unfunded.
+    optional_total: bool,
     members: Arc<HashSet<Box<[u8]>, ahash::RandomState>>,
     numeric: Option<Arc<crate::membership::NumericMembership>>,
     numeric_pair: Option<Arc<crate::membership::NumericPairMembership>>,
     _lease: Arc<Reservation>,
 }
+impl ScanKeyFilter {
+    fn iter(&self) -> impl Iterator<Item = &Self> {
+        std::iter::successors(Some(self), |filter| filter.previous.as_deref())
+    }
+}
 fn scan_key_mask(
+    batch: &RecordBatch,
+    filter: &ScanKeyFilter,
+    budget: &Budget,
+) -> Result<BooleanArray> {
+    let mut result = single_scan_key_mask(batch, filter, budget)?;
+    for filter in filter.iter().skip(1) {
+        let next = single_scan_key_mask(batch, filter, budget)?;
+        result = crate::membership::intersect(&result, &next, budget)?;
+    }
+    Ok(result)
+}
+fn single_scan_key_mask(
     batch: &RecordBatch,
     filter: &ScanKeyFilter,
     budget: &Budget,
@@ -1728,13 +1830,20 @@ impl Materialized {
     }
 }
 struct Context<'a> {
+    filtered_reuse: Option<Arc<Mutex<filtered_reuse::Cache>>>,
+    build_groups: Option<build_groups::Request>,
+    // None disables optional probe retention for a fresh whole-query retry.
+    demand_cache: Option<&'a std::sync::atomic::AtomicBool>,
     shared_attempt: Option<Arc<crate::execute::pipeline::fallback::Attempt>>,
     options: &'a Options,
-    scan_filters: HashMap<usize, ScanKeyFilter>,
+    scan_filters: HashMap<usize, Arc<ScanKeyFilter>>,
     static_filters: HashMap<usize, Expr>,
     scan_transforms: HashMap<usize, Expr>,
+    lane_transforms: HashMap<usize, crate::parquet_scan::BatchTransform>,
     replay_transforms: HashMap<usize, Expr>,
     materialized: HashMap<usize, Arc<Materialized>>,
+    // Declared after the map so its allocation is freed before its credit.
+    sideways_registry_lease: Option<Reservation>,
     spill: Option<crate::spill::SpillStore>,
     budget: Budget,
     metrics: Metrics,
@@ -1745,10 +1854,20 @@ pub(crate) struct ScanTarget {
     payload: usize,
     has_filter: bool,
     key_domain: usize,
+    probe_rows: usize,
 }
-// Only commute through row-preserving renames/projections and ordinary filters.
+// Membership removes rows before the crossed operators run, so every such
+// operator must be total. All exact, pair and bitmap installers share this
+// traversal; there is no unchecked path for an earlier installer to take.
 // Aggregates, limits, outer joins and scalar-cardinality nodes are barriers.
 fn scan_target(node: &Node, mut expressions: Vec<Expr>) -> Result<Option<ScanTarget>> {
+    if !membership_safety::can_move_membership_across(node)
+        || expressions
+            .iter()
+            .any(|e| !membership_safety::expression_is_total(e, node))
+    {
+        return Ok(None);
+    }
     match &node.op {
         RelOp::Scan { .. } => {
             let mut keys = std::collections::BTreeSet::new();
@@ -1774,6 +1893,7 @@ fn scan_target(node: &Node, mut expressions: Vec<Expr>) -> Result<Option<ScanTar
             let key_domain = filter_distinct(node, &expressions);
             Ok(Some(ScanTarget {
                 key_domain,
+                probe_rows: node.estimated_rows,
                 id: node as *const Node as usize,
                 expressions,
                 payload,
@@ -1818,11 +1938,10 @@ fn scan_target(node: &Node, mut expressions: Vec<Expr>) -> Result<Option<ScanTar
                     _ => None,
                 })
                 .collect::<Vec<_>>();
-            if map.iter().any(Option::is_none) {
-                return Ok(None);
-            }
             for expr in &mut expressions {
-                expr.remap_columns(&map)?;
+                if expr.remap_columns(&map).is_err() {
+                    return Ok(None);
+                }
             }
             scan_target(input, expressions)
         }
@@ -1866,6 +1985,13 @@ pub(crate) fn aggregate_scan_target(
     node: &Node,
     mut expressions: Vec<Expr>,
 ) -> Result<Option<ScanTarget>> {
+    if !membership_safety::can_move_membership_across(node)
+        || expressions
+            .iter()
+            .any(|e| !membership_safety::expression_is_total(e, node))
+    {
+        return Ok(None);
+    }
     match &node.op {
         RelOp::Rename { input } => aggregate_scan_target(input, expressions),
         RelOp::Filter { input, .. } => Ok(aggregate_scan_target(input, expressions)?.map(
@@ -1897,23 +2023,14 @@ pub(crate) fn aggregate_scan_target(
                     }
                 })
                 .collect::<Vec<_>>();
-            // A computed non-key output is harmless. A key requiring such an
-            // expression is not movable by this conservative transformation.
+            // The shared barrier proves every non-key output total. Demanded
+            // keys must additionally remap through direct grouping columns.
             for e in &mut expressions {
                 if e.remap_columns(&map).is_err() {
                     return Ok(None);
                 }
             }
             if plan.aggregation {
-                if plan.groups.is_empty()
-                    || plan.aggregates.iter().any(|a| {
-                        a.input
-                            .as_ref()
-                            .is_some_and(|e| !matches!(e.kind, crate::expr::Kind::Column(_)))
-                    })
-                {
-                    return Ok(None);
-                }
                 scan_target(input, expressions)
             } else {
                 aggregate_scan_target(input, expressions)
@@ -1933,11 +2050,6 @@ fn probe_chain(node: &Node) -> bool {
     }
 }
 
-struct CachedProbe {
-    batches: Vec<RecordBatch>,
-    _leases: Vec<Reservation>,
-}
-
 // Admission-only estimate: use the joint domain for composite membership,
 // rather than comparing tuple count with one component's NDV. Correlations can
 // make this optimistic, so retain the strict selectivity and key-count guards.
@@ -1954,7 +2066,7 @@ fn filter_distinct(node: &Node, expressions: &[Expr]) -> usize {
     estimate.min(node.estimated_rows.max(1))
 }
 
-fn install_scan_filter(
+fn install_exact_scan_filter(
     ctx: &mut Context<'_>,
     node: &Node,
     expressions: Vec<Expr>,
@@ -1986,6 +2098,7 @@ fn install_scan_filter(
         payload,
         has_filter,
         key_domain,
+        ..
     }) = scan_target(node, expressions)?
     else {
         return Ok(None);
@@ -2009,22 +2122,21 @@ fn install_scan_filter(
     if ctx.scan_filters.contains_key(&id) {
         return Ok(None);
     }
-    if cached_numeric
-        && let Some(bitmap) =
-            crate::membership::NumericMembership::from_keys(|| keys.keys(), &ctx.budget)
-    {
+    if cached_numeric && let Some(bitmap) = keys.scan_membership(&ctx.budget) {
         let Ok(lease) = ctx.budget.reserve(256) else {
             return Ok(None);
         };
         ctx.scan_filters.insert(
             id,
-            ScanKeyFilter {
+            Arc::new(ScanKeyFilter {
+                previous: None,
+                optional_total: false,
                 expressions,
                 members: Arc::new(HashSet::default()),
                 numeric: Some(Arc::new(bitmap)),
                 numeric_pair: None,
                 _lease: Arc::new(lease),
-            },
+            }),
         );
         return Ok(Some(id));
     }
@@ -2044,13 +2156,15 @@ fn install_scan_filter(
     let members = keys.keys().map(Box::<[u8]>::from).collect();
     ctx.scan_filters.insert(
         id,
-        ScanKeyFilter {
+        Arc::new(ScanKeyFilter {
+            previous: None,
+            optional_total: false,
             numeric: numeric_membership(&expressions, &members, &ctx.budget),
             numeric_pair: numeric_pair_membership(&expressions, &members, &ctx.budget),
             expressions,
             members: Arc::new(members),
             _lease: lease,
-        },
+        }),
     );
     Ok(Some(id))
 }
@@ -2079,6 +2193,32 @@ fn input<'a>(
 }
 
 pub(crate) fn merge(a: &mut Metrics, b: &Metrics) {
+    a.aggregate_scan_reuses += b.aggregate_scan_reuses;
+    a.sideways_prepared_builds += b.sideways_prepared_builds;
+    a.sideways_scan_filters += b.sideways_scan_filters;
+    a.reverse_existence_lane_joins += b.reverse_existence_lane_joins;
+    a.reverse_existence_numeric_lane_joins += b.reverse_existence_numeric_lane_joins;
+    a.reverse_existence_lane_batches += b.reverse_existence_lane_batches;
+    a.reverse_existence_probe_seconds += b.reverse_existence_probe_seconds;
+    a.reverse_existence_merge_seconds += b.reverse_existence_merge_seconds;
+    a.reverse_existence_emit_seconds += b.reverse_existence_emit_seconds;
+    a.build_prepare_concat_seconds += b.build_prepare_concat_seconds;
+    a.build_prepare_key_seconds += b.build_prepare_key_seconds;
+    a.build_prepare_index_seconds += b.build_prepare_index_seconds;
+    a.build_prepare_column_tasks += b.build_prepare_column_tasks;
+    a.build_prepare_index_tasks += b.build_prepare_index_tasks;
+    a.build_group_dictionary_seconds += b.build_group_dictionary_seconds;
+    a.build_group_parallel_dictionaries += b.build_group_parallel_dictionaries;
+    a.build_group_id_aggregates += b.build_group_id_aggregates;
+    a.build_group_id_rows += b.build_group_id_rows;
+    a.build_group_id_groups += b.build_group_id_groups;
+    a.build_group_id_fallbacks += b.build_group_id_fallbacks;
+    a.sorted_distinct_aggregates += b.sorted_distinct_aggregates;
+    a.sorted_distinct_pairs += b.sorted_distinct_pairs;
+    a.sorted_distinct_fallbacks += b.sorted_distinct_fallbacks;
+    a.fused_left_count_joins += b.fused_left_count_joins;
+    a.fused_left_count_rows += b.fused_left_count_rows;
+    a.fused_left_count_serial_retries += b.fused_left_count_serial_retries;
     a.column_projection_batches += b.column_projection_batches;
     a.column_projection_rows += b.column_projection_rows;
     a.parallel_replays += b.parallel_replays;
@@ -2090,6 +2230,7 @@ pub(crate) fn merge(a: &mut Metrics, b: &Metrics) {
         .replay_pending_batches_peak
         .max(b.replay_pending_batches_peak);
     a.replay_pending_bytes_peak = a.replay_pending_bytes_peak.max(b.replay_pending_bytes_peak);
+    a.lane_fused_joins += b.lane_fused_joins;
     a.parallel_joins += b.parallel_joins;
     a.parallel_join_tasks += b.parallel_join_tasks;
     a.parallel_join_batches += b.parallel_join_batches;
@@ -2161,12 +2302,19 @@ pub(crate) fn merge(a: &mut Metrics, b: &Metrics) {
     a.scan_reuses += b.scan_reuses;
     a.scan_materializations += b.scan_materializations;
     a.cached_scan_filters += b.cached_scan_filters;
+    a.filtered_scan_materializations += b.filtered_scan_materializations;
+    a.filtered_scan_reuses += b.filtered_scan_reuses;
+    a.paired_existence_scans += b.paired_existence_scans;
     a.static_scan_filters += b.static_scan_filters;
     a.buffered_parquet_scans += b.buffered_parquet_scans;
     a.parquet_cached_column_rows += b.parquet_cached_column_rows;
     a.parquet_uncached_column_rows += b.parquet_uncached_column_rows;
     a.buffered_compressed_bytes_read += b.buffered_compressed_bytes_read;
     a.demand_filtered_aggregates += b.demand_filtered_aggregates;
+    a.demand_filtered_scans += b.demand_filtered_scans;
+    a.top_k_sorts += b.top_k_sorts;
+    a.late_payload_sorts += b.late_payload_sorts;
+    a.late_payload_rows += b.late_payload_rows;
     a.dense_joins += b.dense_joins;
     a.join_rejection_bitmaps += b.join_rejection_bitmaps;
     a.join_rejection_bitmap_bytes += b.join_rejection_bitmap_bytes;
@@ -2177,6 +2325,8 @@ pub(crate) fn merge(a: &mut Metrics, b: &Metrics) {
     a.bitmap_scan_filters += b.bitmap_scan_filters;
     a.numeric_pair_scan_filters += b.numeric_pair_scan_filters;
     a.output_sort_seconds += b.output_sort_seconds;
+    a.having_input_groups += b.having_input_groups;
+    a.having_output_groups += b.having_output_groups;
     // Relational scan rows are counted at Scan; do not count each transform again.
     a.rows_after_filter += b.rows_after_filter;
     a.batches += b.batches;
@@ -2193,11 +2343,34 @@ impl Node {
         let cancel = ctx.options.cancellation.clone();
         cancel.check()?;
         let mut output_rows = 0;
-        let result = self.run_inner(ctx, &mut |batch| {
-            cancel.check()?;
-            output_rows += batch.num_rows();
-            emit(batch)
-        });
+        let result = if ctx.options.error_replay.canonical() {
+            // A scan's batch size alone does not constrain output from sorts,
+            // materializations, or joins. Every canonical pipeline edge carries
+            // one occurrence at a time; ordinary execution retains its batches.
+            let budget = ctx.budget.clone();
+            self.run_inner(ctx, &mut |batch| {
+                output_rows += batch.num_rows();
+                for row in 0..batch.num_rows() {
+                    cancel.check()?;
+                    // Slices share the already-accounted buffers. Reserve their
+                    // temporary array/RecordBatch metadata before allocating it.
+                    let _slice = budget.reserve(
+                        batch
+                            .num_columns()
+                            .saturating_mul(1024)
+                            .saturating_add(1024),
+                    )?;
+                    emit(batch.slice(row, 1))?;
+                }
+                Ok(())
+            })
+        } else {
+            self.run_inner(ctx, &mut |batch| {
+                cancel.check()?;
+                output_rows += batch.num_rows();
+                emit(batch)
+            })
+        };
         ctx.metrics.operator_profiles.push(serde_json::json!({"operator":match &self.op {RelOp::Scan{..}=>"Scan",RelOp::Join{..}=>"HashJoin",RelOp::Unary{plan,..}=>if plan.aggregation{"Aggregate"}else{"ProjectSort"},RelOp::Filter{..}=>"Filter",RelOp::Mark{..}=>"NullAwareMark",RelOp::TypedMark{..}=>"TypedNullAwareMark",RelOp::CorrelatedMark{..}=>"CorrelatedMark",RelOp::Scalar{..}=>"ScalarCardinality",RelOp::ScalarDefault{..}=>"ScalarEmptyDefault",RelOp::Rename{..}=>"Rename",RelOp::Project{..}=>"ColumnProject",RelOp::Limit{..}=>"Limit",RelOp::UnionAll{..}=>"UnionAll",RelOp::One=>"One",RelOp::Empty=>"Empty",RelOp::Materialize{shared_scan,..}=>if *shared_scan {"SharedScan"} else {"CteMaterialize"}},"estimated_rows":self.estimated_rows,"output_rows":output_rows,"inclusive_seconds":start.elapsed().as_secs_f64(),"timing_scope":"includes child execution and downstream consumer; do not sum"}));
         result
     }
@@ -2206,6 +2379,18 @@ impl Node {
         ctx: &mut Context<'_>,
         emit: &mut dyn FnMut(RecordBatch) -> Result<()>,
     ) -> Result<()> {
+        // Sideways preparation retains a completed build by its immutable node
+        // address (CTE IDs are small ordinals). Consume it once, in batch order.
+        if let Some(stored) = ctx.materialized.remove(&(self as *const Node as usize)) {
+            for batch in &stored.batches {
+                ctx.options.cancellation.check()?;
+                let _metadata = ctx
+                    .budget
+                    .reserve(batch.num_columns().saturating_mul(32).saturating_add(256))?;
+                emit(batch.clone())?;
+            }
+            return Ok(());
+        }
         match &self.op {
             RelOp::CorrelatedMark {
                 left,
@@ -2226,7 +2411,7 @@ impl Node {
                 } else {
                     None
                 };
-                if let Some(filter) = &filter {
+                for filter in filter.iter().flat_map(|filter| filter.iter()) {
                     ctx.metrics.dynamic_scan_filters += 1;
                     ctx.metrics.cached_scan_filters += 1;
                     ctx.metrics.bitmap_scan_filters += usize::from(filter.numeric.is_some());
@@ -2247,7 +2432,7 @@ impl Node {
                         let stats = replay::run(
                             &stored.batches,
                             &self.schema,
-                            filter.as_ref(),
+                            filter.as_deref(),
                             predicate,
                             ctx.options,
                             &ctx.budget,
@@ -2458,6 +2643,10 @@ impl Node {
                 })
             }
             RelOp::Scan { path, columns, .. } => {
+                if filtered_reuse::replay(self, ctx, emit)? {
+                    return Ok(());
+                }
+                let mut retained = filtered_reuse::Pending::new(self, ctx);
                 let file = File::open(path).map_err(|e| e.to_string())?;
                 let metadata = crate::parquet_scan::external_metadata(&file)?;
                 ctx.metrics.selected_column_compressed_bytes += metadata
@@ -2469,11 +2658,33 @@ impl Node {
                 let projection = ProjectionMask::roots(metadata.parquet_schema(), columns.clone());
                 let filter_stats = Arc::new(Mutex::new(ScanFilterStats::default()));
                 let mut predicates: Vec<crate::parquet_scan::PredicateFactory> = Vec::new();
-                if let Some(mut filter) = ctx
+                let filters = ctx
                     .scan_filters
                     .get(&(self as *const Node as usize))
-                    .cloned()
-                {
+                    .cloned();
+                for filter in filters.iter().flat_map(|filter| filter.iter()) {
+                    // ProjectionMask covers the physical schema, which can be
+                    // much wider than this node's pruned output. Fund new mask
+                    // clones for the factory and every live reader before making
+                    // them; optional total predicates may simply decline here.
+                    let projection_credit = if filter.optional_total {
+                        let bytes = metadata
+                            .parquet_schema()
+                            .num_columns()
+                            .saturating_add(256)
+                            .saturating_mul(2)
+                            .saturating_mul(ctx.options.workers.saturating_add(2));
+                        let Ok(credit) = ctx.budget.reserve(bytes) else {
+                            continue;
+                        };
+                        Some(Arc::new(credit))
+                    } else {
+                        None
+                    };
+                    // Each Parquet predicate sees only its own projected columns.
+                    // RowFilter intersects predicates; shared replay intersects masks.
+                    let mut filter = filter.clone();
+                    filter.previous = None;
                     let mut needed = std::collections::BTreeSet::new();
                     for expr in &filter.expressions {
                         expr.columns(&mut needed);
@@ -2492,7 +2703,9 @@ impl Node {
                     ctx.metrics.numeric_pair_scan_filters +=
                         usize::from(filter.numeric_pair.is_some());
                     let stats = filter_stats.clone();
+                    let count_rows = predicates.is_empty();
                     predicates.push(Arc::new(move |error| {
+                        let projection_credit = projection_credit.clone();
                         let filter = filter.clone();
                         let budget = budget.clone();
                         let stats = stats.clone();
@@ -2500,9 +2713,12 @@ impl Node {
                             projection.clone(),
                             move |batch: RecordBatch| {
                                 let start = Instant::now();
+                                let _projection_credit = &projection_credit;
                                 let result = scan_key_mask(&batch, &filter, &budget);
                                 let mut stats = stats.lock().unwrap();
-                                stats.rows += batch.num_rows();
+                                if count_rows {
+                                    stats.rows += batch.num_rows();
+                                }
                                 stats.bytes += batch.get_array_memory_size();
                                 stats.seconds += start.elapsed().as_secs_f64();
                                 if let Err(message) = &result {
@@ -2588,6 +2804,27 @@ impl Node {
                     })
                     .transpose()?;
                 let transformed = transform.is_some();
+                let lane_transform = ctx
+                    .lane_transforms
+                    .get(&(self as *const Node as usize))
+                    .cloned();
+                let lane_stats = lane_transform
+                    .as_ref()
+                    .map(|_| Arc::new(Mutex::new((0usize, 0usize))));
+                let lane_transform = lane_transform.map(|transform| {
+                    let stats = lane_stats.as_ref().unwrap().clone();
+                    Arc::new(move |batch: RecordBatch| {
+                        let rows = batch.num_rows();
+                        let bytes = batch.get_array_memory_size();
+                        let mut stats = stats.lock().unwrap();
+                        stats.0 += rows;
+                        stats.1 += bytes;
+                        drop(stats);
+                        transform(batch)
+                    }) as crate::parquet_scan::BatchTransform
+                });
+                let in_lane = lane_transform.is_some();
+                let transform = lane_fusion::compose(transform, lane_transform);
                 let factory: crate::parquet_scan::FilterFactory = Arc::new(move |error| {
                     (!predicates.is_empty()).then(|| {
                         RowFilter::new(predicates.iter().map(|p| p(error.clone())).collect())
@@ -2617,13 +2854,21 @@ impl Node {
                     let batch = batch?;
                     let bytes = batch.get_array_memory_size();
                     let _lease = ctx.budget.reserve(bytes)?;
-                    if !transformed {
+                    if !transformed && !in_lane {
                         ctx.metrics.decoded_arrow_bytes_total += bytes;
                     }
-                    if !filtered && !transformed {
+                    if !filtered && !transformed && !in_lane {
                         ctx.metrics.rows_read += batch.num_rows();
                     }
+                    if let Some(pending) = &mut retained
+                        && !pending.push(&batch)
+                    {
+                        retained = None;
+                    }
                     emit(batch)?;
+                }
+                if let Some(pending) = retained {
+                    pending.finish(ctx);
                 }
                 if filtered {
                     let stats = filter_stats.lock().unwrap();
@@ -2633,6 +2878,13 @@ impl Node {
                         ctx.metrics.scan_decode_seconds -= stats.seconds;
                     }
                     ctx.metrics.filter_seconds += stats.seconds;
+                }
+                if in_lane && !transformed {
+                    let stats = lane_stats.as_ref().unwrap().lock().unwrap();
+                    ctx.metrics.decoded_arrow_bytes_total += stats.1;
+                    if !filtered {
+                        ctx.metrics.rows_read += stats.0;
+                    }
                 }
                 if transformed {
                     let stats = transform_stats.lock().unwrap();
@@ -2685,6 +2937,46 @@ impl Node {
                 )
             }),
             RelOp::Limit { count, input } => {
+                // Keep the child and all its finalizations intact. Only the
+                // completed ORDER BY permutation/gather is bounded by LIMIT.
+                if ctx.options.relational_optimizations
+                    && !ctx.options.error_replay.canonical()
+                    && ctx.spill.is_none()
+                    && let RelOp::Unary { plan, input: child } = &input.op
+                    && !plan.aggregation
+                    && !plan.order.is_empty()
+                {
+                    if build_groups::try_ordered_limit(
+                        plan,
+                        &input.schema,
+                        child,
+                        *count,
+                        ctx,
+                        emit,
+                    )? {
+                        return Ok(());
+                    }
+                    let prepared = Prepared {
+                        auto_simple: None,
+                        internal_output: true,
+                        plan: plan.clone(),
+                        schema: child.schema.clone(),
+                        relational: None,
+                    };
+                    let result = execute::execute_stream_top_k(
+                        &prepared,
+                        ctx.options,
+                        ctx.budget.clone(),
+                        Some(*count),
+                        |send| child.run(ctx, send),
+                    )?;
+                    merge(&mut ctx.metrics, &result.metrics);
+                    let n = (*count).min(result.batch.num_rows());
+                    if n > 0 {
+                        emit(result.batch.slice(0, n))?;
+                    }
+                    return Ok(());
+                }
                 let mut remaining = *count;
                 input.run(ctx, &mut |b| {
                     let n = remaining.min(b.num_rows());
@@ -2699,6 +2991,13 @@ impl Node {
                 predicate,
                 input: child,
             } => {
+                if let Some(metrics) = numeric_leaf::try_filtered(child, predicate, ctx, emit)? {
+                    numeric_leaf::merge_metrics(&mut ctx.metrics, &metrics);
+                    return Ok(());
+                }
+                if having_output::try_execute(child, predicate, ctx, emit)? {
+                    return Ok(());
+                }
                 let target = if ctx.options.relational_optimizations
                     && ctx
                         .options
@@ -2787,6 +3086,12 @@ impl Node {
                 result
             }
             RelOp::Unary { plan, input: child } => {
+                if let Some(metrics) =
+                    numeric_leaf::try_clustered_plan(plan, child, None, ctx, emit)?
+                {
+                    numeric_leaf::merge_metrics(&mut ctx.metrics, &metrics);
+                    return Ok(());
+                }
                 if let Some(metrics) = shared_pipeline::try_execute(plan, child, ctx, emit)? {
                     shared_pipeline::merge_metrics(&mut ctx.metrics, &metrics);
                     merge(&mut ctx.metrics, &metrics);
@@ -2818,11 +3123,24 @@ impl Node {
                     return Ok(());
                 }
                 let prepared = Prepared {
+                    auto_simple: None,
                     internal_output: true,
                     plan: plan.clone(),
                     schema: child.schema.clone(),
                     relational: None,
                 };
+                if let Some(metrics) = build_groups::try_execute(&prepared, child, ctx, emit)? {
+                    merge(&mut ctx.metrics, &metrics);
+                    return Ok(());
+                }
+                if let Some(metrics) = left_count::try_execute(&prepared, child, ctx, emit)? {
+                    merge(&mut ctx.metrics, &metrics);
+                    return Ok(());
+                }
+                if let Some(metrics) = numeric_leaf::try_execute(&prepared, child, ctx, emit)? {
+                    numeric_leaf::merge_metrics(&mut ctx.metrics, &metrics);
+                    return Ok(());
+                }
                 if plan.aggregation
                     && (!plan.groups.is_empty() || plan.aggregates.iter().any(|a| a.distinct))
                     && let Some(store) = ctx.spill.clone()
@@ -2983,7 +3301,7 @@ impl Node {
                 kind,
                 keys,
                 residual,
-            } => self.hash_join(ctx, emit, left, right, *kind, keys, residual.as_ref()),
+            } => self.hash_join(ctx, emit, left, right, *kind, keys, residual.as_ref(), None),
             RelOp::TypedMark {
                 left,
                 right,
@@ -3030,21 +3348,39 @@ impl Node {
             .iter()
             .map(|(e, _)| e.eval(&values, &budget))
             .collect::<Result<Vec<_>>>()?;
-        let encoded =
-            crate::keys::Keys::with_text_encoding(&keys_values, rows, &budget, compact_text)?;
-        drop(keys_values);
-        drop(values);
-        let mut map = crate::join_index::JoinIndex::new(
-            &encoded,
+        let encoded = Arc::new(crate::keys::Keys::with_text_encoding(
+            &keys_values,
             rows,
             &budget,
-            ctx.options.relational_optimizations,
-        )?;
-        ctx.metrics.dense_joins += usize::from(map.is_dense());
-        let mut next = vec![u32::MAX; rows];
-        let mut matched = vec![false; rows];
+            compact_text,
+        )?);
+        drop(keys_values);
+        drop(values);
         let start = Instant::now();
-        map.populate(&encoded, &mut next);
+        // A bounded numeric membership index does not need either borrowed or
+        // owned hash-table construction. All optional funding precedes the
+        // retained match flags, and denial leaves the original path available.
+        let mut numeric = if residual.is_none() {
+            reverse_lanes::Prepared::numeric(right, keys, &encoded, ctx)?
+        } else {
+            None
+        };
+        let numeric_lanes = numeric.is_some();
+        let mut serial = if numeric.is_none() {
+            let mut map = crate::join_index::JoinIndex::new(
+                &encoded,
+                rows,
+                &budget,
+                ctx.options.relational_optimizations,
+            )?;
+            ctx.metrics.dense_joins += usize::from(map.is_dense());
+            let mut next = vec![u32::MAX; rows];
+            map.populate(&encoded, &mut next);
+            Some((map, next))
+        } else {
+            None
+        };
+        let mut matched = vec![false; rows];
         let mut seconds = start.elapsed().as_secs_f64();
         ctx.metrics.join_build_rows += rows;
         ctx.metrics.reverse_existence_joins += 1;
@@ -3071,116 +3407,167 @@ impl Node {
         };
         let mut residual_rows = 0;
         let mut residual_bytes = 0;
-        let scan_filter = install_scan_filter(
-            ctx,
-            right,
-            keys.iter().map(|(_, e)| e.clone()).collect(),
-            &map,
-        )?;
+        let scan_filter = if let Some((map, _)) = &serial {
+            runtime_filter::install(
+                ctx,
+                right,
+                keys.iter().map(|(_, e)| e.clone()).collect(),
+                map,
+            )?
+        } else {
+            None
+        };
         let start = Instant::now();
-        if scan_filter.is_none() && ctx.options.relational_optimizations {
+        if scan_filter.is_none()
+            && ctx.options.relational_optimizations
+            && let Some((map, _)) = &mut serial
+        {
             ctx.metrics.join_rejection_bitmaps +=
                 usize::from(map.enable_rejection(right.estimated_rows, &budget));
         }
         seconds += start.elapsed().as_secs_f64();
-        let probe_result = right.run(ctx, &mut |probe| {
-            let start = Instant::now();
-            let values = input(&probe, &budget, keys.iter().map(|(_, e)| e))?;
-            let keys_values = keys
-                .iter()
-                .map(|(_, e)| e.eval(&values, &budget))
-                .collect::<Result<Vec<_>>>()?;
-            let probe_keys = crate::keys::Keys::with_text_encoding(
-                &keys_values,
-                probe.num_rows(),
-                &budget,
-                compact_text,
-            )?;
-            if residual.is_none() {
-                for row in 0..probe.num_rows() {
-                    if !probe_keys.valid(row) {
-                        continue;
+        let rejection_bytes = serial
+            .as_ref()
+            .map_or(0, |(map, _)| map.rejection_stats().0);
+        let mut lane_report = None;
+        let mut lane_matched_credit = None;
+        let probe_result = (|| {
+            let mut lane_work = numeric.take();
+            if lane_work.is_none()
+                && residual.is_none()
+                && let Some((prepared, credit)) =
+                    reverse_lanes::Prepared::new(right, keys, rows, ctx)?
+            {
+                let (map, next) = serial.take().unwrap();
+                match crate::join_index::owned::OwnedJoinIndex::from_borrowed(
+                    map,
+                    encoded.clone(),
+                    next,
+                    &budget,
+                ) {
+                    Ok(index) => {
+                        lane_work = Some((prepared, index.into(), credit));
                     }
-                    if let Some(mut r) = map.remove(probe_keys.row(row)) {
-                        while r != u32::MAX {
-                            matched[r as usize] = true;
-                            r = next[r as usize];
-                        }
-                    }
+                    Err(original) => serial = Some(original),
                 }
-                seconds += start.elapsed().as_secs_f64();
+            }
+            if let Some((prepared, index, credit)) = lane_work {
+                lane_matched_credit = Some(credit);
+                let report = prepared.run(index, right, ctx, &mut matched)?;
+                ctx.metrics.reverse_existence_lane_joins += 1;
+                ctx.metrics.reverse_existence_numeric_lane_joins += usize::from(numeric_lanes);
+                ctx.metrics.reverse_existence_lane_batches += report.batches;
+                ctx.metrics.reverse_existence_probe_seconds += report.probe_seconds;
+                ctx.metrics.reverse_existence_merge_seconds += report.merge_seconds;
+                seconds += report.probe_seconds + report.merge_seconds;
+                lane_report = Some(report);
                 return Ok(());
             }
-            let mut li = Vec::with_capacity(batch_size);
-            let mut ri = Vec::with_capacity(batch_size);
-            let mut flush = |li: &mut Vec<u32>, ri: &mut Vec<u32>| -> Result<()> {
-                if li.is_empty() {
+            let (map, next) = serial.as_mut().unwrap();
+            right.run(ctx, &mut |probe| {
+                let start = Instant::now();
+                let values = input(&probe, &budget, keys.iter().map(|(_, e)| e))?;
+                let keys_values = keys
+                    .iter()
+                    .map(|(_, e)| e.eval(&values, &budget))
+                    .collect::<Result<Vec<_>>>()?;
+                let probe_keys = crate::keys::Keys::with_text_encoding(
+                    &keys_values,
+                    probe.num_rows(),
+                    &budget,
+                    compact_text,
+                )?;
+                if residual.is_none() {
+                    for row in 0..probe.num_rows() {
+                        if !probe_keys.valid(row) {
+                            continue;
+                        }
+                        if let Some(mut r) = map.remove(probe_keys.row(row)) {
+                            while r != u32::MAX {
+                                matched[r as usize] = true;
+                                r = next[r as usize];
+                            }
+                        }
+                    }
+                    seconds += start.elapsed().as_secs_f64();
                     return Ok(());
                 }
-                let lidx = UInt32Array::from(li.clone());
-                let ridx = UInt32Array::from(ri.clone());
-                if let Some(program) = &residual_program {
-                    let (mask, bytes) = program.eval(build, &probe, &lidx, &ridx, &budget)?;
-                    residual_rows += li.len();
-                    residual_bytes += bytes;
-                    for (i, l) in li.iter().enumerate() {
-                        if !is_sql_null(mask.array.as_ref(), i) && boolean(&mask.array).value(i) {
+                let mut li = Vec::with_capacity(batch_size);
+                let mut ri = Vec::with_capacity(batch_size);
+                let mut flush = |li: &mut Vec<u32>, ri: &mut Vec<u32>| -> Result<()> {
+                    if li.is_empty() {
+                        return Ok(());
+                    }
+                    let lidx = UInt32Array::from(li.clone());
+                    let ridx = UInt32Array::from(ri.clone());
+                    if let Some(program) = &residual_program {
+                        let (mask, bytes) = program.eval(build, &probe, &lidx, &ridx, &budget)?;
+                        residual_rows += li.len();
+                        residual_bytes += bytes;
+                        for (i, l) in li.iter().enumerate() {
+                            if !is_sql_null(mask.array.as_ref(), i) && boolean(&mask.array).value(i)
+                            {
+                                matched[*l as usize] = true;
+                            }
+                        }
+                        li.clear();
+                        ri.clear();
+                        return Ok(());
+                    }
+                    let arrays = build
+                        .columns()
+                        .iter()
+                        .map(|a| take(a, &lidx, None).map_err(|e| e.to_string()))
+                        .chain(
+                            probe
+                                .columns()
+                                .iter()
+                                .map(|a| take(a, &ridx, None).map_err(|e| e.to_string())),
+                        )
+                        .collect::<Result<Vec<_>>>()?;
+                    let batch = RecordBatch::try_new(combined_schema.clone(), arrays)
+                        .map_err(|e| e.to_string())?;
+                    let _lease = budget.reserve(batch.get_array_memory_size())?;
+                    let expr = residual.unwrap();
+                    let mask = expr.eval(&input(&batch, &budget, [expr])?, &budget)?;
+                    for (l, yes) in li.iter().zip(boolean(&mask.array).iter()) {
+                        if yes == Some(true) {
                             matched[*l as usize] = true;
                         }
                     }
                     li.clear();
                     ri.clear();
-                    return Ok(());
-                }
-                let arrays = build
-                    .columns()
-                    .iter()
-                    .map(|a| take(a, &lidx, None).map_err(|e| e.to_string()))
-                    .chain(
-                        probe
-                            .columns()
-                            .iter()
-                            .map(|a| take(a, &ridx, None).map_err(|e| e.to_string())),
-                    )
-                    .collect::<Result<Vec<_>>>()?;
-                let batch = RecordBatch::try_new(combined_schema.clone(), arrays)
-                    .map_err(|e| e.to_string())?;
-                let _lease = budget.reserve(batch.get_array_memory_size())?;
-                let expr = residual.unwrap();
-                let mask = expr.eval(&input(&batch, &budget, [expr])?, &budget)?;
-                for (l, yes) in li.iter().zip(boolean(&mask.array).iter()) {
-                    if yes == Some(true) {
-                        matched[*l as usize] = true;
+                    Ok(())
+                };
+                for row in 0..probe.num_rows() {
+                    if !probe_keys.valid(row) {
+                        continue;
                     }
-                }
-                li.clear();
-                ri.clear();
-                Ok(())
-            };
-            for row in 0..probe.num_rows() {
-                if !probe_keys.valid(row) {
-                    continue;
-                }
-                if let Some(first) = map.get(probe_keys.row(row)) {
-                    let mut r = *first;
-                    while r != u32::MAX {
-                        li.push(r);
-                        ri.push(row as u32);
-                        if li.len() == batch_size {
-                            flush(&mut li, &mut ri)?;
+                    if let Some(first) = map.get(probe_keys.row(row)) {
+                        let mut r = *first;
+                        while r != u32::MAX {
+                            li.push(r);
+                            ri.push(row as u32);
+                            if li.len() == batch_size {
+                                flush(&mut li, &mut ri)?;
+                            }
+                            r = next[r as usize];
                         }
-                        r = next[r as usize];
                     }
                 }
-            }
-            flush(&mut li, &mut ri)?;
-            seconds += start.elapsed().as_secs_f64();
-            Ok(())
-        });
-        if let Some(id) = scan_filter {
-            ctx.scan_filters.remove(&id);
+                flush(&mut li, &mut ri)?;
+                seconds += start.elapsed().as_secs_f64();
+                Ok(())
+            })
+        })();
+        if let Some(installed) = scan_filter {
+            installed.restore(ctx);
         }
-        probe_result?;
+        if let Err(error) = probe_result {
+            // Match storage stays charged even when lane work or the source fails.
+            drop(matched);
+            return Err(error);
+        }
         let start = Instant::now();
         // Emit bounded batches rather than one allocation proportional to the
         // whole retained side. Input order and duplicate multiplicity survive.
@@ -3212,8 +3599,20 @@ impl Node {
             }
         }
         flush(&mut keep)?;
-        seconds += start.elapsed().as_secs_f64();
-        let (bytes, probes, misses) = map.rejection_stats();
+        drop(lane_matched_credit);
+        let emit_seconds = start.elapsed().as_secs_f64();
+        ctx.metrics.reverse_existence_emit_seconds += emit_seconds;
+        seconds += emit_seconds;
+        let (bytes, probes, misses) = if let Some((map, _)) = serial.as_ref() {
+            map.rejection_stats()
+        } else {
+            let report = lane_report.as_ref().unwrap();
+            (
+                rejection_bytes,
+                report.counts.probes,
+                report.counts.rejected,
+            )
+        };
         ctx.metrics.join_rejection_bitmap_bytes += bytes;
         ctx.metrics.join_rejection_probes += probes;
         ctx.metrics.join_rejection_misses += misses;
@@ -3294,11 +3693,12 @@ impl Node {
         kind: JoinKind,
         keys: &[(Expr, Expr)],
         residual: Option<&Expr>,
+        downstream: Option<lane_fusion::Suffix>,
     ) -> Result<()> {
         if ctx.spill.is_some() {
             return self.spilled_join(
                 ctx,
-                emit,
+                &mut |batch| lane_fusion::deliver(batch, &downstream, emit),
                 left,
                 right,
                 crate::external_join::Mode::Rows(kind),
@@ -3306,106 +3706,176 @@ impl Node {
                 residual,
             );
         }
+        if matches!(kind, JoinKind::Semi | JoinKind::Anti)
+            && paired_existence::try_execute(self, ctx, &mut |batch| {
+                lane_fusion::deliver(batch, &downstream, emit)
+            })?
+        {
+            return Ok(());
+        }
         if ctx.options.relational_optimizations
             && matches!(kind, JoinKind::Semi | JoinKind::Anti)
             && left.estimated_rows.saturating_mul(4) < right.estimated_rows
+            // Reversal changes input/key and residual evaluation order. Only
+            // total subtrees and conditions may exchange these events.
+            && membership_safety::join_conditions_are_total(self)
+            && membership_safety::input_is_total(left)
+            && membership_safety::input_is_total(right)
         {
-            return self.reverse_existence_join(ctx, emit, left, right, kind, keys, residual);
+            return self.reverse_existence_join(
+                ctx,
+                &mut |batch| lane_fusion::deliver(batch, &downstream, emit),
+                left,
+                right,
+                kind,
+                keys,
+                residual,
+            );
         }
+        self.hash_join_with_probe(
+            ctx, emit, left, right, kind, keys, residual, downstream, None, None,
+        )
+    }
+
+    // A paired-existence cost miss has already completed its total left child.
+    // Consume those exact batches in order instead of executing that child again.
+    // This entry point bypasses speculative orientation/fusion admission only;
+    // the ordinary build, keys, residuals and probe kernel remain unchanged.
+    #[allow(clippy::too_many_arguments)]
+    fn hash_join_with_probe(
+        &self,
+        ctx: &mut Context<'_>,
+        emit: &mut dyn FnMut(RecordBatch) -> Result<()>,
+        left: &Node,
+        right: &Node,
+        kind: JoinKind,
+        keys: &[(Expr, Expr)],
+        residual: Option<&Expr>,
+        downstream: Option<lane_fusion::Suffix>,
+        mut cached_probe: Option<BufferedOutput>,
+        mut retained_output: Option<&mut BufferedOutput>,
+    ) -> Result<()> {
+        // Only the first paired fallback buffers output; every other caller
+        // delivers normally. Its cached SEMI/ANTI probe always funds gathers.
+        debug_assert!(
+            retained_output.is_none()
+                || (cached_probe.is_some()
+                    && matches!(kind, JoinKind::Semi | JoinKind::Anti)
+                    && downstream.is_none())
+        );
         let budget = ctx.budget.clone();
         let compact_text = ctx.options.relational_optimizations;
-        let mut cached_probe = None;
-        let mut aggregate_filter = None;
-        if ctx.options.relational_optimizations
-            && matches!(kind, JoinKind::Inner | JoinKind::Left)
-            && !keys.is_empty()
-            && left.estimated_rows <= right.estimated_rows
-            && let Some(ScanTarget {
-                id, expressions, ..
-            }) = aggregate_scan_target(right, keys.iter().map(|(_, e)| e.clone()).collect())?
-            && !ctx.scan_filters.contains_key(&id)
-        {
-            let mut probe = CachedProbe {
-                batches: Vec::new(),
-                _leases: Vec::new(),
-            };
-            let mut members = HashSet::<Box<[u8]>, ahash::RandomState>::default();
-            let mut member_leases = Vec::new();
-            let mut too_many = false;
-            left.run(ctx, &mut |batch| {
-                probe
-                    ._leases
-                    .push(budget.reserve(batch.get_array_memory_size() + 256)?);
-                if !too_many {
-                    let values = input(&batch, &budget, keys.iter().map(|(e, _)| e))?;
-                    let values = keys
-                        .iter()
-                        .map(|(e, _)| e.eval(&values, &budget))
-                        .collect::<Result<Vec<_>>>()?;
-                    let encoded = crate::keys::Keys::new(&values, batch.num_rows(), &budget)?;
-                    for row in 0..batch.num_rows() {
-                        if encoded.valid(row) && !members.contains(encoded.row(row)) {
-                            if members.len() == 65536 {
-                                too_many = true;
-                                break;
-                            }
-                            member_leases.push(budget.reserve(encoded.row(row).len() * 2 + 128)?);
-                            members.insert(encoded.row(row).into());
-                        }
-                    }
-                }
-                probe.batches.push(batch);
-                Ok(())
-            })?;
-            if !too_many && members.len().saturating_mul(16) < distinct(right, &keys[0].1) {
-                // Retain one reservation for the immutable key set. The scan
-                // pass is justified here by avoided grouping, even for narrow
-                // numeric payloads that do not justify ordinary join filtering.
-                let bytes = members.iter().map(|k| k.len() * 2 + 128).sum::<usize>();
-                drop(member_leases);
-                ctx.scan_filters.insert(
-                    id,
-                    ScanKeyFilter {
-                        numeric: numeric_membership(&expressions, &members, &budget),
-                        numeric_pair: numeric_pair_membership(&expressions, &members, &budget),
-                        expressions,
-                        members: Arc::new(members),
-                        _lease: Arc::new(budget.reserve(bytes)?),
-                    },
-                );
-                aggregate_filter = Some(id);
-                ctx.metrics.demand_filtered_aggregates += 1;
-            }
-            cached_probe = Some(probe);
-        }
+        let demand = if matches!(kind, JoinKind::Inner | JoinKind::Left) {
+            demand_filter::prepare(ctx, left, right, keys)
+        } else {
+            None
+        };
+        // Cancellation is never converted into an optional-optimization miss.
+        let sideways = sideways::prepare(self, ctx)?;
+        let transferred = sideways.is_some();
+        ctx.options.cancellation.check()?;
+        // Merge of TK1 (wide demand) and Q21Pb (#76): `cached_probe` is now this function's parameter and holds a funded
+        // BufferedOutput; keep main's conversion (lease travels with the batches) and TK1's wide-scan metrics.
+        let aggregate_filter = demand.map(
+            |demand_filter::PreparedDemand {
+                 id,
+                 filter,
+                 probe,
+                 wide_scan,
+             }| {
+                cached_probe = probe.map(|probe| BufferedOutput {
+                    batches: probe.batches,
+                    reservations: vec![probe.lease],
+                });
+                ctx.scan_filters.insert(id, Arc::new(filter));
+                ctx.metrics.demand_filtered_aggregates += usize::from(!wide_scan);
+                ctx.metrics.demand_filtered_scans += usize::from(wide_scan);
+                id
+            },
+        );
         let mut batches = Vec::new();
         let mut leases = Vec::new();
-        let build_result = right.run(ctx, &mut |b| {
+        #[cfg(test)]
+        let options = ctx.options;
+        let mut collect_build = |b: RecordBatch| {
             leases.push(budget.reserve(b.get_array_memory_size())?);
             batches.push(b);
+            #[cfg(test)]
+            if aggregate_filter.is_some() {
+                demand_filter::tests::checkpoint("filtered-build", &budget, options)?;
+            }
             Ok(())
-        });
+        };
+        let build_result = right.run(ctx, &mut collect_build);
+        if let Some(installed) = sideways {
+            installed.restore(ctx);
+        }
         if let Some(id) = aggregate_filter {
             ctx.scan_filters.remove(&id);
         }
-        build_result?;
+        if aggregate_filter.is_some() && build_result.is_err() {
+            // Optional filtering also consumes memory while the aggregate runs.
+            // Release its complete attempt before replaying the same RHS with
+            // no demand filter. No join row has been emitted at this boundary.
+            batches = Vec::new();
+            leases = Vec::new();
+            cached_probe = None;
+            ctx.options.cancellation.check()?;
+            right.run(ctx, &mut |b| {
+                leases.push(budget.reserve(b.get_array_memory_size())?);
+                batches.push(b);
+                Ok(())
+            })?;
+        } else {
+            build_result?;
+        }
         let rows = batches.iter().map(RecordBatch::num_rows).sum::<usize>();
+        #[cfg(test)]
+        if aggregate_filter.is_some() && cached_probe.is_some() {
+            demand_filter::tests::checkpoint("cached-build-index", &budget, options)?;
+        }
         if rows > u32::MAX as usize {
             return Err("resource-limit: join build indices".into());
         }
-        let funded_build =
-            funded_concat::for_join(&right.schema, &batches, &budget, &ctx.options.cancellation)?;
+        let start = Instant::now();
+        // The child has completed successfully. Restrict the optional path to
+        // direct keys; all computed-key evaluation keeps its serial boundary.
+        let workers = if ctx.options.relational_optimizations
+            && keys
+                .iter()
+                .all(|(_, e)| matches!(e.kind, crate::expr::Kind::Column(_)))
+        {
+            ctx.options.workers
+        } else {
+            1
+        };
+        let (funded_build, tasks) = funded_concat::for_join_parallel(
+            &right.schema,
+            &batches,
+            &budget,
+            &ctx.options.cancellation,
+            workers,
+        )?;
+        ctx.metrics.build_prepare_concat_seconds += start.elapsed().as_secs_f64();
+        ctx.metrics.build_prepare_column_tasks += tasks;
         drop(batches);
         drop(leases);
         let build = funded_build.batch();
+        let key_start = Instant::now();
         let build_input = input(build, &budget, keys.iter().map(|(_, e)| e))?;
         let values = keys
             .iter()
             .map(|(_, e)| e.eval(&build_input, &budget))
             .collect::<Result<Vec<_>>>()?;
-        let encoded = crate::keys::Keys::with_text_encoding(&values, rows, &budget, compact_text)?;
+        let encoded = Arc::new(crate::keys::Keys::with_text_encoding(
+            &values,
+            rows,
+            &budget,
+            compact_text,
+        )?);
         drop(values);
         drop(build_input);
+        ctx.metrics.build_prepare_key_seconds += key_start.elapsed().as_secs_f64();
         // Borrow immutable encoded keys. One contiguous duplicate chain replaces
         // a heap-allocated vector per key; reserve the complete table up front.
         let mut map = crate::join_index::JoinIndex::new(
@@ -3417,9 +3887,14 @@ impl Node {
         ctx.metrics.dense_joins += usize::from(map.is_dense());
         let mut next = vec![u32::MAX; rows];
         let start = Instant::now();
-        map.populate(&encoded, &mut next);
+        ctx.metrics.build_prepare_index_tasks +=
+            map.populate_prepared(&encoded, &mut next, workers, &ctx.options.cancellation)?;
+        if kind == JoinKind::Left {
+            map.restore_build_order(&mut next);
+        }
         ctx.metrics.join_build_rows += rows;
         let mut seconds = start.elapsed().as_secs_f64();
+        ctx.metrics.build_prepare_index_seconds += seconds;
         let batch_size = ctx.options.batch_size;
         let combined_schema = combined(&left.schema, &right.schema);
         let residual_program = if ctx.options.relational_optimizations {
@@ -3442,12 +3917,13 @@ impl Node {
             None
         };
         let scan_filter =
-            if cached_probe.is_none() && matches!(kind, JoinKind::Inner | JoinKind::Semi) {
-                install_scan_filter(
+            if aggregate_filter.is_none() && matches!(kind, JoinKind::Inner | JoinKind::Semi) {
+                runtime_filter::install_after_transfer(
                     ctx,
                     left,
                     keys.iter().map(|(e, _)| e.clone()).collect(),
                     &map,
+                    transferred.then_some((build, keys)),
                 )?
             } else {
                 None
@@ -3458,6 +3934,62 @@ impl Node {
                 usize::from(map.enable_rejection(left.estimated_rows, &budget));
         }
         seconds += start.elapsed().as_secs_f64();
+        // A unique build emits at most one batch per input batch. Duplicate
+        // chains keep today's kernel, including its existing duplicate order.
+        if cached_probe.is_none()
+            && lane_fusion::admitted(self, ctx)?
+            && next.iter().all(|row| *row == u32::MAX)
+            && matches!(funded_build, funded_concat::JoinBuild::Funded(_))
+            && let Ok(descriptors) =
+                budget.reserve(keys.len().saturating_mul(256).saturating_add(2048))
+        {
+            let (rejection_bytes, _, _) = map.rejection_stats();
+            let owned_index = crate::join_index::owned::OwnedJoinIndex::from_borrowed(
+                map,
+                encoded.clone(),
+                next,
+                &budget,
+            );
+            match owned_index {
+                Ok(owned_index) => {
+                    let funded_concat::JoinBuild::Funded(payload) = funded_build else {
+                        unreachable!()
+                    };
+                    let owned = probe::owned::OwnedBuild::from_index(payload, owned_index, &budget);
+                    drop(encoded);
+                    let stats = Arc::new(Mutex::new(probe::Statistics::default()));
+                    let transform = lane_fusion::probe_transform(
+                        owned,
+                        keys.to_vec(),
+                        kind,
+                        self.schema.clone(),
+                        ctx.options,
+                        stats.clone(),
+                        descriptors,
+                    );
+                    let (suffix, reached_scan) =
+                        lane_fusion::Suffix::prepend(transform, downstream);
+                    let result = lane_fusion::run(left, ctx, suffix, emit);
+                    if let Some(installed) = scan_filter {
+                        installed.restore(ctx);
+                    }
+                    let stats = stats.lock().unwrap();
+                    ctx.metrics.lane_fused_joins +=
+                        usize::from(reached_scan.load(std::sync::atomic::Ordering::Relaxed));
+                    ctx.metrics.join_seconds += seconds + stats.seconds;
+                    ctx.metrics.join_output_rows += stats.output_rows;
+                    ctx.metrics.join_rejection_bitmap_bytes += rejection_bytes;
+                    ctx.metrics.join_rejection_probes += stats.probes;
+                    ctx.metrics.join_rejection_misses += stats.rejected;
+                    return result;
+                }
+                Err((original, links)) => {
+                    map = original;
+                    next = links;
+                }
+            }
+        }
+        let mut output = |batch| lane_fusion::deliver(batch, &downstream, emit);
         let mut kernel = probe::Kernel {
             map: map.view(),
             build,
@@ -3476,16 +4008,20 @@ impl Node {
         };
         let cancellation = ctx.options.cancellation.clone();
         let parallel = if ctx.options.relational_optimizations
+            && cached_probe.is_none()
             && matches!(kind, JoinKind::Inner | JoinKind::Left)
             && residual.is_none()
-            && cached_probe.is_none()
+            && aggregate_filter.is_none()
             && probe_chain(left)
         {
             probe::parallel::Configuration::new(ctx.options, &budget, left.estimated_rows)
         } else {
             None
         };
-        kernel.reserve_gathers = parallel.is_some();
+        // Paired cost fallback retains earlier output alongside the cached
+        // probe and RHS build. Fund every gather before Arrow allocates it.
+        kernel.reserve_gathers = parallel.is_some()
+            || (cached_probe.is_some() && matches!(kind, JoinKind::Semi | JoinKind::Anti));
         let mut probe_stats = probe::Statistics::default();
         let probe_result = if let Some(config) = parallel {
             let result = probe::parallel::run(
@@ -3503,7 +4039,7 @@ impl Node {
                     kernel.run(batch, output, check)
                 },
                 |send| left.run(ctx, send),
-                emit,
+                &mut output,
             );
             result.map(|stats| {
                 ctx.metrics.parallel_joins += 1;
@@ -3525,20 +4061,42 @@ impl Node {
             })
         } else {
             let mut consume_probe = |batch| {
-                probe_stats.merge(kernel.run(batch, emit, &|| cancellation.check())?);
+                let stats = if let Some(retained) = retained_output.as_deref_mut() {
+                    kernel.run_with_credits(
+                        batch,
+                        &mut |batch, credits| {
+                            paired_existence::retain_funded(retained, batch, credits, &budget)
+                        },
+                        &|| cancellation.check(),
+                    )?
+                } else {
+                    kernel.run(batch, &mut output, &|| cancellation.check())?
+                };
+                probe_stats.merge(stats);
                 Ok(())
             };
-            if let Some(probe) = cached_probe {
-                let CachedProbe { batches, _leases } = probe;
-                let result = batches.into_iter().try_for_each(&mut consume_probe);
-                drop(_leases);
+            if let Some(BufferedOutput {
+                batches,
+                reservations,
+            }) = cached_probe
+            {
+                let result = batches.into_iter().try_for_each(|batch| {
+                    cancellation.check()?;
+                    consume_probe(batch)?;
+                    #[cfg(test)]
+                    if aggregate_filter.is_some() {
+                        demand_filter::tests::checkpoint("cached-probe-output", &budget, options)?;
+                    }
+                    Ok(())
+                });
+                drop(reservations);
                 result
             } else {
                 left.run(ctx, &mut consume_probe)
             }
         };
-        if let Some(id) = scan_filter {
-            ctx.scan_filters.remove(&id);
+        if let Some(installed) = scan_filter {
+            installed.restore(ctx);
         }
         probe_result?;
         let (bytes, probes, misses) = map.rejection_stats();
@@ -3553,8 +4111,11 @@ impl Node {
     }
 }
 pub fn execute(root: &Node, options: &Options) -> Result<Execution> {
-    crate::execute::execution_policy(options, |options, budget| {
+    let original = crate::execute::execution_policy(options, |options, budget| {
         execute_in_budget(root, options, budget, false)
+    });
+    crate::execute::error_replay::select(original, options, |canonical, budget| {
+        execute_in_budget(root, canonical, budget, false)
     })
 }
 pub(crate) fn execute_in_budget(
@@ -3563,6 +4124,9 @@ pub(crate) fn execute_in_budget(
     budget: Budget,
     internal_output: bool,
 ) -> Result<Execution> {
+    if options.error_replay.canonical() {
+        return shared_retry::canonical(root, options, budget, internal_output);
+    }
     shared_retry::execute(root, options, budget, internal_output)
 }
 struct BufferedOutput {
@@ -3576,20 +4140,92 @@ fn execute_once(
     shared_attempt: Option<Arc<crate::execute::pipeline::fallback::Attempt>>,
     internal_output: bool,
 ) -> Result<Execution> {
+    if options.relational_optimizations
+        && !options.error_replay.canonical()
+        && options.spill.is_none()
+        && let Some(candidate) = aggregate_reuse::candidate(root, &budget, options)
+    {
+        let cache_used = std::sync::atomic::AtomicBool::new(false);
+        let result = execute_once_with_demand_cache(
+            &candidate.root,
+            options,
+            budget.clone(),
+            None,
+            internal_output,
+            Some(&cache_used),
+        );
+        candidate.verify(options)?;
+        // No public output escapes this whole-query attempt. Drop every cache,
+        // buffer and cloned plan before replaying the original retained plan.
+        drop(candidate);
+        if let Ok(mut output) = result {
+            output.metrics.aggregate_scan_reuses += 1;
+            return Ok(output);
+        }
+        options.cancellation.check()?;
+    }
+    let cache_used = std::sync::atomic::AtomicBool::new(false);
+    let result = execute_once_with_demand_cache(
+        root,
+        options,
+        budget.clone(),
+        shared_attempt,
+        internal_output,
+        Some(&cache_used),
+    );
+    if result.is_err() && cache_used.load(std::sync::atomic::Ordering::Relaxed) {
+        // Every candidate buffer/context has been dropped and no public result
+        // escaped. Retained probe memory must not cause a later build, probe,
+        // parent operator, or final output allocation to change query status.
+        // Replay the immutable plan with fresh state and no optional retention.
+        options.cancellation.check()?;
+        execute_once_with_demand_cache(root, options, budget, None, internal_output, None)
+    } else {
+        result
+    }
+}
+
+fn execute_once_with_demand_cache(
+    root: &Node,
+    options: &Options,
+    budget: Budget,
+    shared_attempt: Option<Arc<crate::execute::pipeline::fallback::Attempt>>,
+    internal_output: bool,
+    demand_cache: Option<&std::sync::atomic::AtomicBool>,
+) -> Result<Execution> {
     if options.batch_size == 0 || options.batch_size > 131072 {
         return Err("batch size must be 1..131072".into());
     }
     let start = Instant::now();
     #[cfg(test)]
     let candidate = shared_attempt.clone();
+    let filtered_reuse = if demand_cache.is_some()
+        && options.relational_optimizations
+        && options.spill.is_none()
+        && !options.error_replay.canonical()
+    {
+        filtered_reuse::Cache::new(root, &budget)
+    } else {
+        None
+    };
+    if filtered_reuse.is_some() {
+        demand_cache
+            .unwrap()
+            .store(true, std::sync::atomic::Ordering::Relaxed);
+    }
     let mut ctx = Context {
+        filtered_reuse,
+        build_groups: None,
+        demand_cache,
         shared_attempt,
         options,
         scan_filters: HashMap::new(),
         static_filters: HashMap::new(),
         scan_transforms: HashMap::new(),
+        lane_transforms: HashMap::new(),
         replay_transforms: HashMap::new(),
         materialized: HashMap::new(),
+        sideways_registry_lease: None,
         spill: options
             .spill
             .as_ref()
@@ -3613,6 +4249,20 @@ fn execute_once(
         reservations: Vec::new(),
     };
     let outcome = root.run(&mut ctx, &mut |b| {
+        if options.error_replay.canonical() {
+            // Replay has no publishable result. Validate the public boundary in
+            // row/column order, then release the row instead of buffering N tiny
+            // batches (or charging a shared sort buffer N times).
+            if !internal_output {
+                for (array, field) in b.columns().iter().zip(root.schema.fields()) {
+                    if Type::is_wide_integer(field) {
+                        let _lease = budget.reserve(1024)?;
+                        execute::materialize(array, &Type::Int)?;
+                    }
+                }
+            }
+            return Ok(());
+        }
         output
             .reservations
             .push(budget.reserve(b.get_array_memory_size())?);
@@ -3627,6 +4277,9 @@ fn execute_once(
         }
         Ok(())
     });
+    // Every consumer has finished; release optional scan retention before the
+    // final output concatenation/materialization needs its replacement buffers.
+    ctx.filtered_reuse = None;
     if let Err(error) = outcome {
         ctx.materialized.clear();
         if let Some(store) = ctx.spill.take()
@@ -3700,7 +4353,7 @@ fn execute_once(
     options.cancellation.check()?;
     ctx.metrics.execution_seconds = start.elapsed().as_secs_f64();
     ctx.metrics.peak_reserved_bytes = budget.peak();
-    ctx.metrics.worker_threads_peak = budget.peak_workers();
+    ctx.metrics.worker_threads_peak = budget.peak_threads();
     Ok(Execution {
         batch,
         metrics: ctx.metrics,
@@ -3895,6 +4548,18 @@ fn materialized_storage(
     shared_scan: bool,
     ctx: &mut Context<'_>,
 ) -> Result<Arc<Materialized>> {
+    if id == build_groups::SOURCE_ID
+        && let Some(request) = ctx.build_groups.clone()
+        && !ctx.materialized.contains_key(&id)
+    {
+        let stored = request.materialize(input, ctx)?;
+        // A CTE insertion may grow a registry previously allocated by SIP.
+        if ctx.sideways_registry_lease.is_some() {
+            sideways::fund_registry(ctx, 1)?;
+        }
+        ctx.materialized.insert(id, stored.clone());
+        return Ok(stored);
+    }
     let stored = if let Some(stored) = ctx.materialized.get(&id).cloned() {
         if shared_scan {
             ctx.metrics.scan_reuses += 1;
@@ -3918,7 +4583,15 @@ fn materialized_storage(
             }
             ctx.metrics.spilled_materializations += 1;
         } else {
+            let row_limit = aggregate_reuse::build_row_limit(id, input);
+            let mut rows = 0_u128;
             input.run(ctx, &mut |batch| {
+                if let Some(limit) = row_limit {
+                    rows += batch.num_rows() as u128;
+                    if rows > limit {
+                        return Err("aggregate reuse build exceeds proven count bound".into());
+                    }
+                }
                 retained
                     .reservations
                     .push(budget.reserve(batch.get_array_memory_size() + 256)?);
@@ -3932,6 +4605,10 @@ fn materialized_storage(
             files,
             _leases: retained.reservations,
         });
+        // A CTE insertion may grow a registry previously allocated by SIP.
+        if ctx.sideways_registry_lease.is_some() {
+            sideways::fund_registry(ctx, 1)?;
+        }
         ctx.materialized.insert(id, stored.clone());
         if shared_scan {
             ctx.metrics.scan_materializations += 1;

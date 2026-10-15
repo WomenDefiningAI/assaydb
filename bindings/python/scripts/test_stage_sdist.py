@@ -97,15 +97,26 @@ class StageTests(unittest.TestCase):
                 self.assertFalse(output.exists())
 
     def test_actual_engine_compile_time_files_are_selected(self):
-        # Catch a new include_str!/include_bytes! input omitted from the sdist.
+        # Follow explicit module paths too: those modules can include fixtures.
         root = stage.ROOT
         found = []
-        for source in (root / "src").rglob("*.rs"):
-            for relative in re.findall(r'include_(?:str|bytes)!\s*\(\s*"([^"]+)"', source.read_text()):
+        pending = list((root / "src").rglob("*.rs"))
+        visited = set()
+        while pending:
+            source = pending.pop().resolve()
+            if source in visited:
+                continue
+            visited.add(source)
+            content = source.read_text()
+            references = re.findall(r'include_(?:str|bytes)!\s*\(\s*"([^"]+)"', content)
+            modules = re.findall(r'#\[path\s*=\s*"([^"]+)"\]', content)
+            for relative in references + modules:
                 target = (source.parent / relative).resolve().relative_to(root)
                 found.append(target)
                 self.assertTrue((root / target).is_file(), str(target))
                 self.assertTrue(stage.selected(target.as_posix()), str(target))
+                if relative in modules:
+                    pending.append(root / target)
         self.assertTrue(found, "Expected to inspect real compile-time fixtures")
 
     def test_missing_required_fixture_refused_before_stage_creation(self):

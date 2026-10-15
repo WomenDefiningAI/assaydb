@@ -47,12 +47,12 @@ fn potential(root: &Node, options: &Options) -> bool {
     });
     found
 }
-struct Sources<'a> {
+pub(super) struct Sources<'a> {
     entries: Vec<(&'a Path, Source)>,
     _credit: Reservation,
 }
 impl<'a> Sources<'a> {
-    fn capture(root: &'a Node, budget: &Budget, options: &Options) -> Result<Self> {
+    pub(super) fn capture(root: &'a Node, budget: &Budget, options: &Options) -> Result<Self> {
         let mut count = 0usize;
         visit(root, &mut |node| {
             if matches!(node.op, RelOp::Scan { .. }) {
@@ -112,7 +112,7 @@ impl<'a> Sources<'a> {
         collect(root, &mut sources, options)?;
         Ok(sources)
     }
-    fn verify(&self, options: &Options) -> Result<()> {
+    pub(super) fn verify(&self, options: &Options) -> Result<()> {
         for (path, source) in &self.entries {
             options.cancellation.check()?;
             source.verify_checked(path, &|| options.cancellation.check())?;
@@ -135,6 +135,62 @@ pub(super) fn execute(
     }
     result
 }
+
+/// Reuse the immutable-source guard and the same fresh whole-query state owner
+/// as resource retry. The caller supplies the original Node, never a replan.
+pub(super) fn canonical(
+    root: &Node,
+    options: &Options,
+    budget: Budget,
+    internal_output: bool,
+) -> Result<Execution> {
+    visit(root, &mut |node| {
+        match &node.op {
+            RelOp::Unary { plan, .. } => crate::execute::error_replay::admit_aggregate(plan)?,
+            RelOp::Join {
+                left,
+                right,
+                kind,
+                keys,
+                ..
+            } => {
+                if !keys.iter().all(|(left, right)| {
+                    crate::execute::error_replay::atomic(left)
+                        && crate::execute::error_replay::atomic(right)
+                }) {
+                    return Err("canonical replay unavailable: computed join key".into());
+                }
+                if options.relational_optimizations {
+                    // These runtime alternatives consume the logical probe
+                    // before the build. Reusing Node alone does not pin their
+                    // dependency order across spill, so do not claim rule E.
+                    if matches!(kind, JoinKind::Semi | JoinKind::Anti)
+                        && left.estimated_rows.saturating_mul(4) < right.estimated_rows
+                    {
+                        return Err("canonical replay unavailable: reversed existence join".into());
+                    }
+                    if matches!(kind, JoinKind::Inner | JoinKind::Left)
+                        && !keys.is_empty()
+                        && left.estimated_rows <= right.estimated_rows
+                        && aggregate_scan_target(
+                            right,
+                            keys.iter().map(|(_, key)| key.clone()).collect(),
+                        )?
+                        .is_some()
+                    {
+                        return Err("canonical replay unavailable: aggregate demand join".into());
+                    }
+                }
+            }
+            _ => {}
+        }
+        Ok(())
+    })?;
+    let sources = Sources::capture(root, &budget, options)?;
+    let result = execute_once(root, options, budget.clone(), None, internal_output);
+    sources.verify(options)?;
+    result
+}
 fn execute_reported(
     root: &Node,
     options: &Options,
@@ -152,7 +208,7 @@ fn execute_reported(
     result.map(|mut output| {
         output.metrics.execution_seconds = report.total_seconds;
         output.metrics.peak_reserved_bytes = budget.peak();
-        output.metrics.worker_threads_peak = budget.peak_workers();
+        output.metrics.worker_threads_peak = budget.peak_threads();
         output.metrics.pipeline_candidate_attempts = report.candidate_attempts;
         output.metrics.pipeline_fallbacks = report.fallback_attempts;
         output.metrics.pipeline_candidate_seconds = report.candidate_seconds;

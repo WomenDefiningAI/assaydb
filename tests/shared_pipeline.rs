@@ -60,7 +60,7 @@ impl Drop for Fixture {
     }
 }
 #[test]
-fn public_shared_grouping_admits_parallel_and_preserves_one_worker_scan_reuse() {
+fn public_shared_grouping_admits_metadata_owners_and_preserves_overlap_scan_reuse() {
     for source_domains in [false, true] {
         let fixture = Fixture::new(source_domains);
         let sql = "SELECT a.k,SUM(a.v) FROM t a WHERE a.k IN (SELECT k FROM t GROUP BY k HAVING SUM(v)>0) GROUP BY a.k ORDER BY 1";
@@ -85,23 +85,27 @@ fn public_shared_grouping_admits_parallel_and_preserves_one_worker_scan_reuse() 
                 expected = Some(result.batch.clone());
             }
             assert_eq!(result.metrics.scan_materializations, 1);
-            // On overlap decline, proof populated the cache and baseline
-            // accesses it once before the outer reference's ordinary reuse.
+            // Metadata ownership bypasses the inner materialization at every
+            // width. Overlap keeps the old shared proof/cache reuse path.
             assert_eq!(
                 result.metrics.scan_reuses,
-                if workers > 1 && !source_domains { 2 } else { 1 }
+                if source_domains {
+                    0
+                } else if workers > 1 {
+                    2
+                } else {
+                    1
+                }
             );
-            assert_eq!(
-                result.metrics.pipeline_candidate_attempts,
-                usize::from(workers > 1 && source_domains)
-            );
-            assert_eq!(
-                result.metrics.pipeline_producers > 0,
-                workers > 1 && source_domains
-            );
+            assert_eq!(result.metrics.pipeline_candidate_attempts, 0);
+            assert_eq!(result.metrics.pipeline_producers > 0, source_domains);
             assert_eq!(result.metrics.pipeline_source_routes, 0);
             assert_eq!(result.metrics.pipeline_runtime_submitted[1], 0);
-            if workers > 1 && source_domains {
+            assert_eq!(
+                result.metrics.clustered_row_groups,
+                if source_domains { 16 } else { 0 }
+            );
+            if source_domains {
                 assert!(result.metrics.source_domain_proof_seconds > 0.);
             }
             assert_eq!(result.metrics.pipeline_fallbacks, 0);
@@ -109,7 +113,7 @@ fn public_shared_grouping_admits_parallel_and_preserves_one_worker_scan_reuse() 
                 result.metrics.pipeline_runtime_submitted,
                 result.metrics.pipeline_runtime_completed
             );
-            assert!(result.metrics.worker_threads_peak <= workers.saturating_sub(1));
+            assert!(result.metrics.worker_threads_peak <= workers);
         }
     }
 }

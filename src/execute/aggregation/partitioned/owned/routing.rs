@@ -117,6 +117,9 @@ impl RoutingPlan {
             _base: inner._metadata.clone(),
         })))
     }
+    pub(super) fn state_sources(&self) -> impl Iterator<Item = usize> + '_ {
+        self.0.states.iter().map(|state| state.canonical)
+    }
     pub(super) fn state_bytes(&self) -> usize {
         self.0.state_bytes
     }

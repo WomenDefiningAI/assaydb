@@ -366,13 +366,18 @@ fn allocation_failure_during_materialization_is_not_an_admitted_attempt_or_repla
         // path, before shared grouping has begun; no retry permission exists.
         let pressure = budget.reserve(budget.limit() - budget.used() - 1).unwrap();
         let mut ctx = Context {
+            filtered_reuse: None,
+            build_groups: None,
+            demand_cache: None,
             shared_attempt: Some(attempt.clone()),
             options: &opt,
             scan_filters: HashMap::new(),
             static_filters: HashMap::new(),
             scan_transforms: HashMap::new(),
+            lane_transforms: HashMap::new(),
             replay_transforms: HashMap::new(),
             materialized: HashMap::new(),
+            sideways_registry_lease: None,
             spill: None,
             budget: budget.clone(),
             metrics: Metrics::default(),

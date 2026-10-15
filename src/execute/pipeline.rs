@@ -3,6 +3,7 @@
 //! Portable parallel admission; private slices hand off on conservative memory pressure.
 mod admission;
 pub(crate) mod fallback;
+pub(crate) mod leaf_owned;
 #[cfg(test)]
 pub(crate) mod shared;
 pub(crate) mod source_owned;
@@ -154,7 +155,18 @@ impl Producer {
         )
     }
     fn step_morsel(
+        self,
+        #[cfg(test)] after_batch: &mut dyn FnMut(&Producer),
+    ) -> Result<ProducerStep> {
+        self.step_quantum(
+            false,
+            #[cfg(test)]
+            after_batch,
+        )
+    }
+    fn step_quantum(
         mut self,
+        batch_only: bool,
         #[cfg(test)] after_batch: &mut dyn FnMut(&Producer),
     ) -> Result<ProducerStep> {
         let attempt = self.attempt.clone();
@@ -184,7 +196,10 @@ impl Producer {
                     let shared = next.shared.is_some();
                     #[cfg(not(test))]
                     let shared = false;
-                    if (!shared && next.cursor.is_none()) || limit.reached(&next.metrics) {
+                    if batch_only
+                        || (!shared && next.cursor.is_none())
+                        || limit.reached(&next.metrics)
+                    {
                         return Ok(ProducerStep::Continue(next));
                     }
                     self = next;
@@ -211,6 +226,9 @@ impl Producer {
             };
             let mut state = Aggregation::new(&self.plan, &self.expressions, state_budget, true)?;
             state.disable_dense();
+            if self.slice_bytes.is_some() {
+                state.enable_numeric_slack()?;
+            }
             self.state = Some(state);
         }
         if self.pending.is_some() {
@@ -424,10 +442,57 @@ fn submit_producer(
     producer: Producer,
 ) -> Result<()> {
     let attempt = producer.attempt.clone();
+    // Keep the deterministic decoder-refusal injection at its original
+    // coordinator boundary; ordinary continuations never make that round trip.
+    #[cfg(test)]
+    if producer.options.test_pipeline_interruption.is_some() {
+        active[source] = Some(
+            runtime
+                .try_submit(JobKind::Morsel, move |_| {
+                    producer.step().map(JobOutput::Producer)
+                })
+                .map_err(|e| attempt.rejection(e.reason))?,
+        );
+        return Ok(());
+    }
+    let mut owner = Some(producer);
     active[source] = Some(
         runtime
-            .try_submit(JobKind::Morsel, move |_| {
-                producer.step().map(JobOutput::Producer)
+            .try_submit_continuation(JobKind::Morsel, move |_, background| {
+                let producer = owner.take().expect("exclusive producer continuation");
+                #[cfg(test)]
+                let hooks = producer.options.test_pipeline_continuation.clone();
+                #[cfg(test)]
+                let source = producer.source;
+                #[cfg(test)]
+                let producer = {
+                    let mut producer = producer;
+                    if let Some(hooks) = &hooks {
+                        hooks.before(&mut producer, background);
+                    }
+                    producer
+                };
+                let step = if background {
+                    producer.step()
+                } else {
+                    // Return to completion draining after one original batch.
+                    producer.step_quantum(
+                        true,
+                        #[cfg(test)]
+                        &mut |_| {},
+                    )
+                };
+                #[cfg(test)]
+                if let Some(hooks) = &hooks {
+                    hooks.after(source, &step);
+                }
+                match step? {
+                    ProducerStep::Continue(producer) => {
+                        owner = Some(producer);
+                        Ok(None)
+                    }
+                    output => Ok(Some(JobOutput::Producer(output))),
+                }
             })
             .map_err(|e| attempt.rejection(e.reason))?,
     );
@@ -508,6 +573,25 @@ fn drain_bounded(
         active[source] = None;
         match completion.result {
             Ok(JobOutput::Producer(ProducerStep::Continue(producer))) => {
+                #[cfg(test)]
+                if let Some(target) = &options.test_pipeline_interruption {
+                    let mut report = target.lock().unwrap();
+                    if report.budget.is_none() {
+                        // Resume a live partial aggregate at the next decoder
+                        // step, while the other sources still own outstanding
+                        // jobs/completions. Do not let closure funding consume
+                        // the refusal before the decoder requests its buffers.
+                        report.queued_sources = active.iter().flatten().count() + queue.len();
+                        report.aggregated_rows = producer.metrics.rows_after_filter;
+                        report.budget = Some(producer.budget.clone());
+                        producer.budget.test_refuse_reservations();
+                        drop(report);
+                        return match producer.step() {
+                            Err(error) => Err(error),
+                            Ok(_) => panic!("expected decoder reservation refusal"),
+                        };
+                    }
+                }
                 submit_producer(runtime, active, source, producer)?;
             }
             Ok(JobOutput::Producer(ProducerStep::Flush { producer, routed })) => {
@@ -711,7 +795,7 @@ fn execute_attempt(
                 .collect::<Result<Vec<_>>>()?;
         }
         let mut active = vec![None; producers];
-        for (lane, slot) in active.iter_mut().enumerate() {
+        for lane in 0..producers {
             let mut producer_options = options.clone();
             producer_options.workers = 1;
             producer_options.parquet_cache_bytes =
@@ -740,13 +824,11 @@ fn execute_attempt(
                 #[cfg(test)]
                 shared: None,
             };
-            *slot = Some(
-                runtime
-                    .try_submit(JobKind::Morsel, move |_| {
-                        producer.step().map(JobOutput::Producer)
-                    })
-                    .map_err(|e| attempt.rejection(e.reason))?,
-            );
+            submit_producer(runtime, &mut active, lane, producer)?;
+        }
+        #[cfg(test)]
+        if let Some(hooks) = &options.test_pipeline_continuation {
+            hooks.submitted(runtime);
         }
         let mut partials = Vec::with_capacity(producers);
         let mut first_error: Option<(usize, String)> = None;
@@ -766,7 +848,8 @@ fn execute_attempt(
             )?;
         } else {
             while let Some(completion) = runtime.next_completion() {
-                // Runtime IDs change on resubmission; source-range identity must not.
+                // A continuation retains its job ID; flushed/resumed sources can
+                // receive new IDs, but their contiguous range identity never changes.
                 let source = active
                     .iter()
                     .position(|id| *id == Some(completion.id))
@@ -774,13 +857,7 @@ fn execute_attempt(
                 active[source] = None;
                 match completion.result {
                     Ok(JobOutput::Producer(ProducerStep::Continue(producer))) => {
-                        active[source] = Some(
-                            runtime
-                                .try_submit(JobKind::Morsel, move |_| {
-                                    producer.step().map(JobOutput::Producer)
-                                })
-                                .map_err(|e| attempt.rejection(e.reason))?,
-                        );
+                        submit_producer(runtime, &mut active, source, producer)?;
                     }
                     Ok(JobOutput::Producer(ProducerStep::Finished(output))) => {
                         executor.metrics.pipeline_producers += 1;
@@ -848,10 +925,10 @@ fn execute_attempt(
             options.cancellation.clone(),
         ));
         let mut output = executor
-            .finish(start)
+            .finish(start, None, options)
             .map_err(|e| attempt.record(usize::MAX, Failure::sql(e)))?;
         output.metrics.workers = options.workers;
-        output.metrics.worker_threads_peak = budget.peak_workers();
+        output.metrics.worker_threads_peak = budget.peak_threads();
         Ok(output)
     })();
     if let Err(error) = &result {
@@ -1137,7 +1214,7 @@ mod tests {
                     assert!(
                         actual.metrics.pipeline_source_batches > actual.metrics.pipeline_producers
                     );
-                    assert!(actual.metrics.worker_threads_peak < workers);
+                    assert!(actual.metrics.worker_threads_peak <= workers);
                     assert_eq!(
                         actual.metrics.pipeline_runtime_submitted[0],
                         actual.metrics.pipeline_step_jobs
@@ -1234,7 +1311,7 @@ mod tests {
             assert_eq!(actual.metrics.pipeline_producers, 4);
             assert!(actual.metrics.pipeline_background_producers > 0);
             assert_eq!(actual.metrics.pipeline_source_batches, 128);
-            assert!(actual.metrics.worker_threads_peak <= 3);
+            assert!(actual.metrics.worker_threads_peak <= 4);
         }
     }
 
@@ -1352,7 +1429,7 @@ mod tests {
                     actual.metrics.pipeline_runtime_submitted,
                     actual.metrics.pipeline_runtime_completed
                 );
-                assert!(actual.metrics.worker_threads_peak < workers);
+                assert!(actual.metrics.worker_threads_peak <= workers);
                 drop(actual);
                 assert_eq!(budget.used(), 0);
             }
@@ -1636,5 +1713,7 @@ mod tests {
     }
 }
 
+#[cfg(test)]
+pub(crate) mod continuation_tests;
 #[cfg(test)]
 mod morsel_tests;

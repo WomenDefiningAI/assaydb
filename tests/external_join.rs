@@ -148,7 +148,7 @@ fn automatic_spill_releases_failed_attempt_and_retries_wide_join() {
                 .unwrap()
                 .starts_with("resource-limit: accounted memory")
         );
-        assert!(actual.metrics.worker_threads_peak < workers);
+        assert!(actual.metrics.worker_threads_peak <= workers);
     }
     let mut options = fixture.options(64, 8 << 20, true);
     options.workers = 4;

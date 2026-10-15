@@ -1,6 +1,8 @@
 //! Parquet row-group readers and bounded, ordered parallel scan dispatch.
 //! Predicate caches and prefetched batches belong to the current query only.
 pub(crate) mod cursor;
+#[cfg(test)]
+pub(crate) mod test_support;
 use crate::{
     Result,
     execute::Options,
@@ -217,8 +219,16 @@ impl Reader {
         options: &Options,
         budget: &Budget,
     ) -> Result<Self> {
+        #[cfg(test)]
+        let transform = match &options.test_scan_observer {
+            Some(observer) if observer.path == path => {
+                Some(observer.wrap(transform, budget.clone()))
+            }
+            _ => transform,
+        };
         if options.workers > 1 && metadata.metadata().num_row_groups() > 1 {
-            let workers = budget.workers(metadata.metadata().num_row_groups(), options.workers - 1);
+            let workers =
+                budget.scan_readers(metadata.metadata().num_row_groups(), options.workers - 1);
             if workers.count > 0 {
                 return Ok(Self::Parallel(Box::new(
                     crate::parallel_scan::ParallelReader::new(

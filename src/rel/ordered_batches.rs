@@ -121,24 +121,29 @@ impl Drop for Pending {
     }
 }
 struct Task {
+    start_row: usize,
     batch: RecordBatch,
     _lease: Reservation,
 }
 struct Output {
+    start_row: usize,
     batch: RecordBatch,
     _lease: Reservation,
     _pending: Pending,
 }
 enum Message<R: Report> {
     Batch(Output),
-    End(Result<R>),
+    End(usize, Result<R>),
 }
 struct Pool<'scope, R: Report> {
     senders: Vec<SyncSender<Task>>,
     receivers: Vec<Receiver<Message<R>>>,
-    handles: Vec<ScopedJoinHandle<'scope, ()>>,
-    pending: VecDeque<usize>,
+    handles: Vec<crate::memory::Joined<ScopedJoinHandle<'scope, ()>>>,
+    // Each task owns a contiguous range of canonical input rows. Queue order
+    // is the ordered merge; output never needs a global sort or row index map.
+    pending: VecDeque<(usize, usize)>,
     next_lane: usize,
+    next_row: usize,
     stop: Arc<AtomicBool>,
     credit: Arc<Credit>,
     cancel: Cancellation,
@@ -148,22 +153,29 @@ struct Pool<'scope, R: Report> {
 }
 impl<R: Report> Pool<'_, R> {
     fn drain_one(&mut self, emit: &mut dyn FnMut(RecordBatch) -> Result<()>) -> Result<()> {
-        let lane = *self.pending.front().expect("pending batch task");
+        let (start_row, lane) = *self.pending.front().expect("pending batch task");
         let result: Result<()> = (|| {
             loop {
                 self.cancel.check()?;
                 match self.receivers[lane].recv_timeout(Duration::from_millis(20)) {
                     Ok(Message::Batch(output)) => {
                         let Output {
+                            start_row: output_start,
                             batch,
                             _lease,
                             _pending,
                         } = output;
+                        if output_start != start_row {
+                            return Err("batch worker output range mismatch".into());
+                        }
                         self.stats.batches += 1;
                         // Keep the queue lease alive throughout downstream delivery.
                         emit(batch)?;
                     }
-                    Ok(Message::End(result)) => {
+                    Ok(Message::End(output_start, result)) => {
+                        if output_start != start_row {
+                            return Err("batch worker completion range mismatch".into());
+                        }
                         self.pending.pop_front();
                         self.stats.report.merge(result?);
                         return Ok(());
@@ -192,17 +204,23 @@ impl<R: Report> Pool<'_, R> {
             self.drain_one(emit)?;
         }
         self.cancel.check()?;
+        let start_row = self.next_row;
+        let end_row = start_row
+            .checked_add(batch.num_rows())
+            .ok_or("batch input ordinal overflow")?;
         let lease = self
             .budget
             .reserve(batch.get_array_memory_size().saturating_add(256))?;
         let lane = self.next_lane;
         self.senders[lane]
             .send(Task {
+                start_row,
                 batch,
                 _lease: lease,
             })
             .map_err(|_| "batch worker stopped before task submission")?;
-        self.pending.push_back(lane);
+        self.pending.push_back((start_row, lane));
+        self.next_row = end_row;
         self.next_lane = (lane + 1) % self.senders.len();
         self.stats.tasks += 1;
         Ok(())
@@ -264,6 +282,7 @@ where
             handles: Vec::new(),
             pending: VecDeque::new(),
             next_lane: 0,
+            next_row: 0,
             stop: Arc::new(AtomicBool::new(false)),
             credit: Arc::new(Credit {
                 counts: Mutex::new(Counters {
@@ -286,10 +305,16 @@ where
             let cancel = cancel.clone();
             let process = &process;
             let target = config.target_bytes;
+            let live = budget.thread_started();
             let handle = thread::Builder::new()
                 .name(format!("assaydb-batch-{lane}"))
                 .spawn_scoped(scope, move || {
-                    while let Ok(Task { batch, _lease }) = receive.recv() {
+                    while let Ok(Task {
+                        start_row,
+                        batch,
+                        _lease,
+                    }) = receive.recv()
+                    {
                         let check = || credit.wait(lane, target, &stop, &cancel);
                         let result = check().and_then(|_| {
                             process(
@@ -301,6 +326,7 @@ where
                                     let pending = Pending::new(&credit, lane, bytes);
                                     output
                                         .send(Message::Batch(Output {
+                                            start_row,
                                             batch,
                                             _lease: lease,
                                             _pending: pending,
@@ -311,7 +337,7 @@ where
                             )
                         });
                         drop(_lease);
-                        if output.send(Message::End(result)).is_err()
+                        if output.send(Message::End(start_row, result)).is_err()
                             || stop.load(Ordering::Acquire)
                         {
                             break;
@@ -321,7 +347,7 @@ where
                 .map_err(|e| format!("batch worker spawn: {e}"))?;
             pool.senders.push(send);
             pool.receivers.push(results);
-            pool.handles.push(handle);
+            pool.handles.push(crate::memory::Joined::new(handle, live));
         }
         let source_result = produce(&mut |batch| pool.push(batch, emit));
         // A later child/preparation error cannot leap over earlier task output.

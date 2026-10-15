@@ -26,10 +26,11 @@ struct Report {
     bounded: usize,
     seconds: f64,
 }
+type OwnedStates = Vec<(usize, States)>;
 pub(super) struct Workers {
     senders: Vec<SyncSender<Arc<Batch>>>,
     receivers: Vec<Receiver<Report>>,
-    handles: Vec<JoinHandle<Vec<(usize, States)>>>,
+    handles: Vec<crate::memory::Joined<JoinHandle<OwnedStates>>>,
     owners: Vec<Option<usize>>,
     scalar: bool,
     cancellation: crate::spill::Cancellation,
@@ -113,6 +114,7 @@ impl Workers {
             workers.senders.push(send);
             workers.receivers.push(result);
             let cancellation = options.cancellation.clone();
+            let live = budget.thread_started();
             let handle = thread::Builder::new()
                 .name(format!("assaydb-aggregate-{owner}"))
                 .spawn(move || {
@@ -163,7 +165,9 @@ impl Workers {
                         .collect()
                 })
                 .map_err(|e| format!("aggregate worker spawn: {e}"))?;
-            workers.handles.push(handle);
+            workers
+                .handles
+                .push(crate::memory::Joined::new(handle, live));
         }
         Ok(Some(workers))
     }

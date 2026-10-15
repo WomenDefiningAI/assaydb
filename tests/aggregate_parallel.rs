@@ -99,7 +99,7 @@ fn independent_states_preserve_aliases_late_groups_and_final_overflow() {
                     parallel,
                     "{sql}"
                 );
-                assert!(actual.metrics.worker_threads_peak < workers);
+                assert!(actual.metrics.worker_threads_peak <= workers);
                 assert!(actual.metrics.peak_reserved_bytes <= options.memory_bytes);
             }
         }

@@ -166,6 +166,7 @@ fn run() -> Result<()> {
         } else {
             r.parquet_cache_bytes.or(defaults.parquet_cache_bytes)
         },
+        error_replay: defaults.error_replay,
     };
     event(
         json!({"event":"ready","engine_info":{"engine":"assaydb","stage":assaydb::IMPLEMENTATION_STAGE,"workers":options.workers,"worker_scope":"total execution thread limit including coordinator","spill_enabled":options.spill.is_some(),"spill_mode":options.spill.as_ref().map(|s|s.mode),"batch_size":options.batch_size,"parquet_cache_bytes":options.parquet_cache_bytes,"memory_budget_bytes":options.memory_bytes,"hard_process_memory_cap":false,"memory_scope":"accounted Arrow batches, estimated expression/state/output reservations; decoder, parser, allocator overhead, thread stacks and sort internals not hard capped"}}),
