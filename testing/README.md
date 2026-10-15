@@ -147,8 +147,8 @@ website/setup-only changes remain excluded. Neither mechanism executes tests.
 acceptance record pinned to bundle/policy/source/reviewed-code-head identities, and emits
 both `site/evidence/full-suite/latest.json` and the matching static HTML outcome
 table and timing comparisons. Both views come from one computed object; JavaScript is
-not required. The shipped state is pending and contains no measurements.
-Historical charts are untouched. No synthetic accepted fixture is shipped.
+not required. Accepted measurements are published only after the separate review
+step. Historical charts are untouched. No synthetic accepted fixture is shipped.
 
 ```sh
 python3 testing/site_evidence.py PRIVATE_RESULTS/bundle.json \
