@@ -29,7 +29,9 @@ Do not use this validator alone to authorize a merge or a performance claim.
 Run mechanics tests (synthetic fixtures only):
 
 ```sh
-python3 -m unittest discover -s testing/tests -v
+ASSAY_ACTIVITY_LOCK_PATH=/path/to/shared/engine-activity.lock \
+  python3 scripts/with_engine_activity.py mechanics \
+  python3 -B -m unittest discover -s testing/tests -v
 ```
 
 Validate collector-produced evidence with a separately reviewed policy:
@@ -74,10 +76,12 @@ uses the shared host activity lock; measurements require a quiet host.
   [check-in ab599cbdd0976a63c5cfc7755588f716a7621f27](https://www.sqlite.org/sqllogictest/info/ab599cbdd0976a63c5cfc7755588f716a7621f27).
   622 files; 7,421,339 fixed records; 5,939,714 applicable. Retain the
   [upstream copyright notice](../docs/licenses/SQLLOGICTEST-COPYRIGHT.md), CC0 option.
-  Corpus retrieval and exact runner integration remain pending.
+  The corpus has been privately acquired and hash-verified on the test host.
+  Full execution and independent runtime review remain pending.
 - `hunt55k/generate_v2.py` and `generate_v3.py`: original Assay generators, unchanged
   bytes under the repository MIT OR Apache-2.0 terms. The additive 5K preserves the
-  original 50K prefix. The frozen plans/recipes and reference library are missing;
+  original 50K prefix. The frozen plans/recipes and reference library have been privately acquired and
+  verified on the test host; they are not bundled here;
   **these generators alone do not constitute an executable 55K suite**. Do not
   manufacture replacements. Required plan hashes: v2
   `16f92c49617461eb8837a78a021b3c48e37f82098add02bcf24ab0ab265ffd80`, v3
@@ -167,3 +171,27 @@ allowed. No `status`, `diff` or `ls-files` worktree comparisons run: those can
 invoke repository-configured fsmonitor or attribute clean filters. Worktree bytes
 and extra files are checked directly without consulting Git attributes. A trusted
 Git installation remains a host prerequisite; the adapter does not bootstrap it.
+
+## Separated runtime integration (draft)
+
+`runtime_context.py` rechecks the admitted candidate build, unchanged controller,
+private expanded input files, transfer receipts, interpreter and reviewed collector
+overlay before and after execution. `runtime_launch.py` dispatches only an invocation
+from an independently pinned private policy. Its tools must run from a protected
+copy outside candidate source, with a sanitized Python environment. This is not
+an operating-system sandbox; do not expose publishing credentials to execution.
+
+The collector overlay adapts provenance checks separately from frozen SQL, scoring,
+transport and lifecycle code. Its exact private diff and complete file inventory
+require independent review. No private runner notes or corpus are published here.
+Bounded synthetic integration checks and the pinned SQLite loader check passed;
+full SLT/55K collection and fresh baseline/candidate builds remain pending.
+
+Each private `assay-separated-runtime/v1` policy contains the existing boundary
+policy, separate root mappings, exact overlay and admission-tool inventories, every
+expanded input hash, transfer-receipt hashes, interpreter identity, engine environment,
+host lock and invocation arguments. A fixture invocation cannot be labeled a full
+collection. Build receipts retain Cargo events and require both native artifacts
+to have `fresh: false`; changed or substituted source/binaries fail admission.
+The installed controller pin is unchanged. Full-suite qualification and merge remain
+blocked until all required evidence and independent review are complete.
