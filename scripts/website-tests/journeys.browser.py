@@ -44,12 +44,34 @@ with sync_playwright() as p:
         assert page.locator('#lesson-reviewed').is_visible()
         page.locator('.timing-contexts > summary').click()
         notes = page.locator('.milestone-lessons button')
+        # Choice geometry must stay stable for every selection: no staggered rows,
+        # stretched siblings or blank grid slots from expanding a selected card.
+        geometry = "els => els.map(e => ({x:e.offsetLeft,y:e.offsetTop,w:e.offsetWidth,h:e.offsetHeight}))"
+        initial = page.locator('.milestone-lessons > li').evaluate_all(geometry)
+        assert all(row['h'] == 48 for row in initial), initial
+        if width > 640:
+            assert initial[0]['w'] == 700
+            assert all(initial[i]['y'] == initial[i+1]['y'] for i in (1,3,5)), initial
+            assert initial[1]['y'] - initial[0]['y'] == 60
+            assert initial[3]['y'] - initial[1]['y'] == 60
+        else:
+            assert all(row['x'] == initial[0]['x'] for row in initial), initial
+            assert all(initial[i+1]['y'] - initial[i]['y'] == 60 for i in range(6)), initial
+        for option in notes.all():
+            option.focus()
+            assert page.locator('.milestone-lessons > li').evaluate_all(geometry) == initial
+            assert page.locator('.milestone-receipts .journey-lesson:visible').count() == 1
+        chart_bounds = page.locator('.milestone-scroll').bounding_box()
+        choices_bounds = page.locator('.milestone-lessons').bounding_box()
+        assert abs(chart_bounds['x'] - choices_bounds['x']) < 1
+        assert abs(chart_bounds['width'] - choices_bounds['width']) < 1
+
         notes.first.focus()
         page.keyboard.press('End')
         assert notes.last.get_attribute('aria-pressed') == 'true'
         chart = page.locator('.milestone-chart [data-milestone]')
         chart.first.hover()
-        assert page.locator('#lesson-dense-groups').is_visible()
+        assert page.locator('#lesson-starting-benchmark').is_visible()
         chart.first.focus()
         page.keyboard.press('End')
         assert chart.last.get_attribute('aria-pressed') == 'true'
@@ -63,8 +85,11 @@ with sync_playwright() as p:
         assert [p['total'] for p in data['milestones']] == [1.302, 1.255, 1.234, 1.187, 1.110, 1.087]
         assert data['group']['protocol'] is None
         assert data['starting_benchmark']['total'] == historic['lanes']['sf10-w10']['comparisons']['assaydb_polars']['total']['point']
-        assert '4.1598×' in page.locator('.journey-start h3').inner_text()
-        assert page.locator('.journey-start').is_visible()
+        assert page.locator('.journey-start').count() == 0
+        assert page.locator('.milestone-chart [data-milestone]').count() == 7
+        assert '4.1598×' in page.locator('.milestone-chart [data-milestone=starting-benchmark]').text_content()
+        assert page.locator('.milestone-dot--historical').evaluate('(e)=>e.tagName.toLowerCase()') == 'path'
+        assert page.locator('.milestone-legend').is_visible()
         assert page.locator('.milestone-chart').bounding_box()['width'] == 700
         page.evaluate("document.activeElement.blur(); document.querySelector('.milestone-scroll').scrollLeft = 0")
         page.screenshot(path=str(shots / f'speed-{width}.png'), full_page=True)
@@ -89,7 +114,7 @@ with sync_playwright() as p:
     page.goto(BASE + '/index.html')
     page.locator('#journey-speed').tap()
     page.locator('.milestone-lessons button').first.tap()
-    assert page.locator('#lesson-dense-groups').is_visible()
+    assert page.locator('#lesson-starting-benchmark').is_visible()
     touch.close()
     context = browser.new_context(java_script_enabled=False)
     page = context.new_page()

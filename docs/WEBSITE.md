@@ -195,8 +195,10 @@ renders the static chart and lessons from that sanitized data. Recorded dates ar
 proposal timestamps, not measurement completion. Reported single-round diagnostics stay separate from rotated-protocol results
 and other hosts. The retained historical input documentation leaves sampling
 compatibility unverified; corrected gate code is not evidence that the old runs
-satisfied its five-timed/no-warmup contract. The visible starting benchmark is
-the M2 Pro Alpha 2-equivalent 4.1598× total run, distinct from the M4 4.1364× run.
+satisfied its five-timed/no-warmup contract. The starting benchmark is a differently colored diamond on the same 0–4.5×
+chart scale: the M2 Pro Alpha 2-equivalent 4.1598× total run, distinct from the
+M4 4.1364× run. No line connects unlike hosts. Seven controls use a stable grid;
+the selected lesson appears below instead of expanding a grid item.
 
 The contribution page links to plain GitHub issue creation (issues enabled,
 discussions disabled) and the existing `wrong-answer.md` template. Its accuracy and speed
