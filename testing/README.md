@@ -158,3 +158,12 @@ same controller/tool/input identities. The runtime integration must preserve
 source/build provenance, lock ownership, lifecycle, metamorphic, exclusions,
 comparison and same-host/day checks. This adapter does not make the old private
 runner accept the public checkout; that runtime integration remains unvalidated.
+
+Admission Git reads use the fixed Test Mini `/usr/bin/git`, a minimal explicit
+environment, disabled global/system configuration, no pager/hooks/fsmonitor,
+disabled replacement objects/lazy fetch and denied transport protocols. Only
+`rev-parse HEAD`, `rev-parse HEAD^{tree}` and `ls-tree -rz --full-tree HEAD` are
+allowed. No `status`, `diff` or `ls-files` worktree comparisons run: those can
+invoke repository-configured fsmonitor or attribute clean filters. Worktree bytes
+and extra files are checked directly without consulting Git attributes. A trusted
+Git installation remains a host prerequisite; the adapter does not bootstrap it.

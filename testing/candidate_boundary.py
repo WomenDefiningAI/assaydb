@@ -7,6 +7,7 @@ Full-suite integration and real-run validation remain pending.
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 
@@ -27,17 +28,48 @@ def confined(root, relative):
 
 
 def git(root, *args):
-    return subprocess.check_output(['git','-C',str(root),*args],text=True).strip()
+    # Fixed read-only plumbing only. Do not use status/diff/ls-files: worktree
+    # comparisons may invoke fsmonitor or attribute clean filters from Git config.
+    require(tuple(args) in {('rev-parse','HEAD'), ('rev-parse','HEAD^{tree}'),
+                           ('ls-tree','-rz','--full-tree','HEAD')}, 'unapproved Git operation')
+    env = {'PATH':'/usr/bin:/bin', 'LC_ALL':'C',
+           'GIT_CONFIG_NOSYSTEM':'1', 'GIT_CONFIG_SYSTEM':'/dev/null',
+           'GIT_CONFIG_GLOBAL':'/dev/null', 'GIT_NO_REPLACE_OBJECTS':'1',
+           'GIT_NO_LAZY_FETCH':'1', 'GIT_TERMINAL_PROMPT':'0',
+           'GIT_ASKPASS':'/usr/bin/false', 'GIT_OPTIONAL_LOCKS':'0'}
+    command = ['/usr/bin/git', '--no-pager', '--no-replace-objects',
+               '-c','core.fsmonitor=false', '-c','core.hooksPath=/dev/null',
+               '-c','core.bare=false', '-c','core.worktree='+str(root.resolve()),
+               '-c','protocol.allow=never', '-C',str(root), *args]
+    return subprocess.check_output(command,env=env,text=True).rstrip('\n')
 
 
 def candidate_identity(root, policy):
     require(git(root,'rev-parse','HEAD')==policy['commit'], 'substituted candidate commit')
     require(git(root,'rev-parse','HEAD^{tree}')==policy['tree'], 'substituted candidate tree')
-    names=subprocess.check_output(['git','-C',str(root),'ls-files','-z']).decode().rstrip('\0').split('\0')
+    entries=git(root,'ls-tree','-rz','--full-tree','HEAD').rstrip('\0').split('\0')
+    names=[]
+    for entry in entries:
+        header,name=entry.split('\t',1)
+        mode,kind,_=header.split()
+        require(kind=='blob' and mode in ('100644','100755'), 'unsupported candidate Git entry')
+        names.append(name)
     require(set(names)==set(policy['files']), 'candidate file inventory mismatch')
-    require(not git(root,'status','--porcelain','--untracked-files=all'), 'candidate checkout dirty')
-    # Includes ignored files: no hidden build/import controls in a fresh source checkout.
-    require(not git(root,'ls-files','--others'), 'candidate has untracked or ignored files')
+    # Walk bytes ourselves, including ignored files. This neither consults Git
+    # attributes nor invokes configured filters. Git metadata is not source.
+    actual=set()
+    for directory,dirs,files in os.walk(root,followlinks=False):
+        base=Path(directory)
+        if base==root:
+            dirs[:]=[d for d in dirs if d!='.git']
+            files=[f for f in files if f!='.git']
+        for name in dirs:
+            require(not (base/name).is_symlink(), 'candidate directory symlink')
+        for name in files:
+            path=base/name
+            require(not path.is_symlink() and path.is_file(), 'candidate special file')
+            actual.add(path.relative_to(root).as_posix())
+    require(actual==set(policy['files']), 'candidate has missing, untracked or ignored files')
     for name, expected in policy['files'].items():
         path=confined(root,name)
         require(path.is_file() and digest(path)==expected, 'candidate source mismatch: '+name)

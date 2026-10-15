@@ -1,10 +1,12 @@
 import copy
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).parents[1]))
 from candidate_boundary import digest,fingerprint,git,verify
 
@@ -102,6 +104,55 @@ class BoundaryTests(unittest.TestCase):
         self.policy['inputs']['slt-scope']['path']='slt-scope'
         p=self.inputs/'slt-scope';p.unlink();p.symlink_to(self.inputs/'hunt-plan')
         with self.assertRaisesRegex(ValueError,'symlink'):self.check()
+
+    def marker_hook(self):
+        marker=self.build/'hook-ran'
+        hook=self.build/'marker-hook.sh'
+        # Harmless fixture only: even a regression can only create a temp marker.
+        hook.write_text('#!/bin/sh\n: > "'+str(marker)+'"\n')
+        hook.chmod(0o700)
+        return marker,hook
+
+    def config(self,key,value):
+        subprocess.run(['/usr/bin/git','-C',str(self.candidate),'config',key,str(value)],check=True)
+
+    def test_repo_fsmonitor_never_executes(self):
+        marker,hook=self.marker_hook()
+        self.config('core.fsmonitor',hook)
+        self.check()
+        self.assertFalse(marker.exists())
+
+    def test_clean_filter_never_executes(self):
+        # Commit the attributes before configuring a filter, so fixture setup
+        # itself never invokes the marker. Admission must hash bytes directly.
+        attrs=self.candidate/'.gitattributes';attrs.write_text('src/* filter=marker\n')
+        subprocess.run(['/usr/bin/git','-C',str(self.candidate),'add','.gitattributes'],check=True)
+        subprocess.run(['/usr/bin/git','-C',str(self.candidate),'-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','-qm','Synthetic attributes'],check=True)
+        c=self.policy['candidate'];c['files']['.gitattributes']=digest(attrs)
+        c.update(commit=git(self.candidate,'rev-parse','HEAD'),tree=git(self.candidate,'rev-parse','HEAD^{tree}'))
+        for key,value in [('candidate_commit',c['commit']),('candidate_tree',c['tree'])]:
+            self.policy['build'][key]=self.receipt[key]=value
+        self.receipt['source_before_sha256']=self.receipt['source_after_sha256']=fingerprint(c['files'])
+        self.repin_receipt()
+        marker,hook=self.marker_hook()
+        self.config('filter.marker.clean',hook);self.config('filter.marker.process',hook)
+        self.config('filter.marker.required','true')
+        self.check()
+        self.assertFalse(marker.exists())
+
+    def test_environment_git_and_path_injection_ignored(self):
+        marker,hook=self.marker_hook()
+        fake=self.build/'git';fake.write_bytes(hook.read_bytes());fake.chmod(0o700)
+        global_config=self.build/'global-config';global_config.write_text('[core]\n fsmonitor = '+str(hook)+'\n')
+        injected={'PATH':str(self.build),'GIT_DIR':str(self.controller/'.git'),
+                  'GIT_WORK_TREE':str(self.controller),'GIT_CONFIG_GLOBAL':str(global_config),
+                  'GIT_CONFIG_COUNT':'1','GIT_CONFIG_KEY_0':'core.fsmonitor','GIT_CONFIG_VALUE_0':str(hook)}
+        with patch.dict(os.environ,injected):self.check()
+        self.assertFalse(marker.exists())
+
+    def test_non_plumbing_git_operation_refused(self):
+        with self.assertRaisesRegex(ValueError,'unapproved Git operation'):
+            git(self.candidate,'status','--porcelain')
 
 
 if __name__=='__main__':unittest.main()
