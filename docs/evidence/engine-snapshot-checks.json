@@ -92,8 +92,8 @@
   "remaining": [
     {
       "check": "full-suite exact-export/current-public-base acceptance",
-      "status": "pending review",
-      "reason": "retained full SLT/55K/SF10 campaign measured frozen source and historical baseline; no automatic relabeling or fresh public-main timing claim"
+      "status": "required; in progress",
+      "reason": "full current-public-main SLT/55K/SF10 comparison is required; evaluate exact code/tooling/input and same-day/host equivalence before reuse, otherwise run fresh sequential baseline and candidate"
     },
     {
       "check": "stable error acceptance",

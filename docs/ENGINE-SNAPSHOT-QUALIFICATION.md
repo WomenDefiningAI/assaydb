@@ -90,7 +90,9 @@ the separate Alpha3 performance target is not claimed by this source promotion.
   files and build configuration match the frozen source, apart from the documented
   attribution comments. Retained full-corpus evidence is historical source-equivalent
   evidence, not a fresh run of this binary or a full comparison against current public
-  main. Maintainers must resolve whether additional current-base checks are required.
+  main. The full current-public-main SLT, 55K and SF10 comparison is a required
+  gate and is now in progress. Existing evidence may be reused only after exact
+  code, tooling, input and same-day/host equivalence is verified.
   No fresh public-main paired timing baseline is claimed.
 - Decide whether the retained stable engine/reference errors satisfy the chosen
   engine-PR acceptance policy. Strict zero-error compatibility is not achieved.
