@@ -13,10 +13,13 @@ corpus or a package test suite cannot prove every query correct.
   memory. Arrow conversion is not a claim of zero-copy execution.
 - Accounted query/catalog/result limits do not bound all process memory.
   Arrow buffers, encoder scratch and downstream DataFrames can add allocations.
-  The current decoder also leaves some native allocations, retained Zstandard
+  The root native build’s patched decoder also leaves some native allocations, retained Zstandard
   state and conversion/output buffers outside engine accounting. Its 128 MiB
   decoder-window admission is not a cap on the whole process. This open limitation
   was accepted for experimental PR6 only; it is not a general safety guarantee.
+  The separate Python workspace uses registry Parquet 57.0.0 without this patch;
+  neither the patched decoder's admission check nor its validation can be assumed
+  for Python source builds or wheels. Python limits are not hard process caps either.
 - Local readers accept regular files, without URLs or globs. CSV is a bounded
   import with a required header and TEXT columns. Keep input files unchanged
   during execution. Disabling local readers is not a directory sandbox.

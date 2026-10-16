@@ -11,6 +11,12 @@ The report below retains the separate historical and fresh measurement scopes.
 The evidence JSON is preserved as collected, including its premerge status text;
 this dated status update records the later merge without relabeling the tests.
 
+The timing and patched-decoder evidence below concern the native CLI build.
+The separate Python Cargo workspace locks registry Parquet 57.0.0 and does not
+inherit the root native decoder patch. Shared engine source does not make these
+measurements Python build or wheel qualification; those artifacts require their
+own dependency, build and validation records.
+
 ## Measured speed of this exported build
 
 Fresh SF10 measurements on Test Mini (`Mac.localdomain`), October 16, 2026,

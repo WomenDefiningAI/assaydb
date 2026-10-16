@@ -12,6 +12,9 @@ follow the [source-build instructions](BUILDING.md) and retain the Git revision;
 unchanged package version metadata does not identify the newer build. See the
 [current SQL coverage](../../docs/SQL-COVERAGE.md) and
 [source qualification](../../docs/ENGINE-SNAPSHOT-QUALIFICATION.md).
+Python source builds resolve registry Parquet 57.0.0 in a separate Cargo workspace,
+without the native CLI's root decoder patch. The native timing and patched-decoder
+results do not qualify Python builds or wheels; see the build guide for scope.
 
 Install the published version from PyPI:
 

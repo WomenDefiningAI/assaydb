@@ -22,7 +22,7 @@ limits. These additions are not included in the unchanged published Alpha 1/2
 packages. See [SQL support and refusals](docs/SQL-COVERAGE.md) before relying on a
 form or combination of SQL.
 
-PR6's tested source passed 5,937,073 of 5,939,714 applicable SQLLogicTest records;
+PR6's tested native source passed 5,937,073 of 5,939,714 applicable SQLLogicTest records;
 640 unsupported cases and 2,001 errors remain. No wrong answers were observed in
 that run, which does not prove every query correct. All 64 retained retail tests
 passed. The ten-worker 10 GB test took 9.00% less total time than the tested main
@@ -62,6 +62,9 @@ To build the newer engine from this checkout, follow the
 [Python source-build guide](bindings/python/BUILDING.md). A local build still has
 Alpha 2 version metadata; record the Git commit too. Installing the pinned package
 above or from crates.io does not install the new source changes.
+The root native CLI build uses a local Parquet decoder patch. The separate Python
+workspace instead locks registry Parquet 57.0.0; it does not inherit that patch.
+The native CLI timing and patched-decoder evidence do not qualify Python builds.
 
 ## Rust and contributions
 

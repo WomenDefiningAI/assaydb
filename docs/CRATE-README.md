@@ -13,6 +13,10 @@ This repository includes newer engine source merged in PR6 on October 16, 2026
 to that source update, not the unchanged `0.1.0-alpha.2` package. Building from
 this checkout still uses the old version metadata; keep the Git revision with
 any result. See [current qualification](ENGINE-SNAPSHOT-QUALIFICATION.md).
+The root source build uses the local Parquet decoder patch in
+`vendor/parquet-57.0.0-decoder-v1`. Python source builds have a separate workspace
+and lockfile using registry Parquet 57.0.0 without that patch; native CLI timing
+and patched-decoder results do not qualify Python builds or published packages.
 
 ## First query from a source checkout
 

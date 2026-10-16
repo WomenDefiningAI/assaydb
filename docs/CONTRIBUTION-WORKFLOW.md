@@ -70,6 +70,16 @@ values remain until such evidence is available. Publishing a Python or Rust
 package is a separate release action, not an automatic consequence of merging.
 
 
+## Documentation and website review for every merge
+
+Review current SQL support, limitations, source versus published-package
+distinctions, and verified results for every contribution. Include necessary
+documentation and website updates in the original PR before merge, alongside
+its reviewed evidence. If either needs no update, explain why explicitly in
+the PR. Preserve historical results and never attribute measurements to an
+untested build. After merge, maintainers check the live site against the merged
+changes and record any publication delay or mismatch for follow-up.
+
 ## Include reviewed metrics in the original PR
 
 Do not plan a separate metrics PR after merging an engine contribution. PR8 is a

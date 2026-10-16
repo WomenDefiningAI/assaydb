@@ -26,6 +26,14 @@ in this same PR; this template does not trigger a runner.
 Execution-affecting updates require fresh results. See the
 [result contract](https://github.com/WomenDefiningAI/assaydb/blob/main/docs/CONTRIBUTION-RESULTS.md).
 
+## Documentation and website
+
+- [ ] Review current SQL support, limitations, source versus published-package distinctions, and verified results.
+- [ ] Include necessary docs and site updates in this original PR; explicitly explain below when either needs no update.
+- [ ] Preserve historical results and avoid measurement claims for untested builds.
+- Docs/site changes, or explanation of why no update is needed:
+- Post-merge maintainer follow-up: check the live site against the merged changes and record any publication delay or mismatch.
+
 ## Attribution and risks
 
 Upstream material and licenses; requested contributor credit; remaining risks.

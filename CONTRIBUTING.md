@@ -73,6 +73,16 @@ The feed displays the record after merge; a passing check does not replace human
 The [result contract](docs/CONTRIBUTION-RESULTS.md) preserves evidence requirements;
 these display definitions do not change acceptance policy.
 
+## Documentation and website review for every merge
+
+Review current SQL support, limitations, source versus published-package
+distinctions, and verified results for every contribution. Include necessary
+documentation and website updates in the original PR before merge, alongside
+its reviewed evidence. If either needs no update, explain why explicitly in
+the PR. Preserve historical results and never attribute measurements to an
+untested build. After merge, maintainers check the live site against the merged
+changes and record any publication delay or mismatch for follow-up.
+
 ## Wrong answers and security
 
 Use the [wrong-answer template](.github/ISSUE_TEMPLATE/wrong-answer.md). Include
