@@ -76,6 +76,67 @@ The local checks above are complete. This draft remains unmerged for maintainer
 review. Completed follow-ups and remaining review decisions are distinguished below;
 the separate Alpha3 performance target is not claimed by this source promotion.
 
+### Fresh comparison with current public main
+
+Separately built public base `d86aa0dd769041c23d64bfc760f7b31cc07f3af7` and
+candidate `8bea917ed73be0aadcf36ef6538377e58171e2a1` ran with the same pinned
+inputs and tools on the test host under the exclusive activity lock. These are
+fresh exported-build results, separate from the historical source campaign above.
+
+| Check | Fresh paired result |
+| --- | --- |
+| Full SLT | 7,421,339 records across 622 files compared; zero differences in status or retained evidence, excluding elapsed validation time |
+| Full 55K | 55,000 queries and 60,840 raw records per role; zero differences in outcomes, native/reference payloads, setup replies or metamorphic results |
+| Retail | Candidate 64/64 passed; main 36 passed and 28 unsupported. All 28 unsupported cases became passes; no regressions |
+| SF10 capacity/correctness | 66/66 capacity cases per role; four prerequisite correctness phases passed 44/44 each; raw output and resource evidence audited |
+| SF10 timing | All 22 queries, both roles, workers 1 and 10: 3,960 timed samples plus 792 warmups; one-core 2% regression screen passed |
+
+Each SLT role has 5,937,073 passes out of 7,421,339 fixed records (80.0000%;
+80.04% non-SQLite maximum), then 5,937,073/5,939,714 applicable (99.9555%).
+The 640 unsupported and 2,001 engine errors remain failures. Zero wrong, timeout
+or not-run outcomes were recorded. This meets the existing zero-wrong and
+at-least-99%-applicable threshold without a new waiver.
+
+Each 55K role retains 46,980 passes, 6,975 unsupported cases, 1,020 native errors
+and 25 reference errors. Zero wrong, timeout or not-run outcomes were recorded.
+The paired comparisons do not turn these failures into passes. Retail used
+unchanged frozen independent answers; no fresh reference-engine retail run is
+claimed. Sanitized source/binary identities and comparison receipt hashes are
+in the linked evidence JSON. Final-head documentation changes require review.
+
+### Fresh SF10 measurements and limits
+
+The complete timing run used three rotated engine orders, one warmup and five
+measured repetitions per query/engine/round, with 10,000 bootstrap draws. All 22
+queries are included. Ratios below are candidate/reference; lower is faster.
+
+| Workers | Reference | Total ratio | 95% interval | Geometric ratio |
+| --- | --- | --- | --- | --- |
+| 1 | Current public main | 0.904884 | 0.904016–0.906413 | 0.918253 |
+| 10 | Current public main | 0.909973 | 0.906268–0.913181 | 0.923451 |
+| 1 | Polars | 0.869895 | 0.864793–0.870605 | 0.890102 |
+| 10 | Polars | 0.957067 | 0.927656–0.965075 | 1.033839 |
+| 1 | DuckDB | 0.655962 | 0.655180–0.656706 | 0.654032 |
+| 10 | DuckDB | 0.718009 | 0.696466–0.722211 | 0.760285 |
+
+The existing one-core 2% regression screen against public main passed. At ten
+workers, q16 has a slower point estimate of 1.008164 (95% interval
+0.955933–1.038697); this case remains in the complete denominator. The ten-worker
+Polars total is above 0.95 and its geometric ratio is above 1. The 0.95 goal is
+not established. SF10 does not establish the older formal SF1 parity claim.
+
+Fresh correctness prepasses supplied 176 JSON comparisons and 88 native Arrow
+comparisons across the timing phases. The audit checked 4,892 artifact hashes;
+all phases finished with successful provenance checks, process cleanup and lock
+release. Timed samples retain row counts and resource evidence, not every timed
+output payload. Raw dataset generation was not reverified; staged file hashes
+were verified. Host quietness was sampled. A connection interruption did not
+restart the run, but zero timing impact cannot be established. Bootstrap intervals
+pair matching rotations from sequential role phases and do not eliminate temporal
+drift. These results retain the engine-accounting limits below.
+
+### Other completed checks and remaining review
+
 - The fresh source-bound corrected capacity run passed 66/66 per role and
   independent raw JSON/Arrow/settings/provenance/cleanup review. It measured the
   frozen source build, not the exported binary. The original candidate 0/66
@@ -90,12 +151,13 @@ the separate Alpha3 performance target is not claimed by this source promotion.
   files and build configuration match the frozen source, apart from the documented
   attribution comments. Retained full-corpus evidence is historical source-equivalent
   evidence, not a fresh run of this binary or a full comparison against current public
-  main. The full current-public-main SLT, 55K and SF10 comparison is a required
-  gate and is now in progress. Existing evidence may be reused only after exact
-  code, tooling, input and same-day/host equivalence is verified.
-  No fresh public-main paired timing baseline is claimed.
-- Decide whether the retained stable engine/reference errors satisfy the chosen
-  engine-PR acceptance policy. Strict zero-error compatibility is not achieved.
+  main. Fresh current-public-main SLT, 55K and retail comparisons are now complete
+  as reported above, including fresh SF10 capacity, correctness and paired timing.
+  Existing evidence may be reused only after exact code, tooling, input and
+  same-day/host equivalence is verified.
+- The existing SLT numeric correctness threshold is met. Maintainer review still
+  must consider the complete results and limitations; strict zero-error
+  compatibility is not claimed and no acceptance policy is changed.
 
 Decoder native allocations, retained Zstandard context and conversion/output
 buffers are not fully covered by engine reservation accounting. The decoder's

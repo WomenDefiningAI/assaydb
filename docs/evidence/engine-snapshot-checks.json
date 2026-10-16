@@ -1,6 +1,6 @@
 {
   "schema": "assay-engine-promotion-checks/v1",
-  "qualification": "incomplete; draft PR, not maintainer acceptance",
+  "qualification": "required campaign completed; draft PR awaiting maintainer review, not merge acceptance",
   "tested_public_commit": "7f5b2d2ae67a0f77873afa95e289d58d96c0a714",
   "tested_public_tree": "99cc174c875a316e12c4a791fe07c45e713ee614",
   "public_base": "d86aa0dd769041c23d64bfc760f7b31cc07f3af7",
@@ -92,13 +92,13 @@
   "remaining": [
     {
       "check": "full-suite exact-export/current-public-base acceptance",
-      "status": "required; in progress",
-      "reason": "full current-public-main SLT/55K/SF10 comparison is required; evaluate exact code/tooling/input and same-day/host equivalence before reuse, otherwise run fresh sequential baseline and candidate"
+      "status": "campaign completed; final-head and maintainer review required",
+      "reason": "Fresh full SLT, 55K, retail, SF10 capacity/correctness and complete paired timing finished; one-core 2% regression screen passed. All retained errors and limitations remain disclosed."
     },
     {
-      "check": "stable error acceptance",
-      "status": "unresolved",
-      "reason": "strict zero-error compatibility not achieved; PR5 infrastructure acceptance does not transfer"
+      "check": "existing SLT correctness threshold",
+      "status": "numeric threshold met; maintainer review remains required",
+      "reason": "Zero wrong answers and 99.9555% applicable passes meet the existing >=99% threshold. Unsupported/error outcomes remain failures in the reported denominator; no new zero-error requirement or waiver."
     },
     {
       "check": "decoder native-memory qualification",
@@ -133,5 +133,1066 @@
     "binary_sha256": "07b6b7ba92f10ad28528e43bd0fd0dc746a61e7d14c0fd6acb02b6c370292e4d",
     "compiler_sha256": "1590ac950a3d627817d09ade5cb60b2115f17a72182a3141e010b4bcc482a0c9",
     "comparison_sha256": "20fc4fde298c9d5863b16426f512ff88a62cedd9ce609b0e81051a188f1ce228"
+  },
+  "fresh_current_public_pair": {
+    "baseline": "d86aa0dd769041c23d64bfc760f7b31cc07f3af7",
+    "candidate": "8bea917ed73be0aadcf36ef6538377e58171e2a1",
+    "build": "ordinary release; no PGO; Rust 1.90.0; debug=0, strip=none",
+    "binary_sha256": {
+      "baseline": {
+        "assaydb": "c394f6193850897cd5bc369571573ed4850acbfdd54d1ad9f1bf137756a0b0d2",
+        "assaydb-session": "1ae82c789eea6ba50e1855dea83967ae536d78ce50e6f52e61edae702faf913a"
+      },
+      "candidate": {
+        "assaydb": "856ef0adc041ca33fb8773da3259afc848bf9f4ab8af59e3f377e016fe3c89d3",
+        "assaydb-session": "842ea76f556ad9ec2eec7db6b4ae31de754d5408111aa68757622868f392ec27"
+      }
+    },
+    "full_slt": {
+      "fixed_records": 7421339,
+      "applicable_records": 5939714,
+      "files": 622,
+      "outcomes_each_role": {
+        "passed": 5937073,
+        "unsupported": 640,
+        "engine_error": 2001,
+        "control_only": 617,
+        "conditional_not_executed": 1480933,
+        "after_halt": 75,
+        "wrong": 0,
+        "not_run": 0,
+        "timeout": 0
+      },
+      "changed_evidence_records": 0,
+      "comparison_excludes": [
+        "validated_at_elapsed_seconds"
+      ],
+      "pass_regressions": 0,
+      "receipt_sha256": "99211c0c94474af5b9b3e7b0ac08907665c4c6eeea72bccd279d4d437ad5815d"
+    },
+    "full_55k": {
+      "queries_per_role": 55000,
+      "raw_records_per_role": 60840,
+      "outcomes": {
+        "baseline": {
+          "pass": 46980,
+          "native-unsupported": 6975,
+          "native-error": 1020,
+          "oracle-error": 25
+        },
+        "candidate": {
+          "pass": 46980,
+          "native-unsupported": 6975,
+          "native-error": 1020,
+          "oracle-error": 25
+        }
+      },
+      "comparison": {
+        "setup_records_compared": 740,
+        "outcome_differences": 0,
+        "oracle_differences": 0,
+        "native_semantic_payload_differences": 0,
+        "native_row_order_only_differences": 0,
+        "status_changes": 0,
+        "pass_regressions": 0,
+        "new_passes": 0,
+        "metamorphic_changes": 0,
+        "setup_native_reply_differences": 0,
+        "setup_native_status_changes": 0,
+        "setup_native_regressions": 0,
+        "setup_oracle_reply_differences": 0,
+        "setup_oracle_status_changes": 0,
+        "setup_oracle_regressions": 0
+      },
+      "receipt_sha256": "ffb6b1f68297260549d551c00da095feb4ee6866c089b57134fbe01c79660256"
+    },
+    "retail": {
+      "cases_per_role": 64,
+      "outcomes": {
+        "baseline": {
+          "original/synthetic": {
+            "unsupported": 11,
+            "passed": 9
+          },
+          "original/real": {
+            "unsupported": 11,
+            "passed": 9
+          },
+          "exactness-probe/edge": {
+            "passed": 2
+          },
+          "variant/synthetic": {
+            "passed": 8,
+            "unsupported": 3
+          },
+          "variant/real": {
+            "passed": 8,
+            "unsupported": 3
+          }
+        },
+        "candidate": {
+          "original/synthetic": {
+            "passed": 20
+          },
+          "original/real": {
+            "passed": 20
+          },
+          "exactness-probe/edge": {
+            "passed": 2
+          },
+          "variant/synthetic": {
+            "passed": 11
+          },
+          "variant/real": {
+            "passed": 11
+          }
+        }
+      },
+      "transitions": {
+        "unsupported -> passed": 28,
+        "passed -> passed": 36
+      },
+      "fresh_reference_execution": false,
+      "receipt_sha256": "d070c931c517edcef4c94ca12775ed0c18a44d31b0c4a9e91d1547bcd1284072"
+    },
+    "sf10": {
+      "status": "completed and output-audited; maintainer acceptance pending",
+      "capacity_passed_each_role": 66,
+      "prerequisite_correctness_phases": 4,
+      "prerequisite_correctness_passed_each_phase": 44,
+      "timing": {
+        "queries": 22,
+        "workers": [
+          1,
+          10
+        ],
+        "rotated_orders": 3,
+        "warmups_per_query_engine_round": 1,
+        "timed_repetitions_per_query_engine_round": 5,
+        "bootstrap_draws": 10000,
+        "totals": {
+          "timed_samples": 3960,
+          "warmups": 792,
+          "outcomes": 792,
+          "correctness_json_pairs": 176,
+          "native_arrow_pairs": 88
+        },
+        "main_relative": {
+          "1": {
+            "direction": "candidate/public-main",
+            "statistics": {
+              "total": 0.9048835226685074,
+              "geomean": 0.9182530838342272,
+              "sum_query_round_medians_seconds": {
+                "assaydb": 110.219758254,
+                "baseline": 121.805465005
+              },
+              "confidence_95": {
+                "total": [
+                  0.904016492593744,
+                  0.906412901273053
+                ],
+                "geomean": [
+                  0.9171727176657885,
+                  0.9197609830017038
+                ]
+              },
+              "rounds": [
+                {
+                  "total": 0.90604752942478,
+                  "geomean": 0.9195743054806024
+                },
+                {
+                  "total": 0.9044368445541238,
+                  "geomean": 0.9179434931268442
+                },
+                {
+                  "total": 0.9041676318551918,
+                  "geomean": 0.9172430106458354
+                }
+              ]
+            },
+            "per_query": {
+              "q01": {
+                "point": 0.6309794346005445,
+                "confidence_95": [
+                  0.629226636339495,
+                  0.6367391700028543
+                ]
+              },
+              "q02": {
+                "point": 0.912282881540423,
+                "confidence_95": [
+                  0.9037806470135037,
+                  0.9181318066973487
+                ]
+              },
+              "q03": {
+                "point": 0.961819826418414,
+                "confidence_95": [
+                  0.9570890554180081,
+                  0.9690089816349966
+                ]
+              },
+              "q04": {
+                "point": 0.9800371183962859,
+                "confidence_95": [
+                  0.9776015840006971,
+                  0.9824930319492124
+                ]
+              },
+              "q05": {
+                "point": 0.974805297912231,
+                "confidence_95": [
+                  0.9733841079563557,
+                  0.9756897922700255
+                ]
+              },
+              "q06": {
+                "point": 0.7407705259839217,
+                "confidence_95": [
+                  0.7398727368450447,
+                  0.7416799099964803
+                ]
+              },
+              "q07": {
+                "point": 0.8627414300874858,
+                "confidence_95": [
+                  0.8610963997503561,
+                  0.8679779047738954
+                ]
+              },
+              "q08": {
+                "point": 0.9738864077844053,
+                "confidence_95": [
+                  0.9728252734919747,
+                  0.9746910302581425
+                ]
+              },
+              "q09": {
+                "point": 0.9642394652951743,
+                "confidence_95": [
+                  0.961193980679199,
+                  0.9665328550161622
+                ]
+              },
+              "q10": {
+                "point": 0.9719751492173087,
+                "confidence_95": [
+                  0.9702205690516418,
+                  0.9742173709391416
+                ]
+              },
+              "q11": {
+                "point": 0.8951485230419858,
+                "confidence_95": [
+                  0.8837449674916061,
+                  0.9018528425367357
+                ]
+              },
+              "q12": {
+                "point": 0.9793007809070281,
+                "confidence_95": [
+                  0.9757735156201605,
+                  0.9829412827150534
+                ]
+              },
+              "q13": {
+                "point": 0.7796315799167605,
+                "confidence_95": [
+                  0.7762842537051751,
+                  0.7824487079322721
+                ]
+              },
+              "q14": {
+                "point": 0.9723190173054593,
+                "confidence_95": [
+                  0.9707443231224495,
+                  0.9745624914180016
+                ]
+              },
+              "q15": {
+                "point": 0.9665654378388061,
+                "confidence_95": [
+                  0.9651429070411315,
+                  0.9682788799428904
+                ]
+              },
+              "q16": {
+                "point": 0.9857674369196928,
+                "confidence_95": [
+                  0.9732569166581383,
+                  1.001256134503603
+                ]
+              },
+              "q17": {
+                "point": 0.969135020337434,
+                "confidence_95": [
+                  0.968105164497883,
+                  0.9697988823052444
+                ]
+              },
+              "q18": {
+                "point": 0.9050354791161774,
+                "confidence_95": [
+                  0.9029887607200495,
+                  0.9068363959586393
+                ]
+              },
+              "q19": {
+                "point": 0.9690316452515716,
+                "confidence_95": [
+                  0.9679571290690396,
+                  0.9711267616573243
+                ]
+              },
+              "q20": {
+                "point": 0.9764638137131595,
+                "confidence_95": [
+                  0.9750687090138405,
+                  0.9775901870693026
+                ]
+              },
+              "q21": {
+                "point": 0.9741748869548628,
+                "confidence_95": [
+                  0.9707402524394687,
+                  0.9782750428059084
+                ]
+              },
+              "q22": {
+                "point": 0.9697574881168222,
+                "confidence_95": [
+                  0.965461343064525,
+                  0.9798609224351507
+                ]
+              }
+            },
+            "one_core_2_percent_screen_passed": true
+          },
+          "10": {
+            "direction": "candidate/public-main",
+            "statistics": {
+              "total": 0.9099728677805025,
+              "geomean": 0.9234513181159691,
+              "sum_query_round_medians_seconds": {
+                "assaydb": 19.610820498,
+                "baseline": 21.550994752
+              },
+              "confidence_95": {
+                "total": [
+                  0.9062684187919042,
+                  0.9131811343750339
+                ],
+                "geomean": [
+                  0.92026011752802,
+                  0.926870581528181
+                ]
+              },
+              "rounds": [
+                {
+                  "total": 0.9101706019171752,
+                  "geomean": 0.9236654299852017
+                },
+                {
+                  "total": 0.9083249662119912,
+                  "geomean": 0.9215740784802371
+                },
+                {
+                  "total": 0.911425916635242,
+                  "geomean": 0.9251178833952004
+                }
+              ]
+            },
+            "per_query": {
+              "q01": {
+                "point": 0.7084002897057687,
+                "confidence_95": [
+                  0.6980838621475157,
+                  0.7153973775182303
+                ]
+              },
+              "q02": {
+                "point": 0.9425607998808277,
+                "confidence_95": [
+                  0.9323026683744414,
+                  0.9532213872187016
+                ]
+              },
+              "q03": {
+                "point": 0.9319276508260893,
+                "confidence_95": [
+                  0.9276841433921938,
+                  0.939678060134307
+                ]
+              },
+              "q04": {
+                "point": 0.9558644062062384,
+                "confidence_95": [
+                  0.9517520061889161,
+                  0.9595274249003636
+                ]
+              },
+              "q05": {
+                "point": 0.9587027227937416,
+                "confidence_95": [
+                  0.9340275190306715,
+                  0.9888295636643298
+                ]
+              },
+              "q06": {
+                "point": 0.7676433973850987,
+                "confidence_95": [
+                  0.7461111466069318,
+                  0.7801972234347612
+                ]
+              },
+              "q07": {
+                "point": 0.8682315704345474,
+                "confidence_95": [
+                  0.848121803312594,
+                  0.8774523444676228
+                ]
+              },
+              "q08": {
+                "point": 0.9406206503726368,
+                "confidence_95": [
+                  0.9309334088386343,
+                  0.9470364679145119
+                ]
+              },
+              "q09": {
+                "point": 0.9617122012551906,
+                "confidence_95": [
+                  0.9343052662872163,
+                  0.9720564423184832
+                ]
+              },
+              "q10": {
+                "point": 0.9585875192866335,
+                "confidence_95": [
+                  0.9486610869169468,
+                  0.9711141890107963
+                ]
+              },
+              "q11": {
+                "point": 0.9378864979336488,
+                "confidence_95": [
+                  0.9287266543921768,
+                  0.9619200445177375
+                ]
+              },
+              "q12": {
+                "point": 0.9644482622759035,
+                "confidence_95": [
+                  0.9534766254559857,
+                  0.9705665770579147
+                ]
+              },
+              "q13": {
+                "point": 0.8345897785287666,
+                "confidence_95": [
+                  0.826404508887103,
+                  0.8429846867098308
+                ]
+              },
+              "q14": {
+                "point": 0.9636686907022051,
+                "confidence_95": [
+                  0.957804596039836,
+                  1.0239073980634936
+                ]
+              },
+              "q15": {
+                "point": 0.9543448634258939,
+                "confidence_95": [
+                  0.9417604059824773,
+                  0.9621145586543788
+                ]
+              },
+              "q16": {
+                "point": 1.008163860243957,
+                "confidence_95": [
+                  0.9559334943557292,
+                  1.0386973240145705
+                ]
+              },
+              "q17": {
+                "point": 0.959959746863372,
+                "confidence_95": [
+                  0.9581416771763914,
+                  0.9620066220211069
+                ]
+              },
+              "q18": {
+                "point": 0.9083572875856122,
+                "confidence_95": [
+                  0.9014738438531293,
+                  0.9191006430221615
+                ]
+              },
+              "q19": {
+                "point": 0.9507457826445638,
+                "confidence_95": [
+                  0.9478471749445783,
+                  0.9581469050995197
+                ]
+              },
+              "q20": {
+                "point": 0.9540187443591696,
+                "confidence_95": [
+                  0.9516394781161941,
+                  0.9573102963082566
+                ]
+              },
+              "q21": {
+                "point": 0.9716370494394786,
+                "confidence_95": [
+                  0.9484973964002121,
+                  0.9871203092136729
+                ]
+              },
+              "q22": {
+                "point": 0.9779601731923023,
+                "confidence_95": [
+                  0.9721900705472368,
+                  0.9834473823606789
+                ]
+              }
+            },
+            "one_core_2_percent_screen_passed": null
+          }
+        },
+        "reference_comparisons": {
+          "baseline-timing-w1": {
+            "assaydb_duckdb": {
+              "common_set_diagnostic": null,
+              "complete_queries": [
+                "q01",
+                "q02",
+                "q03",
+                "q04",
+                "q05",
+                "q06",
+                "q07",
+                "q08",
+                "q09",
+                "q10",
+                "q11",
+                "q12",
+                "q13",
+                "q14",
+                "q15",
+                "q16",
+                "q17",
+                "q18",
+                "q19",
+                "q20",
+                "q21",
+                "q22"
+              ],
+              "denominator": 22,
+              "full_suite": true,
+              "full_suite_ratios": {
+                "confidence_95": {
+                  "geomean": [
+                    0.7117653306697803,
+                    0.7143650592592756
+                  ],
+                  "total": [
+                    0.7239624279651456,
+                    0.726375906493937
+                  ]
+                },
+                "geomean": 0.7130221091341902,
+                "rounds": [
+                  {
+                    "geomean": 0.7117104986470021,
+                    "total": 0.7243252642172624
+                  },
+                  {
+                    "geomean": 0.7127324932525128,
+                    "total": 0.7244030904105242
+                  },
+                  {
+                    "geomean": 0.7146264043024396,
+                    "total": 0.7264600200441359
+                  }
+                ],
+                "sum_query_round_medians_seconds": {
+                  "assaydb": 121.805465005,
+                  "duckdb": 167.99325812605093
+                },
+                "total": 0.7250616266612634
+              },
+              "missing_queries": []
+            },
+            "assaydb_polars": {
+              "common_set_diagnostic": null,
+              "complete_queries": [
+                "q01",
+                "q02",
+                "q03",
+                "q04",
+                "q05",
+                "q06",
+                "q07",
+                "q08",
+                "q09",
+                "q10",
+                "q11",
+                "q12",
+                "q13",
+                "q14",
+                "q15",
+                "q16",
+                "q17",
+                "q18",
+                "q19",
+                "q20",
+                "q21",
+                "q22"
+              ],
+              "denominator": 22,
+              "full_suite": true,
+              "full_suite_ratios": {
+                "confidence_95": {
+                  "geomean": [
+                    0.9658548111695835,
+                    0.9715233833182217
+                  ],
+                  "total": [
+                    0.9571849651182024,
+                    0.9638446418969694
+                  ]
+                },
+                "geomean": 0.9704662741525618,
+                "rounds": [
+                  {
+                    "geomean": 0.9697572922030581,
+                    "total": 0.9622361395361606
+                  },
+                  {
+                    "geomean": 0.9712699314616207,
+                    "total": 0.9639397978248048
+                  },
+                  {
+                    "geomean": 0.9703721950324435,
+                    "total": 0.9607301274993763
+                  }
+                ],
+                "sum_query_round_medians_seconds": {
+                  "assaydb": 121.805465005,
+                  "polars": 126.57737237689435
+                },
+                "total": 0.9623004705952846
+              },
+              "missing_queries": []
+            }
+          },
+          "candidate-timing-w1": {
+            "assaydb_duckdb": {
+              "common_set_diagnostic": null,
+              "complete_queries": [
+                "q01",
+                "q02",
+                "q03",
+                "q04",
+                "q05",
+                "q06",
+                "q07",
+                "q08",
+                "q09",
+                "q10",
+                "q11",
+                "q12",
+                "q13",
+                "q14",
+                "q15",
+                "q16",
+                "q17",
+                "q18",
+                "q19",
+                "q20",
+                "q21",
+                "q22"
+              ],
+              "denominator": 22,
+              "full_suite": true,
+              "full_suite_ratios": {
+                "confidence_95": {
+                  "geomean": [
+                    0.6535776899349272,
+                    0.6547089016796498
+                  ],
+                  "total": [
+                    0.6551799875541793,
+                    0.656705638049702
+                  ]
+                },
+                "geomean": 0.6540320427981654,
+                "rounds": [
+                  {
+                    "geomean": 0.6541082869792332,
+                    "total": 0.656419354834023
+                  },
+                  {
+                    "geomean": 0.653812592358946,
+                    "total": 0.6558803657170386
+                  },
+                  {
+                    "geomean": 0.6541753060132713,
+                    "total": 0.6555854387750488
+                  }
+                ],
+                "sum_query_round_medians_seconds": {
+                  "assaydb": 110.219758254,
+                  "duckdb": 168.02774187622708
+                },
+                "total": 0.6559616705150408
+              },
+              "missing_queries": []
+            },
+            "assaydb_polars": {
+              "common_set_diagnostic": null,
+              "complete_queries": [
+                "q01",
+                "q02",
+                "q03",
+                "q04",
+                "q05",
+                "q06",
+                "q07",
+                "q08",
+                "q09",
+                "q10",
+                "q11",
+                "q12",
+                "q13",
+                "q14",
+                "q15",
+                "q16",
+                "q17",
+                "q18",
+                "q19",
+                "q20",
+                "q21",
+                "q22"
+              ],
+              "denominator": 22,
+              "full_suite": true,
+              "full_suite_ratios": {
+                "confidence_95": {
+                  "geomean": [
+                    0.8839271636770525,
+                    0.8910541992518368
+                  ],
+                  "total": [
+                    0.8647927179591276,
+                    0.8706050083041719
+                  ]
+                },
+                "geomean": 0.8901017958468822,
+                "rounds": [
+                  {
+                    "geomean": 0.8896769335075353,
+                    "total": 0.8699376065518055
+                  },
+                  {
+                    "geomean": 0.8898575714058726,
+                    "total": 0.8703476224747864
+                  },
+                  {
+                    "geomean": 0.8907712692077032,
+                    "total": 0.869400830368329
+                  }
+                ],
+                "sum_query_round_medians_seconds": {
+                  "assaydb": 110.219758254,
+                  "polars": 126.70462587403017
+                },
+                "total": 0.8698952977737416
+              },
+              "missing_queries": []
+            }
+          },
+          "baseline-timing-w10": {
+            "assaydb_duckdb": {
+              "common_set_diagnostic": null,
+              "complete_queries": [
+                "q01",
+                "q02",
+                "q03",
+                "q04",
+                "q05",
+                "q06",
+                "q07",
+                "q08",
+                "q09",
+                "q10",
+                "q11",
+                "q12",
+                "q13",
+                "q14",
+                "q15",
+                "q16",
+                "q17",
+                "q18",
+                "q19",
+                "q20",
+                "q21",
+                "q22"
+              ],
+              "denominator": 22,
+              "full_suite": true,
+              "full_suite_ratios": {
+                "confidence_95": {
+                  "geomean": [
+                    0.8221626241769892,
+                    0.8283804975294482
+                  ],
+                  "total": [
+                    0.7893336216503775,
+                    0.7952453795217976
+                  ]
+                },
+                "geomean": 0.8253899247642975,
+                "rounds": [
+                  {
+                    "geomean": 0.8277472675976002,
+                    "total": 0.7937572867869035
+                  },
+                  {
+                    "geomean": 0.8240130416088218,
+                    "total": 0.791412046398031
+                  },
+                  {
+                    "geomean": 0.8244145514875728,
+                    "total": 0.7912569856593958
+                  }
+                ],
+                "sum_query_round_medians_seconds": {
+                  "assaydb": 21.550994752,
+                  "duckdb": 27.20598429418169
+                },
+                "total": 0.7921417037871674
+              },
+              "missing_queries": []
+            },
+            "assaydb_polars": {
+              "common_set_diagnostic": null,
+              "complete_queries": [
+                "q01",
+                "q02",
+                "q03",
+                "q04",
+                "q05",
+                "q06",
+                "q07",
+                "q08",
+                "q09",
+                "q10",
+                "q11",
+                "q12",
+                "q13",
+                "q14",
+                "q15",
+                "q16",
+                "q17",
+                "q18",
+                "q19",
+                "q20",
+                "q21",
+                "q22"
+              ],
+              "denominator": 22,
+              "full_suite": true,
+              "full_suite_ratios": {
+                "confidence_95": {
+                  "geomean": [
+                    1.1164108735666394,
+                    1.1254934430559498
+                  ],
+                  "total": [
+                    1.050651641054594,
+                    1.0607261000412478
+                  ]
+                },
+                "geomean": 1.1212926989122027,
+                "rounds": [
+                  {
+                    "geomean": 1.1240783903691747,
+                    "total": 1.0589101813913178
+                  },
+                  {
+                    "geomean": 1.120002806861923,
+                    "total": 1.0552925099973687
+                  },
+                  {
+                    "geomean": 1.1198020882658146,
+                    "total": 1.0527609309143156
+                  }
+                ],
+                "sum_query_round_medians_seconds": {
+                  "assaydb": 21.550994752,
+                  "polars": 20.414870079926914
+                },
+                "total": 1.0556518198560663
+              },
+              "missing_queries": []
+            }
+          },
+          "candidate-timing-w10": {
+            "assaydb_duckdb": {
+              "common_set_diagnostic": null,
+              "complete_queries": [
+                "q01",
+                "q02",
+                "q03",
+                "q04",
+                "q05",
+                "q06",
+                "q07",
+                "q08",
+                "q09",
+                "q10",
+                "q11",
+                "q12",
+                "q13",
+                "q14",
+                "q15",
+                "q16",
+                "q17",
+                "q18",
+                "q19",
+                "q20",
+                "q21",
+                "q22"
+              ],
+              "denominator": 22,
+              "full_suite": true,
+              "full_suite_ratios": {
+                "confidence_95": {
+                  "geomean": [
+                    0.7496380287972428,
+                    0.7638858365607037
+                  ],
+                  "total": [
+                    0.6964655392148296,
+                    0.7222110953938485
+                  ]
+                },
+                "geomean": 0.7602854647587785,
+                "rounds": [
+                  {
+                    "geomean": 0.7576468721888381,
+                    "total": 0.7130992206711956
+                  },
+                  {
+                    "geomean": 0.7592376766784757,
+                    "total": 0.7190862582658443
+                  },
+                  {
+                    "geomean": 0.7639861346933265,
+                    "total": 0.7219088353109077
+                  }
+                ],
+                "sum_query_round_medians_seconds": {
+                  "assaydb": 19.610820498,
+                  "duckdb": 27.312777832063148
+                },
+                "total": 0.7180090073071356
+              },
+              "missing_queries": []
+            },
+            "assaydb_polars": {
+              "common_set_diagnostic": null,
+              "complete_queries": [
+                "q01",
+                "q02",
+                "q03",
+                "q04",
+                "q05",
+                "q06",
+                "q07",
+                "q08",
+                "q09",
+                "q10",
+                "q11",
+                "q12",
+                "q13",
+                "q14",
+                "q15",
+                "q16",
+                "q17",
+                "q18",
+                "q19",
+                "q20",
+                "q21",
+                "q22"
+              ],
+              "denominator": 22,
+              "full_suite": true,
+              "full_suite_ratios": {
+                "confidence_95": {
+                  "geomean": [
+                    1.0190457779203363,
+                    1.0408073835157794
+                  ],
+                  "total": [
+                    0.92765613884966,
+                    0.9650748471921439
+                  ]
+                },
+                "geomean": 1.0338391422675093,
+                "rounds": [
+                  {
+                    "geomean": 1.040210972538063,
+                    "total": 0.9649633879722751
+                  },
+                  {
+                    "geomean": 1.0248147271364347,
+                    "total": 0.9463939099362413
+                  },
+                  {
+                    "geomean": 1.036554459980019,
+                    "total": 0.9600101406344027
+                  }
+                ],
+                "sum_query_round_medians_seconds": {
+                  "assaydb": 19.610820498,
+                  "polars": 20.49053333478514
+                },
+                "total": 0.9570673528886765
+              },
+              "missing_queries": []
+            }
+          }
+        }
+      },
+      "receipt_sha256": {
+        "capacity_audit": "c1e70e7d16def887e86302feb089cf54f10acabbb7bd26dd3f92f1fa6f289e44",
+        "correctness_audit": "4766aba83a63873a6b9d3c09971d26047a7de68155d795c36693a37dd27d1fe9",
+        "timing_audit": "9ee3b7088e19f2cfe5122cf50d50d893bf6b010d8be14be72cd171522505ee04",
+        "timing_declaration": "bf494f061ecc0fc456009a328f0c491caf684f8e6562e85e4bb9e72c03d3ea18",
+        "policy": "51f1d8d1e713884c33c50fb87bdc83d40abf3c72b0fc217b376e3021c5ac9303"
+      },
+      "cleanup": {
+        "returncode": 0,
+        "owned_group_gone": true,
+        "host_lock_released": true
+      },
+      "limitations": [
+        "Fresh capacity audited separately",
+        "Descriptive measurements conditional on frozen workload and sampled host admission",
+        "Raw dataset generation not reverified",
+        "Main-relative bootstrap pairs matching rotation indices from separate sequential role phases; conditional descriptive intervals do not remove temporal drift",
+        "JSON and Arrow value comparisons cover fresh correctness prepasses; timed samples retain row counts and resource evidence, not every timed output payload",
+        "Host quietness was sampled, not continuously established. A connection interruption during timing did not restart the run; zero timing impact cannot be established.",
+        "Engine-accounted memory and tracked threads are not whole-process hard caps; decoder native allocation accounting remains incomplete.",
+        "SF10 does not establish the older formal SF1 parity claim; no performance-qualified Alpha3 or 0.95 goal claim."
+      ]
+    },
+    "acceptance": "retained errors and unsupported outcomes are not waived; no merge acceptance or performance release claim"
   }
 }
