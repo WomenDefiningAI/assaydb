@@ -37,12 +37,14 @@ class SiteTests(unittest.TestCase):
         record=self.record();stage(record,self.root)
         self.assertEqual(json.loads((self.root/'evidence/full-suite/latest.json').read_text()),record)
         self.assertEqual(page.read_text(),'BEFORE'+render(record)+'AFTER')
-        self.assertIn('22.000000',page.read_text())
+        self.assertNotIn('Reviewed PR evidence', page.read_text())
+        stage(record,self.root)
+        self.assertEqual(page.read_text(),'BEFOREAFTER')
 
     def test_pending_has_no_measurements(self):
         markup=render(PENDING)
         self.assertNotIn('<meter',markup)
-        self.assertIn('No independently qualified',markup)
+        self.assertEqual(markup, '')
 
     def test_rotated_evidence_preserves_method_and_excludes_private_fields(self):
         comparison=dict(full_suite=True,denominator=22,full_suite_ratios=dict(
@@ -56,10 +58,8 @@ class SiteTests(unittest.TestCase):
                             nonpass_categories={'hunt55k':{'native-error':1020,'oracle-error':25}})
         record=self.record();markup=render(record)
         self.assertNotIn('/private/',json.dumps(record));self.assertNotIn('private-host',json.dumps(record))
-        self.assertIn('three rotated rounds',markup)
-        self.assertIn('1.050000',markup);self.assertIn('1.120000',markup)
-        self.assertIn('native-error 1020',markup);self.assertIn('oracle-error 25',markup)
-        self.assertIn('not error-free release qualification',markup)
+        self.assertEqual(markup, '')
+        self.assertEqual(record['timing']['phases']['candidate-timing-w10']['polars']['total'], 1.05)
         self.assertFalse(record['release_qualified'])
 
 

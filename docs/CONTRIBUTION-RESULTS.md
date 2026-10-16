@@ -123,3 +123,12 @@ elapsed time. This total sums query-round medians, not geometric means or full
 harness wall time. The disclosure retains the descriptive interval, sequential
 role/host-interference limitations, slower q16 and resource-accounting limits.
 This is scoped experimental acceptance, not Alpha 3 or 0.95-goal qualification.
+
+Future records use `evidence_commit: merged-pr` and a reviewed premerge source
+binding as described in the [same-PR workflow](CONTRIBUTION-WORKFLOW.md#include-reviewed-metrics-in-the-original-pr).
+The display resolves the immutable merge revision from GitHub only for merged
+PRs. Evidence contains measured values and source identities, not its own commit
+hash. The later display-only commit carries the prior audited head and evidence
+digest. Existing PR5/PR6 repair records retain their immutable historical pins.
+A missing merge identity or invalid metric remains Not measured. Public pages
+show concise contribution summaries and links, not generated full-suite tables.

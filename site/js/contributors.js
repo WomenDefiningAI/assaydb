@@ -32,7 +32,7 @@
     if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(pr.merged_at) || !Number.isFinite(Date.parse(pr.merged_at))) throw Error('Invalid merge date');
     if (typeof pr.title !== 'string') throw Error('Invalid title');
     return {number: pr.number, title: pr.title.replace(/[\w.+-]+@[\w.-]+\.[a-z]{2,}/gi, '[email omitted]'),
-      mergedAt: pr.merged_at, author: account(pr.user), authors: [], authorsComplete: true, unlinkedAuthors: false};
+      mergedAt: pr.merged_at, mergeCommit: /^[a-f0-9]{40}$/.test(pr.merge_commit_sha) ? pr.merge_commit_sha : null, author: account(pr.user), authors: [], authorsComplete: true, unlinkedAuthors: false};
   }
   function commitAuthors(commits, author) {
     const seen = new Set(author ? [author.login.toLowerCase()] : []), result = [];
@@ -123,14 +123,14 @@
     if (!['assay-contribution-display/v1', 'assay-contribution-display/v2'].includes(data?.schema) || !Array.isArray(data.records)) return result;
     for (const row of data.records) {
       if (!row || row.status !== 'accepted' || !Number.isSafeInteger(row.pr) || row.pr < 1 ||
-          !/^[a-f0-9]{40}$/.test(row.evidence_commit) || !/^[a-f0-9]{40}$/.test(row.measured_source) ||
-          !['site/evidence/full-suite/latest.json', 'docs/evidence/engine-snapshot-checks.json'].includes(row.evidence_path)) continue;
+          !(row.evidence_commit === 'merged-pr' || /^[a-f0-9]{40}$/.test(row.evidence_commit)) || !/^[a-f0-9]{40}$/.test(row.measured_source) ||
+          !(/^(site\/evidence|docs\/evidence)\/[a-zA-Z0-9_/-]+\.json$/.test(row.evidence_path) && !row.evidence_path.includes('..'))) continue;
       const a = row.accuracy, categories = ['passed','unsupported','wrong','error','not-run','excluded'];
       if (!a || a.suite !== 'SQLLogicTest' || !Number.isSafeInteger(a.applicable) || a.applicable <= 0 ||
           categories.some(key => !Number.isSafeInteger(a[key]) || a[key] < 0) ||
           categories.filter(key => key !== 'excluded').reduce((n, key) => n + a[key], 0) !== a.applicable) continue;
       const record = {accuracy: a, measuredSource: row.measured_source,
-        source: repoURL + '/blob/' + row.evidence_commit + '/' + row.evidence_path};
+        evidencePath: row.evidence_path, source: row.evidence_commit === 'merged-pr' ? null : repoURL + '/blob/' + row.evidence_commit + '/' + row.evidence_path};
       const speed = row.speed;
       // Invalid or incomplete speed evidence never hides valid accuracy or becomes a zero.
       const sha = value => typeof value === 'string' && /^[a-f0-9]{40}$/.test(value);
@@ -172,7 +172,8 @@
       const author = add(item, 'p', 'PR author: ');
       if (row.author) userLink(author, row.author); else add(author, 'span', 'GitHub account unavailable');
       const metrics = add(item, 'dl'); metrics.className = 'contribution-metrics';
-      const evidence = result.metrics?.get(row.number);
+      const stored = result.metrics?.get(row.number);
+      const evidence = stored && (stored.source || row.mergeCommit) ? {...stored, source: stored.source || repoURL + '/blob/' + row.mergeCommit + '/' + stored.evidencePath} : null;
       add(metrics, 'dt', 'Accuracy · applicable SQL tests passed');
       if (evidence) {
         const a = evidence.accuracy, fmt = n => n.toLocaleString('en-US');
@@ -186,7 +187,7 @@
       add(metrics, 'dt', 'Speed · paired suite wall time versus main');
       if (evidence?.speed) {
         const s = evidence.speed, change = 100 * (s.ratio - 1);
-        add(metrics, 'dd', Math.abs(change).toFixed(4) + '% ' + (change < 0 ? 'less' : change > 0 ? 'more' : 'change in') +
+        add(metrics, 'dd', Math.abs(change).toFixed(2) + '% ' + (change < 0 ? 'less' : change > 0 ? 'more' : 'change in') +
           ' elapsed time · SF10, 22 queries, 10 workers · versus tested main ' + s.baseline_source.slice(0, 8));
         const details = add(item, 'details'); add(details, 'summary', 'Speed sources, method and limits');
         add(details, 'p', 'Candidate/main total ratio ' + s.ratio.toFixed(6) +
@@ -202,8 +203,10 @@
         }
         add(details, 'p', s.limits);
         const link = add(details, 'a', 'Reviewed evidence and qualification'); link.href = evidence.source;
-        const qualification = add(details, 'a', ' · Qualification report');
-        qualification.href = evidence.source.replace('docs/evidence/engine-snapshot-checks.json', 'docs/ENGINE-SNAPSHOT-QUALIFICATION.md');
+        if (evidence.evidencePath === 'docs/evidence/engine-snapshot-checks.json') {
+          const qualification = add(details, 'a', ' · Qualification report');
+          qualification.href = evidence.source.replace('docs/evidence/engine-snapshot-checks.json', 'docs/ENGINE-SNAPSHOT-QUALIFICATION.md');
+        }
       } else add(metrics, 'dd', 'Not measured against the same main baseline and host/configuration.');
       for (const [kind, label] of [['user', 'Other commit authors'], ['bot', 'Bot commit authors'], ['unknown', 'Other accounts with commits']]) {
         const accounts = row.authors.filter(a => a.kind === kind);

@@ -1,0 +1,30 @@
+name: Contribution metrics
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  reviewed-metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate candidate data using base-branch code
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -eu
+          case "$PR_NUMBER" in ''|*[!0-9]*) exit 1;; esac
+          git fetch https://github.com/WomenDefiningAI/assaydb.git "refs/pull/$PR_NUMBER/head"
+          test "$(git rev-parse FETCH_HEAD)" = "$HEAD"
+          if [ ! -f scripts/validate-contribution-metrics.cjs ] && [ "$PR_NUMBER" = 8 ] && [ "$BASE" = b07d7e876dfde65dda09c06808ba811b9fca49fd ]; then
+            echo 'Bootstrap PR8: validator becomes active from the reviewed base after merge.'
+            exit 0
+          fi
+          node scripts/validate-contribution-metrics.cjs "$BASE" "$HEAD" "$PR_NUMBER"
