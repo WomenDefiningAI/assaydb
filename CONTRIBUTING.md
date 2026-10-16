@@ -44,8 +44,8 @@ The [full testing workflow](testing/README.md) retains the technical requirement
 input availability, no-regression rules and release limits.
 
 PR5 has [reviewed infrastructure evidence](site/evidence/full-suite/latest.json),
-not an Alpha 3 release qualification. PR6 remains a draft under independent
-validation. The Alpha 3 goal is 0.95× Polars for both total time and geometric
+not an Alpha 3 release qualification. PR6 has scoped owner acceptance and is merged; its measured-source
+[qualification and limits](docs/ENGINE-SNAPSHOT-QUALIFICATION.md) remain explicit. The Alpha 3 goal is 0.95× Polars for both total time and geometric
 mean on the agreed 10 GB workload; it has not been achieved by the published
 reviewed evidence. Merge, chart acceptance and package release are separate decisions.
 
@@ -64,8 +64,24 @@ positive change means more time (slower). No reviewed evidence means **Not measu
 PR5 has reviewed SLT accuracy evidence. Its timing compares a historical source,
 not the tested public main baseline required by this display metric, so its speed
 field remains Not measured. A ratio to Polars is not a PR improvement against main.
+Future qualifying contributions must include reviewed metrics and source binding
+**in the original PR before merge**, not in a follow-up PR. The
+[premerge metrics workflow](docs/CONTRIBUTION-WORKFLOW.md#include-reviewed-metrics-in-the-original-pr)
+explains the required record, audited nonengine delta and structural CI check.
+The feed displays the record after merge; a passing check does not replace human acceptance.
+
 The [result contract](docs/CONTRIBUTION-RESULTS.md) preserves evidence requirements;
 these display definitions do not change acceptance policy.
+
+## Documentation and website review for every merge
+
+Review current SQL support, limitations, source versus published-package
+distinctions, and verified results for every contribution. Include necessary
+documentation and website updates in the original PR before merge, alongside
+its reviewed evidence. If either needs no update, explain why explicitly in
+the PR. Preserve historical results and never attribute measurements to an
+untested build. After merge, maintainers check the live site against the merged
+changes and record any publication delay or mismatch for follow-up.
 
 ## Wrong answers and security
 

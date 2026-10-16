@@ -1,6 +1,8 @@
 # Historical development source snapshot
 
-This document records the earlier promotion. See [current engine qualification](ENGINE-SNAPSHOT-QUALIFICATION.md) for the newer snapshot; the historical results below are not relabeled.
+Historical record, reviewed October 16, 2026: this document records PR4, before
+the later PR6 merge. Its missing full-suite checks remain historical facts, not
+the current PR6 qualification status. This document records the earlier promotion. See [current engine qualification](ENGINE-SNAPSHOT-QUALIFICATION.md) for the newer snapshot; the historical results below are not relabeled.
 
 This promotion is a source update, not an Alpha 3 release or a performance
 qualification. Published Alpha 1/2 history, package versions, notices and historical

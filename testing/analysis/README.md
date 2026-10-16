@@ -15,8 +15,16 @@ on both fixtures, plus two exact-decimal edge probes (24 records). Keep original
 SQL, reference answers, comparator and decimal scaling unchanged. The previous
 scoped run had 11 unsupported original cases per fixture and three unsupported
 variant cases per fixture. That is historical classification, not an instruction
-to skip them or an assertion about a new candidate. Column DECIMAL casts and
-DENSE_RANK remain separately reported limitations.
+to skip them or an assertion about a new candidate.
+
+In the independently reviewed PR6 comparison on October 16, 2026, tested source
+`8bea917e` passed all 64 cases. Tested main `d86aa0dd` passed 36 and refused 28;
+all 28 refusals became passes. Current source supports the exact decimal column
+casts and selected ranking forms needed here. This does not extend support to
+all casts or window functions. Reference answers were unchanged; no fresh retail
+reference-engine execution is claimed. See the
+[qualification report](../../docs/ENGINE-SNAPSHOT-QUALIFICATION.md) and
+[current SQL boundaries](../../docs/SQL-COVERAGE.md).
 
 Portable execution and redistribution review of synthetic fixtures, independent
 expected answers, comparator and edge probes are pending. SQL files alone do not

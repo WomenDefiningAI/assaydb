@@ -5,7 +5,9 @@
 | Alpha 1 | 0.1.0a1 | 0.1.0-alpha.1 | 44b5ab5ede4504649217ee9909f9c265b44b31b7 |
 | Alpha 2 | 0.1.0a2 | 0.1.0-alpha.2 | 17b575b7c556c47ccc461209f02d28e6a5cf6045 |
 
-The historical Alpha 2 export is preserved in Git history. The current development
+Status as of October 16, 2026: PR6 merged as `b07d7e8`, but no newer package
+publication is claimed. The registry versions and historical source identities
+below remain unchanged. The historical Alpha 2 export is preserved in Git history. The current development
 source promotion is described in [engine qualification](ENGINE-SNAPSHOT-QUALIFICATION.md);
 [the earlier snapshot](SNAPSHOT-PROMOTION.md) remains historical evidence.
 ENGINE-EXPORT-MANIFEST.json inventories the current promotion and file hashes.
@@ -57,4 +59,6 @@ All differences are identified by the export manifest.
 
 No private Git history, session links, operational notes, raw run logs,
 TPC-derived SQL, generators, or benchmark datasets are imported.
-The website and verification/toolkit workspaces are outside this export.
+The original engine-only export excluded the website and verification/toolkit
+workspaces. The public website is now maintained in `site/`; proof workspaces
+remain outside the repository. This does not change the historical package contents.

@@ -1,5 +1,5 @@
 {
-  "schema": "assay-contribution-display/v1",
+  "schema": "assay-contribution-display/v2",
   "definitions": {
     "accuracy": "Applicable SQLLogicTest records passed / all applicable records; unsupported and errors remain nonpasses.",
     "speed": "Paired suite wall-time percentage change versus tested public main on the same host and configuration. Negative change means less time (faster)."
@@ -23,6 +23,47 @@
       },
       "speed": null,
       "speed_absence": "No accepted paired suite wall-time comparison against tested public main. The retained historical baseline is not that main baseline."
+    },
+    {
+      "pr": 6,
+      "status": "accepted",
+      "evidence_commit": "b07d7e876dfde65dda09c06808ba811b9fca49fd",
+      "evidence_path": "docs/evidence/engine-snapshot-checks.json",
+      "measured_source": "8bea917ed73be0aadcf36ef6538377e58171e2a1",
+      "accuracy": {
+        "suite": "SQLLogicTest",
+        "applicable": 5939714,
+        "passed": 5937073,
+        "unsupported": 640,
+        "wrong": 0,
+        "error": 2001,
+        "not-run": 0,
+        "excluded": 1481625
+      },
+      "speed": {
+        "status": "accepted",
+        "baseline_kind": "tested-public-main",
+        "baseline_source": "d86aa0dd769041c23d64bfc760f7b31cc07f3af7",
+        "candidate_source": "8bea917ed73be0aadcf36ef6538377e58171e2a1",
+        "final_engine_equivalent_head": "b64805f34ed4636b227d5bbbf3553ba1d24f01d3",
+        "suite": "SF10",
+        "queries": 22,
+        "workers": 10,
+        "rounds": 3,
+        "warmups": 1,
+        "timed_repetitions": 5,
+        "host": "Test Mini",
+        "configuration": "ordinary release; no PGO; Rust 1.90.0; debug=0, strip=none",
+        "aggregation": "sum-query-round-medians",
+        "candidate_seconds": 19.610820498,
+        "baseline_seconds": 21.550994752,
+        "ratio": 0.9099728677805025,
+        "confidence_95": [
+          0.9062684187919042,
+          0.9131811343750339
+        ],
+        "limits": "Sequential role phases pair matching rotations; descriptive intervals do not eliminate temporal drift. Quietness was sampled; a connection interruption had unknown timing impact. Query 16 was slower and remains included. Timed samples retain row counts, not every output payload. Engine-accounted resources are not hard process caps. No Alpha 3 or 0.95 goal qualification."
+      }
     }
   ]
 }

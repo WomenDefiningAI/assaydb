@@ -45,10 +45,17 @@ Regenerate under the shared activity lock, from the repository root:
 
 ```sh
 python3 scripts/with_engine_activity.py window-reference \
-  python3 scripts/window_ranking_reference.py --output /tmp/window-ranking-reference.json
+  python3 scripts/window_ranking_reference.py --sqlite /path/to/pinned/sqlite3 --output /tmp/window-ranking-reference.json
 ```
 
 No corpus-wide or performance claim follows from these mini-corpus checks.
 Final acceptance requires independent Test Mini reproduction of the exact
 candidate commits, full unchanged corpus/differential checks, and benchmark
 no-regression gates.
+
+PR6's October 16, 2026 qualification includes an independent 80-case regeneration
+and 60 SQLite cross-checks. The unavailable Apple SQLite executable was replaced
+by an explicitly reviewed official upstream 3.51.0 build; original expected
+answers were not changed. This approval applies to that run, not to arbitrary
+future executable substitutions. See [reproduction](REPRODUCE.md) and the
+[qualification report](../../../docs/ENGINE-SNAPSHOT-QUALIFICATION.md).

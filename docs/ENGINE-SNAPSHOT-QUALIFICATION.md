@@ -1,5 +1,22 @@
 # Engine snapshot qualification
 
+**Status updated October 16, 2026:** PR6 was accepted and merged as
+`b07d7e876dfde65dda09c06808ba811b9fca49fd`, from reviewed head
+`b64805f34ed4636b227d5bbbf3553ba1d24f01d3`. The full-suite measured candidate
+remains `8bea917ed73be0aadcf36ef6538377e58171e2a1`, against tested public main
+`d86aa0dd769041c23d64bfc760f7b31cc07f3af7`. The final head preserves engine/build
+inputs; its reviewed changes after measurement do not constitute a new run.
+This is accepted experimental source, not a package publication or Alpha 3.
+The report below retains the separate historical and fresh measurement scopes.
+The evidence JSON is preserved as collected, including its premerge status text;
+this dated status update records the later merge without relabeling the tests.
+
+The timing and patched-decoder evidence below concern the native CLI build.
+The separate Python Cargo workspace locks registry Parquet 57.0.0 and does not
+inherit the root native decoder patch. Shared engine source does not make these
+measurements Python build or wheel qualification; those artifacts require their
+own dependency, build and validation records.
+
 ## Measured speed of this exported build
 
 Fresh SF10 measurements on Test Mini (`Mac.localdomain`), October 16, 2026,
@@ -21,7 +38,7 @@ but zero timing impact cannot be established. Sequential-role bootstrap interval
 do not eliminate temporal drift. Engine-accounted resources are not hard process
 caps. Detailed intervals, slower cases and audit limits remain below.
 
-Current public main is now `c03d4bf901ed2c3f4b38a2b3d61fd767ab9d04e7` after
+At PR6 integration review, public main was `c03d4bf901ed2c3f4b38a2b3d61fd767ab9d04e7` after
 site PR #7. Read-only comparison of complete Git inventories found 18 changed
 website, documentation, website-test/rendering and testing-display files. Engine
 source, dependencies, toolchain and native build inputs are unchanged. The measured
@@ -36,10 +53,10 @@ memory-accounting limitation. The retained 55K failures also remain disclosed.
 This decision applies only to this PR and its reviewed evidence; it does not
 extend the infrastructure-only policy, establish a global waiver, certify a hard
 process-memory cap, or qualify Alpha3/the 0.95 goal. Final-head verification and
-the merge operation remain separate. Useful SQL coverage is the next priority,
+the subsequent merge are distinct from the recorded measurements. Useful SQL coverage is the next priority,
 with full regression coverage before formal verification.
 
-This is a source promotion for review, not an Alpha3 release or package upload.
+This accepted source promotion is not an Alpha3 release or package upload.
 The immutable source is `76e816727c249c285223635f7b7f75cf7154c901`, source tree
 `22abe151f6b6639976fcf437882c5ca447ca016f`. The public branch starts at
 `d86aa0dd769041c23d64bfc760f7b31cc07f3af7` and retains the sanitized Alpha 1/2
@@ -98,7 +115,7 @@ Interrupted attempts and intact recovery phases remain in private evidence.
 Quiet-host admission was sampled; connection interruptions cannot be claimed to
 have had zero timing impact. These observations limit the timing interpretation.
 
-## Exported-tree checks and remaining acceptance
+## Exported-tree checks and acceptance history
 
 Fresh exported-tree checks ran against `7f5b2d2ae67a0f77873afa95e289d58d96c0a714`
 (tree `99cc174c875a316e12c4a791fe07c45e713ee614`). [Sanitized evidence](evidence/engine-snapshot-checks.json)
@@ -111,8 +128,9 @@ changes are documentation/evidence only. Passing the decoder recorder tests is n
 a fresh upstream parity comparison; decoder parity remains attributed to the
 retained frozen-source campaign.
 
-The local checks above are complete. The owner has accepted this scoped experimental promotion. It remains unmerged
-pending final-head verification and the separate merge operation. Completed follow-ups and remaining review decisions are distinguished below;
+The local checks above are complete. The owner accepted this scoped experimental
+promotion and PR6 subsequently merged after final-head verification. Completed
+follow-ups and retained limitations are distinguished below;
 the separate Alpha3 performance target is not claimed by this source promotion.
 
 ### Fresh comparison with current public main

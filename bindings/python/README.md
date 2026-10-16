@@ -5,7 +5,18 @@ alpha. The packaged fast engine is tested, not proved, and does not include
 linked verified execution. Separate proof research describes its own narrower
 scope. Only read Parquet files you trust.
 
-Install this version from PyPI:
+This installation uses the published Alpha 2 package, not the newer source now
+on public main. PR6 (`b07d7e8`, October 16, 2026) added exact decimal expression
+casts and selected ranking functions to current source. To try those additions,
+follow the [source-build instructions](BUILDING.md) and retain the Git revision;
+unchanged package version metadata does not identify the newer build. See the
+[current SQL coverage](../../docs/SQL-COVERAGE.md) and
+[source qualification](../../docs/ENGINE-SNAPSHOT-QUALIFICATION.md).
+Python source builds resolve registry Parquet 57.0.0 in a separate Cargo workspace,
+without the native CLI's root decoder patch. The native timing and patched-decoder
+results do not qualify Python builds or wheels; see the build guide for scope.
+
+Install the published version from PyPI:
 
 ```sh
 python -m pip install --only-binary=:all: 'assaydb==0.1.0a2'

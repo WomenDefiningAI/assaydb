@@ -10,17 +10,29 @@ For measurements, include inputs, versions, all failures, and scope.
 
 ## Maintainer verification
 
-Contributors may leave these pending. TestMini execution and accepted-result
-publication are being prepared; this section does not trigger a runner.
+Contributors may leave these pending while the PR is a draft. Before merge,
+maintainers must review the independent test results and exact source binding.
+Qualifying engine/testing changes must include reviewed contribution metrics
+in this same PR; this template does not trigger a runner.
 
 - Tested source revision / current PR head: pending / pending
 - Base revision: pending
-- Result summary link: pending
+- Result summary link and evidence digest: pending
+- Same-PR contribution metrics record: pending
+- Audited head and nonengine file/blob delta: pending
 - Maintainer acceptance (pending / pass): pending
 - Checks not run and why:
 
 Execution-affecting updates require fresh results. See the
-[planned result contract](https://github.com/WomenDefiningAI/assaydb/blob/main/docs/CONTRIBUTION-RESULTS.md).
+[result contract](https://github.com/WomenDefiningAI/assaydb/blob/main/docs/CONTRIBUTION-RESULTS.md).
+
+## Documentation and website
+
+- [ ] Review current SQL support, limitations, source versus published-package distinctions, and verified results.
+- [ ] Include necessary docs and site updates in this original PR; explicitly explain below when either needs no update.
+- [ ] Preserve historical results and avoid measurement claims for untested builds.
+- Docs/site changes, or explanation of why no update is needed:
+- Post-merge maintainer follow-up: check the live site against the merged changes and record any publication delay or mismatch.
 
 ## Attribution and risks
 

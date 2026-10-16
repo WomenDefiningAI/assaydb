@@ -34,6 +34,8 @@ with sync_playwright() as p:
             page.evaluate('document.fonts.ready')
             assert page.locator('a[href="https://github.com/helenlkupp"]').count() == (2 if name == 'index' else 1)
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), (name, width)
+            assert page.locator('#full-suite-evidence').count() == 0
+            assert 'Reviewed PR evidence.' not in page.locator('body').inner_text()
         page.wait_for_function("document.querySelector('#engine-contributions').getAttribute('aria-busy') === 'false'")
         assert page.locator('.contribution-metrics dd').count() == 2
         assert all('Not measured' in value for value in page.locator('.contribution-metrics dd').all_text_contents())
@@ -57,6 +59,46 @@ with sync_playwright() as p:
             folder = Path(os.environ['WEBSITE_SCREENSHOTS']); folder.mkdir(parents=True, exist_ok=True)
             page.locator('#engine-contributions').screenshot(path=str(folder / f'contributors-{width}.png'))
         assert not errors, errors
+        page.close()
+
+    # Accepted PR6 data renders independently from untrusted PR prose.
+    for width in (1440, 390, 320):
+        page = browser.new_page(viewport=dict(width=width, height=1000))
+        def accepted_route(route):
+            data = ([dict(filename='src/lib.rs')] if '/files?' in route.request.url else
+                    [] if '/commits?' in route.request.url else
+                    [dict(PR, number=6, title='Promote engine snapshot: exact decimal casts, ranking windows and decoder changes',
+                          merged_at='2026-10-16T02:23:11Z', merge_commit_sha='b07d7e876dfde65dda09c06808ba811b9fca49fd', user=dict(login='helenlkupp', type='User'))])
+            route.fulfill(status=200, content_type='application/json', body=json.dumps(data))
+        page.route(API + '**', accepted_route)
+        page.goto(BASE + '/contribute.html')
+        page.wait_for_function("document.querySelector('#engine-contributions').getAttribute('aria-busy') === 'false'")
+        text = page.locator('#contribution-list').inner_text()
+        assert '99.9555%' in text and '5,937,073 / 5,939,714' in text
+        assert '9.00% less elapsed time' in text and 'd86aa0dd' in text
+        assert 'Not measured' not in text
+        page.locator('#contribution-list details').evaluate_all('(nodes)=>nodes.forEach(n=>n.open=true)')
+        text = page.locator('#contribution-list').inner_text()
+        assert '640 unsupported; 2,001 errors' in text and '0 wrong' in text
+        assert '0.909973' in text and '8bea917e' in text and 'b64805f3' in text
+        assert 'not a geometric mean' in text and 'No Alpha 3' in text
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        if os.environ.get('WEBSITE_SCREENSHOTS'):
+            folder = Path(os.environ['WEBSITE_SCREENSHOTS']); folder.mkdir(parents=True, exist_ok=True)
+            page.locator('#engine-contributions').screenshot(path=str(folder / f'pr6-contributors-{width}.png'))
+        # Valid accuracy survives rejected speed evidence in the rendered row.
+        data = json.loads((Path(__file__).resolve().parents[2] / 'site/evidence/contribution-metrics.json').read_text())
+        data['records'][1]['evidence_commit'] = 'merged-pr'
+        page.route('**/evidence/contribution-metrics.json', lambda r: r.fulfill(content_type='application/json', body=json.dumps(data)))
+        page.reload()
+        page.wait_for_function("document.querySelector('#engine-contributions').getAttribute('aria-busy') === 'false'")
+        assert '9.00% less elapsed time' in page.locator('#contribution-list').inner_text()
+        assert page.locator('#contribution-list a[href*="/blob/b07d7e876dfde65dda09c06808ba811b9fca49fd/"]').count() >= 2
+        data['records'][1]['speed']['status'] = 'provisional'
+        page.reload()
+        page.wait_for_function("document.querySelector('#engine-contributions').getAttribute('aria-busy') === 'false'")
+        assert '99.9555%' in page.locator('#contribution-list').inner_text()
+        assert 'Not measured' in page.locator('#contribution-list').inner_text()
         page.close()
 
     # Delayed request leaves a clear loading state; failure is not an empty result.

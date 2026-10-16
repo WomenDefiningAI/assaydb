@@ -1,8 +1,11 @@
 # Assay
 
 Assay is an experimental analytical SQL engine written in Rust, with Python
-sessions and Arrow results. This tree is a development source snapshot after
-Alpha 2; see [current snapshot qualification](docs/ENGINE-SNAPSHOT-QUALIFICATION.md).
+sessions and Arrow results. It answers questions about tables on one computer.
+Current source includes the experimental engine update merged in
+[PR6](https://github.com/WomenDefiningAI/assaydb/pull/6) on October 16, 2026
+(`b07d7e876dfde65dda09c06808ba811b9fca49fd`). See the
+[current source qualification](docs/ENGINE-SNAPSHOT-QUALIFICATION.md).
 Published packages remain Python `0.1.0a2` and Rust `0.1.0-alpha.2`.
 Unchanged version metadata does not make this tree the published package source.
 
@@ -11,7 +14,22 @@ verified mode, proof workspaces, or benchmark datasets. Catalogs are
 temporary and SQL support is incomplete. Only read Parquet files you trust.
 Accounted query limits do not cap total process memory.
 
-## Try Python
+## What current source adds
+
+Current source supports exact INTEGER/DECIMAL expression casts to `DECIMAL(p,s)`
+and the ranking functions `ROW_NUMBER`, `RANK` and `DENSE_RANK` within documented
+limits. These additions are not included in the unchanged published Alpha 1/2
+packages. See [SQL support and refusals](docs/SQL-COVERAGE.md) before relying on a
+form or combination of SQL.
+
+PR6's tested native source passed 5,937,073 of 5,939,714 applicable SQLLogicTest records;
+640 unsupported cases and 2,001 errors remain. No wrong answers were observed in
+that run, which does not prove every query correct. All 64 retained retail tests
+passed. The ten-worker 10 GB test took 9.00% less total time than the tested main
+baseline, but did not meet the Alpha 3 goal against Polars. Exact source identities,
+methods and limits are in the [qualification report](docs/ENGINE-SNAPSHOT-QUALIFICATION.md).
+
+## Try the published Python package
 
 Published wheels target CPython 3.10+ on macOS arm64 and Linux x86_64.
 Use a virtual environment:
@@ -36,6 +54,17 @@ Results remain usable after the connection closes. PyArrow is required;
 pandas/Polars conversions are optional. See the [Python API](bindings/python/README.md),
 [notebook](bindings/python/notebooks/quickstart.ipynb), and
 [build instructions](bindings/python/BUILDING.md).
+
+## Use current source
+
+To build the newer engine from this checkout, follow the
+[native command-line guide](docs/CRATE-README.md) or
+[Python source-build guide](bindings/python/BUILDING.md). A local build still has
+Alpha 2 version metadata; record the Git commit too. Installing the pinned package
+above or from crates.io does not install the new source changes.
+The root native CLI build uses a local Parquet decoder patch. The separate Python
+workspace instead locks registry Parquet 57.0.0; it does not inherit that patch.
+The native CLI timing and patched-decoder evidence do not qualify Python builds.
 
 ## Rust and contributions
 

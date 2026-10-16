@@ -69,3 +69,80 @@ Charts may change only from reviewed, accepted measurements; existing historical
 values remain until such evidence is available. Publishing a Python or Rust
 package is a separate release action, not an automatic consequence of merging.
 
+
+## Documentation and website review for every merge
+
+Review current SQL support, limitations, source versus published-package
+distinctions, and verified results for every contribution. Include necessary
+documentation and website updates in the original PR before merge, alongside
+its reviewed evidence. If either needs no update, explain why explicitly in
+the PR. Preserve historical results and never attribute measurements to an
+untested build. After merge, maintainers check the live site against the merged
+changes and record any publication delay or mismatch for follow-up.
+
+## Include reviewed metrics in the original PR
+
+Do not plan a separate metrics PR after merging an engine contribution. PR8 is a
+one-off repair for PR6. Before merging a qualifying engine, binding, test or build
+change, include the reviewed record in `site/evidence/contribution-metrics.json`
+in that same PR. The contributor feed renders it only after GitHub reports the
+PR merged. Raw ratios retain full precision; displayed speed uses two decimals.
+
+1. Freeze and independently test the candidate against the current public base.
+   Obtain maintainer review of accuracy, paired SF10 timing and all limitations.
+   The supported speed method is currently 22 SF10 queries, ten workers, three
+   rotations, one warmup and five timed repetitions. Agree a schema extension
+   before merging a contribution that needs another method; do not invent values.
+2. Commit sanitized evidence under `docs/evidence/` or `site/evidence/` in the PR.
+   Its JSON contains `tested_source`, `baseline_source`, `accuracy` and `speed`.
+   Accuracy and measured speed fields match the display schema exactly, except
+   the evidence's speed omits `final_engine_equivalent_head`: that identity does
+   not exist until this evidence commit has been made.
+3. Have a maintainer audit the delta from the tested candidate to this evidence
+   commit. Record this existing commit as `review.audited_head`. Only reviewed
+   inert documentation or static website files may differ; engine, build, inputs,
+   harness and execution changes require a fresh run. The validator rejects
+   changes outside its narrow presentation-file allowance. Review is still needed
+   to determine whether an allowed file actually affects test inputs or execution.
+4. Append the display record in the same PR with `status: accepted`,
+   `evidence_commit: merged-pr`, the relative `evidence_path`, original
+   `measured_source`, and accepted accuracy/speed. Set speed's
+   `final_engine_equivalent_head` to the existing audited head, not a future final
+   commit. Include `review` with `decision: accepted`, public `reviewer` handle,
+   `audited_head`, SHA-256 of exact evidence bytes as `evidence_sha256`, and
+   `audited_delta`: a Git-sorted list of `{path, entry}` for every changed file
+   between tested source and audited head. Each `entry` is the trimmed output of
+   `git ls-tree AUDITED_HEAD -- PATH`, including mode and blob ID (empty on deletion).
+5. After audit, only this PR's display record may change. Other changes require
+   repeating the audit; execution-affecting changes require new testing. A base
+   change requires a fresh matching baseline and review. Run:
+   ```sh
+   node scripts/validate-contribution-metrics.cjs BASE_SHA HEAD_SHA PR_NUMBER
+   ```
+   The `Contribution metrics / reviewed-metrics` pull-request check performs the
+   same structural validation using code from the trusted base, never executing
+   candidate scripts. It needs no private inputs, secrets or engine execution.
+
+`merged-pr` is resolved to GitHub's merge commit only when the merged row renders.
+The record therefore does not need its own final commit SHA or a follow-up PR.
+The evidence digest and audited source identities bind the reviewed contents;
+adding the display record does not claim a new execution of the final head.
+
+The check fails missing/invalid metrics and stale source bindings for qualifying
+changes. It does not establish that a claimed reviewer actually accepted the
+result, replace independent raw-evidence review, or enforce the full testing gate.
+Maintainers must verify acceptance and require the check in repository rules.
+This change does not modify branch protection. Website-only PRs remain subject
+to the existing human merge policy but do not invent engine metrics. PR8 has a
+narrow bootstrap exception because the trusted base does not yet contain this
+validator; subsequent PRs run the validator from their base.
+
+The premerge classifier is broader than contributor attribution: engine/build
+files, all non-Markdown testing inputs and tests, controller/harness/collector
+code, general execution scripts/tools, binding inputs and engine CI workflows
+require a metrics record. New collector filenames are covered automatically;
+removals and renames are checked too. Explicit presentation-only exceptions cover
+`site/`, `scripts/website-tests/`, the speed-chart renderer, the site-evidence
+exporter and its tests, and the metrics validator/workflow itself. Ordinary
+Markdown docs are exempt; `docs/BENCHMARK-INPUTS.md` remains an execution contract.
+These exceptions affect only this structural metrics check, not human merge policy.
