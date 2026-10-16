@@ -217,3 +217,18 @@ historical comparison is not a tested public-main baseline. The evidence exporte
 removes legacy full-suite page blocks. It never inserts tables or policy prose
 into public pages. Reports remain linked on GitHub. Browser tests reject
 reintroduced evidence blocks on every public page.
+
+
+## Compact contribution table
+
+Each contribution has one summary row: author, linked PR title/number, UTC merge
+date, applicable SQL pass percentage and paired speed change against tested main.
+The Details button opens a full-width evidence row and exposes its state through
+`aria-expanded` and `aria-controls`; Enter and Space work without moving focus.
+Failure counts, denominators, source identities, caveats, evidence links and other
+commit authors stay collapsed initially. Missing measurements remain explicit.
+On small screens the labeled, keyboard-focusable table region scrolls horizontally
+without widening the page. Without JavaScript, the status and GitHub link explain
+how to browse contributions. Loading, error and retry states remain available.
+This display-only change does not alter SQL support, package/source distinctions,
+reviewed results or filtering of website-only PRs.

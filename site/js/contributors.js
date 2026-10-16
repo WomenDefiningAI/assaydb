@@ -166,30 +166,45 @@
       if (user.kind !== 'user') add(parent, 'span', ' (account type unknown)');
     }
     for (const row of result.rows) {
-      const item = add(list, 'li'), heading = add(item, 'h3');
-      const link = add(heading, 'a', '#' + row.number + ' · ' + row.title); link.href = repoURL + '/pull/' + row.number;
-      const meta = add(item, 'p', 'Merged '), date = add(meta, 'time', row.mergedAt.slice(0, 10) + ' (UTC)'); date.dateTime = row.mergedAt;
-      const author = add(item, 'p', 'PR author: ');
+      const item = add(list, 'tr'); item.className = 'contribution-row';
+      const author = add(item, 'td');
       if (row.author) userLink(author, row.author); else add(author, 'span', 'GitHub account unavailable');
-      const metrics = add(item, 'dl'); metrics.className = 'contribution-metrics';
+      const heading = add(item, 'th'); heading.scope = 'row';
+      const link = add(heading, 'a', '#' + row.number + ' · ' + row.title); link.href = repoURL + '/pull/' + row.number;
+      const date = add(add(item, 'td'), 'time', row.mergedAt.slice(0, 10)); date.dateTime = row.mergedAt;
+      const accuracy = add(item, 'td'), speed = add(item, 'td');
+      accuracy.className = speed.className = 'contribution-value';
+      const toggle = add(add(item, 'td'), 'button', 'Details');
+      toggle.type = 'button'; toggle.className = 'contribution-toggle';
+      toggle.setAttribute('aria-label', 'Details for PR #' + row.number);
+      toggle.setAttribute('aria-expanded', 'false');
+      const detailRow = add(list, 'tr'); detailRow.hidden = true; detailRow.className = 'contribution-detail-row';
+      const details = add(detailRow, 'td'); details.colSpan = 6; details.id = 'contribution-details-' + row.number;
+      toggle.setAttribute('aria-controls', details.id);
+      toggle.addEventListener('click', () => {
+        detailRow.hidden = !detailRow.hidden;
+        toggle.setAttribute('aria-expanded', String(!detailRow.hidden));
+      });
       const stored = result.metrics?.get(row.number);
       const evidence = stored && (stored.source || row.mergeCommit) ? {...stored, source: stored.source || repoURL + '/blob/' + row.mergeCommit + '/' + stored.evidencePath} : null;
-      add(metrics, 'dt', 'Accuracy · applicable SQL tests passed');
       if (evidence) {
         const a = evidence.accuracy, fmt = n => n.toLocaleString('en-US');
-        add(metrics, 'dd', (100 * a.passed / a.applicable).toFixed(4) + '% · ' + fmt(a.passed) + ' / ' + fmt(a.applicable));
-        const details = add(item, 'details');
-        add(details, 'summary', 'SQLLogicTest scope and failure breakdown');
+        add(accuracy, 'span', (100 * a.passed / a.applicable).toFixed(4) + '%');
+        add(details, 'h3', 'SQLLogicTest scope and failure breakdown');
+        add(details, 'p', fmt(a.passed) + ' / ' + fmt(a.applicable) + ' applicable SQL tests passed.');
         add(details, 'p', fmt(a.wrong) + ' wrong; ' + fmt(a.unsupported) + ' unsupported; ' + fmt(a.error) + ' errors; ' + fmt(a['not-run']) + ' not run. ' + fmt(a.excluded) + ' excluded control records are outside the applicable denominator.');
         add(details, 'p', 'Measured source ' + evidence.measuredSource.slice(0, 8) + '. Retained reviewed evidence, not a fresh run of the merged PR head.');
         const link = add(details, 'a', 'Reviewed evidence and limits'); link.href = evidence.source;
-      } else add(metrics, 'dd', 'Not measured · no reviewed applicable-suite result.');
-      add(metrics, 'dt', 'Speed · paired suite wall time versus main');
+      } else {
+        accuracy.textContent = 'Not measured';
+        add(details, 'p', 'Accuracy: no reviewed applicable-suite result.');
+      }
       if (evidence?.speed) {
         const s = evidence.speed, change = 100 * (s.ratio - 1);
-        add(metrics, 'dd', Math.abs(change).toFixed(2) + '% ' + (change < 0 ? 'less' : change > 0 ? 'more' : 'change in') +
-          ' elapsed time · SF10, 22 queries, 10 workers · versus tested main ' + s.baseline_source.slice(0, 8));
-        const details = add(item, 'details'); add(details, 'summary', 'Speed sources, method and limits');
+        add(speed, 'span', Math.abs(change).toFixed(2) + '% ' + (change < 0 ? 'less' : change > 0 ? 'more' : 'change in') +
+          ' elapsed time');
+        add(details, 'h3', 'Speed sources, method and limits');
+        add(details, 'p', 'SF10, 22 queries, 10 workers · versus tested main ' + s.baseline_source.slice(0, 8));
         add(details, 'p', 'Candidate/main total ratio ' + s.ratio.toFixed(6) +
           '; 95% descriptive interval ' + s.confidence_95.map(n => n.toFixed(6)).join('–') +
           '. Total sums query-round medians (' + s.candidate_seconds + ' / ' + s.baseline_seconds +
@@ -207,19 +222,22 @@
           const qualification = add(details, 'a', ' · Qualification report');
           qualification.href = evidence.source.replace('docs/evidence/engine-snapshot-checks.json', 'docs/ENGINE-SNAPSHOT-QUALIFICATION.md');
         }
-      } else add(metrics, 'dd', 'Not measured against the same main baseline and host/configuration.');
+      } else {
+        speed.textContent = 'Not measured';
+        add(details, 'p', 'Speed: not measured against the same main baseline and host/configuration.');
+      }
       for (const [kind, label] of [['user', 'Other commit authors'], ['bot', 'Bot commit authors'], ['unknown', 'Other accounts with commits']]) {
         const accounts = row.authors.filter(a => a.kind === kind);
         if (!accounts.length) continue;
-        const line = add(item, 'p', label + ': ');
+        const line = add(details, 'p', label + ': ');
         accounts.forEach((user, i) => {
           if (i) add(line, 'span', ' · ');
           userLink(line, user);
           const evidence = add(line, 'a', ' (commit)'); evidence.href = repoURL + '/commit/' + user.sha;
         });
       }
-      if (row.unlinkedAuthors) add(item, 'p', 'Some commits have no linked GitHub author account.').className = 'note';
-      if (!row.authorsComplete) add(item, 'p', 'The commit-author list is incomplete or unavailable.').className = 'note';
+      if (row.unlinkedAuthors) add(details, 'p', 'Some commits have no linked GitHub author account.').className = 'note';
+      if (!row.authorsComplete) add(details, 'p', 'The commit-author list is incomplete or unavailable.').className = 'note';
     }
     const status = doc.getElementById('contribution-status');
     status.textContent = result.partial ? (result.rows.length ?

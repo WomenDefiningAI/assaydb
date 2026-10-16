@@ -51,8 +51,10 @@ reviewed evidence. Merge, chart acceptance and package release are separate deci
 
 ## Credit and contribution metrics
 
-The website lists merged engine and meaningful testing PRs with author, title,
-number and merge date. Website-only PRs are excluded. Credit is not certification.
+The website shows merged engine and meaningful testing PRs in a compact table
+with author, linked title/number, merge date, SQL pass percentage and paired speed
+change. Open Details for counts, failures, source identities, evidence and limits.
+Website-only PRs are excluded. Credit is not certification.
 
 Accuracy is the percentage of applicable SQL tests passed, alongside passed/total
 counts and an expandable wrong/unsupported/error/not-run breakdown. The suite and
