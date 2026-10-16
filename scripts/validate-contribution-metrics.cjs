@@ -4,6 +4,24 @@ const {execFileSync} = require('node:child_process');
 const {createHash} = require('node:crypto');
 const {enginePath, displayMetrics} = require('../site/js/contributors.js');
 const METRICS = 'site/evidence/contribution-metrics.json';
+// Gate coverage is deliberately broader than contributor attribution. New runner,
+// collector, fixture or policy files must not silently bypass required evidence.
+function executionPath(path) {
+  if (enginePath(path)) return true; // Includes the benchmark-input contract.
+  if (typeof path !== 'string') return false;
+  const displayOnly = new Set([
+    'testing/site_evidence.py', 'testing/tests/test_site_evidence.py',
+    'scripts/render_speed_journey.py', 'scripts/validate-contribution-metrics.cjs',
+    '.github/workflows/contribution-metrics.yml'
+  ]);
+  if (displayOnly.has(path) || /^(site|scripts\/website-tests)\//.test(path)) return false;
+  // Markdown documentation is exempt, except execution contracts matched above.
+  if (/\.md$/i.test(path)) return false;
+  return /^(src|tests|testing|scripts|tools|controller|controllers|harness|harnesses|collector|collectors|benches|benchmarks|bindings|vendor|\.cargo)\//.test(path) ||
+    /^\.github\/workflows\//.test(path) ||
+    /^(Cargo\.(toml|lock)|build\.rs|rust-toolchain(\.toml)?|\.python-version|pyproject\.toml|uv\.lock|requirements[^/]*\.txt)$/.test(path);
+}
+
 function validate({base, head, pr, cwd = process.cwd()}) {
   const need = (ok, message) => { if (!ok) throw Error(message); };
   const sha = x => typeof x === 'string' && /^[0-9a-f]{40}$/.test(x);
@@ -11,7 +29,7 @@ function validate({base, head, pr, cwd = process.cwd()}) {
   const git = (...args) => execFileSync('git', args, {cwd, encoding: 'utf8'});
   const read = (rev, path) => git('show', `${rev}:${path}`);
   const changed = (a,b) => git('diff','--name-only','--no-renames','-z',a,b).split('\0').filter(Boolean);
-  const qualifies = path => enginePath(path) || /^(Cargo\.(toml|lock)|build\.rs|rust-toolchain(\.toml)?|\.cargo\/|vendor\/)/.test(path);
+  const qualifies = executionPath;
   if (!changed(base,head).some(qualifies)) return 'No qualifying engine/testing/build changes; full maintainer merge policy still applies.';
   const data = JSON.parse(read(head,METRICS));
   need(data.records.filter(r => r?.pr === pr).length === 1, 'Include exactly one reviewed metrics record for this PR before merge');
@@ -49,7 +67,7 @@ function validate({base, head, pr, cwd = process.cwd()}) {
     JSON.stringify(source.speed) === JSON.stringify(measuredSpeed), 'Display values must match reviewed source evidence');
   return 'Reviewed metrics and audited source binding are present. Human acceptance/authenticity and full independent qualification remain required.';
 }
-module.exports = {validate};
+module.exports = {validate, executionPath};
 if (require.main === module) {
   try { console.log(validate({base:process.argv[2],head:process.argv[3],pr:Number(process.argv[4])})); }
   catch (error) { console.error('Contribution metrics: ' + error.message); process.exitCode = 1; }

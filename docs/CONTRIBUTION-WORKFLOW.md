@@ -126,3 +126,13 @@ This change does not modify branch protection. Website-only PRs remain subject
 to the existing human merge policy but do not invent engine metrics. PR8 has a
 narrow bootstrap exception because the trusted base does not yet contain this
 validator; subsequent PRs run the validator from their base.
+
+The premerge classifier is broader than contributor attribution: engine/build
+files, all non-Markdown testing inputs and tests, controller/harness/collector
+code, general execution scripts/tools, binding inputs and engine CI workflows
+require a metrics record. New collector filenames are covered automatically;
+removals and renames are checked too. Explicit presentation-only exceptions cover
+`site/`, `scripts/website-tests/`, the speed-chart renderer, the site-evidence
+exporter and its tests, and the metrics validator/workflow itself. Ordinary
+Markdown docs are exempt; `docs/BENCHMARK-INPUTS.md` remains an execution contract.
+These exceptions affect only this structural metrics check, not human merge policy.
