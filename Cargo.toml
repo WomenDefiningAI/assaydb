@@ -38,3 +38,8 @@ strip = "debuginfo"
 # overflow checks in SQL kernels; this changes compiler optimization only.
 lto = "thin"
 codegen-units = 1
+
+# Parquet 57.0.0 with reviewed local decoder changes: direct
+# FLBA->Decimal128 decode and sized reusable zstd. See vendor/parquet-57.0.0-decoder-v1/ASSAY-PROVENANCE.md.
+[patch.crates-io]
+parquet = { path = "vendor/parquet-57.0.0-decoder-v1" }

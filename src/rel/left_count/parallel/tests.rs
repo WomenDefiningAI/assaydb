@@ -1,6 +1,196 @@
 use super::*;
 use arrow::datatypes::{DataType, TimeUnit};
 
+#[test]
+fn compact_counts_require_schema_proof_through_projection() {
+    let scan = Node {
+        schema: Arc::new(Schema::new(vec![
+            Field::new("required", DataType::Int64, false),
+            Field::new("optional", DataType::Int64, true),
+            Field::new("null", DataType::Null, false),
+        ])),
+        estimated_rows: 0,
+        op: RelOp::Scan {
+            path: PathBuf::new(),
+            columns: vec![0, 1, 2],
+            statistics: vec![],
+            distinct: vec![],
+        },
+    };
+    assert!(required_counts(&scan, &[Some(0), None, Some(0)]));
+    assert!(!required_counts(&scan, &[Some(0), Some(1)]));
+    assert!(!required_counts(&scan, &[Some(2)]));
+    let projected = Node {
+        schema: scan.schema.clone(),
+        estimated_rows: 0,
+        op: RelOp::Project {
+            input: Box::new(scan),
+            columns: vec![1, 0],
+        },
+    };
+    assert!(required_counts(&projected, &[Some(1)]));
+    assert!(!required_counts(&projected, &[Some(0)]));
+}
+
+#[test]
+fn compact_windows_bound_widen_merge_and_release() {
+    for bound in [0, i64::from(u32::MAX), i64::from(u32::MAX) + 1, -1] {
+        let budget = Budget::new(2 << 20);
+        {
+            let cell_bytes = Counts::compact_cell_bytes(bound);
+            assert_eq!(
+                cell_bytes,
+                if (0..=i64::from(u32::MAX)).contains(&bound) {
+                    4
+                } else {
+                    8
+                }
+            );
+            let mut counts =
+                Counts::with_compact_window(1, 3, bound, budget.reserve(3 * cell_bytes).unwrap())
+                    .unwrap();
+            assert_eq!(budget.used(), 3 * cell_bytes);
+            assert_eq!(counts.narrow.len(), if cell_bytes == 4 { 3 } else { 0 });
+            let source = batch(
+                vec![Some(2), Some(2), None],
+                Arc::new(Int64Array::from(vec![7; 3])),
+            );
+            let keys = BatchKeys::new(&source, &[column(0)], &budget).unwrap();
+            assert_eq!(
+                counts
+                    .add(
+                        &keys,
+                        &source,
+                        &[Some(1)],
+                        &[],
+                        &budget,
+                        &Options::default().cancellation
+                    )
+                    .unwrap(),
+                3
+            );
+            assert_eq!(counts.value(1, 0), 2);
+            assert_eq!(counts.value(1, 1), 2);
+            assert_eq!(keys.group(2, &counts), None);
+            // Hints cannot exclude outliers; widening preserves the old counts.
+            let outlier = batch(vec![Some(99)], Arc::new(Int64Array::from(vec![7])));
+            let outlier_keys = BatchKeys::new(&outlier, &[column(0)], &budget).unwrap();
+            counts
+                .add(
+                    &outlier_keys,
+                    &outlier,
+                    &[Some(1)],
+                    &[],
+                    &budget,
+                    &Options::default().cancellation,
+                )
+                .unwrap();
+            assert!(counts.narrow.is_empty());
+            assert_eq!(counts.value(1, 1), 2);
+            assert_eq!(counts.value(outlier_keys.group(0, &counts).unwrap(), 1), 1);
+            assert!(
+                budget.used() >= counts.values.capacity() * 8 + counts.numeric.allocation_bytes()
+            );
+        }
+        assert_eq!(budget.used(), 0);
+    }
+    let budget = Budget::new(2 << 20);
+    {
+        let mut counts =
+            Counts::with_compact_window(1, 1, i64::from(u32::MAX), budget.reserve(4).unwrap())
+                .unwrap();
+        counts.narrow[0] = u32::MAX;
+        let tables = Tables::single(counts, &budget).unwrap();
+        let source = batch(
+            vec![Some(1), Some(1), None],
+            Arc::new(Int64Array::from(vec![7; 3])),
+        );
+        let options = Options::default();
+        let probe = Probe {
+            tables: &tables,
+            keys: &[column(0)],
+            groups: &[column(1)],
+            filters: &[],
+            columns: &[Some(1), None],
+            descriptors: 4096,
+            budget: &budget,
+            options: &options,
+        };
+        let result = probe.run(&source).unwrap();
+        let weights = result.weights[0]
+            .array
+            .as_any()
+            .downcast_ref::<UInt64Array>()
+            .unwrap();
+        assert_eq!(
+            weights.values().as_ref(),
+            &[u64::from(u32::MAX), u64::from(u32::MAX), 0]
+        );
+    }
+    assert_eq!(budget.used(), 0);
+}
+
+#[test]
+fn compact_window_denial_cancellation_and_masks_are_exact() {
+    let budget = Budget::new(2 << 20);
+    {
+        assert!(Counts::with_compact_window(1, 3, 3, budget.reserve(11).unwrap()).is_err());
+        assert_eq!(budget.used(), 0);
+        let mut counts = Counts::with_compact_window(1, 3, 3, budget.reserve(12).unwrap()).unwrap();
+        let source = batch(
+            vec![Some(2), None, Some(3)],
+            Arc::new(Int64Array::from(vec![7; 3])),
+        );
+        let keys = BatchKeys::new(&source, &[column(0)], &budget).unwrap();
+        let mask = Value::adopt(
+            Arc::new(BooleanArray::from(vec![Some(true), Some(true), None])),
+            &budget,
+        )
+        .unwrap();
+        let cancellation = crate::spill::Cancellation::default();
+        assert_eq!(
+            counts
+                .add(&keys, &source, &[Some(1)], &[mask], &budget, &cancellation)
+                .unwrap(),
+            2
+        );
+        assert_eq!(counts.narrow, vec![0, 1, 0]);
+        let pressure = budget.reserve(budget.limit() - budget.used()).unwrap();
+        assert!(
+            counts
+                .widen(&budget)
+                .unwrap_err()
+                .starts_with("resource-limit:")
+        );
+        assert_eq!(counts.narrow, vec![0, 1, 0]);
+        drop(pressure);
+        cancellation.cancel();
+        assert_eq!(
+            counts
+                .add(&keys, &source, &[Some(1)], &[], &budget, &cancellation)
+                .unwrap_err(),
+            "cancelled: query execution"
+        );
+        assert_eq!(counts.narrow, vec![0, 1, 0]);
+        counts.narrow[1] = u32::MAX;
+        assert_eq!(
+            counts
+                .add(
+                    &keys,
+                    &source,
+                    &[Some(1)],
+                    &[],
+                    &budget,
+                    &crate::spill::Cancellation::default()
+                )
+                .unwrap_err(),
+            "resource-limit: join build indices"
+        );
+        assert_eq!(counts.narrow[1], u32::MAX);
+    }
+    assert_eq!(budget.used(), 0);
+}
+
 fn column(index: usize) -> Expr {
     Expr {
         kind: Kind::Column(index),

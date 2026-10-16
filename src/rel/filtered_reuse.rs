@@ -52,7 +52,9 @@ fn scans<'a>(node: &'a Node, visit: &mut impl FnMut(&'a Node)) {
     match &node.op {
         RelOp::Scan { .. } => visit(node),
         RelOp::Materialize { .. } | RelOp::One | RelOp::Empty => (),
-        RelOp::Unary { input, .. }
+        RelOp::WindowOrder { input, .. }
+        | RelOp::Window { input, .. }
+        | RelOp::Unary { input, .. }
         | RelOp::Filter { input, .. }
         | RelOp::Rename { input }
         | RelOp::Project { input, .. }

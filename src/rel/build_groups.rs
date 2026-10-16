@@ -220,6 +220,7 @@ fn expression_bytes(expr: &Expr) -> usize {
         }
         Kind::Function(name, a) => name.len().saturating_add(expression_bytes(a)),
         Kind::Cast(a)
+        | Kind::CastDecimal(a, _, _)
         | Kind::Not(a)
         | Kind::Neg(a)
         | Kind::IsNull(a, _)

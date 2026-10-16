@@ -206,8 +206,8 @@ fn run_declines_coercions_distinct_and_empty_join_inputs_to_serial_semantics() {
         ),
         EnabledStatistics::None,
     );
-    // Nonliteral DECIMAL casts are unsupported; decimal arithmetic exercises
-    // the same scale coercions through expressions accepted by the binder.
+    // Decimal arithmetic continues to exercise these scale coercions,
+    // independently of explicit DECIMAL cast support.
     for sql in [
         "SELECT k, SUM(v + (d + 0.00)) FROM t GROUP BY k",
         "SELECT k + 0.00, SUM(v) FROM t GROUP BY k + 0.00",

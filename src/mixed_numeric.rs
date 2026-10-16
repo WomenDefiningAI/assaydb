@@ -148,7 +148,7 @@ fn expression_mode(e: &Expr, input: &[Fact], guard: bool) -> Result<Fact> {
             }
         }
         Kind::Column(column) => return get(input, *column),
-        Kind::Cast(a) => {
+        Kind::Cast(a) | Kind::CastDecimal(a, _, _) => {
             let a = expression_mode(a, input, guard)?;
             // A conversion fixes the consuming storage class. Its child was
             // still visited, so a cast cannot hide an earlier unsafe division.
@@ -428,7 +428,9 @@ fn empty_stream(root: &Node, remaining: usize) -> bool {
     match &root.op {
         RelOp::Empty => true,
         RelOp::Limit { count, input } => *count == 0 || child(input),
-        RelOp::Project { input, .. }
+        RelOp::WindowOrder { input, .. }
+        | RelOp::Window { input, .. }
+        | RelOp::Project { input, .. }
         | RelOp::Rename { input }
         | RelOp::Materialize { input, .. } => child(input),
         RelOp::Filter { predicate, input } => false_filter(predicate) || child(input),
@@ -442,6 +444,21 @@ fn empty_stream(root: &Node, remaining: usize) -> bool {
 fn node_mode(root: &Node, guard: bool) -> Result<Vec<Fact>> {
     match &root.op {
         RelOp::Scan { .. } | RelOp::Empty => fields(&root.schema),
+        RelOp::Window {
+            input,
+            specification,
+        } => {
+            let mut facts = node_mode(input, guard)?;
+            for key in specification
+                .partition
+                .iter()
+                .chain(specification.order.iter().map(|(key, _, _)| key))
+            {
+                expression_mode(key, &facts, guard)?;
+            }
+            facts.push(Fact::typed(&Type::Int, false, true));
+            Ok(facts)
+        }
         RelOp::One => Ok(Vec::new()),
         RelOp::Unary { plan: p, input } => {
             plan_mode(p, &node_mode(input, guard)?, empty_stream(input, 64), guard)
@@ -455,9 +472,10 @@ fn node_mode(root: &Node, guard: bool) -> Result<Vec<Fact>> {
             expression_mode(predicate, &input, guard)?;
             Ok(input)
         }
-        RelOp::Rename { input } | RelOp::Materialize { input, .. } | RelOp::Limit { input, .. } => {
-            node_mode(input, guard)
-        }
+        RelOp::WindowOrder { input, .. }
+        | RelOp::Rename { input }
+        | RelOp::Materialize { input, .. }
+        | RelOp::Limit { input, .. } => node_mode(input, guard),
         RelOp::Scalar { input } => {
             let mut values = node_mode(input, guard)?;
             let empty = empty_stream(input, 64);

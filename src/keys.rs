@@ -41,6 +41,101 @@ struct TextRows {
     bytes: Vec<u8>,
     offsets: Vec<usize>,
 }
+
+/// Validated fixed-width UTF-8 fields produce the existing canonical tuple bytes.
+pub(crate) struct CompactText<'a> {
+    fields: [Option<(&'a [u8], usize)>; 3],
+    template: [u8; 16],
+    len: usize,
+}
+impl<'a> CompactText<'a> {
+    /// Admission checks every offset and NULL bit before borrowing short payloads.
+    pub(crate) fn new(values: &'a [Value], rows: usize) -> Option<Self> {
+        if rows == 0 || !(2..=3).contains(&values.len()) {
+            return None;
+        }
+        let mut compact = Self {
+            fields: [None; 3],
+            template: [0; 16],
+            len: 0,
+        };
+        for (slot, value) in values.iter().enumerate() {
+            let array = value.array.as_any().downcast_ref::<StringArray>()?;
+            if array.len() != rows || array.null_count() != 0 {
+                return None;
+            }
+            let offsets = array.value_offsets();
+            let width = usize::try_from(offsets[1] - offsets[0]).ok()?;
+            let end = compact.len.checked_add(4)?.checked_add(width)?;
+            if end > compact.template.len()
+                || offsets
+                    .windows(2)
+                    .any(|pair| (pair[1] - pair[0]) as usize != width)
+            {
+                return None;
+            }
+            compact.template[compact.len..compact.len + 4]
+                .copy_from_slice(&(width as u32).to_ne_bytes());
+            compact.fields[slot] = Some((
+                &array.value_data()[offsets[0] as usize..offsets[rows] as usize],
+                width,
+            ));
+            compact.len = end;
+        }
+        Some(compact)
+    }
+
+    pub(crate) fn len(&self) -> usize {
+        self.len
+    }
+
+    /// Validated one-byte UTF-8 fields are ASCII slices in the original row order.
+    pub(crate) fn byte_pairs(&self) -> Option<(&'a [u8], &'a [u8])> {
+        match self.fields {
+            [Some((a, 1)), Some((b, 1)), None] => Some((a, b)),
+            _ => None,
+        }
+    }
+
+    /// The validated widths make this stack key byte-identical to the fallback.
+    #[inline]
+    pub(crate) fn row(&self, row: usize) -> [u8; 16] {
+        let mut key = self.template;
+        let mut offset = 0;
+        for (bytes, width) in self.fields.iter().flatten() {
+            offset += 4;
+            key[offset..offset + width].copy_from_slice(&bytes[row * width..(row + 1) * width]);
+            offset += width;
+        }
+        key
+    }
+
+    /// The caller's encoder lease funds canonical transport bytes and both offset vectors.
+    fn encode(&self, rows: usize) -> Result<TextRows> {
+        let capacity = rows.checked_mul(self.len).ok_or("text key size overflow")?;
+        let mut bytes = Vec::with_capacity(capacity);
+        let mut offsets =
+            Vec::with_capacity(rows.checked_add(1).ok_or("text key offsets overflow")?);
+        if let Some((left, right)) = self.byte_pairs() {
+            // Constant positions avoid tuple construction/variable-size copies
+            // for each field; the canonical length prefixes remain unchanged.
+            let mut key: [u8; 10] = self.template[..10].try_into().unwrap();
+            for (&a, &b) in left.iter().zip(right) {
+                offsets.push(bytes.len());
+                key[4] = a;
+                key[9] = b;
+                bytes.extend_from_slice(&key);
+            }
+        } else {
+            for row in 0..rows {
+                offsets.push(bytes.len());
+                bytes.extend_from_slice(&self.row(row)[..self.len]);
+            }
+        }
+        offsets.push(bytes.len());
+        Ok(TextRows { bytes, offsets })
+    }
+}
 pub(crate) struct Keys {
     len: usize,
     rows: Option<Rows>,
@@ -164,6 +259,8 @@ impl Keys {
                 // as NULL's private key, distinct from empty and every string.
                 // Clone only buffer owners; slices retain their actual offset.
                 (Some(arrays[0].clone()), None)
+            } else if let Some(compact) = CompactText::new(values, len) {
+                (None, Some(compact.encode(len)?))
             } else {
                 let prefixes = len
                     .checked_mul(arrays.len())
@@ -292,6 +389,9 @@ impl Keys {
             .as_ref()
             .is_none_or(|nulls| nulls.null_count() == 0)
     }
+    pub(crate) fn valid_len(&self) -> usize {
+        self.len - self.nulls.as_ref().map_or(0, NullBuffer::null_count)
+    }
     pub fn numeric_values(&self) -> Option<&[i128]> {
         self.numeric.as_ref().map(|b| b.typed_data())
     }
@@ -345,6 +445,8 @@ pub(crate) fn decode_numeric_pair(bytes: &[u8]) -> Option<[i128; 2]> {
     ])
 }
 
+#[cfg(test)]
+mod compact_tests;
 #[cfg(test)]
 mod tests {
     use super::*;

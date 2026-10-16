@@ -242,31 +242,43 @@ impl Binder<'_> {
                 if let Some(ty) = sqlite_target {
                     return crate::expr::casts::bind(value, ty);
                 }
+                if let sql::DataType::Decimal(info)
+                | sql::DataType::Numeric(info)
+                | sql::DataType::Dec(info) = data_type
+                {
+                    let sql::ExactNumberInfo::PrecisionAndScale(p, s) = info else {
+                        return Err(unsupported(format!("CAST AS {data_type}")));
+                    };
+                    if !(1..=38).contains(p) || *s > 18 || s > p {
+                        return Err(unsupported(format!("CAST AS {data_type}")));
+                    }
+                    let ty = Type::Decimal(*s as i8);
+                    // Retain the existing lossless literal-text contract.
+                    if let Kind::Literal(Literal::Text(text)) = &value.kind {
+                        let (n, old) = decimal_literal(text)?;
+                        let n = rescale(n, old, *s as i8)?;
+                        if n.unsigned_abs() >= crate::types::factor(*p as i8)? as u128 {
+                            return Err("decimal cast precision overflow".into());
+                        }
+                        return Ok(literal(ty, Literal::Num(n)));
+                    }
+                    if !matches!(value.ty, Type::Int | Type::Decimal(_) | Type::Null) {
+                        return Err(unsupported("DECIMAL cast requires an exact numeric source"));
+                    }
+                    return Ok(Expr {
+                        kind: Kind::CastDecimal(Box::new(value), *p as u8, *s as i8),
+                        ty,
+                    });
+                }
                 let ty = match data_type {
                     sql::DataType::Date => Type::Date,
                     sql::DataType::BigInt(None) => Type::Int,
                     sql::DataType::Boolean => Type::Bool,
-                    sql::DataType::Decimal(sql::ExactNumberInfo::PrecisionAndScale(p, s))
-                        if *p <= 38 && *s <= 18 && s <= p =>
-                    {
-                        Type::Decimal(*s as i8)
-                    }
                     _ => return Err(unsupported(format!("CAST AS {data_type}"))),
                 };
                 match (&value.kind, &ty) {
                     (Kind::Literal(Literal::Null), _) => literal(ty, Literal::Null),
                     (Kind::Literal(Literal::Text(s)), Type::Date) => Self::date(s)?,
-                    (Kind::Literal(Literal::Text(s)), Type::Decimal(scale)) => {
-                        let (n, old) = decimal_literal(s)?;
-                        let n = rescale(n, old, *scale)?;
-                        if let sql::DataType::Decimal(sql::ExactNumberInfo::PrecisionAndScale(p, _)) =
-                            data_type
-                            && n.unsigned_abs() >= crate::types::factor(*p as i8)? as u128
-                        {
-                            return Err("decimal cast precision overflow".into());
-                        }
-                        literal(ty, Literal::Num(n))
-                    }
                     _ if value.ty == ty && !matches!(ty, Type::Decimal(_)) => value,
                     _ => return Err(unsupported("only lossless literal casts in M1")),
                 }
@@ -338,6 +350,11 @@ impl Binder<'_> {
                 } else {
                     bound
                 }
+            }
+            E::Function(f) if f.over.is_some() => {
+                return Err(unsupported(
+                    "window function outside SELECT/ORDER BY window stage",
+                ));
             }
             E::Function(f)
                 if f.filter.is_none()
@@ -826,6 +843,12 @@ fn bind_output(
     let sql::SetExpr::Select(s) = q.body.as_ref() else {
         unreachable!()
     };
+    if !s.named_window.is_empty() {
+        return Err(unsupported("named WINDOW clauses"));
+    }
+    if s.qualify.is_some() {
+        return Err(unsupported("QUALIFY"));
+    }
     if s.distinct.is_some()
         || s.top.is_some()
         || s.exclude.is_some()
@@ -882,6 +905,7 @@ fn bind_output(
         };
         names.push(name);
         if let sql::Expr::Function(f) = e
+            && f.over.is_none()
             && ["count", "sum", "avg", "min", "max"]
                 .contains(&f.name.to_string().to_lowercase().as_str())
         {

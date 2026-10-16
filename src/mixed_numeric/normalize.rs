@@ -14,6 +14,7 @@ fn bounded(e: &Expr, left: &mut usize) -> bool {
         | Kind::Not(a)
         | Kind::IsNull(a, _)
         | Kind::Cast(a)
+        | Kind::CastDecimal(a, _, _)
         | Kind::Function(_, a)
         | Kind::Year(a)
         | Kind::Substring(a, _, _) => bounded(a, left),

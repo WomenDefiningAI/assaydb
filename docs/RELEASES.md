@@ -6,9 +6,10 @@
 | Alpha 2 | 0.1.0a2 | 0.1.0-alpha.2 | 17b575b7c556c47ccc461209f02d28e6a5cf6045 |
 
 The historical Alpha 2 export is preserved in Git history. The current development
-source promotion is described in [SNAPSHOT-PROMOTION](SNAPSHOT-PROMOTION.md).
-EXPORT-MANIFEST.json records each exported path, upstream Git blob identity when
-applicable, sanitization notes, and SHA-256 of the exported bytes.
+source promotion is described in [engine qualification](ENGINE-SNAPSHOT-QUALIFICATION.md);
+[the earlier snapshot](SNAPSHOT-PROMOTION.md) remains historical evidence.
+ENGINE-EXPORT-MANIFEST.json inventories the current promotion and file hashes.
+The historical EXPORT-MANIFEST.json preserves the earlier export provenance.
 Export commits will have different identities from their original sources.
 
 ## Publication evidence and limits

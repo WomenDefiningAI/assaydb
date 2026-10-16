@@ -86,6 +86,62 @@ fn rows() -> [Vec<Row>; 2] {
 }
 
 #[test]
+fn group_limit_latches_across_batches_and_keeps_ordered_states() {
+    for sql in [
+        "SELECT k,SUM(v) FROM t GROUP BY k",
+        "SELECT k,SUM(v),AVG(v),COUNT(*) FROM t GROUP BY k",
+    ] {
+        let (p, e, _) = plan(sql);
+        let budget = Budget::new(8 << 20);
+        {
+            let mut fast = state(&p, &e, &budget);
+            let mut serial = state(&p, &e, &budget);
+            serial.narrow_disabled = true;
+            let mut metrics = Metrics::default();
+            let mut serial_metrics = Metrics::default();
+            let batches = [
+                (0..64).map(|k| (Some(k), None, Some(k - 32))).collect(),
+                vec![(Some(64), None, Some(7)), (Some(0), None, Some(-9))],
+                vec![(Some(0), None, Some(3)); 128],
+                vec![(None, None, None), (Some(64), None, Some(11))],
+            ];
+            let mut bounded_after_limit = 0;
+            for (index, rows) in batches.iter().enumerate() {
+                let source = SourceBatch::new(0, index as u64);
+                fast.update_ordered_source(&p, &e, &mut metrics, batch(&p, rows, &budget), source)
+                    .unwrap();
+                serial
+                    .update_ordered_source(
+                        &p,
+                        &e,
+                        &mut serial_metrics,
+                        batch(&p, rows, &budget),
+                        source,
+                    )
+                    .unwrap();
+                assert_eq!(fast.narrow_disabled, index > 0);
+                if index == 0 {
+                    assert!(metrics.bounded_sum_batches > 0);
+                } else if index == 1 {
+                    bounded_after_limit = metrics.bounded_sum_batches;
+                } else {
+                    assert_eq!(metrics.bounded_sum_batches, bounded_after_limit);
+                }
+                assert_eq!(fast.group_count, serial.group_count);
+                assert_eq!(fast.numeric_group_keys, serial.numeric_group_keys);
+                assert_eq!(fast.null_group, serial.null_group);
+                assert_eq!(fast.encounters, serial.encounters);
+                for (actual, expected) in fast.states.iter().zip(&serial.states) {
+                    assert_eq!(actual.sums, expected.sums);
+                    assert_eq!(actual.counts, expected.counts);
+                }
+            }
+        }
+        assert_eq!(budget.used(), 0);
+    }
+}
+
+#[test]
 fn first_group_occurrence_preserves_stable_filtered_order_and_wide_values() {
     for sql in [
         "SELECT k,SUM(v),AVG(v),COUNT(*) FROM t GROUP BY k",

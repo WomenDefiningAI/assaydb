@@ -149,7 +149,18 @@ fn contract(run: &mut impl FnMut(&str) -> Result<RecordBatch, String>) {
     );
     // Existing unapproved casts keep their strict contracts.
     assert!(run("SELECT CAST('12tail' AS BIGINT)").is_err());
-    assert!(run("SELECT CAST(1.2 AS DECIMAL(10,1))").is_err());
+    // Phase 1 now supports exact DECIMAL expressions; this supplemental
+    // capability control keeps its SQL and checks the exact scaled value.
+    assert_eq!(
+        run("SELECT CAST(1.2 AS DECIMAL(10,1))")
+            .unwrap()
+            .column(0)
+            .as_any()
+            .downcast_ref::<Decimal128Array>()
+            .unwrap()
+            .value(0),
+        12
+    );
     let b = run("SELECT CAST('1.25' AS DECIMAL(10,2))").unwrap();
     assert_eq!(
         b.column(0)

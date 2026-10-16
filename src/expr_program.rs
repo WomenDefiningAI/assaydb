@@ -30,6 +30,7 @@ fn children(expr: &Expr) -> Vec<&Expr> {
         }
         Kind::Function(_, a)
         | Kind::Cast(a)
+        | Kind::CastDecimal(a, _, _)
         | Kind::Not(a)
         | Kind::Neg(a)
         | Kind::IsNull(a, _)
@@ -70,6 +71,7 @@ fn rewrite(expr: &Expr, shared: &[Expr], width: usize) -> Expr {
         }
         Kind::Function(_, a)
         | Kind::Cast(a)
+        | Kind::CastDecimal(a, _, _)
         | Kind::Not(a)
         | Kind::Neg(a)
         | Kind::IsNull(a, _)

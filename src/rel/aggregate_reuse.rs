@@ -177,6 +177,7 @@ fn producer<'a>(node: &'a Node, fact: &Node, measure: usize) -> Option<Producer<
 // anti/outer join, LIMIT or unrelated aggregation is silently crossed.
 fn children(node: &Node, visit: &mut impl FnMut(&Node)) {
     match &node.op {
+        RelOp::WindowOrder { input, .. } | RelOp::Window { input, .. } => visit(input),
         RelOp::Rename { input }
         | RelOp::Project { input, .. }
         | RelOp::Filter { input, .. }

@@ -26,9 +26,12 @@ pub(super) use output::{AggregateOutput, PartitionOutput};
 mod capacity;
 pub(super) mod clustered;
 mod heap;
+mod narrow;
+use narrow::NarrowDeltas;
 mod ordered_source;
 mod preflight;
 mod runs;
+mod small_text;
 mod sorted_distinct;
 pub(super) use ordered_source::SourceBatch;
 pub(crate) use sorted_distinct::DECLINED as SORTED_DISTINCT_DECLINED;
@@ -118,45 +121,71 @@ impl States {
         }
         Ok(0)
     }
-    pub(super) fn add_narrow_batch(&mut self, numbers: &Decimal128Array, groups: &[usize]) -> bool {
+    /// With signed-i64 inputs, this margin bounds every ordered prefix and count.
+    fn narrow_state_is_safe(&self, rows: usize) -> bool {
         // For a small set of states, prove every possible prefix stays inside
         // precision 38 once per batch. Checking magnitudes is conservative even
         // with mixed signs, arbitrary group interleaving and cancellation.
-        if self.counts.len() > 64 || numbers.null_count() != 0 {
+        if self.counts.len() > narrow::GROUPS {
             return false;
         }
-        let Some(growth) = (1_i128 << 63).checked_mul(numbers.len() as i128) else {
+        let Some(growth) = (1_i128 << 63).checked_mul(rows as i128) else {
             return false;
         };
         const LIMIT: i128 = 10_i128.pow(38) - 1;
         let Some(margin) = LIMIT.checked_sub(growth).filter(|n| *n >= 0) else {
             return false;
         };
-        let Some(sums) = &mut self.sums else {
+        let Some(sums) = &self.sums else {
             return false;
         };
         if self
             .counts
             .iter()
-            .any(|count| *count > u64::MAX - numbers.len() as u64)
+            .any(|count| *count > u64::MAX - rows as u64)
             || sums.iter().any(|sum| {
                 sum.to_i128()
                     .is_none_or(|value| value.unsigned_abs() > margin as u128)
             })
-            || numbers.values().iter().any(|n| i64::try_from(*n).is_err())
         {
             return false;
         }
+        true
+    }
+    /// The fused group/update loop needs the full value proof before mutating state.
+    fn narrow_batch_is_safe(&self, numbers: &Decimal128Array) -> bool {
+        numbers.null_count() == 0
+            && self.narrow_state_is_safe(numbers.len())
+            && numbers.values().iter().all(|n| i64::try_from(*n).is_ok())
+    }
+    /// Only admitted batches reassociate: each i128 delta equals the ordered wide updates.
+    pub(super) fn add_narrow_batch(&mut self, numbers: &Decimal128Array, groups: &[usize]) -> bool {
+        if numbers.null_count() != 0 || !self.narrow_state_is_safe(numbers.len()) {
+            return false;
+        }
         if self.counts.len() == 1 {
-            // The bounds above prove every prefix and the final reduction fit.
-            // One state needs no per-row indirect group lookup or state write.
-            sums[0] += i256::from_i128(numbers.values().iter().sum::<i128>());
+            // Reject at the first wide value, before reducing or publishing.
+            // The state margin proves every prefix of the admitted reduction fits.
+            if numbers.values().iter().any(|n| i64::try_from(*n).is_err()) {
+                return false;
+            }
+            let delta = numbers.values().iter().sum::<i128>();
+            self.sums.as_mut().unwrap()[0] += i256::from_i128(delta);
             self.counts[0] += numbers.len() as u64;
         } else {
+            // Grouped reduction validates sign-extended low words. Rejected
+            // inputs cannot overflow local deltas and publish no state.
+            let mut fits = true;
+            let mut deltas = NarrowDeltas::new();
             for (number, group) in numbers.values().iter().zip(groups) {
-                sums[*group] += i256::from_i128(*number);
-                self.counts[*group] += 1;
+                let narrow = i128::from(*number as i64);
+                fits &= narrow == *number;
+                deltas.add(*group, narrow);
             }
+            if !fits {
+                return false;
+            }
+            deltas.merge(self);
         }
         true
     }
@@ -220,6 +249,9 @@ pub(super) struct Aggregation {
     #[cfg(test)]
     export_drop_audit: Option<ExportDropAudit>,
     allow_dense: bool,
+    // Group counts only grow. Once large, never pay small-group preflight or
+    // optional-delta row branches again, even when a later batch has few keys.
+    narrow_disabled: bool,
     encounters: Vec<EncounterToken>,
     encounters_valid: bool,
     last_ordered_batch: Option<SourceBatch>,
@@ -502,6 +534,7 @@ impl Aggregation {
             #[cfg(test)]
             export_drop_audit: None,
             allow_dense: true,
+            narrow_disabled: !optimizations,
             encounters: Vec::new(),
             encounters_valid: true,
             last_ordered_batch: None,
@@ -738,6 +771,45 @@ impl Aggregation {
         tokens: Option<&[EncounterToken]>,
         source: Option<SourceBatch>,
     ) -> Result<()> {
+        // Also cover groups installed by partial merges before this update.
+        self.narrow_disabled |= self.group_count > narrow::GROUPS;
+        let result = if !self.narrow_disabled && expressions.enabled {
+            self.update_inner_mode::<TRACK_ENCOUNTERS, ORDERED, COUNTED, true>(
+                p,
+                expressions,
+                metrics,
+                batch,
+                tokens,
+                source,
+            )
+        } else {
+            self.update_inner_mode::<TRACK_ENCOUNTERS, ORDERED, COUNTED, false>(
+                p,
+                expressions,
+                metrics,
+                batch,
+                tokens,
+                source,
+            )
+        };
+        self.narrow_disabled |= self.group_count > narrow::GROUPS;
+        result
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn update_inner_mode<
+        const TRACK_ENCOUNTERS: bool,
+        const ORDERED: bool,
+        const COUNTED: bool,
+        const NARROW: bool,
+    >(
+        &mut self,
+        p: &Plan,
+        expressions: &crate::expr_program::ExpressionProgram,
+        metrics: &mut Metrics,
+        batch: EvaluatedBatch,
+        tokens: Option<&[EncounterToken]>,
+        source: Option<SourceBatch>,
+    ) -> Result<()> {
         // An untracked update permanently invalidates an otherwise tracked
         // partial too. This is one store per batch, not a per-row branch.
         self.encounters_valid = false;
@@ -768,9 +840,15 @@ impl Aggregation {
             metrics.dense_group_batches += usize::from(bytes > 0);
             metrics.dense_group_index_peak_bytes = metrics.dense_group_index_peak_bytes.max(bytes);
         }
+        // Borrow short validated fields directly; retained output keys still
+        // come from the original Values. Canonical bytes match prepared batches.
+        let compact_text = expressions
+            .enabled
+            .then(|| crate::keys::CompactText::new(&keys, rows))
+            .flatten();
         let encoded = if prepared_keys.is_some() {
             prepared_keys
-        } else if numeric_keys.is_none() {
+        } else if numeric_keys.is_none() && compact_text.is_none() {
             Some(crate::keys::Keys::with_text_encoding(
                 &keys,
                 rows,
@@ -795,6 +873,10 @@ impl Aggregation {
         } else {
             None
         };
+        let mut single_deltas = single_numeric
+            .filter(|numbers| NARROW && self.states[0].narrow_batch_is_safe(numbers))
+            .map(|_| NarrowDeltas::new());
+        let single_bounded = single_deltas.is_some();
         let index_len = if single_numeric.is_some() { 0 } else { rows };
         let _group_ids_lease = self.budget.reserve(
             index_len
@@ -809,21 +891,41 @@ impl Aggregation {
             .filter(|(i, _)| expressions.state_sources[*i] == *i)
             .map(|(_, states)| states.bytes_per_group())
             .sum();
+        // Ordered-source batches cannot improve an existing group's encounter
+        // token. Resolve only known groups; one unknown key restores the entire
+        // ordinary loop before state or encounter metadata changes.
+        let existing_text = NARROW
+            && index_len > 0
+            && rows >= 64
+            && (!TRACK_ENCOUNTERS || ORDERED)
+            && compact_text.as_ref().is_some_and(|compact| {
+                small_text::fill_existing(compact, &self.group_keys, &mut group_ids)
+            });
         let mut short_cache = crate::group_lookup::ShortCache::new(
-            expressions.enabled
+            !existing_text
+                && expressions.enabled
                 && numeric_keys.is_none()
                 && !p.groups.is_empty()
                 && rows >= 64
                 && self.map.len() <= 64
-                && encoded.as_ref().is_some_and(|keys| keys.row(0).len() <= 16),
+                && (compact_text.is_some()
+                    || encoded.as_ref().is_some_and(|keys| keys.row(0).len() <= 16)),
             &mut self.state_slack,
         );
         let group_result: Result<()> = (|| {
+            if existing_text {
+                return Ok(());
+            }
             for row in 0..rows {
                 let group = if p.groups.is_empty() {
                     0
                 } else {
-                    let bytes = encoded.as_ref().map(|keys| keys.row(row));
+                    let inline = compact_text.as_ref().map(|keys| keys.row(row));
+                    let bytes = if let Some(inline) = &inline {
+                        Some(&inline[..compact_text.as_ref().unwrap().len()])
+                    } else {
+                        encoded.as_ref().map(|keys| keys.row(row))
+                    };
                     let existing = if let Some(keys) = numeric_keys {
                         if keys.is_null(row) {
                             self.null_group
@@ -927,7 +1029,17 @@ impl Aggregation {
                     self.encounters[group] = self.encounters[group].min(tokens[row]);
                 }
                 if let Some(numbers) = single_numeric {
+                    if NARROW
+                        && group >= narrow::GROUPS
+                        && let Some(deltas) = single_deltas.take()
+                    {
+                        deltas.merge(&mut self.states[0]);
+                    }
                     if numbers.is_valid(row) {
+                        if NARROW && let Some(deltas) = &mut single_deltas {
+                            deltas.add(group, numbers.value(row));
+                            continue;
+                        }
                         let state = &mut self.states[0];
                         let sum = &mut state.sums.as_mut().unwrap()[group];
                         *sum = if state.integer_sum {
@@ -952,8 +1064,21 @@ impl Aggregation {
         metrics.short_group_cache_bypasses += short_cache.bypasses;
         metrics.short_group_cache_peak_bytes =
             metrics.short_group_cache_peak_bytes.max(short_cache.bytes);
+        if existing_text {
+            metrics.short_group_cache_batches += 1;
+            metrics.short_group_cache_hits += rows;
+            metrics.short_group_cache_peak_bytes = metrics
+                .short_group_cache_peak_bytes
+                .max(small_text::TABLE_BYTES);
+        }
         group_result?;
         if single_numeric.is_some() {
+            if NARROW && let Some(deltas) = single_deltas {
+                deltas.merge(&mut self.states[0]);
+            }
+            if NARROW {
+                metrics.bounded_sum_batches += usize::from(single_bounded);
+            }
             metrics.aggregate_seconds += start.elapsed().as_secs_f64();
             return Ok(());
         }
@@ -979,6 +1104,25 @@ impl Aggregation {
             metrics.bounded_sum_batches += bounded;
             metrics.parallel_aggregate_batches += 1;
             metrics.parallel_aggregate_worker_seconds += seconds;
+            metrics.aggregate_seconds += start.elapsed().as_secs_f64();
+            return Ok(());
+        }
+        // Source continuations own their states outright. Fuse only fully
+        // admitted local states; helper-owned and weighted COUNT paths retain
+        // their existing dispatch and permit lifetimes.
+        if NARROW
+            && !COUNTED
+            && self.group_count <= narrow::GROUPS
+            && !p.groups.is_empty()
+            && let Some(bounded) = narrow::update_many(
+                &mut self.states,
+                &p.aggregates,
+                &expressions.state_sources,
+                &values,
+                &group_ids,
+            )
+        {
+            metrics.bounded_sum_batches += bounded;
             metrics.aggregate_seconds += start.elapsed().as_secs_f64();
             return Ok(());
         }
@@ -1403,5 +1547,7 @@ impl Backend {
 pub(super) use partitioned::owned::OwnedJob;
 pub(super) use partitioned::owned::{OwnedCompletion, OwnedPartitions, RoutedPartial, RoutingPlan};
 
+#[cfg(test)]
+mod kernel_tests;
 #[cfg(test)]
 mod output_builder_tests;

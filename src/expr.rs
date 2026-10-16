@@ -55,6 +55,7 @@ pub enum Kind {
     Substring(Box<Expr>, usize, usize),
     Case(Vec<(Expr, Expr)>, Box<Expr>),
     Cast(Box<Expr>),
+    CastDecimal(Box<Expr>, u8, i8),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Expr {
@@ -272,6 +273,7 @@ impl Expr {
             }
             Kind::Function(_, a)
             | Kind::Cast(a)
+            | Kind::CastDecimal(a, _, _)
             | Kind::Not(a)
             | Kind::Neg(a)
             | Kind::IsNull(a, _)
@@ -303,6 +305,7 @@ impl Expr {
             }
             Kind::Function(_, a)
             | Kind::Cast(a)
+            | Kind::CastDecimal(a, _, _)
             | Kind::Not(a)
             | Kind::Neg(a)
             | Kind::IsNull(a, _)
@@ -340,6 +343,10 @@ impl Expr {
             Kind::NullIf(a, b) => {
                 drop(lease);
                 return nullif::evaluate(a, b, &self.ty, input, budget);
+            }
+            Kind::CastDecimal(a, precision, scale) => {
+                drop(lease);
+                return casts::evaluate_decimal(a, *precision, *scale, input, budget);
             }
             Kind::Cast(a) => {
                 drop(lease);
