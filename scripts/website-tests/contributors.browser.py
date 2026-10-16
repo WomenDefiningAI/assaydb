@@ -37,15 +37,16 @@ with sync_playwright() as p:
             assert page.locator('#full-suite-evidence').count() == 0
             assert 'Reviewed PR evidence.' not in page.locator('body').inner_text()
         page.wait_for_function("document.querySelector('#engine-contributions').getAttribute('aria-busy') === 'false'")
-        assert page.locator('.contribution-metrics dd').count() == 2
-        assert all('Not measured' in value for value in page.locator('.contribution-metrics dd').all_text_contents())
-        assert page.locator('#contribution-list > li').count() == 1
-        assert HOSTILE in page.locator('#contribution-list h3').inner_text()
+        assert page.locator('.contribution-value').count() == 2
+        assert all('Not measured' in value for value in page.locator('.contribution-value').all_text_contents())
+        assert page.locator('#contribution-list > .contribution-row').count() == 1
+        assert HOSTILE in page.locator('#contribution-list th').inner_text()
         assert 'alice@example.com' not in page.locator('#contribution-list').inner_text()
         assert page.locator('#contribution-list img, #contribution-list script').count() == 0
         assert page.evaluate('window.injected === undefined')
-        assert page.locator('#contribution-list h3 a').get_attribute('href') == 'https://github.com/WomenDefiningAI/assaydb/pull/42'
-        assert page.locator('#contribution-list time').inner_text() == '2026-10-14 (UTC)'
+        assert page.locator('#contribution-list th a').get_attribute('href') == 'https://github.com/WomenDefiningAI/assaydb/pull/42'
+        assert page.locator('#contribution-list time').inner_text() == '2026-10-14'
+        page.locator('.contribution-toggle').click()
         text = page.locator('#contribution-list').inner_text()
         assert 'Some commits have no linked GitHub author account.' in text
         assert 'Private Name' not in text and 'private@example.com' not in text
@@ -53,7 +54,6 @@ with sync_playwright() as p:
         assert page.locator('a[href="https://github.com/WomenDefiningAI/assaydb/commit/' + 'a'*40 + '"]').count() == 1
         assert page.locator('a[href="https://github.com/WomenDefiningAI/assaydb/commit/' + 'b'*40 + '"]').count() == 1
         assert page.locator('#contribution-list a[href*="%5Bbot%5D"]').count() == 0
-        page.locator('#engine-contributions details').evaluate('(node) => node.open = true')
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
         if os.environ.get('WEBSITE_SCREENSHOTS'):
             folder = Path(os.environ['WEBSITE_SCREENSHOTS']); folder.mkdir(parents=True, exist_ok=True)
@@ -65,19 +65,44 @@ with sync_playwright() as p:
     for width in (1440, 390, 320):
         page = browser.new_page(viewport=dict(width=width, height=1000))
         def accepted_route(route):
-            data = ([dict(filename='src/lib.rs')] if '/files?' in route.request.url else
+            data = ([dict(filename='site/contribute.html')] if '/pulls/8/files?' in route.request.url else
+                    [dict(filename='src/lib.rs')] if '/files?' in route.request.url else
                     [] if '/commits?' in route.request.url else
                     [dict(PR, number=6, title='Promote engine snapshot: exact decimal casts, ranking windows and decoder changes',
-                          merged_at='2026-10-16T02:23:11Z', merge_commit_sha='b07d7e876dfde65dda09c06808ba811b9fca49fd', user=dict(login='helenlkupp', type='User'))])
+                          merged_at='2026-10-16T02:23:11Z', merge_commit_sha='b07d7e876dfde65dda09c06808ba811b9fca49fd', user=dict(login='helenlkupp', type='User')),
+                     dict(PR, number=8, title='Clarify current engine documentation and require reviewed PR metrics')])
             route.fulfill(status=200, content_type='application/json', body=json.dumps(data))
         page.route(API + '**', accepted_route)
         page.goto(BASE + '/contribute.html')
         page.wait_for_function("document.querySelector('#engine-contributions').getAttribute('aria-busy') === 'false'")
         text = page.locator('#contribution-list').inner_text()
-        assert '99.9555%' in text and '5,937,073 / 5,939,714' in text
-        assert '9.00% less elapsed time' in text and 'd86aa0dd' in text
+        assert '99.9555%' in text and '9.00% less elapsed time' in text
+        assert '5,937,073 / 5,939,714' not in text and 'd86aa0dd' not in text
+        assert page.locator('#contribution-list th a[href$="/pull/8"]').count() == 0
+        assert page.locator('#contribution-list > .contribution-row').count() == 1
+        assert page.get_by_role('table').count() == 1
+        assert page.locator('thead th[scope=col]').count() == 6
+        toggle = page.get_by_role('button', name='Details for PR #6')
+        assert toggle.get_attribute('aria-expanded') == 'false'
+        toggle.focus(); page.keyboard.press('Enter')
+        assert toggle.get_attribute('aria-expanded') == 'true'
+        assert page.locator('#contribution-details-6').is_visible()
+        page.keyboard.press('Space')
+        assert toggle.get_attribute('aria-expanded') == 'false'
+        if width < 768:
+            scroll = page.locator('.contribution-scroll')
+            scroll.focus(); page.keyboard.press('End')
+            scroll.evaluate('(el) => el.scrollLeft = el.scrollWidth')
+            assert scroll.evaluate('(el) => el.scrollLeft > 0')
+            scroll.evaluate('(el) => el.scrollLeft = 0')
+        if os.environ.get('WEBSITE_SCREENSHOTS'):
+            folder = Path(os.environ['WEBSITE_SCREENSHOTS']); folder.mkdir(parents=True, exist_ok=True)
+            page.locator('#engine-contributions').screenshot(path=str(folder / f'compact-contributors-{width}.png'))
+        if width < 768 and os.environ.get('WEBSITE_SCREENSHOTS'):
+            scroll.evaluate('(el) => el.scrollLeft = el.scrollWidth')
+            page.locator('#engine-contributions').screenshot(path=str(folder / f'compact-metrics-{width}.png'))
+        toggle.click()
         assert 'Not measured' not in text
-        page.locator('#contribution-list details').evaluate_all('(nodes)=>nodes.forEach(n=>n.open=true)')
         text = page.locator('#contribution-list').inner_text()
         assert '640 unsupported; 2,001 errors' in text and '0 wrong' in text
         assert '0.909973' in text and '8bea917e' in text and 'b64805f3' in text
@@ -117,7 +142,7 @@ with sync_playwright() as p:
     page.route(API + '**', lambda route: route.fulfill(status=200, content_type='application/json', body='[]'))
     page.locator('#contribution-retry').click()
     page.wait_for_function("document.querySelector('#contribution-status').textContent.startsWith('No merged')")
-    assert page.locator('#contribution-list > li').count() == 0
+    assert page.locator('#contribution-list > .contribution-row').count() == 0
     assert page.locator('#contribution-retry').is_enabled()
     page.close()
 
@@ -129,9 +154,9 @@ with sync_playwright() as p:
             [] if '/commits?' in route.request.url else [{**PR, 'user': dict(login=login, type='Bot')}])) )
         page.goto(BASE + '/contribute.html')
         page.wait_for_function("document.querySelector('#engine-contributions').getAttribute('aria-busy') === 'false'")
-        assert f'PR author: @{login} (bot)' in page.locator('#contribution-list').inner_text()
+        assert f'@{login} (bot)' in page.locator('#contribution-list').inner_text()
         assert page.locator('#contribution-list a[href*="%5Bbot%5D"]').count() == 0
-        assert page.locator('#contribution-list h3 a').get_attribute('href').endswith('/pull/42')
+        assert page.locator('#contribution-list th a').get_attribute('href').endswith('/pull/42')
         page.unroute(API + '**')
     page.close()
 
@@ -146,6 +171,7 @@ with sync_playwright() as p:
     page.route(API + '**', missing)
     page.goto(BASE + '/contribute.html')
     page.wait_for_function("document.querySelector('#engine-contributions').getAttribute('aria-busy') === 'false'")
+    page.locator('.contribution-toggle').click()
     text = page.locator('#contribution-list').inner_text()
     assert 'GitHub account unavailable' in text and 'commit-author list is incomplete' in text
     page.close()
@@ -154,6 +180,7 @@ with sync_playwright() as p:
     page.goto(BASE + '/contribute.html')
     assert 'Enable JavaScript' in page.locator('#contribution-status').inner_text()
     assert page.locator('#contribution-retry').is_hidden()
+    assert page.locator('.contribution-toggle').count() == 0
     assert page.get_by_role('link', name='Browse merged pull requests').is_visible()
     browser.close()
 print('PASS: four pages at 1440/390/320px; literal hostile titles; exact PR/commit/profile links; bots; loading/error/retry/empty; missing accounts; no JavaScript')
