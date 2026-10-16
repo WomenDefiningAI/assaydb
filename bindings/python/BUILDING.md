@@ -1,6 +1,10 @@
 # Build and verify the Python package
 
 Use Rust 1.90.0, a native C/C++ linker, and Python 3.10 or later.
+These commands build the checked-out source. At PR6 merge `b07d7e8`
+(October 16, 2026), that source is newer than published Alpha 2, although version
+metadata remains `0.1.0a2`. Record `git rev-parse HEAD` with your artifact.
+A successful build does not turn it into the reviewed PyPI wheel or a new release.
 The binding has its own Cargo workspace/lockfile and uses the engine by path.
 PyO3 is pinned to 0.29.0; maturin is pinned to 1.9.6.
 
@@ -17,7 +21,10 @@ This produces a wheel for the build host. Distributed manylinux wheels require
 a compatible build environment and audit; renaming a wheel does not provide
 compatibility. See [maturin's distribution guide](https://www.maturin.rs/distribution.html).
 Release builds remap private build paths and strip debug information.
-Inspect actual native bytes before distributing any new artifact.
+Inspect actual native bytes before distributing any new artifact. The checked-in
+release profiles use `strip = "debuginfo"`; PR6’s timing record reports
+`strip=none`. These packaging commands do not claim to reproduce the measured
+binaries. Keep the actual command, flags and binary hash with any new result.
 
 Use the actual wheel filename:
 ```sh

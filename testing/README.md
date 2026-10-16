@@ -3,11 +3,19 @@
 Every PR considered for merge requires independent Test Mini full SLT, frozen
 55K differential, SF10 correctness and timing, real-world original and variant
 analysis, standard checks and acceptance-small evidence. Missing inputs or runs
-block qualification and merge, including for this setup PR. There is no automatic
+block qualification and merge for future changes. There is no automatic
 documentation-only exemption. GitHub branch settings are unchanged; this is not
 claimed to be an enforced hosted check.
 
-## Current implementation and blockers
+## Current implementation and availability
+
+As of October 16, 2026, PR6 has completed its independent full campaign and
+received scoped owner acceptance. It merged as `b07d7e8`; full-suite results
+remain bound to candidate `8bea917e` and measured main `d86aa0dd`. See the
+[qualification report](../docs/ENGINE-SNAPSHOT-QUALIFICATION.md) for exact hashes,
+retained SLT/55K failures, retail improvements and timing/resource limits.
+This completed campaign does not supply the omitted private inputs to a new
+checkout or automatically qualify a later change. No new run is claimed here.
 
 `result_contract.py` validates source/base/tree and reviewer-supplied identities,
 all suite entries, hash-linked artifacts, complete ordered record streams,
@@ -145,9 +153,9 @@ separately from GitHub, including the reviewed testing-code allowlist; ordinary
 website/setup-only changes remain excluded. Neither mechanism executes tests.
 `site_evidence.py` validates the private bundle, requires a separate maintainer
 acceptance record pinned to bundle/policy/source/reviewed-code-head identities, and emits
-both `site/evidence/full-suite/latest.json` and the matching static HTML outcome
-table and timing comparisons. Both views come from one computed object; JavaScript is
-not required. Accepted measurements are published only after the separate review
+`site/evidence/full-suite/latest.json`. It removes legacy visible full-suite
+blocks instead of generating tables or policy prose on public pages. The site
+shows concise contribution summaries and links to the detailed reports. Accepted measurements are published only after the separate review
 step. Historical charts are untouched. No synthetic accepted fixture is shipped.
 
 ```sh
@@ -175,7 +183,9 @@ full-suite evidence before any such qualification is claimed.
 
 `candidate_boundary.py` implements read-only identity verification for a public
 candidate whose repository intentionally differs from the private controller.
-**Unvalidated on full suites.** It does not build, import candidate code, launch
+The source-bound PR6 campaign completed full-suite collection and review using
+the separated runtime path. This is evidence for that pinned execution, not
+a universal guarantee for the adapter. The adapter itself does not build, import candidate code, launch
 collectors, alter the installed controller or relax the original private runner.
 
 ```sh
@@ -211,7 +221,8 @@ any suite, retain admission receipts for both baseline and candidate and use the
 same controller/tool/input identities. The runtime integration must preserve
 source/build provenance, lock ownership, lifecycle, metamorphic, exclusions,
 comparison and same-host/day checks. This adapter does not make the old private
-runner accept the public checkout; that runtime integration remains unvalidated.
+runner accept arbitrary public checkouts. Each new runtime integration and
+source/controller pairing needs its own reviewed pins and evidence.
 
 Admission Git reads use the fixed Test Mini `/usr/bin/git`, a minimal explicit
 environment, disabled global/system configuration, no pager/hooks/fsmonitor,
@@ -222,7 +233,7 @@ invoke repository-configured fsmonitor or attribute clean filters. Worktree byte
 and extra files are checked directly without consulting Git attributes. A trusted
 Git installation remains a host prerequisite; the adapter does not bootstrap it.
 
-## Separated runtime integration (draft)
+## Separated runtime integration
 
 `runtime_context.py` rechecks the admitted candidate build, unchanged controller,
 private expanded input files, transfer receipts, interpreter and reviewed collector
@@ -234,8 +245,10 @@ an operating-system sandbox; do not expose publishing credentials to execution.
 The collector overlay adapts provenance checks separately from frozen SQL, scoring,
 transport and lifecycle code. Its exact private diff and complete file inventory
 require independent review. No private runner notes or corpus are published here.
-Bounded synthetic integration checks and the pinned SQLite loader check passed;
-full SLT/55K collection and fresh baseline/candidate builds remain pending.
+Bounded synthetic checks, the pinned SQLite loader check and the fresh PR6
+baseline/candidate campaign completed. Full SLT, 55K, retail and SF10 results are
+reported separately in the linked qualification record. This is not an automated
+public runner; the protected collector, exact inputs and human review remain required.
 
 Each private `assay-separated-runtime/v1` policy contains the existing boundary
 policy, separate root mappings, exact overlay and admission-tool inventories, every
@@ -265,3 +278,13 @@ pins, pair identity, host/Pacific day and canonical lock path/device/inode. Each
 policy file is still checked against its own externally supplied SHA on every
 admission/postflight. Phase arguments cannot change substantive provenance.
 Host/date mismatch refuses; both paired policies must name the same reviewed pair.
+
+## Metrics in the contribution PR
+
+Include reviewed accuracy and speed display data in the original qualifying PR
+before merge. The [same-PR workflow](../docs/CONTRIBUTION-WORKFLOW.md#include-reviewed-metrics-in-the-original-pr)
+binds measured source/base, reviewed evidence bytes and an audited nonengine delta
+without requiring a file to contain its own commit hash. The premerge metrics
+check rejects missing or stale records for execution-affecting engine, testing,
+controller, harness and collector changes. It does not run engines, authenticate
+human acceptance or replace the independent full-suite gate.

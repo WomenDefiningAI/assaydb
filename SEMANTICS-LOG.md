@@ -1,6 +1,9 @@
 # Assay SQL semantics
 
-These contracts describe the Alpha 1 and Alpha 2 engine sources.
+These contracts describe current public source, reviewed against the PR6 merge
+`b07d7e876dfde65dda09c06808ba811b9fca49fd` on October 16, 2026. The exact DECIMAL
+expression-cast and ranking sections include additions after Alpha 2. Published
+Alpha 1/2 packages are unchanged; see [release provenance](docs/RELEASES.md).
 The reference for SQLite-compatible choices is SQLite 3.54.0 bundled with
 sqllogictest check-in `ab599cbdd0976a63c5cfc7755588f716a7621f27`;
 amalgamation SHA-256 `b739c477092f587417d402fe227eb13c0a83f7534e87082f4a1b80d429a57931`.
@@ -145,4 +148,5 @@ Native tests cover worker/batch/spill matrices, activation counters, cancellatio
 reservation release, schema/order preservation and explicit refusals. Engine
 reservation bounds do not include every native decoder allocation or imply a
 whole-process memory cap. See [qualification](docs/ENGINE-SNAPSHOT-QUALIFICATION.md)
-for exact test identities, incomplete prerequisites and acceptance limits.
+for exact tested identities, completed PR6 checks and remaining limitations.
+This documentation review ran no new engine tests.

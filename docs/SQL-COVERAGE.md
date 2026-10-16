@@ -1,6 +1,9 @@
 # SQL coverage
 
-This table was checked against the source and regression tests in this export.
+This table describes current source at PR6 merge
+`b07d7e876dfde65dda09c06808ba811b9fca49fd`, reviewed on October 16, 2026 against
+engine code and regression tests. It does not describe every published package:
+Alpha 1/2 packages have not gained the newer decimal-expression casts or ranking functions.
 It describes supported forms, not every combination of SQL syntax. A parser
 accepting a statement does not mean the engine supports it. SQLite corpus
 coverage does not establish broad SQL coverage or SQLite drop-in compatibility.
@@ -20,7 +23,8 @@ No new execution is claimed by this documentation review.
 | Types | Signed integers, fixed decimals, Float64, Boolean, UTF-8 text, Date32, NULL; binary literals and supported Arrow Binary inputs | No timestamp/time-zone, array, map or struct type; declarations are typed, not general SQLite dynamic storage; declared CHAR/VARCHAR lengths are intentionally ignored | [types.rs](../src/types.rs), [session.rs](../src/session.rs), [binary](../tests/binary.rs) |
 | Arithmetic | Checked +, -, *, unary signs; Int/Int division truncates toward zero; supported numeric comparisons are exact for Int/Float | Overflow returns an error; decimal/float contracts differ from integer contracts; division/remainder by zero follows the documented type-specific rules | [integer_division](../tests/integer_division.rs), [null_zero](../tests/null_zero.rs), [exact_numeric_comparison](../tests/exact_numeric_comparison.rs) |
 | Conditionals | CASE, COALESCE and NULLIF with supported reachable types and short-circuit semantics | Row-dependent reachable Int/Float alternatives are explicitly refused for every consumer; proven dead arms do not promote | [branch_types.rs](../src/bind/branch_types.rs), [mixed_numeric_guard](../tests/mixed_numeric_guard.rs), [dead_arm_types](../tests/dead_arm_types.rs) |
-| Casts | SQLite-compatible approved INTEGER/REAL/TEXT conversions, with documented source restrictions; strict literal DATE casts; exact INTEGER/DECIMAL expressions to DECIMAL(p,s) | Float/Decimal-to-TEXT, invalid UTF-8 Binary-to-TEXT, nonfinite REAL and many general strict casts; BIGINT is not the permissive INTEGER cast | [casts.rs](../src/expr/casts.rs), [cast_types](../tests/cast_types.rs), [cast_real_oracle](../tests/cast_real_oracle.rs) |
+| Casts | Supported SQLite-compatible INTEGER/REAL/TEXT conversions; strict literal DATE casts; explicit INTEGER/DECIMAL expression casts to DECIMAL(p,s), including columns and aggregates | DECIMAL targets require precision 1–38 and scale 0–18, no greater than precision; Float and text-column sources are refused; narrowing rounds ties away from zero and overflow errors. Literal-text DECIMAL conversion remains lossless. Float/Decimal-to-TEXT, invalid UTF-8 Binary-to-TEXT and nonfinite REAL remain refused; BIGINT is not the permissive INTEGER cast | [casts.rs](../src/expr/casts.rs), [decimal_cast](../tests/decimal_cast.rs), [cast_types](../tests/cast_types.rs), [cast_real_oracle](../tests/cast_real_oracle.rs) |
+| Ranking windows | ROW_NUMBER, RANK and DENSE_RANK with inline OVER; optional PARTITION BY and ORDER BY; explicit ASC/DESC and NULLS FIRST/LAST | No frames, named WINDOW, QUALIFY, aggregate windows, LAG/LEAD or general analytic functions. Windows in WHERE/GROUP BY/HAVING or aggregate arguments are refused. Some CTE inputs needing canonical ordering are refused | [window ranking tests](../tests/window_ranking.rs), [decimal/ranking composition](../tests/decimal_window_composition.rs), [precise semantics](../SEMANTICS-LOG.md#exact-decimal-casts-and-ranking-windows) |
 | Text/date functions | LENGTH(text), POSITION, SUBSTRING with constant positive start/nonnegative length, LIKE without ESCAPE; EXTRACT(YEAR FROM date) | General string/date function library, LIKE ESCAPE, arbitrary substring bounds and other EXTRACT fields | [bind.rs](../src/bind.rs), [engine](../tests/engine.rs) |
 | Other scalar functions | ABS, FACTORIAL, COALESCE, NULLIF in accepted signatures | Unlisted names, named arguments, unsupported arities/modifiers | [bind.rs](../src/bind.rs), [scalar_variants](../tests/scalar_variants.rs) |
 | Tables and mutations | CREATE/DROP TABLE; INSERT VALUES and accepted SELECT sources; UPDATE, DELETE; REPLACE/INSERT OR REPLACE; NOT NULL and primary/unique constraints | Triggers, foreign keys, general ALTER, transactions, RETURNING and many mutation modifiers; nested DML as INSERT source is rejected before execution | [session](../tests/session.rs), [update](../tests/update.rs), [delete](../tests/delete.rs), [nested_insert](../tests/nested_insert.rs) |
@@ -39,6 +43,11 @@ The fast engine is not formally proved. Proof workspaces and linked verified
 execution are not included in this export. SQL tests establish bounded examples
 and refusal boundaries; they do not prove all SQL behavior.
 
-Ranking: ROW_NUMBER, RANK and DENSE_RANK with inline OVER are supported within
-the limits in [semantics](../SEMANTICS-LOG.md). Aggregate windows, frames and other
-analytic functions remain unsupported. See [ranking tests](../tests/window_ranking.rs).
+## What the retained tests say
+
+PR6's tested source passed 5,937,073 / 5,939,714 applicable SQLLogicTest records
+(99.9555%). There were still 640 unsupported cases and 2,001 engine errors, with
+zero observed wrong answers or not-run outcomes. The fixed collection has
+7,421,339 records; exclusions remain visible in the
+[qualification report](ENGINE-SNAPSHOT-QUALIFICATION.md). These are measurements
+of the identified source, not a guarantee for all SQL or every later build.

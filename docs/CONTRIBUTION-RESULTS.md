@@ -1,10 +1,10 @@
 # Contribution result contract and implementation status
 
 The structural validator is implemented in `testing/result_contract.py`.
-Record adapters, raw-sample timing calculation and static site evidence generation
-are implemented and tested with synthetic fixtures. Integration with incoming
-full-suite collectors and maintainer acceptance remains pending; this is not an
-operating full-suite runner or hosted CI gate. PR #5 published reviewed TestMini results under an explicit infrastructure
+Record adapters, raw-sample timing calculation and public evidence export are
+implemented and tested with synthetic fixtures. Reviewed independent campaigns
+have completed for PR5 and PR6; PR6 merged on October 16, 2026 as `b07d7e8`.
+This is not an automatically operating public full-suite runner or hosted acceptance gate. PR #5 published reviewed TestMini results under an explicit infrastructure
 no-regression policy. Those accepted measurements remain bound to their recorded
 source; they do not qualify later engine changes. The site deploys committed
 evidence automatically, but does not run or accept tests automatically.
@@ -79,8 +79,7 @@ tested source, final head, base, scope, limitations and maintainer decision.
 The accepted chart-data update belongs to the reviewed merge; the intended site deployment then publishes that version from main. Automatic Vercel deployment from public main was verified for PR #4;
 that deployment did not qualify its source under the full-suite gate. Future charts
 and their no-JavaScript fallbacks must derive from the same versioned accepted
-data, never from PR prose or the contribution-credit list. Until that path exists
-and new measurements are accepted, retain all current historical chart JSON,
+data, never from PR prose or the contribution-credit list. Unless a chart change has its own reviewed accepted measurements, retain all historical chart JSON,
 values, machine/release context and caveats unchanged.
 
 ## Website display metrics
