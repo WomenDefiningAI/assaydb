@@ -88,7 +88,7 @@ values, machine/release context and caveats unchanged.
 These definitions do not replace the acceptance contract above. The contributor
 list is populated from merged public PR metadata. Explicit reviewed display data
 lives in `site/evidence/contribution-metrics.json`, versioned as
-`assay-contribution-display/v1`; no metrics are mined from PR prose.
+`assay-contribution-display/v2`; no metrics are mined from PR prose.
 
 - **Accuracy:** applicable SQLLogicTest passed / applicable total × 100, with
   integer counts and wrong/unsupported/error/not-run outcomes. Excluded control
@@ -96,8 +96,12 @@ lives in `site/evidence/contribution-metrics.json`, versioned as
   the denominator and links the exact measured source and immutable public evidence.
 - **Speed:** paired suite wall-time percentage change versus tested public main
   on the same host/configuration: 100 × (candidate / main − 1). Negative means
-  faster; positive means slower. A future measured speed entry requires a reviewed
-  schema extension with paired source/main identities, scope and timing fields.
+  faster; positive means slower. Accepted speed entries require paired source/main identities, the final
+  engine-equivalent head, same-host configuration, scope, aggregation, positive
+  elapsed totals, a consistent candidate/main ratio and a containing 95% interval.
+  Version 2 supports the reviewed SF10 22-query, ten-worker, three-rotation method
+  with one warmup and five timed repetitions. Invalid speed stays Not measured
+  independently of valid accuracy. Version 1 accuracy records remain readable.
 
 The current record for PR5 contains accepted SQLLogicTest counts and null speed.
 Its historical timing baseline is not public main. Other missing records show
@@ -105,3 +109,17 @@ Not measured. The renderer never substitutes a Polars ratio or historical-source
 comparison for a main-baseline improvement. PR5's retained measured source is
 not relabeled as a fresh execution of its merged head. Values are attributed to
 reviewed evidence, not inferred from contributor credit.
+
+PR6 adds the owner-accepted fresh public pair from
+[merged evidence](evidence/engine-snapshot-checks.json) and its
+[qualification report](ENGINE-SNAPSHOT-QUALIFICATION.md), pinned in display data to
+merge `b07d7e876dfde65dda09c06808ba811b9fca49fd`. Tested candidate `8bea917e`
+and tested main `d86aa0dd` remain distinct from final engine-equivalent head
+`b64805f3`. No fresh run of that final head or merge is implied. Accuracy retains
+5,937,073 / 5,939,714 applicable records (99.9555366%), 640 unsupported,
+2,001 errors and zero observed wrong answers. Ten-worker SF10 total is
+19.610820498 / 21.550994752 seconds = 0.9099728677805025, or 9.0027% less
+elapsed time. This total sums query-round medians, not geometric means or full
+harness wall time. The disclosure retains the descriptive interval, sequential
+role/host-interference limitations, slower q16 and resource-accounting limits.
+This is scoped experimental acceptance, not Alpha 3 or 0.95-goal qualification.

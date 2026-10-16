@@ -158,7 +158,52 @@ test('reviewed accuracy uses applicable denominator and retains nonpasses; never
     r => { r.evidence_commit = 'main'; }
   ]) {
     const altered = structuredClone(data); change(altered.records[0]);
-    assert.equal(api.displayMetrics(altered).size, 0);
+    assert.equal(api.displayMetrics(altered).has(5), false);
   }
   assert.equal(api.displayMetrics({}).size, 0);
+});
+
+test('PR6 accepted speed and accuracy match the merged fresh public pair exactly', () => {
+  const data = require('../../site/evidence/contribution-metrics.json');
+  const source = require('../../docs/evidence/engine-snapshot-checks.json').fresh_current_public_pair;
+  const row = api.displayMetrics(data).get(6), speed = row.speed;
+  assert.equal(row.measuredSource, source.candidate);
+  assert.equal(row.accuracy.passed, source.full_slt.outcomes_each_role.passed);
+  assert.equal(row.accuracy.applicable, source.full_slt.applicable_records);
+  assert.equal(row.accuracy.error, source.full_slt.outcomes_each_role.engine_error);
+  assert.equal(row.accuracy.unsupported, source.full_slt.outcomes_each_role.unsupported);
+  assert.equal(row.accuracy.wrong, 0);
+  assert.equal(speed.baseline_source, source.baseline);
+  const measured = source.sf10.timing.main_relative['10'].statistics;
+  assert.equal(speed.ratio, measured.total);
+  assert.equal(speed.candidate_seconds, measured.sum_query_round_medians_seconds.assaydb);
+  assert.equal(speed.baseline_seconds, measured.sum_query_round_medians_seconds.baseline);
+  assert.deepEqual(speed.confidence_95, measured.confidence_95.total);
+  assert.equal((100 * (1 - speed.ratio)).toFixed(4), '9.0027');
+  assert.match(row.source, /blob\/b07d7e876dfde65dda09c06808ba811b9fca49fd\/docs\/evidence\//);
+});
+test('missing, unaccepted, mismatched and malformed speed never produce a measurement', () => {
+  const data = require('../../site/evidence/contribution-metrics.json');
+  const changes = [
+    r => { r.speed = null; }, r => { delete r.speed; },
+    r => { r.speed.status = 'provisional'; }, r => { r.speed.baseline_kind = 'historical'; },
+    r => { r.speed.baseline_source = 'main'; }, r => { r.speed.candidate_source = 'a'.repeat(40); },
+    r => { r.speed.final_engine_equivalent_head = ''; }, r => { r.speed.workers = 1; },
+    r => { r.speed.queries = 21; }, r => { r.speed.rounds = 1; },
+    r => { r.speed.warmups = 0; }, r => { r.speed.timed_repetitions = 4; },
+    r => { r.speed.aggregation = 'geomean'; }, r => { r.speed.host = ''; },
+    r => { r.speed.configuration = ''; }, r => { r.speed.limits = ''; },
+    r => { r.speed.ratio = NaN; }, r => { r.speed.ratio = '0.909973'; },
+    r => { r.speed.ratio = 0.8; }, r => { r.speed.candidate_seconds = -1; },
+    r => { r.speed.baseline_seconds = 0; }, r => { r.speed.confidence_95 = [1, 0.8]; },
+    r => { r.speed.confidence_95 = null; }, r => { r.speed.confidence_95 = [0.9, Infinity]; }
+  ];
+  for (const change of changes) {
+    const copy = structuredClone(data); change(copy.records.find(r => r.pr === 6));
+    const result = api.displayMetrics(copy).get(6);
+    assert.ok(result.accuracy); assert.equal(result.speed, undefined);
+  }
+  const old = structuredClone(data); old.schema = 'assay-contribution-display/v1';
+  assert.equal(api.displayMetrics(old).get(6).speed, undefined);
+  assert.equal(api.displayMetrics({...data, records: [null]}).size, 0);
 });

@@ -120,19 +120,36 @@
   // Only explicit reviewed display data can supply metrics, never PR prose.
   function displayMetrics(data) {
     const result = new Map();
-    if (data?.schema !== 'assay-contribution-display/v1' || !Array.isArray(data.records)) return result;
+    if (!['assay-contribution-display/v1', 'assay-contribution-display/v2'].includes(data?.schema) || !Array.isArray(data.records)) return result;
     for (const row of data.records) {
-      if (row.status !== 'accepted' || !Number.isSafeInteger(row.pr) || row.pr < 1 ||
+      if (!row || row.status !== 'accepted' || !Number.isSafeInteger(row.pr) || row.pr < 1 ||
           !/^[a-f0-9]{40}$/.test(row.evidence_commit) || !/^[a-f0-9]{40}$/.test(row.measured_source) ||
-          row.evidence_path !== 'site/evidence/full-suite/latest.json') continue;
+          !['site/evidence/full-suite/latest.json', 'docs/evidence/engine-snapshot-checks.json'].includes(row.evidence_path)) continue;
       const a = row.accuracy, categories = ['passed','unsupported','wrong','error','not-run','excluded'];
       if (!a || a.suite !== 'SQLLogicTest' || !Number.isSafeInteger(a.applicable) || a.applicable <= 0 ||
           categories.some(key => !Number.isSafeInteger(a[key]) || a[key] < 0) ||
           categories.filter(key => key !== 'excluded').reduce((n, key) => n + a[key], 0) !== a.applicable) continue;
-      // No speed record is currently accepted. Supporting one requires a reviewed
-      // schema extension with paired main identity, scope and timing fields.
-      result.set(row.pr, {accuracy: a, measuredSource: row.measured_source,
-        source: repoURL + '/blob/' + row.evidence_commit + '/' + row.evidence_path});
+      const record = {accuracy: a, measuredSource: row.measured_source,
+        source: repoURL + '/blob/' + row.evidence_commit + '/' + row.evidence_path};
+      const speed = row.speed;
+      // Invalid or incomplete speed evidence never hides valid accuracy or becomes a zero.
+      const sha = value => typeof value === 'string' && /^[a-f0-9]{40}$/.test(value);
+      const positive = value => Number.isFinite(value) && value > 0;
+      const text = value => typeof value === 'string' && value.trim().length > 0;
+      if (data.schema === 'assay-contribution-display/v2' && speed?.status === 'accepted' &&
+          speed.baseline_kind === 'tested-public-main' && sha(speed.baseline_source) &&
+          sha(speed.candidate_source) && speed.candidate_source === row.measured_source &&
+          speed.baseline_source !== speed.candidate_source && sha(speed.final_engine_equivalent_head) &&
+          speed.suite === 'SF10' && speed.queries === 22 && speed.workers === 10 &&
+          speed.rounds === 3 && speed.warmups === 1 && speed.timed_repetitions === 5 &&
+          speed.aggregation === 'sum-query-round-medians' &&
+          ['host', 'configuration', 'limits'].every(key => text(speed[key])) &&
+          [speed.ratio, speed.candidate_seconds, speed.baseline_seconds].every(positive) &&
+          Math.abs(speed.ratio - speed.candidate_seconds / speed.baseline_seconds) < 1e-12 &&
+          Array.isArray(speed.confidence_95) && speed.confidence_95.length === 2 &&
+          speed.confidence_95.every(positive) && speed.confidence_95[0] <= speed.ratio &&
+          speed.ratio <= speed.confidence_95[1]) record.speed = speed;
+      result.set(row.pr, record);
     }
     return result;
   }
@@ -167,7 +184,27 @@
         const link = add(details, 'a', 'Reviewed evidence and limits'); link.href = evidence.source;
       } else add(metrics, 'dd', 'Not measured · no reviewed applicable-suite result.');
       add(metrics, 'dt', 'Speed · paired suite wall time versus main');
-      add(metrics, 'dd', 'Not measured against the same main baseline and host/configuration.');
+      if (evidence?.speed) {
+        const s = evidence.speed, change = 100 * (s.ratio - 1);
+        add(metrics, 'dd', Math.abs(change).toFixed(4) + '% ' + (change < 0 ? 'less' : change > 0 ? 'more' : 'change in') +
+          ' elapsed time · SF10, 22 queries, 10 workers · versus tested main ' + s.baseline_source.slice(0, 8));
+        const details = add(item, 'details'); add(details, 'summary', 'Speed sources, method and limits');
+        add(details, 'p', 'Candidate/main total ratio ' + s.ratio.toFixed(6) +
+          '; 95% descriptive interval ' + s.confidence_95.map(n => n.toFixed(6)).join('–') +
+          '. Total sums query-round medians (' + s.candidate_seconds + ' / ' + s.baseline_seconds +
+          ' seconds); it is not a geometric mean or full harness runtime.');
+        add(details, 'p', s.host + '; same pinned inputs and configuration for both roles: ' + s.configuration +
+          '. Three rotated orders; one warmup and five timed repetitions per query/engine/round.');
+        for (const [label, sha] of [['Tested candidate', s.candidate_source], ['Tested main baseline', s.baseline_source],
+          ['Final engine-equivalent head (not a new run)', s.final_engine_equivalent_head]]) {
+          const line = add(details, 'p', label + ': '); const link = add(line, 'a', sha.slice(0, 8));
+          link.href = repoURL + '/commit/' + sha;
+        }
+        add(details, 'p', s.limits);
+        const link = add(details, 'a', 'Reviewed evidence and qualification'); link.href = evidence.source;
+        const qualification = add(details, 'a', ' · Qualification report');
+        qualification.href = evidence.source.replace('docs/evidence/engine-snapshot-checks.json', 'docs/ENGINE-SNAPSHOT-QUALIFICATION.md');
+      } else add(metrics, 'dd', 'Not measured against the same main baseline and host/configuration.');
       for (const [kind, label] of [['user', 'Other commit authors'], ['bot', 'Bot commit authors'], ['unknown', 'Other accounts with commits']]) {
         const accounts = row.authors.filter(a => a.kind === kind);
         if (!accounts.length) continue;
