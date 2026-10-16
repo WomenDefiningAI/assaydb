@@ -1,0 +1,112 @@
+{
+  "schema": "assay-speed-journey-notes/v2",
+  "status": "reviewed-sanitized-transcription",
+  "acceptance": "Development diagnostics only; transcription review does not accept these measurements as a public release or merge gate.",
+  "date_basis": "UTC time the development milestone was first documented in its change proposal; not measurement completion time. Chart spacing follows recorded order, not elapsed duration.",
+  "group": {
+    "id": "development-gates",
+    "host": "Development Mini",
+    "hardware": "Exact model is not attested in these retained gate summaries.",
+    "scale": "SF10 (~10 GB uncompressed)",
+    "query_count": 22,
+    "requested_workers": 10,
+    "protocol": null,
+    "method": "Reported single-round development diagnostics using per-query wall medians and retained Polars references. Exact historical warmup/sample compatibility is not established by these summaries. Geometric means are reported values; missing final-run values remain null.",
+    "reference_scope": "Historical Development Mini reference medians. The retained input documentation says the sampling-compatibility audit and operator decision were outstanding; corrected collector code does not retroactively certify these runs.",
+    "limits": "Development diagnostics, not audited corrected-protocol receipts, paired gains versus main, or release qualification. The development gate allowed noise-triggered retries; values are rounded transcriptions, not recomputations from private raw samples."
+  },
+  "milestones": [
+    {
+      "id": "dense-groups",
+      "title": "Dense group IDs",
+      "documented_at": "2026-10-13T18:39:11Z",
+      "total": 1.302,
+      "geomean": null,
+      "measurement_status": "development-diagnostic",
+      "lesson": "Compact group IDs avoid encoding text keys for every joined row. q16 fell from 0.245 s to 0.166 s. The host was slightly busy; this was one timing round."
+    },
+    {
+      "id": "distinct-radix",
+      "title": "Radix COUNT DISTINCT",
+      "documented_at": "2026-10-13T19:21:53Z",
+      "total": 1.255,
+      "geomean": 1.293,
+      "measurement_status": "development-diagnostic",
+      "lesson": "Sorting funded (group, value) pairs replaces a hash set per group. q16 fell from 0.166 s to 0.098 s. Output ordering and memory bounds still need protection."
+    },
+    {
+      "id": "scan-reuse",
+      "title": "Reuse filtered scans",
+      "documented_at": "2026-10-13T23:13:20Z",
+      "total": 1.234,
+      "geomean": 1.266,
+      "measurement_status": "development-diagnostic",
+      "lesson": "Retain a bounded filtered result instead of rescanning. The final reviewed-fix run reported q17 at 0.251 s and total 1.234\u00d7; earlier attempts are not substituted."
+    },
+    {
+      "id": "cardinality",
+      "title": "Use actual row counts",
+      "documented_at": "2026-10-14T03:18:19Z",
+      "total": 1.187,
+      "geomean": null,
+      "measurement_status": "development-diagnostic",
+      "lesson": "Actual row counts can unlock an optimization that estimates reject. The corrected run was 1.187\u00d7 total with q21 at 0.585 s; the initial 1.177\u00d7 result is not the final value. Memory funding matters as much as admission."
+    },
+    {
+      "id": "scan-claiming",
+      "title": "Dynamic scan claiming",
+      "documented_at": "2026-10-14T07:12:28Z",
+      "total": 1.11,
+      "geomean": 1.157,
+      "measurement_status": "development-diagnostic",
+      "lesson": "Let workers claim row groups dynamically while retaining source order. q04 fell from 0.261 s to 0.202 s. Runnable permits and live-thread limits are different resource obligations."
+    },
+    {
+      "id": "continuations",
+      "title": "Pipeline continuations",
+      "documented_at": "2026-10-14T17:38:25Z",
+      "total": 1.087,
+      "geomean": 1.147,
+      "measurement_status": "development-diagnostic",
+      "lesson": "Workers resubmit continuations to avoid coordinator waits. q01 reached 0.761 s. The measured worktree was committed with an identical tree, but no binary rebuild/hash comparison was performed."
+    }
+  ],
+  "provisional": {
+    "id": "combined",
+    "title": "Combined source \u00b7 provisional M4 run",
+    "documented_at": "2026-10-15T15:01:21Z",
+    "host": "Apple M4 development host",
+    "configuration": "10 logical CPUs, 16 GiB RAM, macOS 26.6.2; Rust 1.90.0; no custom RUSTFLAGS. Assay 4 GiB accounted budget; Polars streaming; resource limits are not equivalent whole-process caps.",
+    "query_count": 22,
+    "requested_workers": 10,
+    "scale": "SF10 (~10 GB uncompressed)",
+    "protocol": "Three rotated rounds; one warmup and five timed samples per engine/query/round. Total sums query-round medians; geometric mean uses paired query ratios.",
+    "total": 0.97,
+    "geomean": 1.046,
+    "total_confidence_95": [
+      0.967,
+      0.973
+    ],
+    "geomean_confidence_95": [
+      1.041,
+      1.048
+    ],
+    "measurement_status": "provisional-one-attempt-not-accepted",
+    "lesson": "The combined source was below Polars in total time but above it in geometric mean. The 0.95\u00d7 goal for both metrics was not met. This single attempt is separate from the Test Mini runs.",
+    "limits": "Quiet-host admission sampled six five-second intervals before launch; the harness did not continuously record background processes. One attempt; no independent acceptance or hardware portability claim."
+  },
+  "starting_benchmark": {
+    "title": "Starting benchmark \u00b7 Alpha 2-equivalent native source",
+    "host": "Apple M2 Pro",
+    "documented_date": "2026-10-11",
+    "date_basis": "Date of published historical benchmark report, not elapsed development time.",
+    "scale": "SF10 (~10 GB uncompressed)",
+    "query_count": 22,
+    "requested_workers": 10,
+    "total": 4.159825306441633,
+    "geomean": 2.2669855097076708,
+    "source": "evidence/completed-speed-macbook-run-001.json",
+    "method": "SQL to materialized Arrow; three rounds, one warmup then five hot samples per engine/query/round. Total is ratio of sums over query-round medians; geometric mean uses paired query-round ratios.",
+    "limits": "Best-effort host with background activity; native CLI, not installed Python wheel/API. Distinct from the historical M4 4.1364\u00d7 result and later Development Mini diagnostics; no controlled cross-host gain is claimed."
+  }
+}
