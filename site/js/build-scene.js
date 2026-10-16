@@ -29,7 +29,7 @@
     const buttons=[...host.querySelectorAll('[data-checkpoint]')],status=doc.getElementById('build-status');let selected=5;
     function select(i,announce=false){selected=i;host.dataset.selected=String(i);const p=points[i];
       buttons.forEach((b,j)=>b.setAttribute('aria-pressed',String(j===i)));
-      caption.textContent=`${p.scope==='pilot'?'Pilot':'Full test'} · ${p.hours.toFixed(2)}h · ${p.rate.toFixed(3)}% passed (${fmt(p.n)} / ${fmt(p.d)} eligible records) · ${fmt(p.wrong)} observed wrong answers.`;
+      caption.textContent=`${p.scope==='pilot'?'The pilot':'The full test'} finished at ${p.hours.toFixed(2)} hours. ${p.rate.toFixed(3)}% passed (${fmt(p.n)} / ${fmt(p.d)} eligible records), with ${fmt(p.wrong)} observed wrong answers.`;
       if(announce)status.textContent=caption.textContent;
     }
     const player=playback.player({motion,step:i=>{host.dataset.stage='checkpoint';select(i);},finish:announce=>{host.dataset.stage='final';select(5,announce);}});

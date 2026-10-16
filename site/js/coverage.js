@@ -1,8 +1,18 @@
 /* Receipt-backed categorical series. Shared by the browser and focused tests. */
 (function (root) {
   'use strict';
-  const labels = ['Baseline', 'Unary plus and constant SELECT', 'DISTINCT plus broader column admission', 'Whole-table aggregates', 'CASE/IN/BETWEEN/ABS', 'ORDER BY/LIMIT', 'Exact decimal comparisons'];
-  const changes = ['Starting measured reference scope.', 'Adds unary plus and constant queries.', 'Adds DISTINCT; broader column admission and SELECT * also contribute.', 'Adds COUNT, SUM, MIN and MAX without GROUP BY.', 'Adds selected scalar constructs and their supported translations.', 'Adds ordering over output columns and LIMIT, with admission rules for ties and NULL placement.', 'Adds exact decimal comparison meanings and broader REAL-column admission; decimal loading/scaling translation remains trusted.'];
+  const labels = ['First measurement', 'Simple expressions', 'Removing repeated rows', 'Summarizing a table', 'More ways to ask questions', 'Sorting and limiting results', 'Comparing decimals', 'Grouping and filtering summaries', 'Checking another query’s results'];
+  const changes = [
+    'This was the first measurement of the full reference test collection.',
+    'The reference added unary plus, such as +3, and queries that return a constant value.',
+    'DISTINCT removes repeated rows. Accepting more column types and SELECT * queries also increased coverage.',
+    'COUNT, SUM, MIN and MAX summarize a whole table without splitting it into groups.',
+    'The reference added selected uses of CASE, IN, BETWEEN and ABS to choose values, check membership or ranges, and find absolute values.',
+    'ORDER BY sorts answers and LIMIT keeps the requested number of rows. Rules still restrict ties and where missing values appear.',
+    'The reference added exact decimal comparisons and accepted more REAL columns. Reading and scaling decimal values still relies on trusted translation code.',
+    'GROUP BY collects related rows; HAVING filters the resulting groups. The proof covers selected supported cases.',
+    'IN and NOT IN check whether a value appears in another query’s result, using the supported rules for missing values.'
+  ];
   const total = 7421339, applicable = 5939714, set = 'sqlite-slt/full-622';
   function series(entries) {
     if (entries.length < 2) throw Error('Expected a comparable full-suite history');
@@ -81,9 +91,9 @@
       detail.replaceChildren(); const p=points[i];
       const text=(tag,value)=>{const n=doc.createElement(tag);n.textContent=value;detail.append(n);return n;};
       text('h3',`${i+1} / ${p.label}`);
-      text('p',`${p.rate.toFixed(2)}% · ${fmt(p.n)} / ${fmt(p.total)} full-collection records`).className='detail-value';
+      text('p',`${p.rate.toFixed(2)}% of the full collection matched: ${fmt(p.n)} / ${fmt(p.total)} records.`).className='detail-value';
       text('p',p.change);
-      text('p',p.gain===null?'Baseline; no earlier full-suite point.':`${p.gain>=0?'+':''}${fmt(p.gain)} records · ${p.pp>=0?'+':''}${p.pp.toFixed(2)} percentage points vs previous milestone.`);
+      text('p',p.gain===null?'There is no earlier measurement of the full collection.':`${fmt(Math.abs(p.gain))} ${p.gain >= 0 ? 'more' : 'fewer'} records matched than at the previous milestone, ${p.gain >= 0 ? 'an increase' : 'a decrease'} of ${Math.abs(p.pp).toFixed(2)} percentage points.`);
       const link=text('a','Measurement summary (JSON)');link.href=p.path;
       const dates=doc.createElement('details'), summary=doc.createElement('summary');summary.textContent='Recorded completion date';dates.append(summary);
       const date=doc.createElement('p');date.textContent=p.date;dates.append(date);detail.append(dates);

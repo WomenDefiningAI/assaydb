@@ -96,6 +96,21 @@ with sync_playwright() as p:
         for name in ('contribute', 'verification', 'reference'):
             page.goto(BASE + '/' + name + '.html')
             page.evaluate('document.fonts.ready')
+            if name == 'verification':
+                page.locator('[data-example="negative"]').click()
+                assert page.locator('#interactive-max .answer-token').inner_text() == '−3'
+                page.locator('[data-example="positive"]').click()
+                assert page.locator('#interactive-max .answer-token').inner_text() == '7'
+            if name == 'reference':
+                page.wait_for_selector('.coverage-point')
+                points = page.locator('.coverage-point')
+                assert points.count() == 9
+                points.first.focus()
+                page.keyboard.press('Home')
+                assert page.locator('#coverage-detail').get_attribute('data-selected') == '0'
+                page.keyboard.press('End')
+                assert page.locator('#coverage-detail').get_attribute('data-selected') == '8'
+                assert '5,169,602 / 7,421,339' in page.locator('#coverage-detail').inner_text()
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), (name, width)
             page.screenshot(path=str(shots / f'{name}-{width}.png'), full_page=True)
         assert not errors, errors
