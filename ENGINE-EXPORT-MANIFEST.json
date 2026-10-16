@@ -2,7 +2,7 @@
   "schema": "assay-engine-export-manifest/v1",
   "source_commit": "76e816727c249c285223635f7b7f75cf7154c901",
   "source_tree": "22abe151f6b6639976fcf437882c5ca447ca016f",
-  "public_base": "d86aa0dd769041c23d64bfc760f7b31cc07f3af7",
+  "public_base": "c03d4bf901ed2c3f4b38a2b3d61fd767ab9d04e7",
   "scope": "Complete final PR delta except this self-describing manifest. Native implementation tested at tested_public_commit; final follow-up changes only documentation, evidence and this inventory.",
   "files": [
     {
@@ -42,15 +42,15 @@
     },
     {
       "path": "docs/CONTRIBUTION-RESULTS.md",
-      "bytes": 5304,
-      "sha256": "acc56c77791092cf1bd7af19218753918c76837482c97eafd5c9419716a490ef",
+      "bytes": 6735,
+      "sha256": "f8abc8abd1cf54126e81d46baa32b611e9b1637d70679b34888226edc380ae0a",
       "source_sha256": null,
       "source_identical": false
     },
     {
       "path": "docs/ENGINE-SNAPSHOT-QUALIFICATION.md",
-      "bytes": 13547,
-      "sha256": "764978ba1ce333e33d5dbd04b2a8a32bf6a612727a3381b744ba9f2a6f03c360",
+      "bytes": 14958,
+      "sha256": "46e7e3d2f56b2606e6348294922bef36c9c68fd86d1263702ff5534f3be5bb3c",
       "source_sha256": null,
       "source_identical": false
     },
@@ -77,8 +77,8 @@
     },
     {
       "path": "docs/evidence/engine-snapshot-checks.json",
-      "bytes": 39773,
-      "sha256": "1bc142a718cd14f0ad3c35b489f1075a439c134e3c9afafeb5f4413409274e61",
+      "bytes": 40974,
+      "sha256": "7807083f4e66e8fd624956338322158c9023bcb5295e570a83bba47af4bad0e9",
       "source_sha256": null,
       "source_identical": false
     },
@@ -86,13 +86,6 @@
       "path": "scripts/window_ranking_reference.py",
       "bytes": 5750,
       "sha256": "8e36c22aba6bb9ccf1e8efacd5dd39a4a1a49dd610d553ff7c226be08a405823",
-      "source_sha256": null,
-      "source_identical": false
-    },
-    {
-      "path": "site/contribute.html",
-      "bytes": 12851,
-      "sha256": "9259076f89a1f5c566758bde988acc86c50698dd17fd8217219a5a9c59c11ad8",
       "source_sha256": null,
       "source_identical": false
     },
@@ -1729,5 +1722,7 @@
     }
   ],
   "tested_public_commit": "7f5b2d2ae67a0f77873afa95e289d58d96c0a714",
-  "full_suite_tested_public_commit": "8bea917ed73be0aadcf36ef6538377e58171e2a1"
+  "full_suite_tested_public_commit": "8bea917ed73be0aadcf36ef6538377e58171e2a1",
+  "original_export_base": "d86aa0dd769041c23d64bfc760f7b31cc07f3af7",
+  "integration_note": "Public main PR7 integrated; manifest inventories remaining export delta excluding itself. Original tested identities retained; no new engine run."
 }

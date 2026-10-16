@@ -35,6 +35,8 @@ with sync_playwright() as p:
             assert page.locator('a[href="https://github.com/helenlkupp"]').count() == (2 if name == 'index' else 1)
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), (name, width)
         page.wait_for_function("document.querySelector('#engine-contributions').getAttribute('aria-busy') === 'false'")
+        assert page.locator('.contribution-metrics dd').count() == 2
+        assert all('Not measured' in value for value in page.locator('.contribution-metrics dd').all_text_contents())
         assert page.locator('#contribution-list > li').count() == 1
         assert HOSTILE in page.locator('#contribution-list h3').inner_text()
         assert 'alice@example.com' not in page.locator('#contribution-list').inner_text()

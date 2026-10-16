@@ -82,3 +82,26 @@ and their no-JavaScript fallbacks must derive from the same versioned accepted
 data, never from PR prose or the contribution-credit list. Until that path exists
 and new measurements are accepted, retain all current historical chart JSON,
 values, machine/release context and caveats unchanged.
+
+## Website display metrics
+
+These definitions do not replace the acceptance contract above. The contributor
+list is populated from merged public PR metadata. Explicit reviewed display data
+lives in `site/evidence/contribution-metrics.json`, versioned as
+`assay-contribution-display/v1`; no metrics are mined from PR prose.
+
+- **Accuracy:** applicable SQLLogicTest passed / applicable total × 100, with
+  integer counts and wrong/unsupported/error/not-run outcomes. Excluded control
+  records remain separately visible. The renderer validates that outcomes sum to
+  the denominator and links the exact measured source and immutable public evidence.
+- **Speed:** paired suite wall-time percentage change versus tested public main
+  on the same host/configuration: 100 × (candidate / main − 1). Negative means
+  faster; positive means slower. A future measured speed entry requires a reviewed
+  schema extension with paired source/main identities, scope and timing fields.
+
+The current record for PR5 contains accepted SQLLogicTest counts and null speed.
+Its historical timing baseline is not public main. Other missing records show
+Not measured. The renderer never substitutes a Polars ratio or historical-source
+comparison for a main-baseline improvement. PR5's retained measured source is
+not relabeled as a fresh execution of its merged head. Values are attributed to
+reviewed evidence, not inferred from contributor credit.

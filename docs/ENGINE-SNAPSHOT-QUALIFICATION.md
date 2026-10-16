@@ -28,12 +28,16 @@ source, dependencies, toolchain and native build inputs are unchanged. The measu
 baseline remains `d86aa0dd769041c23d64bfc760f7b31cc07f3af7`; no run of the new
 main is claimed, and this comparison is not merge acceptance.
 
-**Acceptance remains unresolved.** Zero wrong answers and 99.9555% applicable
-passes meet the historical internal SLT launch threshold. That threshold does not
-establish an approved public engine-PR policy. The public zero-error policy and
-infrastructure-only no-regression policy are not broadened here. Maintainer/owner
-decision on engine acceptance is still required; completed measurements do not
-clear this PR for merge.
+**Scoped owner acceptance (October 16, 2026).** Helen accepted PR #6 as an
+experimental source promotion with the disclosed unchanged SLT failures (640
+unsupported and 2,001 errors), zero wrong answers or observed regressions, all
+28 previously unsupported retail cases now passing, and the known decoder
+memory-accounting limitation. The retained 55K failures also remain disclosed.
+This decision applies only to this PR and its reviewed evidence; it does not
+extend the infrastructure-only policy, establish a global waiver, certify a hard
+process-memory cap, or qualify Alpha3/the 0.95 goal. Final-head verification and
+the merge operation remain separate. Useful SQL coverage is the next priority,
+with full regression coverage before formal verification.
 
 This is a source promotion for review, not an Alpha3 release or package upload.
 The immutable source is `76e816727c249c285223635f7b7f75cf7154c901`, source tree
@@ -107,8 +111,8 @@ changes are documentation/evidence only. Passing the decoder recorder tests is n
 a fresh upstream parity comparison; decoder parity remains attributed to the
 retained frozen-source campaign.
 
-The local checks above are complete. This draft remains unmerged for maintainer
-review. Completed follow-ups and remaining review decisions are distinguished below;
+The local checks above are complete. The owner has accepted this scoped experimental promotion. It remains unmerged
+pending final-head verification and the separate merge operation. Completed follow-ups and remaining review decisions are distinguished below;
 the separate Alpha3 performance target is not claimed by this source promotion.
 
 ### Fresh comparison with current public main
@@ -129,8 +133,9 @@ fresh exported-build results, separate from the historical source campaign above
 Each SLT role has 5,937,073 passes out of 7,421,339 fixed records (80.0000%;
 80.04% non-SQLite maximum), then 5,937,073/5,939,714 applicable (99.9555%).
 The 640 unsupported and 2,001 engine errors remain failures. Zero wrong, timeout
-or not-run outcomes were recorded. This meets the historical internal SLT launch threshold; applicability as a
-public engine-PR acceptance policy remains unresolved.
+or not-run outcomes were recorded. This meets the historical internal SLT launch threshold. The scoped owner
+acceptance above is the authority for this experimental promotion, not an
+automatic extension of that historical threshold.
 
 Each 55K role retains 46,980 passes, 6,975 unsupported cases, 1,020 native errors
 and 25 reference errors. Zero wrong, timeout or not-run outcomes were recorded.
@@ -190,10 +195,9 @@ drift. These results retain the engine-accounting limits below.
   as reported above, including fresh SF10 capacity, correctness and paired timing.
   Existing evidence may be reused only after exact code, tooling, input and
   same-day/host equivalence is verified.
-- The historical internal SLT numeric launch threshold is met. Public engine
-  acceptance remains unresolved: no approved extension of the infrastructure-only
-  no-regression policy is established. Owner/maintainer decision is required;
-  strict zero-error compatibility is not claimed and no policy is changed.
+- The historical SLT numeric launch threshold is met. Scoped owner acceptance
+  for this experimental promotion is recorded above; retained errors remain
+  failures and the general acceptance policies are unchanged.
 
 Decoder native allocations, retained Zstandard context and conversion/output
 buffers are not fully covered by engine reservation accounting. The decoder's
@@ -204,3 +208,19 @@ Alpha3 claim follows from this promotion.
 The website automatically deploys committed content after merge. Its existing
 accepted PR #5 measurements remain unchanged by this proposed source promotion.
 New measurements require their own review and acceptance before replacing them.
+
+## Integration with the current public website
+
+The integration preserves the complete PR #7 website, scripts and display files
+from `c03d4bf901ed2c3f4b38a2b3d61fd767ab9d04e7`. The only textual merge conflict
+was `site/contribute.html`; the PR #7 version was retained verbatim. The updated
+export manifest inventories the remaining delta against that public base while
+preserving the original export base and measured source identities. Engine,
+dependency and build-input equivalence is checked separately from website tests.
+
+Integration checks: all 14 contributor unit tests and all 85 synthetic testing
+mechanics tests passed. The mechanics suite was rerun under the shared host lock
+after the first attempt failed setup because its lock environment was absent.
+JavaScript syntax and JSON parsing checks passed. Browser interaction tests were
+not run here because Playwright is unavailable; the website and its test/rendering
+files remain byte-identical to PR #7. No new engine tests or benchmarks were run.

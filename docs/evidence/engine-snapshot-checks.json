@@ -1,6 +1,6 @@
 {
   "schema": "assay-engine-promotion-checks/v1",
-  "qualification": "measurements completed; public engine acceptance unresolved; draft and not cleared for merge",
+  "qualification": "scoped owner acceptance for experimental PR6; final-head verification and parent merge pending; not Alpha3",
   "tested_public_commit": "7f5b2d2ae67a0f77873afa95e289d58d96c0a714",
   "tested_public_tree": "99cc174c875a316e12c4a791fe07c45e713ee614",
   "public_base": "d86aa0dd769041c23d64bfc760f7b31cc07f3af7",
@@ -92,13 +92,13 @@
   "remaining": [
     {
       "check": "full-suite exact-export/current-public-base acceptance",
-      "status": "campaign completed; final-head and maintainer review required",
-      "reason": "Fresh full-suite measurements and audits completed; one-core regression screen passed. Public engine acceptance policy and final maintainer decision remain unresolved."
+      "status": "campaign completed; scoped owner acceptance recorded; final-head verification and merge pending",
+      "reason": "No new benchmarks; tested engine/build identity preserved while integrating PR7 website/docs/display changes."
     },
     {
       "check": "historical internal SLT launch threshold versus public engine acceptance",
-      "status": "historical numeric threshold met; public engine acceptance unresolved",
-      "reason": "Zero wrong and 99.9555% applicable meet the historical internal launch threshold. No approved extension of infrastructure-no-regression/v1 to this engine PR is established. Owner/maintainer decision is required; no waiver or policy change."
+      "status": "historical numeric threshold met; scoped owner acceptance recorded",
+      "reason": "Owner decision applies only to this experimental PR6 promotion; no general engine policy or infrastructure-policy extension."
     },
     {
       "check": "decoder native-memory qualification",
@@ -256,7 +256,7 @@
       "receipt_sha256": "d070c931c517edcef4c94ca12775ed0c18a44d31b0c4a9e91d1547bcd1284072"
     },
     "sf10": {
-      "status": "completed and output-audited; maintainer acceptance pending",
+      "status": "completed and output-audited; scoped owner acceptance recorded",
       "capacity_passed_each_role": 66,
       "prerequisite_correctness_phases": 4,
       "prerequisite_correctness_passed_each_phase": 44,
@@ -1193,7 +1193,7 @@
         "SF10 does not establish the older formal SF1 parity claim; no performance-qualified Alpha3 or 0.95 goal claim."
       ]
     },
-    "acceptance": "measurements completed; public engine acceptance unresolved; retained errors are failures; no policy extension, merge clearance or performance release claim"
+    "acceptance": "scoped owner acceptance for experimental PR6 only; retained failures and resource limitations unchanged; no release claim"
   },
   "current_main_comparison": {
     "measured_baseline": "d86aa0dd769041c23d64bfc760f7b31cc07f3af7",
@@ -1222,5 +1222,37 @@
     "engine_build_inputs_unchanged": true,
     "new_main_benchmark_run": false,
     "merge_acceptance": false
+  },
+  "owner_acceptance": {
+    "date": "2026-10-16",
+    "owner": "Helen",
+    "scope": "PR6 experimental source promotion only",
+    "decision": "accepted for merge after final-head verification",
+    "slt_retained_failures": {
+      "unsupported": 640,
+      "engine_error": 2001
+    },
+    "wrong_answers": 0,
+    "observed_regressions": 0,
+    "retail_unsupported_to_passed": 28,
+    "decoder_native_memory_limitation_accepted": true,
+    "retained_55k_failures_disclosed": true,
+    "global_policy_waiver": false,
+    "infrastructure_policy_extended": false,
+    "alpha3": false,
+    "performance_goal_0_95_established": false,
+    "next_priority": "Useful SQL coverage and full regression coverage before formal verification"
+  },
+  "integration_validation": {
+    "public_main": "c03d4bf901ed2c3f4b38a2b3d61fd767ab9d04e7",
+    "tested_candidate": "8bea917ed73be0aadcf36ef6538377e58171e2a1",
+    "website_files_byte_identical_to_main": 61,
+    "outside_reviewed_docs_display_allowlist_files_identical": 593,
+    "contributor_tests_passed": 14,
+    "synthetic_mechanics_tests_passed": 85,
+    "initial_mechanics_attempt": "17 setup errors from absent ASSAY_ACTIVITY_LOCK_PATH; preserved; locked rerun passed",
+    "browser_tests": "not-run; Playwright unavailable; PR7 website bytes preserved",
+    "new_engine_tests": false,
+    "new_benchmarks": false
   }
 }

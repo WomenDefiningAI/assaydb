@@ -92,7 +92,8 @@ def render(record):
                 value=totals[role]
                 body+=f'<p>{role}: {value:.6f} seconds <meter min="0" max="{maximum:.9f}" value="{value:.9f}" aria-label="{role} query time">{value:.6f}</meter></p>'
             body+=f'<p>Candidate / baseline: {record["timing"]["total_wall_ratio"]:.6f}. This is not a comparison with another engine or an Alpha 3 release qualification.</p></figure>'
-    return START+'<section class="section page-block" id="full-suite-evidence"><h2>Independent PR validation.</h2>'+body+'<p><a href="evidence/full-suite/latest.json">Machine-readable reviewed evidence</a></p></section>'+END
+    body = body.replace('<table>', '<div class="evidence-scroll" role="region" aria-label="Reviewed evidence table" tabindex="0"><table>').replace('</table>', '</table></div>')
+    return START+'<section class="section page-block" id="full-suite-evidence"><h2>Reviewed PR evidence.</h2>'+body+'<p><a href="evidence/full-suite/latest.json">Machine-readable reviewed evidence</a></p></section>'+END
 
 
 def stage(record, site):
