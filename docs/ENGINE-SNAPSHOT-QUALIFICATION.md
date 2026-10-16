@@ -1,5 +1,40 @@
 # Engine snapshot qualification
 
+## Measured speed of this exported build
+
+Fresh SF10 measurements on Test Mini (`Mac.localdomain`), October 16, 2026,
+00:03:45–01:53:28 UTC (October 15 Pacific), compare exported candidate
+`8bea917ed73be0aadcf36ef6538377e58171e2a1` with measured public-main baseline
+`d86aa0dd769041c23d64bfc760f7b31cc07f3af7`. Lower ratios mean less time.
+
+| Workers | Candidate / measured main, total | Candidate / Polars, total | Candidate / Polars, geometric mean |
+| --- | --- | --- | --- |
+| 10 | 0.909973 | 0.957067 | 1.033839 |
+| 1 | 0.904884 | 0.869895 | 0.890102 |
+
+On this workload, the ten-worker total took about **9.00% less time than measured
+main** and **4.29% less time than Polars**, while its geometric mean was
+**3.38% above Polars**. This does not establish the 0.95 target or an Alpha3 release.
+All 22 queries, three rotated orders, one warmup and five timed repetitions were
+retained. Host quietness was sampled; a connection interruption caused no restart,
+but zero timing impact cannot be established. Sequential-role bootstrap intervals
+do not eliminate temporal drift. Engine-accounted resources are not hard process
+caps. Detailed intervals, slower cases and audit limits remain below.
+
+Current public main is now `c03d4bf901ed2c3f4b38a2b3d61fd767ab9d04e7` after
+site PR #7. Read-only comparison of complete Git inventories found 18 changed
+website, documentation, website-test/rendering and testing-display files. Engine
+source, dependencies, toolchain and native build inputs are unchanged. The measured
+baseline remains `d86aa0dd769041c23d64bfc760f7b31cc07f3af7`; no run of the new
+main is claimed, and this comparison is not merge acceptance.
+
+**Acceptance remains unresolved.** Zero wrong answers and 99.9555% applicable
+passes meet the historical internal SLT launch threshold. That threshold does not
+establish an approved public engine-PR policy. The public zero-error policy and
+infrastructure-only no-regression policy are not broadened here. Maintainer/owner
+decision on engine acceptance is still required; completed measurements do not
+clear this PR for merge.
+
 This is a source promotion for review, not an Alpha3 release or package upload.
 The immutable source is `76e816727c249c285223635f7b7f75cf7154c901`, source tree
 `22abe151f6b6639976fcf437882c5ca447ca016f`. The public branch starts at
@@ -94,8 +129,8 @@ fresh exported-build results, separate from the historical source campaign above
 Each SLT role has 5,937,073 passes out of 7,421,339 fixed records (80.0000%;
 80.04% non-SQLite maximum), then 5,937,073/5,939,714 applicable (99.9555%).
 The 640 unsupported and 2,001 engine errors remain failures. Zero wrong, timeout
-or not-run outcomes were recorded. This meets the existing zero-wrong and
-at-least-99%-applicable threshold without a new waiver.
+or not-run outcomes were recorded. This meets the historical internal SLT launch threshold; applicability as a
+public engine-PR acceptance policy remains unresolved.
 
 Each 55K role retains 46,980 passes, 6,975 unsupported cases, 1,020 native errors
 and 25 reference errors. Zero wrong, timeout or not-run outcomes were recorded.
@@ -155,9 +190,10 @@ drift. These results retain the engine-accounting limits below.
   as reported above, including fresh SF10 capacity, correctness and paired timing.
   Existing evidence may be reused only after exact code, tooling, input and
   same-day/host equivalence is verified.
-- The existing SLT numeric correctness threshold is met. Maintainer review still
-  must consider the complete results and limitations; strict zero-error
-  compatibility is not claimed and no acceptance policy is changed.
+- The historical internal SLT numeric launch threshold is met. Public engine
+  acceptance remains unresolved: no approved extension of the infrastructure-only
+  no-regression policy is established. Owner/maintainer decision is required;
+  strict zero-error compatibility is not claimed and no policy is changed.
 
 Decoder native allocations, retained Zstandard context and conversion/output
 buffers are not fully covered by engine reservation accounting. The decoder's

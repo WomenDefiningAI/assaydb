@@ -1,6 +1,6 @@
 {
   "schema": "assay-engine-promotion-checks/v1",
-  "qualification": "required campaign completed; draft PR awaiting maintainer review, not merge acceptance",
+  "qualification": "measurements completed; public engine acceptance unresolved; draft and not cleared for merge",
   "tested_public_commit": "7f5b2d2ae67a0f77873afa95e289d58d96c0a714",
   "tested_public_tree": "99cc174c875a316e12c4a791fe07c45e713ee614",
   "public_base": "d86aa0dd769041c23d64bfc760f7b31cc07f3af7",
@@ -93,12 +93,12 @@
     {
       "check": "full-suite exact-export/current-public-base acceptance",
       "status": "campaign completed; final-head and maintainer review required",
-      "reason": "Fresh full SLT, 55K, retail, SF10 capacity/correctness and complete paired timing finished; one-core 2% regression screen passed. All retained errors and limitations remain disclosed."
+      "reason": "Fresh full-suite measurements and audits completed; one-core regression screen passed. Public engine acceptance policy and final maintainer decision remain unresolved."
     },
     {
-      "check": "existing SLT correctness threshold",
-      "status": "numeric threshold met; maintainer review remains required",
-      "reason": "Zero wrong answers and 99.9555% applicable passes meet the existing >=99% threshold. Unsupported/error outcomes remain failures in the reported denominator; no new zero-error requirement or waiver."
+      "check": "historical internal SLT launch threshold versus public engine acceptance",
+      "status": "historical numeric threshold met; public engine acceptance unresolved",
+      "reason": "Zero wrong and 99.9555% applicable meet the historical internal launch threshold. No approved extension of infrastructure-no-regression/v1 to this engine PR is established. Owner/maintainer decision is required; no waiver or policy change."
     },
     {
       "check": "decoder native-memory qualification",
@@ -1193,6 +1193,34 @@
         "SF10 does not establish the older formal SF1 parity claim; no performance-qualified Alpha3 or 0.95 goal claim."
       ]
     },
-    "acceptance": "retained errors and unsupported outcomes are not waived; no merge acceptance or performance release claim"
+    "acceptance": "measurements completed; public engine acceptance unresolved; retained errors are failures; no policy extension, merge clearance or performance release claim"
+  },
+  "current_main_comparison": {
+    "measured_baseline": "d86aa0dd769041c23d64bfc760f7b31cc07f3af7",
+    "new_public_main": "c03d4bf901ed2c3f4b38a2b3d61fd767ab9d04e7",
+    "method": "read-only complete Git blob and mode comparison; inventories not truncated",
+    "changed_files": [
+      "CONTRIBUTING.md",
+      "docs/CONTRIBUTION-RESULTS.md",
+      "docs/CONTRIBUTION-WORKFLOW.md",
+      "docs/WEBSITE.md",
+      "scripts/render_speed_journey.py",
+      "scripts/website-tests/contributors.browser.py",
+      "scripts/website-tests/contributors.test.cjs",
+      "scripts/website-tests/journeys.browser.py",
+      "site/contribute.html",
+      "site/css/page-blocks.css",
+      "site/evidence/contribution-metrics.json",
+      "site/evidence/speed-journey-notes.json",
+      "site/index.html",
+      "site/js/build-scene.js",
+      "site/js/contributors.js",
+      "site/js/journeys.js",
+      "site/verification.html",
+      "testing/site_evidence.py"
+    ],
+    "engine_build_inputs_unchanged": true,
+    "new_main_benchmark_run": false,
+    "merge_acceptance": false
   }
 }
