@@ -13,6 +13,12 @@ jobs:
           ref: ${{ github.event.pull_request.base.sha }}
           fetch-depth: 0
           persist-credentials: false
+      # October 2026 CA/security fixes; do not inherit the runner's Node version.
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22.23.4'
+      - name: Record validator runtime
+        run: node --version
       - name: Validate candidate data using base-branch code
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
