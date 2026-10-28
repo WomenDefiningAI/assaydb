@@ -1,0 +1,489 @@
+{
+  "schema": "assay-pr13-reviewed-evidence/v1",
+  "status": "maintainer-accepted-partial-coverage",
+  "tested_source": "db9f965e8ae3adb9d4589bc41ba7b546585ea767",
+  "baseline_source": "7ed1fa5cc8400368682d8e9c1ef217305ccc1e18",
+  "accuracy": {
+    "suite": "SQLLogicTest",
+    "applicable": 5939714,
+    "passed": 5939628,
+    "unsupported": 31,
+    "wrong": 0,
+    "error": 55,
+    "not-run": 0,
+    "excluded": 1481625
+  },
+  "speed": {
+    "status": "accepted",
+    "baseline_kind": "tested-public-main",
+    "baseline_source": "7ed1fa5cc8400368682d8e9c1ef217305ccc1e18",
+    "candidate_source": "db9f965e8ae3adb9d4589bc41ba7b546585ea767",
+    "suite": "SF10",
+    "queries": 22,
+    "workers": 10,
+    "rounds": 3,
+    "warmups": 1,
+    "timed_repetitions": 5,
+    "host": "Test Mini",
+    "configuration": "ordinary release; no PGO; Rust 1.90.0; debug=0, strip=none",
+    "aggregation": "sum-query-round-medians",
+    "candidate_seconds": 20.251780752,
+    "baseline_seconds": 20.542645211,
+    "ratio": 0.9858409442400217,
+    "confidence_95": [
+      0.9817659911430048,
+      0.9900208322479388
+    ],
+    "limits": "Sequential role phases; descriptive intervals do not eliminate temporal drift. Quietness was sampled. Queries17,18,19 were slower at10workers; queries01,05,06,11,18,22 slower at1worker by intervals wholly above1. Timed samples retain row counts, not every output payload. Engine-accounted budgets are not hard process caps. Internal workload measurements, not official TPC results. No general superiority, Alpha3 or package-release qualification."
+  },
+  "hunt55k": {
+    "direct_passes": 54171,
+    "raw_documented_differences": 739,
+    "native_expected_rejections": 65,
+    "oracle_errors": 25,
+    "unexplained_wrong": 0
+  },
+  "standard": {
+    "rust_passed": 1169,
+    "rust_failed": 0,
+    "rust_ignored": 0,
+    "clippy": "passed",
+    "format": "passed",
+    "installed_python_tests": 12,
+    "compatibility_records_passed": 593,
+    "acceptance_small": "receipt-verified"
+  },
+  "business": {
+    "analyst_matching_rows": 16,
+    "analyst_expected_typed_overflow": 1,
+    "analyst_separate_variants_passed": 3,
+    "retail_passed": 64
+  },
+  "remaining_limitations": [
+    "31 unsupported and55 ordinary SQL errors remain nonpasses.",
+    "The strict public policy rejects both candidate55 and baseline2001 ordinary SLT errors. Infrastructure policy scope is not authorization for this engine contribution.",
+    "Metadata-sensitive fingerprints differ in20 passing SLT rejection controls,86 retained SLT nonpasses and45 retained hunt nonpasses. No difference was normalized away.",
+    "739 classified SQLite divergences are not direct passes;45 prior unsupported hunt cases now emit expected native rejections.",
+    "Partial-coverage exception applies only to PR13. No full SQL support, official TPC result, formal proof or package release follows."
+  ],
+  "audit_recovery": {
+    "original_failure": "Postflight invocation omitted arguments and assumed older supervisor layout; retained failure.",
+    "adapter": "Authenticated actual additional bounded-check supervisor chain; unchanged measurement/bootstrap/threshold code.",
+    "replay_sha256": "1234dff5343e933dbce3c7c1bd2a72aa2fa3b093c0ca7b9a3b945ec6872bb420",
+    "rerun_measurements": false
+  },
+  "acceptance": {
+    "kind": "explicit-pr13-only-maintainer-exception",
+    "maintainer": "helenlkupp",
+    "date": "2026-10-28",
+    "scope": "Only public PR13 measured db9f965e8ae3adb9d4589bc41ba7b546585ea767 versus public main7ed1fa5cc8400368682d8e9c1ef217305ccc1e18; accepted as a SQL improvement with documented existing gaps.",
+    "decision": "Helen explicitly approved this PR-specific exception to the zero-error rule after independent review, and authorized merge.",
+    "global_policy_changed": false,
+    "result_contract_pass_claimed": false,
+    "full_sql_support_claimed": false,
+    "package_release_authorized": false,
+    "baseline_ordinary_slt_errors": 2001,
+    "candidate_ordinary_slt_errors": 55,
+    "candidate_slt_unsupported": 31,
+    "raw_classification_limits": "739 documented SQLite divergences remain raw differences,65 expected native rejections remain errors with labels,25 oracle errors remain separately visible. No unknown cases or failures were relabeled as direct passes.",
+    "fingerprint_equivalences_reviewed": {
+      "slt_20_passing_statement_error_controls": "Both versions correctly reject; only added error_cause:null and error_cause_schema metadata changes full fingerprints. All other fields equal.",
+      "slt_55_errors_and31_unsupported": "Same emitted messages and failure kinds; only added error-cause metadata changes fingerprints. Remain nonpasses.",
+      "hunt20_retained_native_rejections": "Added error_cause_schema; same emitted BIGINT overflow errors and oracle replies.",
+      "hunt25_retained_oracle_errors": "Oracle replies identical; native outcome improves from unsupported to successful answer, but top-level outcome stays oracle-error.",
+      "hunt45_changed_failure_kinds": "Previously unsupported cases now emit65 total documented expected rejections including20 retained cases;45 changes specifically reviewed, not direct passes."
+    },
+    "independent_review": "No changed answers for previously passing queries and no unexplained provenance flaw found in retained receipts. Metadata differences and raw/classified transitions remain recorded.",
+    "outstanding": "This acceptance is not a zero-error/v1 or infrastructure-no-regression/v1 structural pass. Their existing semantics are unchanged."
+  },
+  "paired_main_relative": {
+    "1": {
+      "direction": "candidate/public-main",
+      "statistics": {
+        "total": 1.0017495945540196,
+        "geomean": 1.0000751681935978,
+        "sum_query_round_medians_seconds": {
+          "assaydb": 110.641547084,
+          "baseline": 110.448307327
+        },
+        "confidence_95": {
+          "total": [
+            1.0001805172172504,
+            1.0031820916417882
+          ],
+          "geomean": [
+            0.9976097872692421,
+            1.0016125991871316
+          ]
+        },
+        "rounds": [
+          {
+            "total": 0.9999206632007874,
+            "geomean": 0.998311598353821
+          },
+          {
+            "total": 1.0030765093042227,
+            "geomean": 1.0013636035389495
+          },
+          {
+            "total": 1.0022584494356213,
+            "geomean": 1.000552802771697
+          }
+        ]
+      },
+      "per_query": {
+        "q01": {
+          "point": 1.0053421878997002,
+          "confidence_95": [
+            1.0029561195696992,
+            1.0091631345963623
+          ]
+        },
+        "q02": {
+          "point": 0.8965316112904378,
+          "confidence_95": [
+            0.8587725465797761,
+            0.901921776851931
+          ]
+        },
+        "q03": {
+          "point": 0.9965929875670142,
+          "confidence_95": [
+            0.994665932202153,
+            1.0060542177541067
+          ]
+        },
+        "q04": {
+          "point": 0.9981636702439423,
+          "confidence_95": [
+            0.9893050513243451,
+            1.0027655427728717
+          ]
+        },
+        "q05": {
+          "point": 1.0151240934877588,
+          "confidence_95": [
+            1.0108961463141743,
+            1.0197525140694874
+          ]
+        },
+        "q06": {
+          "point": 1.0020569510166133,
+          "confidence_95": [
+            1.0004661065070208,
+            1.0031548299613458
+          ]
+        },
+        "q07": {
+          "point": 1.0012783252588597,
+          "confidence_95": [
+            0.9990454666636924,
+            1.006573549521549
+          ]
+        },
+        "q08": {
+          "point": 0.9967301388118759,
+          "confidence_95": [
+            0.9922167239901424,
+            1.00280669047448
+          ]
+        },
+        "q09": {
+          "point": 1.0012429869140969,
+          "confidence_95": [
+            0.9979948218930721,
+            1.0043917934477609
+          ]
+        },
+        "q10": {
+          "point": 1.0015254077649773,
+          "confidence_95": [
+            0.9993022142670639,
+            1.00412908919949
+          ]
+        },
+        "q11": {
+          "point": 1.0327741592441955,
+          "confidence_95": [
+            1.0258940889228758,
+            1.037152191852095
+          ]
+        },
+        "q12": {
+          "point": 1.0013172888224415,
+          "confidence_95": [
+            0.9956062925460442,
+            1.0054655935573285
+          ]
+        },
+        "q13": {
+          "point": 0.9981133821541702,
+          "confidence_95": [
+            0.9847963966588783,
+            1.0079331204703712
+          ]
+        },
+        "q14": {
+          "point": 0.9998541067702079,
+          "confidence_95": [
+            0.9930181287154649,
+            1.0075920702853522
+          ]
+        },
+        "q15": {
+          "point": 0.9974355579124118,
+          "confidence_95": [
+            0.9953365334406922,
+            0.9992742841164528
+          ]
+        },
+        "q16": {
+          "point": 1.0109994003621101,
+          "confidence_95": [
+            0.9998246777811668,
+            1.022821131786823
+          ]
+        },
+        "q17": {
+          "point": 0.9990845635525247,
+          "confidence_95": [
+            0.9974246689742038,
+            1.0007569784067396
+          ]
+        },
+        "q18": {
+          "point": 1.0129232410294124,
+          "confidence_95": [
+            1.0103149977444184,
+            1.0206442612192927
+          ]
+        },
+        "q19": {
+          "point": 1.0008557617377143,
+          "confidence_95": [
+            0.9998002838274139,
+            1.0018599051468002
+          ]
+        },
+        "q20": {
+          "point": 1.0002246138971007,
+          "confidence_95": [
+            0.994004813095898,
+            1.0056232819239135
+          ]
+        },
+        "q21": {
+          "point": 1.0025301131266109,
+          "confidence_95": [
+            0.9989446145432689,
+            1.0057854450388939
+          ]
+        },
+        "q22": {
+          "point": 1.038222498738138,
+          "confidence_95": [
+            1.0339503176067033,
+            1.0431147500241809
+          ]
+        }
+      },
+      "one_core_2_percent_screen_passed": true
+    },
+    "10": {
+      "direction": "candidate/public-main",
+      "statistics": {
+        "total": 0.9858409442400217,
+        "geomean": 0.9664341925285345,
+        "sum_query_round_medians_seconds": {
+          "assaydb": 20.251780752,
+          "baseline": 20.542645211
+        },
+        "confidence_95": {
+          "total": [
+            0.9817659911430048,
+            0.9900208322479388
+          ],
+          "geomean": [
+            0.962116387696909,
+            0.9703260140721996
+          ]
+        },
+        "rounds": [
+          {
+            "total": 0.9860144086978418,
+            "geomean": 0.9673929435620212
+          },
+          {
+            "total": 0.9859732743153112,
+            "geomean": 0.9665191508601175
+          },
+          {
+            "total": 0.985535157208414,
+            "geomean": 0.9653915250097204
+          }
+        ]
+      },
+      "per_query": {
+        "q01": {
+          "point": 0.9949496486521479,
+          "confidence_95": [
+            0.9834766295922553,
+            1.0087844183268653
+          ]
+        },
+        "q02": {
+          "point": 0.9548871568120714,
+          "confidence_95": [
+            0.9256291845845885,
+            0.9662324035689226
+          ]
+        },
+        "q03": {
+          "point": 1.0003909336763446,
+          "confidence_95": [
+            0.9352113178410575,
+            1.0166193122223541
+          ]
+        },
+        "q04": {
+          "point": 0.9753208628843523,
+          "confidence_95": [
+            0.9659526896969957,
+            0.9905345026224964
+          ]
+        },
+        "q05": {
+          "point": 1.010996927403064,
+          "confidence_95": [
+            0.9998821711905849,
+            1.0247504893859871
+          ]
+        },
+        "q06": {
+          "point": 0.9328503545260556,
+          "confidence_95": [
+            0.9304309239560488,
+            0.9377556634485557
+          ]
+        },
+        "q07": {
+          "point": 0.9636936556395401,
+          "confidence_95": [
+            0.9498750542842801,
+            0.9733187161174359
+          ]
+        },
+        "q08": {
+          "point": 1.001971037798697,
+          "confidence_95": [
+            0.9903838752359156,
+            1.0066673299311641
+          ]
+        },
+        "q09": {
+          "point": 1.0019536287930075,
+          "confidence_95": [
+            0.998347320663275,
+            1.0321571544530392
+          ]
+        },
+        "q10": {
+          "point": 1.0032950131753544,
+          "confidence_95": [
+            0.9926699948048646,
+            1.0153064548509574
+          ]
+        },
+        "q11": {
+          "point": 0.8270796842672504,
+          "confidence_95": [
+            0.8152566945798005,
+            0.833338695362033
+          ]
+        },
+        "q12": {
+          "point": 0.8755614636721952,
+          "confidence_95": [
+            0.8689154222462331,
+            0.8778909081321018
+          ]
+        },
+        "q13": {
+          "point": 1.001779885968238,
+          "confidence_95": [
+            0.9982561708932428,
+            1.0044612120954406
+          ]
+        },
+        "q14": {
+          "point": 1.0021019531905513,
+          "confidence_95": [
+            0.9974256801819505,
+            1.01297745623469
+          ]
+        },
+        "q15": {
+          "point": 1.006901333180411,
+          "confidence_95": [
+            0.9359853789538737,
+            1.0130195681316612
+          ]
+        },
+        "q16": {
+          "point": 1.0196124963302313,
+          "confidence_95": [
+            0.9704124850721142,
+            1.0693459248524664
+          ]
+        },
+        "q17": {
+          "point": 1.0078212660154489,
+          "confidence_95": [
+            1.00389735955408,
+            1.083561377671903
+          ]
+        },
+        "q18": {
+          "point": 1.0258628229335853,
+          "confidence_95": [
+            1.0188100744239712,
+            1.0356356367952548
+          ]
+        },
+        "q19": {
+          "point": 1.006306960560054,
+          "confidence_95": [
+            1.0029792372827013,
+            1.011466946595788
+          ]
+        },
+        "q20": {
+          "point": 1.0021828543665736,
+          "confidence_95": [
+            0.9951866682365875,
+            1.0077603485402173
+          ]
+        },
+        "q21": {
+          "point": 0.9937593071334554,
+          "confidence_95": [
+            0.9592248703076708,
+            1.013555569484823
+          ]
+        },
+        "q22": {
+          "point": 0.7189409571876197,
+          "confidence_95": [
+            0.7148774843526099,
+            0.7251815745397551
+          ]
+        }
+      },
+      "one_core_2_percent_screen_passed": null
+    }
+  },
+  "retained_receipt_hashes": {
+    "timing_audit_sha256": "1234dff5343e933dbce3c7c1bd2a72aa2fa3b093c0ca7b9a3b945ec6872bb420",
+    "acceptance_small_receipt_sha256": "61d10f3c9d61613bc8c8299669b7bd571ee658f39e77931b51538a2558a311c7"
+  }
+}
