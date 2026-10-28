@@ -22,17 +22,22 @@ use hashbrown::HashSet;
 use std::{sync::Arc, time::Instant};
 pub(super) mod having;
 mod output;
+pub(crate) mod window;
 pub(super) use output::{AggregateOutput, PartitionOutput};
 mod capacity;
 pub(super) mod clustered;
+mod float;
 mod heap;
+mod moments;
 mod narrow;
 use narrow::NarrowDeltas;
+mod ordered_set;
 mod ordered_source;
 mod preflight;
 mod runs;
 mod small_text;
 mod sorted_distinct;
+mod string_agg;
 pub(super) use ordered_source::SourceBatch;
 pub(crate) use sorted_distinct::DECLINED as SORTED_DISTINCT_DECLINED;
 
@@ -47,7 +52,14 @@ pub(super) struct States {
     pub(super) integer_sum: bool,
     pub(super) counts: Vec<u64>,
     pub(super) sums: Option<Vec<i256>>,
+    // One ordered accumulator per group; these states must never be merged.
+    float_sums: Option<Vec<f64>>,
     pub(super) extremes: Option<Vec<Option<Key>>>,
+    // Ordered second-moment accumulators; like float_sums, never merged.
+    moments: Option<moments::Cells>,
+    // Every value of each group for MEDIAN/QUANTILE/PERCENTILE/MODE; funded
+    // by heap_lease, so it is declared (and dropped) before that lease.
+    ordered: Option<ordered_set::Cells>,
     #[allow(clippy::type_complexity, clippy::box_collection)]
     pub(super) distinct: Option<Vec<Option<Box<HashSet<Key, ahash::RandomState>>>>>,
     // Payloads and tables drop before their backing lease, including raw exports.
@@ -83,6 +95,10 @@ impl States {
             }
             Aggregate::Sum | Aggregate::Avg => {
                 let array = &value.expect("bound aggregate input").array;
+                if self.float_sums.is_some() {
+                    self.update_float(array, groups, scalar)?;
+                    return Ok(0);
+                }
                 if array.data_type() != &arrow::datatypes::DataType::Null {
                     let numbers = numeric(array);
                     if optimized && self.add_narrow_batch(numbers, groups) {
@@ -120,6 +136,22 @@ impl States {
             _ => return Err("internal: unsupported independent aggregate state".into()),
         }
         Ok(0)
+    }
+    /// Update for an independently owned, non-DISTINCT state (aggregate helpers).
+    pub(super) fn update_independent(
+        &mut self,
+        function: &Aggregate,
+        value: Option<&Value>,
+        groups: &[usize],
+        rows: usize,
+        scalar: bool,
+    ) -> Result<usize> {
+        if let Aggregate::Moment { inputs, .. } = function {
+            let value = value.ok_or("internal: moment aggregate without input")?;
+            self.update_moments(inputs, value, groups, rows, scalar)?;
+            return Ok(0);
+        }
+        self.update_plain(function, value, groups, rows, scalar, true)
     }
     /// With signed-i64 inputs, this margin bounds every ordered prefix and count.
     fn narrow_state_is_safe(&self, rows: usize) -> bool {
@@ -193,8 +225,38 @@ impl States {
         Self {
             integer_sum: aggregate.input.as_ref().is_some_and(|e| e.ty == Type::Int),
             counts: Vec::new(),
-            sums: matches!(aggregate.function, Aggregate::Sum | Aggregate::Avg).then(Vec::new),
-            extremes: matches!(aggregate.function, Aggregate::Min | Aggregate::Max).then(Vec::new),
+            sums: (matches!(aggregate.function, Aggregate::Sum | Aggregate::Avg)
+                && !aggregate
+                    .input
+                    .as_ref()
+                    .is_some_and(|e| e.ty == Type::Float))
+            .then(Vec::new),
+            float_sums: (matches!(aggregate.function, Aggregate::Sum | Aggregate::Avg)
+                && aggregate
+                    .input
+                    .as_ref()
+                    .is_some_and(|e| e.ty == Type::Float))
+            .then(Vec::new),
+            // STRING_AGG keeps one funded entry buffer per group in this slot;
+            // ARG_MAX/ARG_MIN keep the winning packed row in it.
+            extremes: matches!(
+                aggregate.function,
+                Aggregate::Min
+                    | Aggregate::Max
+                    | Aggregate::StringAgg(_)
+                    | Aggregate::ArgExtreme { .. }
+            )
+            .then(Vec::new),
+            moments: match &aggregate.function {
+                Aggregate::Moment { inputs, .. } => Some(moments::Cells::new(inputs)),
+                _ => None,
+            },
+            ordered: aggregate.function.is_ordered_set().then(|| {
+                ordered_set::Cells::new(
+                    &aggregate.function,
+                    aggregate.input.as_ref().map_or(&Type::Null, |e| &e.ty),
+                )
+            }),
             distinct: aggregate.distinct.then(Vec::new),
             heap_lease: None,
         }
@@ -206,9 +268,21 @@ impl States {
                 .as_ref()
                 .map_or(0, |_| std::mem::size_of::<i256>())
             + self
+                .float_sums
+                .as_ref()
+                .map_or(0, |_| std::mem::size_of::<f64>())
+            + self
                 .extremes
                 .as_ref()
                 .map_or(0, |_| std::mem::size_of::<Option<Key>>())
+            + self
+                .moments
+                .as_ref()
+                .map_or(0, moments::Cells::bytes_per_group)
+            + self
+                .ordered
+                .as_ref()
+                .map_or(0, ordered_set::Cells::bytes_per_group)
             + self.distinct.as_ref().map_or(0, |_| {
                 std::mem::size_of::<Option<Box<HashSet<Key, ahash::RandomState>>>>()
             })
@@ -218,8 +292,17 @@ impl States {
         if let Some(sums) = &mut self.sums {
             sums.push(i256::ZERO);
         }
+        if let Some(sums) = &mut self.float_sums {
+            sums.push(0.0);
+        }
         if let Some(extremes) = &mut self.extremes {
             extremes.push(None);
+        }
+        if let Some(moments) = &mut self.moments {
+            moments.push();
+        }
+        if let Some(ordered) = &mut self.ordered {
+            ordered.push();
         }
         if let Some(distinct) = &mut self.distinct {
             distinct.push(None);
@@ -688,6 +771,15 @@ impl Aggregation {
     ) -> Result<()> {
         let dest = &mut self.states[index];
         let src = &source.states[index];
+        if dest.float_sums.is_some() || src.float_sums.is_some() {
+            return Err("internal: floating aggregate partial merge is not ordered".into());
+        }
+        if dest.moments.is_some() || dest.extremes.is_some() {
+            return Err("internal: ordered aggregate state has no partial merge".into());
+        }
+        if dest.ordered.is_some() {
+            return Err("internal: ordered-set aggregate state has no partial merge".into());
+        }
         dest.counts[group] = dest.counts[group]
             .checked_add(src.counts[local])
             .ok_or("aggregate count overflow")?;
@@ -731,6 +823,11 @@ impl Aggregation {
         }
         if let Some(pairs) = self.sorted_distinct.take() {
             pairs.finish(&mut self.states[0].counts)?;
+        }
+        for state in &mut self.states {
+            if let Some(ordered) = &mut state.ordered {
+                ordered.finish();
+            }
         }
         Ok(())
     }
@@ -1164,6 +1261,35 @@ impl Aggregation {
                 )?;
                 continue;
             }
+            if !agg.distinct
+                && let Aggregate::Moment { inputs, .. } = &agg.function
+            {
+                self.states[index].update_moments(
+                    inputs,
+                    value.as_ref().expect("bound moment input"),
+                    &group_ids,
+                    rows,
+                    p.groups.is_empty(),
+                )?;
+                continue;
+            }
+            if agg.function.is_ordered_set() {
+                let States {
+                    ordered,
+                    heap_lease,
+                    ..
+                } = &mut self.states[index];
+                let lease = match heap_lease {
+                    Some(lease) => lease,
+                    None => heap_lease.insert(self.budget.reserve(0)?),
+                };
+                ordered.as_mut().expect("ordered-set state").update(
+                    value.as_ref().expect("bound ordered-set input"),
+                    &group_ids,
+                    lease,
+                )?;
+                continue;
+            }
             // DISTINCT and MIN/MAX retain the general typed-key path.
             let state = &mut self.states[index];
             if state.heap_lease.is_none() {
@@ -1191,11 +1317,52 @@ impl Aggregation {
                         continue;
                     }
                 }
-                state.counts[*group] = state.counts[*group]
-                    .checked_add(1)
-                    .ok_or("aggregate count overflow")?;
-                match agg.function {
+                // Float sums count inside add_float, with their overflow check.
+                if state.float_sums.is_none() {
+                    state.counts[*group] = state.counts[*group]
+                        .checked_add(1)
+                        .ok_or("aggregate count overflow")?;
+                }
+                match &agg.function {
                     Aggregate::Count => {}
+                    Aggregate::StringAgg(_) => {
+                        heap::append_entry(
+                            &mut state.extremes.as_mut().unwrap()[*group],
+                            state.heap_lease.as_mut().unwrap(),
+                            value.as_ref().unwrap(),
+                            row,
+                        )?;
+                    }
+                    _ if state.float_sums.is_some() => {
+                        // DISTINCT Float SUM/AVG: the first occurrence of each
+                        // distinct value is added in canonical input order.
+                        let number = value
+                            .as_ref()
+                            .unwrap()
+                            .array
+                            .as_any()
+                            .downcast_ref::<Float64Array>()
+                            .expect("bound Float aggregate input")
+                            .value(row);
+                        state.add_float(*group, number)?;
+                    }
+                    Aggregate::Moment { inputs, .. } => {
+                        state.update_moment_row(inputs, value.as_ref().unwrap(), *group, row)?;
+                    }
+                    Aggregate::ArgExtreme {
+                        minimum,
+                        arg,
+                        value: value_type,
+                    } => {
+                        state.update_arg_extreme(
+                            *minimum,
+                            arg,
+                            value_type,
+                            value.as_ref().unwrap(),
+                            *group,
+                            row,
+                        )?;
+                    }
                     Aggregate::Min | Aggregate::Max => {
                         heap::update_extreme(
                             &mut state.extremes.as_mut().unwrap()[*group],
@@ -1261,9 +1428,26 @@ impl Aggregation {
                 Output::Aggregate(i) => {
                     let a = &p.aggregates[*i];
                     let states = &self.states[expressions.state_sources[*i]];
-                    match a.function {
+                    match &a.function {
+                        Aggregate::Moment { function, inputs } => {
+                            states.moment_output(*function, inputs, range.clone())?
+                        }
+                        Aggregate::ArgExtreme { arg, .. } => {
+                            states.arg_extreme_output(arg, t, range.clone())?
+                        }
+                        Aggregate::Quantile(_) | Aggregate::Mode { .. } => {
+                            states.ordered.as_ref().expect("ordered-set state").output(
+                                &a.function,
+                                &a.input.as_ref().expect("ordered-set input").ty,
+                                t,
+                                range.clone(),
+                            )?
+                        }
                         Aggregate::Count => {
                             count_array(states.counts[range.clone()].iter().copied(), t)?
+                        }
+                        Aggregate::Sum | Aggregate::Avg if states.float_sums.is_some() => {
+                            states.float_output(range.clone(), matches!(a.function, Aggregate::Avg))
                         }
                         Aggregate::Sum => {
                             // Finalize the complete column before materializing
@@ -1289,6 +1473,11 @@ impl Aggregation {
                             );
                             materialize(&array, t)?
                         }
+                        Aggregate::StringAgg(separator) => string_agg::output(
+                            &states.extremes.as_ref().unwrap()[range.clone()],
+                            separator,
+                            &self.budget,
+                        )?,
                         Aggregate::Min | Aggregate::Max => keys_array(
                             &states.extremes.as_ref().unwrap()[range.clone()]
                                 .iter()
@@ -1319,7 +1508,7 @@ impl Aggregation {
             };
             arrays.push(output_array(array, output_schema.field(arrays.len()))?);
         }
-        RecordBatch::try_new(output_schema.clone(), arrays).map_err(|e| e.to_string())
+        Ok(RecordBatch::try_new(output_schema.clone(), arrays).map_err(|e| e.to_string())?)
     }
     pub(super) fn output_bytes(
         &self,
@@ -1350,6 +1539,21 @@ impl Aggregation {
                             .checked_add(key.payload_bytes())
                             .ok_or("output size overflow")?;
                     }
+                }
+                // A STRING_AGG result adds one separator per entry at most.
+                if let Aggregate::StringAgg(separator) = &p.aggregates[*i].function {
+                    for count in &state.counts[range.clone()] {
+                        strings = usize::try_from(*count)
+                            .ok()
+                            .and_then(|n| n.checked_mul(separator.len()))
+                            .and_then(|n| strings.checked_add(n))
+                            .ok_or("output size overflow")?;
+                    }
+                }
+                if let Some(ordered) = &state.ordered {
+                    strings = strings
+                        .checked_add(ordered.output_payload(range.clone()))
+                        .ok_or("output size overflow")?;
                 }
             }
         }

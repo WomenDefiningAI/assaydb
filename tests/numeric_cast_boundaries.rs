@@ -1,5 +1,7 @@
 //! Exact48-query oracle retained from the found-and-fixed CAST boundary probe.
-//! Expected results are pinned SQLite3.54 values, including binary64 zero signs.
+//! Expected results are pinned SQLite3.54 values, including binary64 zero signs,
+//! except ABS(-0.0): +0.0 by the 2026-10-17 decision (SQLite's -0.0 is recorded
+//! beside it as `sqlite_expected`).
 use arrow::{
     array::{BooleanArray, Float64Array, Int64Array},
     record_batch::RecordBatch,
@@ -50,6 +52,9 @@ fn all_48_pinned_numeric_cast_queries_keep_exact_values_and_zero_signs() {
         fixture["amalgamation_sha256"],
         "b739c477092f587417d402fe227eb13c0a83f7534e87082f4a1b80d429a57931"
     );
+    // The October 21 compatibility decision restores the original public
+    // SQLite answers. The immutable DuckDB observations remain in
+    // fixtures/cast_dialect/legacy-final.json; they do not override this oracle.
     let cases = fixture["cases"].as_array().unwrap();
     assert_eq!(cases.len(), 48);
     for workers in [1, 10] {

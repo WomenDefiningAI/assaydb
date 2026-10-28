@@ -698,6 +698,7 @@ fn cancellation_during_demand_probe_releases_members_batches_and_workers() {
             lane_transforms: Default::default(),
             replay_transforms: HashMap::new(),
             materialized: HashMap::new(),
+            recursive_bindings: None,
             sideways_registry_lease: None,
             spill: None,
             budget: budget.clone(),

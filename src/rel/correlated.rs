@@ -183,7 +183,7 @@ fn validate_exists_projection(
                                 && ids.len() == 2
                                 && !qualified_columns(local, &ids[0]).is_empty()
                             {
-                                return Err(format!("unknown local column: {e}"));
+                                return Err(format!("unknown local column: {e}").into());
                             }
                             binder(outer).expr(e)?;
                         }
@@ -215,7 +215,7 @@ fn validate_exists_projection(
                     fields = qualified_columns(outer, qualifier);
                 }
                 if fields.is_empty() {
-                    return Err(format!("unknown wildcard qualifier: {name}"));
+                    return Err(format!("unknown wildcard qualifier: {name}").into());
                 }
                 for field in fields {
                     Type::from_field(field)?;
@@ -490,6 +490,7 @@ mod tests {
                 lane_transforms: HashMap::new(),
                 replay_transforms: HashMap::new(),
                 materialized: HashMap::new(),
+                recursive_bindings: None,
                 sideways_registry_lease: None,
                 spill: None,
                 budget: budget.clone(),

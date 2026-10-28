@@ -362,6 +362,7 @@ mod tests {
             lane_transforms: HashMap::new(),
             replay_transforms: HashMap::new(),
             materialized: HashMap::new(),
+            recursive_bindings: None,
             sideways_registry_lease: None,
             spill: None,
             budget: budget.clone(),

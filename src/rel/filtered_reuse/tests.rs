@@ -156,6 +156,7 @@ fn context<'a>(options: &'a Options, budget: &Budget) -> Context<'a> {
         lane_transforms: HashMap::new(),
         replay_transforms: HashMap::new(),
         materialized: HashMap::new(),
+        recursive_bindings: None,
         sideways_registry_lease: None,
         spill: None,
         budget: budget.clone(),
@@ -188,7 +189,7 @@ fn collected(node: &Node, ctx: &mut Context<'_>) -> Result<RecordBatch> {
         batches.push(b);
         Ok(())
     })?;
-    concat_batches(&node.schema, &batches).map_err(|e| e.to_string())
+    Ok(concat_batches(&node.schema, &batches).map_err(|e| e.to_string())?)
 }
 
 #[test]

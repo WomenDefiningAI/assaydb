@@ -1,0 +1,165 @@
+{
+  "duckdb_version": "1.5.6",
+  "threads": 1,
+  "cases_sha256": "999dbd5b7c90d503e7f8556810f3121d8586f0e30b31d1c7b9e0e01b0154da4b",
+  "inputs": {},
+  "float_comparison": "abs <= 1e-12 or relative <= 1e-12; deterministic Assay bits separately pinned",
+  "cases": [
+    {
+      "id": "wf081",
+      "ordered": true,
+      "sibling_of": "wf045",
+      "sql": "WITH w AS (\n SELECT 1 AS id, 'a' AS p, 1 AS k, 2 AS v, CAST(2.5 AS DOUBLE) AS f, DATE '2024-01-29' AS day, 'b' AS txt\n UNION ALL SELECT 2,'a',1,4,CAST(4.5 AS DOUBLE),DATE '2024-01-31','a'\n UNION ALL SELECT 3,'a',3,NULL,CAST(NULL AS DOUBLE),DATE '2024-02-01',CAST(NULL AS TEXT)\n UNION ALL SELECT 4,'a',7,-2,CAST(-2.5 AS DOUBLE),DATE '2024-02-06','c'\n UNION ALL SELECT 5,'a',NULL,8,CAST(8.5 AS DOUBLE),CAST(NULL AS DATE),'d'\n UNION ALL SELECT 6,'b',1,NULL,CAST(NULL AS DOUBLE),DATE '2024-02-27',CAST(NULL AS TEXT)\n UNION ALL SELECT 7,'b',2,NULL,CAST(NULL AS DOUBLE),DATE '2024-02-29','z'\n UNION ALL SELECT 8,'b',2,NULL,CAST(NULL AS DOUBLE),DATE '2024-03-01','x'\n UNION ALL SELECT 9,NULL,2,8,CAST(8 AS DOUBLE),DATE '2024-02-29','y'\n UNION ALL SELECT 10,NULL,NULL,8,CAST(8 AS DOUBLE),DATE '2024-03-06','q'\n)\nSELECT id,FIRST_VALUE(txt) OVER(PARTITION BY p ORDER BY k,id RANGE BETWEEN CURRENT ROW AND CURRENT ROW) AS result FROM w ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          1,
+          "b"
+        ],
+        [
+          2,
+          "a"
+        ],
+        [
+          3,
+          null
+        ],
+        [
+          4,
+          "c"
+        ],
+        [
+          5,
+          "d"
+        ],
+        [
+          6,
+          null
+        ],
+        [
+          7,
+          "z"
+        ],
+        [
+          8,
+          "x"
+        ],
+        [
+          9,
+          "y"
+        ],
+        [
+          10,
+          "q"
+        ]
+      ]
+    },
+    {
+      "id": "wf082",
+      "ordered": true,
+      "sibling_of": "wf048",
+      "sql": "WITH w AS (\n SELECT 1 AS id, 'a' AS p, 1 AS k, 2 AS v, CAST(2.5 AS DOUBLE) AS f, DATE '2024-01-29' AS day, 'b' AS txt\n UNION ALL SELECT 2,'a',1,4,CAST(4.5 AS DOUBLE),DATE '2024-01-31','a'\n UNION ALL SELECT 3,'a',3,NULL,CAST(NULL AS DOUBLE),DATE '2024-02-01',CAST(NULL AS TEXT)\n UNION ALL SELECT 4,'a',7,-2,CAST(-2.5 AS DOUBLE),DATE '2024-02-06','c'\n UNION ALL SELECT 5,'a',NULL,8,CAST(8.5 AS DOUBLE),CAST(NULL AS DATE),'d'\n UNION ALL SELECT 6,'b',1,NULL,CAST(NULL AS DOUBLE),DATE '2024-02-27',CAST(NULL AS TEXT)\n UNION ALL SELECT 7,'b',2,NULL,CAST(NULL AS DOUBLE),DATE '2024-02-29','z'\n UNION ALL SELECT 8,'b',2,NULL,CAST(NULL AS DOUBLE),DATE '2024-03-01','x'\n UNION ALL SELECT 9,NULL,2,8,CAST(8 AS DOUBLE),DATE '2024-02-29','y'\n UNION ALL SELECT 10,NULL,NULL,8,CAST(8 AS DOUBLE),DATE '2024-03-06','q'\n)\nSELECT id,LAST_VALUE(txt) OVER(PARTITION BY p ORDER BY k,id ) AS result FROM w ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          1,
+          "b"
+        ],
+        [
+          2,
+          "a"
+        ],
+        [
+          3,
+          null
+        ],
+        [
+          4,
+          "c"
+        ],
+        [
+          5,
+          "d"
+        ],
+        [
+          6,
+          null
+        ],
+        [
+          7,
+          "z"
+        ],
+        [
+          8,
+          "x"
+        ],
+        [
+          9,
+          "y"
+        ],
+        [
+          10,
+          "q"
+        ]
+      ]
+    },
+    {
+      "id": "wf083",
+      "ordered": true,
+      "sibling_of": "wf058",
+      "sql": "WITH w AS (\n SELECT 1 AS id, 'a' AS p, 1 AS k, 2 AS v, CAST(2.5 AS DOUBLE) AS f, DATE '2024-01-29' AS day, 'b' AS txt\n UNION ALL SELECT 2,'a',1,4,CAST(4.5 AS DOUBLE),DATE '2024-01-31','a'\n UNION ALL SELECT 3,'a',3,NULL,CAST(NULL AS DOUBLE),DATE '2024-02-01',CAST(NULL AS TEXT)\n UNION ALL SELECT 4,'a',7,-2,CAST(-2.5 AS DOUBLE),DATE '2024-02-06','c'\n UNION ALL SELECT 5,'a',NULL,8,CAST(8.5 AS DOUBLE),CAST(NULL AS DATE),'d'\n UNION ALL SELECT 6,'b',1,NULL,CAST(NULL AS DOUBLE),DATE '2024-02-27',CAST(NULL AS TEXT)\n UNION ALL SELECT 7,'b',2,NULL,CAST(NULL AS DOUBLE),DATE '2024-02-29','z'\n UNION ALL SELECT 8,'b',2,NULL,CAST(NULL AS DOUBLE),DATE '2024-03-01','x'\n UNION ALL SELECT 9,NULL,2,8,CAST(8 AS DOUBLE),DATE '2024-02-29','y'\n UNION ALL SELECT 10,NULL,NULL,8,CAST(8 AS DOUBLE),DATE '2024-03-06','q'\n)\nSELECT id,NTH_VALUE(txt,3) OVER(PARTITION BY p ORDER BY k,id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS result FROM w ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          null
+        ],
+        [
+          3,
+          "c"
+        ],
+        [
+          4,
+          "d"
+        ],
+        [
+          5,
+          null
+        ],
+        [
+          6,
+          null
+        ],
+        [
+          7,
+          "x"
+        ],
+        [
+          8,
+          null
+        ],
+        [
+          9,
+          null
+        ],
+        [
+          10,
+          null
+        ]
+      ]
+    }
+  ]
+}

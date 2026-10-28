@@ -1,0 +1,3717 @@
+{
+ "duckdb_version": "1.5.6",
+ "cases_sha256": "413019b29216d05bfcbe681374963f5782db521cac8ddb67b1398ad1d8239ed1",
+ "tables": {
+  "sales": {
+   "bytes": 8926,
+   "sha256": "6a346bb286fc252905113d720824c8371007ceecbc2e4f4c4fd393a7ef83fe16"
+  },
+  "empty_sales": {
+   "bytes": 1416,
+   "sha256": "1c758df1de3e73e572bc6e3110aaf7939dbe07e9cad0384f03252d1cd3f72ccd"
+  },
+  "big": {
+   "bytes": 1603,
+   "sha256": "565a900bd09486c662979385b7ca4c4fdcdeb1dd0aeaa44928a795d2654d168e"
+  }
+ },
+ "postgresql_execution": "psql against PostgreSQL TEMP tables with the same rows (text COLLATE \"C\"); pg_agrees is a loose numeric comparison for notes only",
+ "unexpected_reference_outcomes": [],
+ "cases": [
+  {
+   "id": "filter_count_star_ungrouped",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT COUNT(*) FILTER (WHERE urgent) AS urgent_rows, COUNT(*) FILTER (WHERE NOT urgent) AS other_rows, COUNT(*) AS all_rows FROM sales;",
+   "reference_outcome": "rows",
+   "columns": [
+    "urgent_rows",
+    "other_rows",
+    "all_rows"
+   ],
+   "types": [
+    "BIGINT",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     8,
+     7,
+     18
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_grouped_several_conditions",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, COUNT(*) FILTER (WHERE urgent) AS urgent_rows, COUNT(*) FILTER (WHERE NOT urgent) AS other_rows, COUNT(*) FILTER (WHERE urgent IS NULL) AS unknown_rows, COUNT(*) AS all_rows FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "urgent_rows",
+    "other_rows",
+    "unknown_rows",
+    "all_rows"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "BIGINT",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     3,
+     2,
+     0,
+     5
+    ],
+    [
+     "APAC",
+     1,
+     2,
+     1,
+     4
+    ],
+    [
+     "EU",
+     3,
+     1,
+     1,
+     5
+    ],
+    [
+     "MEA",
+     0,
+     2,
+     0,
+     2
+    ],
+    [
+     null,
+     1,
+     0,
+     1,
+     2
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_sum_avg_min_max",
+   "ordered": true,
+   "pg": "agree (PostgreSQL AVG of BIGINT returns NUMERIC; values agree)",
+   "sql": "SELECT region, SUM(qty) FILTER (WHERE urgent) AS urgent_qty, AVG(qty) FILTER (WHERE qty > 2) AS avg_big_qty, MIN(price) FILTER (WHERE urgent) AS min_urgent_price, MAX(price) FILTER (WHERE NOT urgent) AS max_other_price FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "urgent_qty",
+    "avg_big_qty",
+    "min_urgent_price",
+    "max_other_price"
+   ],
+   "types": [
+    "VARCHAR",
+    "HUGEINT",
+    "DOUBLE",
+    "DECIMAL(10,2)",
+    "DECIMAL(10,2)"
+   ],
+   "rows": [
+    [
+     "AMER",
+     16,
+     {
+      "float": "7.0"
+     },
+     "0.01",
+     "15.00"
+    ],
+    [
+     "APAC",
+     2,
+     {
+      "float": "7.5"
+     },
+     "5.55",
+     "12.34"
+    ],
+    [
+     "EU",
+     16,
+     {
+      "float": "4.75"
+     },
+     "10.50",
+     "20.00"
+    ],
+    [
+     "MEA",
+     null,
+     {
+      "float": "4.0"
+     },
+     null,
+     "6.00"
+    ],
+    [
+     null,
+     2,
+     null,
+     "8.00",
+     null
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_all_rows_filtered_ungrouped",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT COUNT(*) FILTER (WHERE qty > 100) AS n, COUNT(qty) FILTER (WHERE qty > 100) AS nq, SUM(qty) FILTER (WHERE qty > 100) AS s, AVG(price) FILTER (WHERE qty > 100) AS a, MIN(city) FILTER (WHERE qty > 100) AS lo, MAX(d) FILTER (WHERE qty > 100) AS hi FROM sales;",
+   "reference_outcome": "rows",
+   "columns": [
+    "n",
+    "nq",
+    "s",
+    "a",
+    "lo",
+    "hi"
+   ],
+   "types": [
+    "BIGINT",
+    "BIGINT",
+    "HUGEINT",
+    "DOUBLE",
+    "VARCHAR",
+    "DATE"
+   ],
+   "rows": [
+    [
+     0,
+     0,
+     null,
+     null,
+     null,
+     null
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_group_with_no_matching_rows",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, COUNT(*) FILTER (WHERE urgent) AS urgent_rows, SUM(price) FILTER (WHERE urgent) AS urgent_price, COUNT(*) AS all_rows FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "urgent_rows",
+    "urgent_price",
+    "all_rows"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "DECIMAL(38,2)",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     3,
+     "101.00",
+     5
+    ],
+    [
+     "APAC",
+     1,
+     "5.55",
+     4
+    ],
+    [
+     "EU",
+     3,
+     "30.50",
+     5
+    ],
+    [
+     "MEA",
+     0,
+     null,
+     2
+    ],
+    [
+     null,
+     1,
+     "8.00",
+     2
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_null_condition_is_skipped",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT COUNT(*) FILTER (WHERE urgent) AS t, COUNT(*) FILTER (WHERE NOT urgent) AS f, COUNT(*) FILTER (WHERE urgent OR urgent IS NULL) AS t_or_unknown, COUNT(*) FILTER (WHERE NULL) AS never FROM sales;",
+   "reference_outcome": "rows",
+   "columns": [
+    "t",
+    "f",
+    "t_or_unknown",
+    "never"
+   ],
+   "types": [
+    "BIGINT",
+    "BIGINT",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     8,
+     7,
+     11,
+     0
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_count_column",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, COUNT(qty) FILTER (WHERE urgent) AS urgent_qty_rows, COUNT(city) FILTER (WHERE price > 5) AS priced_city_rows FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "urgent_qty_rows",
+    "priced_city_rows"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     3,
+     3
+    ],
+    [
+     "APAC",
+     1,
+     3
+    ],
+    [
+     "EU",
+     3,
+     4
+    ],
+    [
+     "MEA",
+     0,
+     1
+    ],
+    [
+     null,
+     1,
+     1
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_in_having",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, COUNT(*) AS n FROM sales GROUP BY region HAVING COUNT(*) FILTER (WHERE urgent) >= 2 ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     5
+    ],
+    [
+     "EU",
+     5
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_order_by_alias",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, SUM(qty) FILTER (WHERE urgent) AS uq FROM sales WHERE region IS NOT NULL GROUP BY region ORDER BY uq DESC NULLS LAST, region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "uq"
+   ],
+   "types": [
+    "VARCHAR",
+    "HUGEINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     16
+    ],
+    [
+     "EU",
+     16
+    ],
+    [
+     "APAC",
+     2
+    ],
+    [
+     "MEA",
+     null
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_order_by_expression",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, COUNT(*) AS n FROM sales WHERE region IS NOT NULL GROUP BY region ORDER BY COUNT(*) FILTER (WHERE urgent) DESC, region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     5
+    ],
+    [
+     "EU",
+     5
+    ],
+    [
+     "APAC",
+     4
+    ],
+    [
+     "MEA",
+     2
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_count_distinct",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, COUNT(DISTINCT city) FILTER (WHERE urgent) AS urgent_cities, COUNT(DISTINCT city) AS cities FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "urgent_cities",
+    "cities"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     2,
+     3
+    ],
+    [
+     "APAC",
+     1,
+     2
+    ],
+    [
+     "EU",
+     2,
+     2
+    ],
+    [
+     "MEA",
+     0,
+     2
+    ],
+    [
+     null,
+     1,
+     1
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_date_min_max",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT MAX(d) FILTER (WHERE urgent) AS last_urgent, MIN(d) FILTER (WHERE NOT urgent) AS first_other FROM sales;",
+   "reference_outcome": "rows",
+   "columns": [
+    "last_urgent",
+    "first_other"
+   ],
+   "types": [
+    "DATE",
+    "DATE"
+   ],
+   "rows": [
+    [
+     "2024-03-31",
+     "2024-01-20"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_text_min_max",
+   "ordered": true,
+   "pg": "agree with COLLATE \"C\" text columns",
+   "sql": "SELECT region, MIN(city) FILTER (WHERE qty >= 3) AS first_city, MAX(note) FILTER (WHERE urgent) AS last_note FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "first_city",
+    "last_note"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "AMER",
+     "Lima",
+     "j"
+    ],
+    [
+     "APAC",
+     "Ōsaka",
+     "k"
+    ],
+    [
+     "EU",
+     "Köln",
+     "c"
+    ],
+    [
+     "MEA",
+     "Cairo",
+     null
+    ],
+    [
+     null,
+     null,
+     "i"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_empty_table_ungrouped",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT COUNT(*) FILTER (WHERE urgent) AS n, SUM(qty) FILTER (WHERE urgent) AS s, AVG(qty) FILTER (WHERE urgent) AS a FROM empty_sales;",
+   "reference_outcome": "rows",
+   "columns": [
+    "n",
+    "s",
+    "a"
+   ],
+   "types": [
+    "BIGINT",
+    "HUGEINT",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     0,
+     null,
+     null
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_empty_table_grouped",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, COUNT(*) FILTER (WHERE urgent) AS n FROM empty_sales GROUP BY region ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_decimal_arithmetic_argument",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, SUM(price * qty) FILTER (WHERE d >= DATE '2024-02-01') AS late_value, SUM(price * qty) AS all_value FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "late_value",
+    "all_value"
+   ],
+   "types": [
+    "VARCHAR",
+    "DECIMAL(38,2)",
+    "DECIMAL(38,2)"
+   ],
+   "rows": [
+    [
+     "AMER",
+     "130.04",
+     "330.02"
+    ],
+    [
+     "APAC",
+     "61.05",
+     "135.09"
+    ],
+    [
+     "EU",
+     "60.00",
+     "172.50"
+    ],
+    [
+     "MEA",
+     "43.50",
+     "43.50"
+    ],
+    [
+     null,
+     null,
+     "16.00"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_float_sum",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, SUM(disc) FILTER (WHERE urgent) AS urgent_disc, COUNT(disc) FILTER (WHERE urgent) AS urgent_disc_rows FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "urgent_disc",
+    "urgent_disc_rows"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     {
+      "float": "NaN"
+     },
+     3
+    ],
+    [
+     "APAC",
+     {
+      "float": "+inf"
+     },
+     1
+    ],
+    [
+     "EU",
+     {
+      "float": "0.75"
+     },
+     3
+    ],
+    [
+     "MEA",
+     null,
+     0
+    ],
+    [
+     null,
+     {
+      "float": "0.5"
+     },
+     1
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_float_distinct",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, SUM(DISTINCT disc) FILTER (WHERE NOT urgent) AS s, AVG(DISTINCT disc) FILTER (WHERE NOT urgent) AS a FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "s",
+    "a"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "AMER",
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     "APAC",
+     {
+      "float": "1.0"
+     },
+     {
+      "float": "1.0"
+     }
+    ],
+    [
+     "EU",
+     {
+      "float": "0.5"
+     },
+     {
+      "float": "0.5"
+     }
+    ],
+    [
+     "MEA",
+     {
+      "float": "0.75"
+     },
+     {
+      "float": "0.75"
+     }
+    ],
+    [
+     null,
+     null,
+     null
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_in_derived_table",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT SUM(u) AS urgent_rows, MAX(u) AS busiest FROM (SELECT region, COUNT(*) FILTER (WHERE urgent) AS u FROM sales GROUP BY region) t;",
+   "reference_outcome": "rows",
+   "columns": [
+    "urgent_rows",
+    "busiest"
+   ],
+   "types": [
+    "HUGEINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     8,
+     3
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_in_scalar_subquery",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT (SELECT COUNT(*) FILTER (WHERE urgent) FROM sales) AS urgent_rows, (SELECT SUM(qty) FILTER (WHERE region = 'EU') FROM sales) AS eu_qty;",
+   "reference_outcome": "rows",
+   "columns": [
+    "urgent_rows",
+    "eu_qty"
+   ],
+   "types": [
+    "BIGINT",
+    "HUGEINT"
+   ],
+   "rows": [
+    [
+     8,
+     19
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_like_condition",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT COUNT(*) FILTER (WHERE city LIKE 'S%') AS s_cities, COUNT(*) FILTER (WHERE city LIKE '%ö%') AS umlaut_cities FROM sales;",
+   "reference_outcome": "rows",
+   "columns": [
+    "s_cities",
+    "umlaut_cities"
+   ],
+   "types": [
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     2,
+     2
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_same_aggregate_different_filters",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, SUM(qty) AS all_qty, SUM(qty) FILTER (WHERE urgent) AS urgent_qty, SUM(qty) FILTER (WHERE NOT urgent) AS other_qty FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "all_qty",
+    "urgent_qty",
+    "other_qty"
+   ],
+   "types": [
+    "VARCHAR",
+    "HUGEINT",
+    "HUGEINT",
+    "HUGEINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     24,
+     16,
+     8
+    ],
+    [
+     "APAC",
+     17,
+     2,
+     6
+    ],
+    [
+     "EU",
+     19,
+     16,
+     3
+    ],
+    [
+     "MEA",
+     8,
+     null,
+     8
+    ],
+    [
+     null,
+     2,
+     2,
+     null
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "filter_fallible_argument_refused",
+   "ordered": true,
+   "pg": "disagree: PostgreSQL evaluates the argument only for rows passing FILTER (returns 8.51 here); DuckDB evaluates it on every row and raises a conversion error",
+   "assay_error": "unsupported: aggregate FILTER over an argument that may fail",
+   "difference": "DuckDB evaluates the argument on filtered-out rows and errors, PostgreSQL does not; Assay refuses arguments it cannot prove total",
+   "sql": "SELECT SUM(CAST(price AS DECIMAL(3,2))) FILTER (WHERE price < 5) AS s FROM sales;",
+   "reference_outcome": "error",
+   "reference_error": "Conversion Error: Casting value \"10.50\" to type DECIMAL(3,2) failed: value is out of range! when casting from source column price\n\nLINE 1: SELECT SUM(CAST(price AS DECIMAL(3,2))) FILTER (WHERE price < 5) AS...\n                   ^",
+   "pg_outcome": "rows"
+  },
+  {
+   "id": "filter_window_refused",
+   "ordered": true,
+   "pg": "agree (both engines support FILTER on window aggregates)",
+   "sql": "SELECT id, SUM(qty) FILTER (WHERE urgent) OVER () AS s FROM sales ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "s"
+   ],
+   "types": [
+    "BIGINT",
+    "HUGEINT"
+   ],
+   "rows": [
+    [
+     1,
+     36
+    ],
+    [
+     2,
+     36
+    ],
+    [
+     3,
+     36
+    ],
+    [
+     4,
+     36
+    ],
+    [
+     5,
+     36
+    ],
+    [
+     6,
+     36
+    ],
+    [
+     7,
+     36
+    ],
+    [
+     8,
+     36
+    ],
+    [
+     9,
+     36
+    ],
+    [
+     10,
+     36
+    ],
+    [
+     11,
+     36
+    ],
+    [
+     12,
+     36
+    ],
+    [
+     13,
+     36
+    ],
+    [
+     14,
+     36
+    ],
+    [
+     15,
+     36
+    ],
+    [
+     16,
+     36
+    ],
+    [
+     17,
+     36
+    ],
+    [
+     18,
+     36
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "distinct_float_grouped",
+   "ordered": true,
+   "pg": "agree (PostgreSQL also equates -0 with 0 and all NaNs)",
+   "sql": "SELECT region, SUM(DISTINCT disc) AS s, AVG(DISTINCT disc) AS a, COUNT(DISTINCT disc) AS n, SUM(disc) AS plain FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "s",
+    "a",
+    "n",
+    "plain"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DOUBLE",
+    "BIGINT",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "AMER",
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     3,
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     "APAC",
+     {
+      "float": "+inf"
+     },
+     {
+      "float": "+inf"
+     },
+     2,
+     {
+      "float": "+inf"
+     }
+    ],
+    [
+     "EU",
+     {
+      "float": "0.75"
+     },
+     {
+      "float": "0.25"
+     },
+     3,
+     {
+      "float": "1.5"
+     }
+    ],
+    [
+     "MEA",
+     {
+      "float": "0.75"
+     },
+     {
+      "float": "0.75"
+     },
+     1,
+     {
+      "float": "1.5"
+     }
+    ],
+    [
+     null,
+     {
+      "float": "0.5"
+     },
+     {
+      "float": "0.5"
+     },
+     1,
+     {
+      "float": "0.5"
+     }
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "distinct_float_ungrouped_where",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT SUM(DISTINCT disc) AS s, AVG(DISTINCT disc) AS a, COUNT(DISTINCT disc) AS n FROM sales WHERE region = 'EU';",
+   "reference_outcome": "rows",
+   "columns": [
+    "s",
+    "a",
+    "n"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     {
+      "float": "0.75"
+     },
+     {
+      "float": "0.25"
+     },
+     3
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "distinct_float_expression",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT SUM(DISTINCT disc * 2) AS s, AVG(DISTINCT -disc) AS a FROM sales WHERE region = 'EU';",
+   "reference_outcome": "rows",
+   "columns": [
+    "s",
+    "a"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "1.5"
+     },
+     {
+      "float": "-0.25"
+     }
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "distinct_float_signed_zero",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT SUM(DISTINCT disc) AS s, AVG(DISTINCT disc) AS a, COUNT(DISTINCT disc) AS n FROM sales WHERE id IN (4, 5);",
+   "reference_outcome": "rows",
+   "columns": [
+    "s",
+    "a",
+    "n"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     {
+      "float": "0.0"
+     },
+     {
+      "float": "0.0"
+     },
+     1
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "distinct_float_nan_payloads",
+   "ordered": true,
+   "pg": "agree (NaN only; PostgreSQL has a single NaN)",
+   "sql": "SELECT SUM(DISTINCT disc) AS s, AVG(DISTINCT disc) AS a, COUNT(DISTINCT disc) AS n FROM sales WHERE id IN (6, 17);",
+   "reference_outcome": "rows",
+   "columns": [
+    "s",
+    "a",
+    "n"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     1
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "distinct_float_all_null",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT SUM(DISTINCT disc) AS s, AVG(DISTINCT disc) AS a, COUNT(DISTINCT disc) AS n FROM sales WHERE id IN (11, 13);",
+   "reference_outcome": "rows",
+   "columns": [
+    "s",
+    "a",
+    "n"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     null,
+     null,
+     0
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "distinct_float_empty_table",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT SUM(DISTINCT disc) AS s, AVG(DISTINCT disc) AS a FROM empty_sales;",
+   "reference_outcome": "rows",
+   "columns": [
+    "s",
+    "a"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     null,
+     null
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "distinct_float_empty_table_grouped",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, SUM(DISTINCT disc) AS s FROM empty_sales GROUP BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "s"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE"
+   ],
+   "rows": [],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "distinct_float_infinity",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT SUM(DISTINCT disc) AS s, AVG(DISTINCT disc) AS a FROM sales WHERE region = 'APAC';",
+   "reference_outcome": "rows",
+   "columns": [
+    "s",
+    "a"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "+inf"
+     },
+     {
+      "float": "+inf"
+     }
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "distinct_float_avoids_duplicate_overflow",
+   "ordered": true,
+   "pg": "SUM and COUNT agree; PostgreSQL AVG(float8) raises overflow because its transition also accumulates squares (pre-existing approved Float AVG = SUM / COUNT)",
+   "sql": "SELECT SUM(DISTINCT x) AS s, AVG(DISTINCT x) AS a, COUNT(DISTINCT x) AS n FROM big WHERE g = 1;",
+   "reference_outcome": "rows",
+   "columns": [
+    "s",
+    "a",
+    "n"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     {
+      "float": "0.0"
+     },
+     {
+      "float": "0.0"
+     },
+     2
+    ]
+   ],
+   "pg_outcome": "error",
+   "pg_error": "ERROR:  value out of range: overflow"
+  },
+  {
+   "id": "distinct_float_overflow_refused",
+   "ordered": true,
+   "pg": "disagree: PostgreSQL raises float overflow; DuckDB returns infinity",
+   "difference": "Integration candidate 2: overflowing Float SUM returns +/-infinity like DuckDB (decision 2026-10-17); the id keeps its original name",
+   "sql": "SELECT SUM(DISTINCT x) AS s FROM big WHERE g = 2;",
+   "reference_outcome": "rows",
+   "columns": [
+    "s"
+   ],
+   "types": [
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "+inf"
+     }
+    ]
+   ],
+   "pg_outcome": "error",
+   "pg_error": "ERROR:  value out of range: overflow"
+  },
+  {
+   "id": "distinct_float_cast_integers",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, SUM(DISTINCT CAST(qty AS DOUBLE PRECISION)) AS s, AVG(DISTINCT CAST(qty AS DOUBLE PRECISION)) AS a FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "s",
+    "a"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "AMER",
+     {
+      "float": "24.0"
+     },
+     {
+      "float": "4.8"
+     }
+    ],
+    [
+     "APAC",
+     {
+      "float": "17.0"
+     },
+     {
+      "float": "5.666666666666667"
+     }
+    ],
+    [
+     "EU",
+     {
+      "float": "16.0"
+     },
+     {
+      "float": "5.333333333333333"
+     }
+    ],
+    [
+     "MEA",
+     {
+      "float": "8.0"
+     },
+     {
+      "float": "4.0"
+     }
+    ],
+    [
+     null,
+     {
+      "float": "2.0"
+     },
+     {
+      "float": "2.0"
+     }
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "distinct_float_having",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, SUM(DISTINCT disc) AS s FROM sales WHERE region IN ('EU', 'MEA') OR region IS NULL GROUP BY region HAVING SUM(DISTINCT disc) >= 0.5 ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "s"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "EU",
+     {
+      "float": "0.75"
+     }
+    ],
+    [
+     "MEA",
+     {
+      "float": "0.75"
+     }
+    ],
+    [
+     null,
+     {
+      "float": "0.5"
+     }
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "distinct_float_alongside_exact_distinct",
+   "ordered": true,
+   "pg": "agree (PostgreSQL AVG of NUMERIC returns NUMERIC; values agree)",
+   "sql": "SELECT region, SUM(DISTINCT disc) AS sd, SUM(DISTINCT qty) AS sq, AVG(DISTINCT price) AS ap, COUNT(*) AS n FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "sd",
+    "sq",
+    "ap",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "HUGEINT",
+    "DOUBLE",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     {
+      "float": "NaN"
+     },
+     24,
+     {
+      "float": "29.0"
+     },
+     5
+    ],
+    [
+     "APAC",
+     {
+      "float": "+inf"
+     },
+     17,
+     {
+      "float": "6.963333333333333"
+     },
+     4
+    ],
+    [
+     "EU",
+     {
+      "float": "0.75"
+     },
+     16,
+     {
+      "float": "12.583333333333334"
+     },
+     5
+    ],
+    [
+     "MEA",
+     {
+      "float": "0.75"
+     },
+     8,
+     {
+      "float": "5.25"
+     },
+     2
+    ],
+    [
+     null,
+     {
+      "float": "0.5"
+     },
+     2,
+     {
+      "float": "8.0"
+     },
+     2
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_cities_per_region",
+   "ordered": true,
+   "pg": "agree with COLLATE \"C\" (default en_US collation orders Ñ before S)",
+   "sql": "SELECT region, STRING_AGG(city, ', ' ORDER BY city) AS cities FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "cities"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "AMER",
+     "Lima, Lima, São Paulo, São Paulo, Ñuñoa"
+    ],
+    [
+     "APAC",
+     "Ōsaka, Ōsaka, 東京, 東京"
+    ],
+    [
+     "EU",
+     "Köln, Köln, Zürich, Zürich"
+    ],
+    [
+     "MEA",
+     "Cairo, Lagos"
+    ],
+    [
+     null,
+     "Paris"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_order_by_id_desc_nulls_last",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, STRING_AGG(note, ',' ORDER BY id DESC NULLS LAST) AS notes FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "notes"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "AMER",
+     "j,f,e,d"
+    ],
+    [
+     "APAC",
+     "k,h,g"
+    ],
+    [
+     "EU",
+     "b,c,,b,a"
+    ],
+    [
+     "MEA",
+     null
+    ],
+    [
+     null,
+     "i"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_null_keys_sort_last",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, STRING_AGG(city, '|' ORDER BY qty) AS by_qty FROM sales WHERE region IN ('EU', 'APAC') GROUP BY region ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "by_qty"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "APAC",
+     "Ōsaka|東京|Ōsaka|東京"
+    ],
+    [
+     "EU",
+     "Köln|Köln|Zürich|Zürich"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_desc_nulls_first",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, STRING_AGG(city, '|' ORDER BY qty DESC NULLS FIRST) AS by_qty FROM sales WHERE region IN ('EU', 'APAC') GROUP BY region ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "by_qty"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "APAC",
+     "東京|Ōsaka|東京|Ōsaka"
+    ],
+    [
+     "EU",
+     "Zürich|Zürich|Köln|Köln"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_empty_separator",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, STRING_AGG(note, '' ORDER BY id) AS joined FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "joined"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "AMER",
+     "defj"
+    ],
+    [
+     "APAC",
+     "ghk"
+    ],
+    [
+     "EU",
+     "abcb"
+    ],
+    [
+     "MEA",
+     null
+    ],
+    [
+     null,
+     "i"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_non_ascii_separator",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT STRING_AGG(city, ' → ' ORDER BY id) AS route FROM sales WHERE region = 'APAC';",
+   "reference_outcome": "rows",
+   "columns": [
+    "route"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "東京 → Ōsaka → 東京 → Ōsaka"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_empty_table",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT STRING_AGG(city, ',' ORDER BY id) AS cities, COUNT(*) AS n FROM empty_sales;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cities",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     null,
+     0
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_empty_table_grouped",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, STRING_AGG(city, ',' ORDER BY id) AS cities FROM empty_sales GROUP BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "cities"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_all_rows_filtered",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT STRING_AGG(city, ',' ORDER BY id) AS cities FROM sales WHERE qty > 100;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cities"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     null
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_keeps_duplicates",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT STRING_AGG(city, ',' ORDER BY city) AS cities FROM sales WHERE region = 'EU';",
+   "reference_outcome": "rows",
+   "columns": [
+    "cities"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "Köln,Köln,Zürich,Zürich"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_distinct_ordered_by_argument",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, STRING_AGG(DISTINCT city, ',' ORDER BY city) AS cities FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "cities"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "AMER",
+     "Lima,São Paulo,Ñuñoa"
+    ],
+    [
+     "APAC",
+     "Ōsaka,東京"
+    ],
+    [
+     "EU",
+     "Köln,Zürich"
+    ],
+    [
+     "MEA",
+     "Cairo,Lagos"
+    ],
+    [
+     null,
+     "Paris"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_filter",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, STRING_AGG(city, ';' ORDER BY id) FILTER (WHERE urgent) AS urgent_cities FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "urgent_cities"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "AMER",
+     "São Paulo;Ñuñoa;São Paulo"
+    ],
+    [
+     "APAC",
+     "Ōsaka"
+    ],
+    [
+     "EU",
+     "Zürich;Köln"
+    ],
+    [
+     "MEA",
+     null
+    ],
+    [
+     null,
+     "Paris"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_two_order_keys",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT STRING_AGG(CAST(id AS TEXT), ',' ORDER BY region NULLS FIRST, qty DESC NULLS LAST, id) AS ids FROM sales;",
+   "reference_outcome": "rows",
+   "columns": [
+    "ids"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "12,13,17,6,8,5,7,10,9,18,11,4,1,2,16,3,15,14"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_order_by_date",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, STRING_AGG(city, ',' ORDER BY d DESC NULLS LAST) AS recent_first FROM sales WHERE city IS NOT NULL GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "recent_first"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "AMER",
+     "São Paulo,Lima,Lima,Ñuñoa,São Paulo"
+    ],
+    [
+     "APAC",
+     "Ōsaka,東京,Ōsaka,東京"
+    ],
+    [
+     "EU",
+     "Köln,Zürich,Köln,Zürich"
+    ],
+    [
+     "MEA",
+     "Cairo,Lagos"
+    ],
+    [
+     null,
+     "Paris"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_order_by_float_nan_last",
+   "ordered": true,
+   "pg": "agree (NaN sorts above infinity in both)",
+   "sql": "SELECT STRING_AGG(CAST(id AS TEXT), ',' ORDER BY disc) AS ids FROM sales WHERE id IN (5, 6, 7, 9, 18);",
+   "reference_outcome": "rows",
+   "columns": [
+    "ids"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "5,7,9,18,6"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_in_having",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, COUNT(*) AS n FROM sales GROUP BY region HAVING STRING_AGG(city, ',' ORDER BY city) LIKE '%Köln%' ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "EU",
+     5
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_with_other_aggregates",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT COUNT(*) AS n, STRING_AGG(region, '/' ORDER BY id) AS regions, SUM(qty) AS q, MAX(note) AS last_note FROM sales WHERE id <= 5;",
+   "reference_outcome": "rows",
+   "columns": [
+    "n",
+    "regions",
+    "q",
+    "last_note"
+   ],
+   "types": [
+    "BIGINT",
+    "VARCHAR",
+    "HUGEINT",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     5,
+     "EU/EU/EU/EU/AMER",
+     18,
+     "d"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_empty_string_values",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT STRING_AGG(note, ',' ORDER BY id) AS notes FROM sales WHERE region = 'EU';",
+   "reference_outcome": "rows",
+   "columns": [
+    "notes"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "a,b,,c,b"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_unordered_refused",
+   "ordered": true,
+   "pg": "agree in SQL: order without ORDER BY is unspecified in both engines",
+   "assay_error": "unsupported: STRING_AGG without ORDER BY",
+   "difference": "Unordered concatenation order is unspecified; Assay requires an explicit ORDER BY",
+   "sql": "SELECT region, STRING_AGG(city, ',') AS cities FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "cities"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "AMER",
+     "São Paulo,Lima,Lima,Ñuñoa,São Paulo"
+    ],
+    [
+     "APAC",
+     "東京,Ōsaka,東京,Ōsaka"
+    ],
+    [
+     "EU",
+     "Zürich,Köln,Zürich,Köln"
+    ],
+    [
+     "MEA",
+     "Lagos,Cairo"
+    ],
+    [
+     null,
+     "Paris"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "string_agg_one_argument_refused",
+   "ordered": true,
+   "pg": "disagree: PostgreSQL has no one-argument STRING_AGG; DuckDB defaults the separator to ','",
+   "assay_error": "unsupported: STRING_AGG requires an explicit separator",
+   "difference": "Reference engines disagree on the one-argument form",
+   "sql": "SELECT STRING_AGG(city ORDER BY city) AS cities FROM sales WHERE region = 'EU';",
+   "reference_outcome": "rows",
+   "columns": [
+    "cities"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "Köln,Köln,Zürich,Zürich"
+    ]
+   ],
+   "pg_outcome": "error",
+   "pg_error": "ERROR:  function string_agg(text) does not exist"
+  },
+  {
+   "id": "string_agg_null_separator_refused",
+   "ordered": true,
+   "pg": "disagree: PostgreSQL treats a NULL delimiter as empty; DuckDB returns NULL",
+   "assay_error": "unsupported: STRING_AGG separator must be a non-NULL string literal",
+   "difference": "Reference engines disagree on a NULL separator",
+   "sql": "SELECT STRING_AGG(city, NULL ORDER BY city) AS cities FROM sales WHERE region = 'EU';",
+   "reference_outcome": "rows",
+   "columns": [
+    "cities"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     null
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": false,
+   "pg_rows": [
+    [
+     "KölnKölnZürichZürich"
+    ]
+   ]
+  },
+  {
+   "id": "string_agg_column_separator_refused",
+   "ordered": true,
+   "pg": "disagree: PostgreSQL accepts a per-row delimiter; DuckDB rejects a non-constant separator",
+   "assay_error": "unsupported: STRING_AGG separator must be a non-NULL string literal",
+   "difference": "Reference engines disagree on non-constant separators",
+   "sql": "SELECT STRING_AGG(city, note ORDER BY city) AS cities FROM sales WHERE region = 'EU';",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: Separator argument to StringAgg must be a constant",
+   "pg_outcome": "rows"
+  },
+  {
+   "id": "string_agg_integer_input_refused",
+   "ordered": true,
+   "pg": "disagree: PostgreSQL has no STRING_AGG(bigint, text); DuckDB casts to VARCHAR",
+   "assay_error": "unsupported: STRING_AGG requires TEXT input",
+   "difference": "Reference engines disagree on implicit casting of non-text input",
+   "sql": "SELECT STRING_AGG(qty, ',' ORDER BY id) AS q FROM sales WHERE region = 'EU';",
+   "reference_outcome": "rows",
+   "columns": [
+    "q"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "5,3,8,3"
+    ]
+   ],
+   "pg_outcome": "error",
+   "pg_error": "ERROR:  function string_agg(bigint, unknown) does not exist"
+  },
+  {
+   "id": "string_agg_distinct_other_order_refused",
+   "ordered": true,
+   "pg": "disagree: PostgreSQL requires DISTINCT ORDER BY expressions to appear in the argument list",
+   "assay_error": "unsupported: STRING_AGG DISTINCT requires ORDER BY the aggregated argument",
+   "difference": "PostgreSQL rejects this form; DuckDB accepts it",
+   "sql": "SELECT STRING_AGG(DISTINCT city, ',' ORDER BY id) AS cities FROM sales WHERE region = 'EU';",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: In a DISTINCT aggregate, ORDER BY expressions must appear in the argument list",
+   "pg_outcome": "error",
+   "pg_error": "ERROR:  in an aggregate with DISTINCT, ORDER BY expressions must appear in argument list"
+  },
+  {
+   "id": "string_agg_desc_default_nulls_refused",
+   "ordered": true,
+   "pg": "disagree: PostgreSQL DESC defaults to NULLS FIRST; DuckDB to NULLS LAST",
+   "assay_error": "unsupported: STRING_AGG ORDER BY DESC requires explicit NULLS FIRST or NULLS LAST",
+   "difference": "Reference engines place NULL keys differently",
+   "sql": "SELECT region, STRING_AGG(city, '|' ORDER BY qty DESC) AS by_qty FROM sales WHERE region = 'EU' GROUP BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "by_qty"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "EU",
+     "Zürich|Köln|Köln|Zürich"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": false,
+   "pg_rows": [
+    [
+     "EU",
+     "Zürich|Zürich|Köln|Köln"
+    ]
+   ]
+  },
+  {
+   "id": "string_agg_tied_keys_refused",
+   "ordered": true,
+   "pg": "agree in SQL: peers have no defined order in either engine",
+   "assay_error": "unsupported: STRING_AGG ORDER BY ties between different values",
+   "difference": "The order among tied keys is unspecified; Assay refuses instead of choosing one",
+   "sql": "SELECT STRING_AGG(city, ',' ORDER BY region) AS cities FROM sales;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cities"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "São Paulo,Lima,Lima,Ñuñoa,São Paulo,東京,Ōsaka,東京,Ōsaka,Zürich,Köln,Zürich,Köln,Lagos,Cairo,Paris"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": false,
+   "pg_rows": [
+    [
+     "Lima,São Paulo,Ñuñoa,Lima,São Paulo,Ōsaka,東京,Ōsaka,東京,Köln,Zürich,Zürich,Köln,Cairo,Lagos,Paris"
+    ]
+   ]
+  },
+  {
+   "id": "string_agg_signed_zero_tie_refused",
+   "ordered": true,
+   "pg": "agree in SQL: -0 and 0 are equal sort keys",
+   "assay_error": "unsupported: STRING_AGG ORDER BY ties between different values",
+   "difference": "-0.0 and 0.0 are peers; their order is unspecified",
+   "sql": "SELECT STRING_AGG(CAST(id AS TEXT), ',' ORDER BY disc) AS ids FROM sales WHERE id IN (4, 5);",
+   "reference_outcome": "rows",
+   "columns": [
+    "ids"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "4,5"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "listagg_refused",
+   "ordered": true,
+   "pg": "disagree: PostgreSQL has no LISTAGG",
+   "assay_error": "unsupported: LISTAGG",
+   "difference": "Only DuckDB provides LISTAGG; use STRING_AGG(value, separator ORDER BY ...)",
+   "sql": "SELECT LISTAGG(city, ',') AS cities FROM sales WHERE region = 'EU';",
+   "reference_outcome": "rows",
+   "columns": [
+    "cities"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "Zürich,Köln,Zürich,Köln"
+    ]
+   ],
+   "pg_outcome": "error",
+   "pg_error": "ERROR:  function listagg(text, unknown) does not exist"
+  },
+  {
+   "id": "group_concat_refused",
+   "ordered": true,
+   "pg": "disagree: PostgreSQL has no GROUP_CONCAT",
+   "assay_error": "unsupported: GROUP_CONCAT",
+   "difference": "Only DuckDB provides GROUP_CONCAT; use STRING_AGG(value, separator ORDER BY ...)",
+   "sql": "SELECT GROUP_CONCAT(city, ',') AS cities FROM sales WHERE region = 'EU';",
+   "reference_outcome": "rows",
+   "columns": [
+    "cities"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "Zürich,Köln,Zürich,Köln"
+    ]
+   ],
+   "pg_outcome": "error",
+   "pg_error": "ERROR:  function group_concat(text, unknown) does not exist"
+  },
+  {
+   "id": "string_agg_window_refused",
+   "ordered": true,
+   "pg": "disagree: PostgreSQL rejects aggregate ORDER BY in window functions; DuckDB accepts it",
+   "assay_error": "unsupported:",
+   "difference": "Window STRING_AGG is outside the supported window subset",
+   "sql": "SELECT id, STRING_AGG(city, ',' ORDER BY id) OVER () AS s FROM sales ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "s"
+   ],
+   "types": [
+    "BIGINT",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     2,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     3,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     4,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     5,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     6,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     7,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     8,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     9,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     10,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     11,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     12,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     13,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     14,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     15,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     16,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     17,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ],
+    [
+     18,
+     "Zürich,Köln,Zürich,São Paulo,Lima,Lima,Ñuñoa,東京,Ōsaka,東京,Paris,Lagos,Cairo,Köln,São Paulo,Ōsaka"
+    ]
+   ],
+   "pg_outcome": "error",
+   "pg_error": "ERROR:  aggregate ORDER BY is not implemented for window functions"
+  },
+  {
+   "id": "rollup_region_city_grouping",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, city, SUM(qty) AS q, COUNT(*) AS n, GROUPING(region) AS gr, GROUPING(city) AS gc, GROUPING(region, city) AS g FROM sales GROUP BY ROLLUP(region, city) ORDER BY gr, region NULLS LAST, gc, city NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "city",
+    "q",
+    "n",
+    "gr",
+    "gc",
+    "g"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR",
+    "HUGEINT",
+    "BIGINT",
+    "BIGINT",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     "Lima",
+     8,
+     2,
+     0,
+     0,
+     0
+    ],
+    [
+     "AMER",
+     "São Paulo",
+     12,
+     2,
+     0,
+     0,
+     0
+    ],
+    [
+     "AMER",
+     "Ñuñoa",
+     4,
+     1,
+     0,
+     0,
+     0
+    ],
+    [
+     "AMER",
+     null,
+     24,
+     5,
+     0,
+     1,
+     1
+    ],
+    [
+     "APAC",
+     "Ōsaka",
+     11,
+     2,
+     0,
+     0,
+     0
+    ],
+    [
+     "APAC",
+     "東京",
+     6,
+     2,
+     0,
+     0,
+     0
+    ],
+    [
+     "APAC",
+     null,
+     17,
+     4,
+     0,
+     1,
+     1
+    ],
+    [
+     "EU",
+     "Köln",
+     6,
+     2,
+     0,
+     0,
+     0
+    ],
+    [
+     "EU",
+     "Zürich",
+     5,
+     2,
+     0,
+     0,
+     0
+    ],
+    [
+     "EU",
+     null,
+     8,
+     1,
+     0,
+     0,
+     0
+    ],
+    [
+     "EU",
+     null,
+     19,
+     5,
+     0,
+     1,
+     1
+    ],
+    [
+     "MEA",
+     "Cairo",
+     5,
+     1,
+     0,
+     0,
+     0
+    ],
+    [
+     "MEA",
+     "Lagos",
+     3,
+     1,
+     0,
+     0,
+     0
+    ],
+    [
+     "MEA",
+     null,
+     8,
+     2,
+     0,
+     1,
+     1
+    ],
+    [
+     null,
+     "Paris",
+     2,
+     1,
+     0,
+     0,
+     0
+    ],
+    [
+     null,
+     null,
+     null,
+     1,
+     0,
+     0,
+     0
+    ],
+    [
+     null,
+     null,
+     2,
+     2,
+     0,
+     1,
+     1
+    ],
+    [
+     null,
+     null,
+     70,
+     18,
+     1,
+     1,
+     3
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "rollup_order_by_grouping_expression",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, SUM(price) AS revenue FROM sales GROUP BY ROLLUP(region) ORDER BY GROUPING(region), region NULLS FIRST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "revenue"
+   ],
+   "types": [
+    "VARCHAR",
+    "DECIMAL(38,2)"
+   ],
+   "rows": [
+    [
+     null,
+     "8.00"
+    ],
+    [
+     "AMER",
+     "131.00"
+    ],
+    [
+     "APAC",
+     "26.44"
+    ],
+    [
+     "EU",
+     "57.75"
+    ],
+    [
+     "MEA",
+     "10.50"
+    ],
+    [
+     null,
+     "233.69"
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "cube_region_urgent",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, urgent, COUNT(*) AS n, GROUPING(region, urgent) AS g FROM sales GROUP BY CUBE(region, urgent) ORDER BY g, region NULLS LAST, urgent NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "urgent",
+    "n",
+    "g"
+   ],
+   "types": [
+    "VARCHAR",
+    "BOOLEAN",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     false,
+     2,
+     0
+    ],
+    [
+     "AMER",
+     true,
+     3,
+     0
+    ],
+    [
+     "APAC",
+     false,
+     2,
+     0
+    ],
+    [
+     "APAC",
+     true,
+     1,
+     0
+    ],
+    [
+     "APAC",
+     null,
+     1,
+     0
+    ],
+    [
+     "EU",
+     false,
+     1,
+     0
+    ],
+    [
+     "EU",
+     true,
+     3,
+     0
+    ],
+    [
+     "EU",
+     null,
+     1,
+     0
+    ],
+    [
+     "MEA",
+     false,
+     2,
+     0
+    ],
+    [
+     null,
+     true,
+     1,
+     0
+    ],
+    [
+     null,
+     null,
+     1,
+     0
+    ],
+    [
+     "AMER",
+     null,
+     5,
+     1
+    ],
+    [
+     "APAC",
+     null,
+     4,
+     1
+    ],
+    [
+     "EU",
+     null,
+     5,
+     1
+    ],
+    [
+     "MEA",
+     null,
+     2,
+     1
+    ],
+    [
+     null,
+     null,
+     2,
+     1
+    ],
+    [
+     null,
+     false,
+     7,
+     2
+    ],
+    [
+     null,
+     true,
+     8,
+     2
+    ],
+    [
+     null,
+     null,
+     3,
+     2
+    ],
+    [
+     null,
+     null,
+     18,
+     3
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "grouping_sets_explicit",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, urgent, SUM(qty) AS q, GROUPING(region) AS gr, GROUPING(urgent) AS gu FROM sales GROUP BY GROUPING SETS ((region), (urgent), ()) ORDER BY gr, gu, region NULLS LAST, urgent NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "urgent",
+    "q",
+    "gr",
+    "gu"
+   ],
+   "types": [
+    "VARCHAR",
+    "BOOLEAN",
+    "HUGEINT",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     null,
+     24,
+     0,
+     1
+    ],
+    [
+     "APAC",
+     null,
+     17,
+     0,
+     1
+    ],
+    [
+     "EU",
+     null,
+     19,
+     0,
+     1
+    ],
+    [
+     "MEA",
+     null,
+     8,
+     0,
+     1
+    ],
+    [
+     null,
+     null,
+     2,
+     0,
+     1
+    ],
+    [
+     null,
+     false,
+     25,
+     1,
+     0
+    ],
+    [
+     null,
+     true,
+     36,
+     1,
+     0
+    ],
+    [
+     null,
+     null,
+     9,
+     1,
+     0
+    ],
+    [
+     null,
+     null,
+     70,
+     1,
+     1
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "rollup_having_grouping",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, city, COUNT(*) AS n FROM sales GROUP BY ROLLUP(region, city) HAVING GROUPING(city) = 1 AND COUNT(*) > 2 ORDER BY GROUPING(region), region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "city",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     null,
+     5
+    ],
+    [
+     "APAC",
+     null,
+     4
+    ],
+    [
+     "EU",
+     null,
+     5
+    ],
+    [
+     null,
+     null,
+     18
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "rollup_empty_table_grand_total",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, COUNT(*) AS n, SUM(qty) AS q, GROUPING(region) AS g FROM empty_sales GROUP BY ROLLUP(region);",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "n",
+    "q",
+    "g"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "HUGEINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     null,
+     0,
+     null,
+     1
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "rollup_all_rows_filtered",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, city, COUNT(*) AS n, MAX(price) AS p FROM sales WHERE qty > 100 GROUP BY ROLLUP(region, city);",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "city",
+    "n",
+    "p"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR",
+    "BIGINT",
+    "DECIMAL(10,2)"
+   ],
+   "rows": [
+    [
+     null,
+     null,
+     0,
+     null
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "rollup_plain_key_plus_rollup",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, urgent, COUNT(*) AS n, GROUPING(urgent) AS gu FROM sales WHERE region IS NOT NULL GROUP BY region, ROLLUP(urgent) ORDER BY region, gu, urgent NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "urgent",
+    "n",
+    "gu"
+   ],
+   "types": [
+    "VARCHAR",
+    "BOOLEAN",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     false,
+     2,
+     0
+    ],
+    [
+     "AMER",
+     true,
+     3,
+     0
+    ],
+    [
+     "AMER",
+     null,
+     5,
+     1
+    ],
+    [
+     "APAC",
+     false,
+     2,
+     0
+    ],
+    [
+     "APAC",
+     true,
+     1,
+     0
+    ],
+    [
+     "APAC",
+     null,
+     1,
+     0
+    ],
+    [
+     "APAC",
+     null,
+     4,
+     1
+    ],
+    [
+     "EU",
+     false,
+     1,
+     0
+    ],
+    [
+     "EU",
+     true,
+     3,
+     0
+    ],
+    [
+     "EU",
+     null,
+     1,
+     0
+    ],
+    [
+     "EU",
+     null,
+     5,
+     1
+    ],
+    [
+     "MEA",
+     false,
+     2,
+     0
+    ],
+    [
+     "MEA",
+     null,
+     2,
+     1
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "rollup_duplicate_grouping_sets",
+   "ordered": true,
+   "pg": "agree (both keep duplicate grouping sets)",
+   "sql": "SELECT region, COUNT(*) AS n, GROUPING(region) AS g FROM sales GROUP BY region, ROLLUP(region) ORDER BY region NULLS LAST, n;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "n",
+    "g"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     5,
+     0
+    ],
+    [
+     "AMER",
+     5,
+     0
+    ],
+    [
+     "APAC",
+     4,
+     0
+    ],
+    [
+     "APAC",
+     4,
+     0
+    ],
+    [
+     "EU",
+     5,
+     0
+    ],
+    [
+     "EU",
+     5,
+     0
+    ],
+    [
+     "MEA",
+     2,
+     0
+    ],
+    [
+     "MEA",
+     2,
+     0
+    ],
+    [
+     null,
+     2,
+     0
+    ],
+    [
+     null,
+     2,
+     0
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "rollup_with_filter_aggregates",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, COUNT(*) FILTER (WHERE urgent) AS urgent_rows, COUNT(*) AS n, GROUPING(region) AS g FROM sales GROUP BY ROLLUP(region) ORDER BY g, region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "urgent_rows",
+    "n",
+    "g"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     3,
+     5,
+     0
+    ],
+    [
+     "APAC",
+     1,
+     4,
+     0
+    ],
+    [
+     "EU",
+     3,
+     5,
+     0
+    ],
+    [
+     "MEA",
+     0,
+     2,
+     0
+    ],
+    [
+     null,
+     1,
+     2,
+     0
+    ],
+    [
+     null,
+     8,
+     18,
+     1
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "rollup_with_string_agg",
+   "ordered": true,
+   "pg": "agree with COLLATE \"C\"",
+   "sql": "SELECT region, STRING_AGG(DISTINCT city, ',' ORDER BY city) AS cities, GROUPING(region) AS g FROM sales GROUP BY ROLLUP(region) ORDER BY g, region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "cities",
+    "g"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     "Lima,São Paulo,Ñuñoa",
+     0
+    ],
+    [
+     "APAC",
+     "Ōsaka,東京",
+     0
+    ],
+    [
+     "EU",
+     "Köln,Zürich",
+     0
+    ],
+    [
+     "MEA",
+     "Cairo,Lagos",
+     0
+    ],
+    [
+     null,
+     "Paris",
+     0
+    ],
+    [
+     null,
+     "Cairo,Köln,Lagos,Lima,Paris,São Paulo,Zürich,Ñuñoa,Ōsaka,東京",
+     1
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "rollup_with_distinct_float",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, SUM(DISTINCT disc) AS s, COUNT(DISTINCT disc) AS n, GROUPING(region) AS g FROM sales WHERE region IN ('EU', 'MEA') GROUP BY ROLLUP(region) ORDER BY g, region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "s",
+    "n",
+    "g"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "EU",
+     {
+      "float": "0.75"
+     },
+     3,
+     0
+    ],
+    [
+     "MEA",
+     {
+      "float": "0.75"
+     },
+     1,
+     0
+    ],
+    [
+     null,
+     {
+      "float": "1.5"
+     },
+     4,
+     1
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "rollup_expression_key",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT EXTRACT(MONTH FROM d) AS m, region, SUM(qty) AS q FROM sales GROUP BY ROLLUP(EXTRACT(MONTH FROM d), region) ORDER BY GROUPING(EXTRACT(MONTH FROM d)), m NULLS LAST, GROUPING(region), region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m",
+    "region",
+    "q"
+   ],
+   "types": [
+    "BIGINT",
+    "VARCHAR",
+    "HUGEINT"
+   ],
+   "rows": [
+    [
+     1,
+     "AMER",
+     2
+    ],
+    [
+     1,
+     "APAC",
+     6
+    ],
+    [
+     1,
+     "EU",
+     8
+    ],
+    [
+     1,
+     null,
+     2
+    ],
+    [
+     1,
+     null,
+     18
+    ],
+    [
+     2,
+     "AMER",
+     4
+    ],
+    [
+     2,
+     "APAC",
+     9
+    ],
+    [
+     2,
+     "EU",
+     8
+    ],
+    [
+     2,
+     null,
+     21
+    ],
+    [
+     3,
+     "AMER",
+     18
+    ],
+    [
+     3,
+     "APAC",
+     2
+    ],
+    [
+     3,
+     "EU",
+     3
+    ],
+    [
+     3,
+     "MEA",
+     8
+    ],
+    [
+     3,
+     null,
+     31
+    ],
+    [
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     70
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "grouping_plain_group_by",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, GROUPING(region) AS g, COUNT(*) AS n FROM sales GROUP BY region ORDER BY region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "g",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     0,
+     5
+    ],
+    [
+     "APAC",
+     0,
+     4
+    ],
+    [
+     "EU",
+     0,
+     5
+    ],
+    [
+     "MEA",
+     0,
+     2
+    ],
+    [
+     null,
+     0,
+     2
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "rollup_composite_element",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT region, urgent, COUNT(*) AS n, GROUPING(region, urgent) AS g FROM sales GROUP BY ROLLUP((region, urgent)) ORDER BY g, region NULLS LAST, urgent NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "urgent",
+    "n",
+    "g"
+   ],
+   "types": [
+    "VARCHAR",
+    "BOOLEAN",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     false,
+     2,
+     0
+    ],
+    [
+     "AMER",
+     true,
+     3,
+     0
+    ],
+    [
+     "APAC",
+     false,
+     2,
+     0
+    ],
+    [
+     "APAC",
+     true,
+     1,
+     0
+    ],
+    [
+     "APAC",
+     null,
+     1,
+     0
+    ],
+    [
+     "EU",
+     false,
+     1,
+     0
+    ],
+    [
+     "EU",
+     true,
+     3,
+     0
+    ],
+    [
+     "EU",
+     null,
+     1,
+     0
+    ],
+    [
+     "MEA",
+     false,
+     2,
+     0
+    ],
+    [
+     null,
+     true,
+     1,
+     0
+    ],
+    [
+     null,
+     null,
+     1,
+     0
+    ],
+    [
+     null,
+     null,
+     18,
+     3
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "grouping_sets_empty_set_only",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT COUNT(*) AS n, SUM(qty) AS q FROM sales GROUP BY GROUPING SETS (());",
+   "reference_outcome": "rows",
+   "columns": [
+    "n",
+    "q"
+   ],
+   "types": [
+    "BIGINT",
+    "HUGEINT"
+   ],
+   "rows": [
+    [
+     18,
+     70
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "cube_three_keys_counts",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT gg AS g, COUNT(*) AS rows_in_set, SUM(n) AS total FROM (SELECT region, urgent, note, COUNT(*) AS n, GROUPING(region, urgent, note) AS gg FROM sales GROUP BY CUBE(region, urgent, note)) t GROUP BY gg ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "rows_in_set",
+    "total"
+   ],
+   "types": [
+    "BIGINT",
+    "BIGINT",
+    "HUGEINT"
+   ],
+   "rows": [
+    [
+     0,
+     17,
+     18
+    ],
+    [
+     1,
+     11,
+     18
+    ],
+    [
+     2,
+     16,
+     18
+    ],
+    [
+     3,
+     5,
+     18
+    ],
+    [
+     4,
+     15,
+     18
+    ],
+    [
+     5,
+     3,
+     18
+    ],
+    [
+     6,
+     13,
+     18
+    ],
+    [
+     7,
+     1,
+     18
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  },
+  {
+   "id": "rollup_with_rollup_modifier_refused",
+   "ordered": true,
+   "pg": "agree: both reject MySQL GROUP BY ... WITH ROLLUP",
+   "assay_error": "unsupported:",
+   "difference": "MySQL WITH ROLLUP spelling is not supported by either reference engine",
+   "sql": "SELECT region, COUNT(*) AS n FROM sales GROUP BY region WITH ROLLUP;",
+   "reference_outcome": "error",
+   "reference_error": "Parser Error: syntax error at or near \"WITH\"\n\nLINE 1: SELECT region, COUNT(*) AS n FROM sales GROUP BY region WITH ROLLUP;\n                                                                ^",
+   "pg_outcome": "error",
+   "pg_error": "ERROR:  syntax error at or near \"WITH\""
+  },
+  {
+   "id": "grouping_id_refused",
+   "ordered": true,
+   "pg": "disagree: PostgreSQL has no GROUPING_ID",
+   "assay_error": "unsupported: GROUPING_ID",
+   "difference": "Only DuckDB provides GROUPING_ID; use GROUPING(...)",
+   "sql": "SELECT region, GROUPING_ID(region) AS g FROM sales GROUP BY ROLLUP(region) ORDER BY g, region NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "g"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     0
+    ],
+    [
+     "APAC",
+     0
+    ],
+    [
+     "EU",
+     0
+    ],
+    [
+     "MEA",
+     0
+    ],
+    [
+     null,
+     0
+    ],
+    [
+     null,
+     1
+    ]
+   ],
+   "pg_outcome": "error",
+   "pg_error": "ERROR:  function grouping_id(text) does not exist"
+  },
+  {
+   "id": "grouping_non_key_error",
+   "ordered": true,
+   "pg": "agree: both reject GROUPING of a non-grouping expression",
+   "assay_error": "GROUPING arguments must be grouping expressions",
+   "difference": "Both engines reject this query",
+   "sql": "SELECT region, GROUPING(city) AS g FROM sales GROUP BY ROLLUP(region);",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: GROUPING child \"city\" must be a grouping column\n\nLINE 1: SELECT region, GROUPING(city) AS g FROM sales GROUP BY ROLLUP(region);\n                       ^",
+   "pg_outcome": "error",
+   "pg_error": "ERROR:  arguments to GROUPING must be grouping expressions of the associated query level"
+  },
+  {
+   "id": "rollup_window_refused",
+   "ordered": true,
+   "pg": "agree (both support windows over grouping sets)",
+   "assay_error": "unsupported: window functions with ROLLUP/CUBE/GROUPING SETS",
+   "difference": "Windows over grouping-set results are not yet supported",
+   "sql": "SELECT region, SUM(qty) AS q, RANK() OVER (ORDER BY SUM(qty) DESC NULLS LAST) AS r FROM sales GROUP BY ROLLUP(region);",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "q",
+    "r"
+   ],
+   "types": [
+    "VARCHAR",
+    "HUGEINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     null,
+     70,
+     1
+    ],
+    [
+     "AMER",
+     24,
+     2
+    ],
+    [
+     "EU",
+     19,
+     3
+    ],
+    [
+     "APAC",
+     17,
+     4
+    ],
+    [
+     "MEA",
+     8,
+     5
+    ],
+    [
+     null,
+     2,
+     6
+    ]
+   ],
+   "pg_outcome": "rows",
+   "pg_agrees": true
+  }
+ ]
+}

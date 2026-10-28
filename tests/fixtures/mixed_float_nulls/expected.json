@@ -1,0 +1,152 @@
+{
+  "duckdb_version": "1.5.6",
+  "cases_sha256": "c2892b2ed4c934389b8fa8420043dfa58576cecb5334d2bff565dda4902f0316",
+  "setup_sql": "CREATE TABLE null_arms (flag BOOLEAN, n INTEGER);\nINSERT INTO null_arms VALUES (TRUE, 1), (FALSE, 2), (NULL, 3), (TRUE, NULL);",
+  "setup_sha256": "2b64c1005f59d4065f9086763baa7b5a28327240a6bfccc03b76c406e31d585e",
+  "reference_type_mapping": "Assay REAL = DOUBLE; SIGNED = BIGINT",
+  "cases": [
+    {
+      "id": "slt_good_83_real",
+      "source": "test/random/expr/slt_good_83.test",
+      "line": 83665,
+      "sql": "SELECT 38 * 83 * + COALESCE ( - CASE + 34 WHEN + - ( AVG ( + 1 ) ) THEN - CAST ( NULL AS REAL ) - - 47 + + 75 + + 60 + - 11 + CASE + 68 WHEN 94 THEN 93 + + 14 - + + 33 + - 84 + - CASE + CAST ( - 21 AS INTEGER ) + + 28 WHEN + 23 THEN + 44 WHEN 77 THEN NULL WHEN 45 * 14 THEN NULL WHEN - 34 THEN NULL END * 63 * 58 WHEN 12 / + 91 THEN NULL WHEN AVG ( 53 ) + + 77 * - 45 THEN NULL WHEN - 9 THEN NULL ELSE NULL END + - COUNT ( * ) * - 78 / - 26 WHEN + 34 THEN - 21 ELSE NULL END, 67 - - COUNT ( * ) ) * 73 + CAST ( NULL AS INTEGER )",
+      "reference_sql": "SELECT 38 * 83 * + COALESCE ( - CASE + 34 WHEN + - ( AVG ( + 1 ) ) THEN - CAST ( NULL AS DOUBLE ) - - 47 + + 75 + + 60 + - 11 + CASE + 68 WHEN 94 THEN 93 + + 14 - + + 33 + - 84 + - CASE + CAST ( - 21 AS INTEGER ) + + 28 WHEN + 23 THEN + 44 WHEN 77 THEN NULL WHEN 45 * 14 THEN NULL WHEN - 34 THEN NULL END * 63 * 58 WHEN 12 / + 91 THEN NULL WHEN AVG ( 53 ) + + 77 * - 45 THEN NULL WHEN - 9 THEN NULL ELSE NULL END + - COUNT ( * ) * - 78 / - 26 WHEN + 34 THEN - 21 ELSE NULL END, 67 - - COUNT ( * ) ) * 73 + CAST ( NULL AS INTEGER )",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "slt_good_83_decimal_signed",
+      "source": "test/random/expr/slt_good_83.test",
+      "line": 83661,
+      "sql": "SELECT 38 * 83 * + COALESCE ( - CASE + 34 WHEN + - ( AVG ( + 1 ) ) THEN - CAST( NULL AS DECIMAL ) - - 47 + + 75 + + 60 + - 11 + CASE + 68 WHEN 94 THEN 93 + + 14 - + + 33 + - 84 + - CASE + CAST( - 21 AS SIGNED ) + + 28 WHEN + 23 THEN + 44 WHEN 77 THEN NULL WHEN 45 * 14 THEN NULL WHEN - 34 THEN NULL END * 63 * 58 WHEN 12 / + 91 THEN NULL WHEN AVG ( 53 ) + + 77 * - 45 THEN NULL WHEN - 9 THEN NULL ELSE NULL END + - COUNT( * ) * - 78 / - 26 WHEN + 34 THEN - 21 ELSE NULL END, 67 - - COUNT( * ) ) * 73 + CAST( NULL AS SIGNED )",
+      "reference_sql": "SELECT 38 * 83 * + COALESCE ( - CASE + 34 WHEN + - ( AVG ( + 1 ) ) THEN - CAST( NULL AS DECIMAL ) - - 47 + + 75 + + 60 + - 11 + CASE + 68 WHEN 94 THEN 93 + + 14 - + + 33 + - 84 + - CASE + CAST( - 21 AS BIGINT ) + + 28 WHEN + 23 THEN + 44 WHEN 77 THEN NULL WHEN 45 * 14 THEN NULL WHEN - 34 THEN NULL END * 63 * 58 WHEN 12 / + 91 THEN NULL WHEN AVG ( 53 ) + + 77 * - 45 THEN NULL WHEN - 9 THEN NULL ELSE NULL END + - COUNT( * ) * - 78 / - 26 WHEN + 34 THEN - 21 ELSE NULL END, 67 - - COUNT( * ) ) * 73 + CAST( NULL AS BIGINT )",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "reduced_avg",
+      "sql": "SELECT COALESCE(CASE WHEN AVG(1) = 34 THEN CAST(NULL AS REAL) ELSE -21 END, 67 - -COUNT(*)) + CAST(NULL AS INTEGER)",
+      "reference_sql": "SELECT COALESCE(CASE WHEN AVG(1) = 34 THEN CAST(NULL AS DOUBLE) ELSE -21 END, 67 - -COUNT(*)) + CAST(NULL AS INTEGER)",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "reduced_null_arithmetic",
+      "sql": "SELECT COALESCE(CASE WHEN AVG(1) = 34 THEN -CAST(NULL AS REAL) + COUNT(*) ELSE -21 END, COUNT(*) + 67) + CAST(NULL AS INTEGER)",
+      "reference_sql": "SELECT COALESCE(CASE WHEN AVG(1) = 34 THEN -CAST(NULL AS DOUBLE) + COUNT(*) ELSE -21 END, COUNT(*) + 67) + CAST(NULL AS INTEGER)",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "reduced_double",
+      "sql": "SELECT COALESCE(CASE WHEN COUNT(*) = 0 THEN CAST(NULL AS DOUBLE) ELSE 1 END, COUNT(*)) * CAST(NULL AS INTEGER)",
+      "reference_sql": "SELECT COALESCE(CASE WHEN COUNT(*) = 0 THEN CAST(NULL AS DOUBLE) ELSE 1 END, COUNT(*)) * CAST(NULL AS INTEGER)",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "reduced_double_precision",
+      "sql": "SELECT COALESCE(CASE WHEN COUNT(*) = 0 THEN CAST(NULL AS DOUBLE PRECISION) ELSE 1 END, COUNT(*)) - CAST(NULL AS INTEGER)",
+      "reference_sql": "SELECT COALESCE(CASE WHEN COUNT(*) = 0 THEN CAST(NULL AS DOUBLE PRECISION) ELSE 1 END, COUNT(*)) - CAST(NULL AS INTEGER)",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "reduced_division",
+      "sql": "SELECT COALESCE(CASE WHEN AVG(1) = 34 THEN CAST(NULL AS REAL) ELSE -21 END, COUNT(*)) / 2 + CAST(NULL AS INTEGER)",
+      "reference_sql": "SELECT COALESCE(CASE WHEN AVG(1) = 34 THEN CAST(NULL AS DOUBLE) ELSE -21 END, COUNT(*)) / 2 + CAST(NULL AS INTEGER)",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "non_null_selected_literal",
+      "sql": "SELECT COALESCE(CASE WHEN AVG(1) = 34 THEN CAST(NULL AS REAL) ELSE -21 END, COUNT(*))",
+      "reference_sql": "SELECT COALESCE(CASE WHEN AVG(1) = 34 THEN CAST(NULL AS DOUBLE) ELSE -21 END, COUNT(*))",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          -21.0
+        ]
+      ]
+    },
+    {
+      "id": "non_null_selected_division",
+      "sql": "SELECT COALESCE(CASE WHEN AVG(1) = 34 THEN CAST(NULL AS REAL) ELSE -21 END, COUNT(*)) / 2",
+      "reference_sql": "SELECT COALESCE(CASE WHEN AVG(1) = 34 THEN CAST(NULL AS DOUBLE) ELSE -21 END, COUNT(*)) / 2",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          -10.5
+        ]
+      ]
+    },
+    {
+      "id": "nullable_rows",
+      "sql": "SELECT COALESCE(CASE WHEN flag THEN -CAST(NULL AS REAL) + n ELSE -21 END, n + 67) AS v FROM null_arms ORDER BY v",
+      "reference_sql": "SELECT COALESCE(CASE WHEN flag THEN -CAST(NULL AS DOUBLE) + n ELSE -21 END, n + 67) AS v FROM null_arms ORDER BY v",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          -21.0
+        ],
+        [
+          -21.0
+        ],
+        [
+          68.0
+        ],
+        [
+          null
+        ]
+      ]
+    }
+  ]
+}

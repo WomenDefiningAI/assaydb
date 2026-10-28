@@ -196,7 +196,7 @@ impl<I: Index> Kernel<'_, I> {
                 leases.push(budget.reserve(batch.get_array_memory_size())?);
             }
             let mask = residual
-                .map(|e| e.eval(&input(&batch, budget, [e])?, budget))
+                .map(|e| e.eval_filter(&input(&batch, budget, [e])?, budget))
                 .transpose()?;
             for (i, l) in li.iter().enumerate() {
                 if mask

@@ -138,6 +138,150 @@ pub(super) fn expression(expr: &s::Expr, input: &Node, source: &Schema) -> Resul
     Ok(bound)
 }
 
+// A value-independent HAVING expression may still contain checked casts of
+// unavailable source columns. Validate those casts on every row of each group
+// before releasing the constant result. This is conservative: any out-of-range
+// input refuses, and no arbitrary grouped representative is ever invented.
+// Only eager expression trees and direct integer columns (optionally negated)
+// qualify; CASE, subqueries, functions and other conversions keep their barriers.
+pub(super) fn checked_cast_having(
+    expr: &s::Expr,
+    input: &mut Node,
+    source: &Schema,
+) -> Result<Option<Expr>> {
+    use crate::expr::{Kind, Literal, Op, cast_dialect::Target};
+    fn source_integer(e: &Expr, width: usize) -> bool {
+        e.ty == Type::Int
+            && match &e.kind {
+                Kind::Column(i) => *i >= width,
+                Kind::Neg(a) => source_integer(a, width),
+                _ => false,
+            }
+    }
+    fn collect(e: &mut Expr, width: usize, casts: &mut Vec<Expr>, left: &mut usize) -> bool {
+        if *left == 0 {
+            return false;
+        }
+        *left -= 1;
+        match &mut e.kind {
+            Kind::DialectCast(a, Target::Integer | Target::BigInt) if source_integer(a, width) => {
+                casts.push(e.clone());
+                let Kind::DialectCast(a, _) =
+                    std::mem::replace(&mut e.kind, Kind::Literal(Literal::Null))
+                else {
+                    unreachable!()
+                };
+                // A temporary proof expression, never installed in the plan.
+                e.kind = Kind::Cast(a);
+                true
+            }
+            Kind::Binary(_, a, b) | Kind::NullIf(a, b) => {
+                collect(a, width, casts, left) && collect(b, width, casts, left)
+            }
+            Kind::Neg(a) | Kind::Not(a) | Kind::IsNull(a, _) => collect(a, width, casts, left),
+            Kind::Literal(_) | Kind::Column(_) => true,
+            _ => false,
+        }
+    }
+    let RelOp::Unary {
+        plan,
+        input: grouping_input,
+    } = &input.op
+    else {
+        return Ok(None);
+    };
+    if !plan.aggregation || !std::ptr::eq(grouping_input.schema.as_ref(), source) {
+        return Ok(None);
+    }
+    let width = input.schema.fields().len();
+    let schema = validation_schema(&input.schema, source);
+    let mut input_facts = crate::mixed_numeric::binding_facts(input)?;
+    input_facts.extend(crate::mixed_numeric::fields(source)?);
+    let mut constant = Binder {
+        schema: &schema,
+        table: None,
+        facts: Some(&input_facts),
+    }
+    .expr(expr)?;
+    let mut casts = Vec::new();
+    if !collect(&mut constant, width, &mut casts, &mut 256) || casts.is_empty() {
+        return Ok(None);
+    }
+    facts::simplify(
+        &mut constant,
+        &schema,
+        &validation_narrow_columns(input, source),
+    );
+    if constant.ty != Type::Bool
+        || !matches!(
+            constant.kind,
+            Kind::Literal(Literal::Null | Literal::Bool(_))
+        )
+    {
+        return Ok(None);
+    }
+    let mapping = (0..width)
+        .map(|_| None)
+        .chain((0..source.fields().len()).map(Some))
+        .collect::<Vec<_>>();
+    for cast in &mut casts {
+        cast.remap_columns(&mapping)?;
+    }
+    let RelOp::Unary { plan, .. } = &mut input.op else {
+        unreachable!()
+    };
+    let mut schema_fields = input.schema.fields().to_vec();
+    let mut predicate = constant;
+    for cast in casts {
+        let mut used = std::collections::BTreeSet::from_iter(plan.columns.iter().copied());
+        cast.columns(&mut used);
+        plan.columns = used.into_iter().collect();
+        let aggregate = plan.aggregates.len();
+        let column = plan.output.len();
+        plan.aggregates.push(bind::Agg {
+            function: bind::Aggregate::Count,
+            input: Some(cast),
+            ty: Type::Int,
+            distinct: false,
+        });
+        plan.output.push(bind::Output::Aggregate(aggregate));
+        let mut name = format!("__assay_checked_cast_{column}");
+        while source.fields().iter().chain(schema_fields.iter()).any(|f| {
+            f.name()
+                .rsplit('.')
+                .next()
+                .is_some_and(|n| n.eq_ignore_ascii_case(&name))
+        }) {
+            name.push('_');
+        }
+        plan.names.push(name.clone());
+        plan.types.push(Type::Int);
+        schema_fields.push(Arc::new(Type::Int.field(&name, false)));
+        // Count is always nonnegative. Keeping this read in HAVING prevents
+        // projection pruning from discarding the required validation aggregate.
+        let checked = Expr {
+            ty: Type::Bool,
+            kind: Kind::Binary(
+                Op::Ge,
+                Box::new(Expr {
+                    ty: Type::Int,
+                    kind: Kind::Column(column),
+                }),
+                Box::new(Expr {
+                    ty: Type::Int,
+                    kind: Kind::Literal(Literal::Num(0)),
+                }),
+            ),
+        };
+        predicate = Expr {
+            ty: Type::Bool,
+            kind: Kind::Binary(Op::And, Box::new(checked), Box::new(predicate)),
+        };
+    }
+    input.schema = Arc::new(Schema::new(schema_fields));
+    Ok(Some(predicate))
+}
+
 pub(super) fn projection(query: &s::Query, input: Node, source: &Schema) -> Result<Node> {
     let input_facts = crate::mixed_numeric::binding_facts(&input)?;
     let plan = match bind::bind_with_facts(query, &input.schema, &input_facts) {

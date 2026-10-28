@@ -267,6 +267,71 @@ mod tests {
         keys::Keys,
     };
 
+    #[test]
+    fn float_scan_membership_matches_nan_payloads_zeros_and_keeps_nulls_out() {
+        use arrow::array::Float64Array;
+        let budget = Budget::new(1 << 20);
+        {
+            let build = Value::adopt(
+                Arc::new(Float64Array::from(vec![
+                    f64::from_bits(0xfff8000000000001),
+                    -0.0,
+                ])),
+                &budget,
+            )
+            .unwrap();
+            let keys = Keys::new(&[build], 2, &budget).unwrap();
+            let members = (0..2).map(|i| Box::<[u8]>::from(keys.row(i))).collect();
+            let filter = ScanKeyFilter {
+                expressions: vec![Expr {
+                    kind: Kind::Column(0),
+                    ty: Type::Float,
+                }],
+                previous: None,
+                optional_total: true,
+                members: Arc::new(members),
+                numeric: None,
+                numeric_pair: None,
+                _lease: Arc::new(budget.reserve(2048).unwrap()),
+            };
+            let batch = RecordBatch::try_new(
+                Arc::new(Schema::new(vec![Field::new(
+                    "reading",
+                    arrow::datatypes::DataType::Float64,
+                    true,
+                )])),
+                vec![Arc::new(Float64Array::from(vec![
+                    Some(f64::NAN),
+                    Some(f64::from_bits(0x7ff0000000000001)),
+                    Some(f64::from_bits(0xfff0000000000001)),
+                    Some(0.0),
+                    Some(-0.0),
+                    None,
+                    Some(f64::INFINITY),
+                    Some(f64::NEG_INFINITY),
+                    Some(0.5),
+                ]))],
+            )
+            .unwrap();
+            let mask = scan_key_mask(&batch, &filter, &budget).unwrap();
+            assert_eq!(
+                mask.iter().collect::<Vec<_>>(),
+                vec![
+                    Some(true),
+                    Some(true),
+                    Some(true),
+                    Some(true),
+                    Some(true),
+                    Some(false),
+                    Some(false),
+                    Some(false),
+                    Some(false),
+                ]
+            );
+        }
+        assert_eq!(budget.used(), 0);
+    }
+
     fn column(i: usize) -> Expr {
         Expr {
             kind: Kind::Column(i),
@@ -302,6 +367,7 @@ mod tests {
             lane_transforms: Default::default(),
             replay_transforms: HashMap::new(),
             materialized: HashMap::new(),
+            recursive_bindings: None,
             sideways_registry_lease: None,
             spill: None,
             budget: budget.clone(),
@@ -1027,6 +1093,7 @@ mod tests {
             RelOp::Limit {
                 input: Box::new(scan()),
                 count: 1,
+                offset: 0,
             },
             RelOp::Scalar {
                 input: Box::new(scan()),

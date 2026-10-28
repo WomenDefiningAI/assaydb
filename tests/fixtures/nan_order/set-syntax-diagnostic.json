@@ -1,0 +1,426 @@
+{
+  "error": "unsupported: UNION modifiers",
+  "cases_sha256": "2d5317de24ed705487d7cce07e4be94b8cce7e4a6aea8ef5c77d768c146966d4",
+  "cases": [
+    {
+      "id": "union",
+      "ordered": true,
+      "sql": "SELECT reading FROM t WHERE id<24 UNION SELECT peer FROM t WHERE id>=8 ORDER BY 1 NULLS LAST;",
+      "types": [
+        "float"
+      ],
+      "rows": [
+        [
+          {
+            "float": "fff0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "c024000000000000"
+          }
+        ],
+        [
+          {
+            "float": "bfd0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "float": "3fd0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "3fe0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "3ff0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "4024000000000000"
+          }
+        ],
+        [
+          {
+            "float": "7ff0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "intersect",
+      "ordered": true,
+      "sql": "SELECT reading FROM t WHERE id<24 INTERSECT SELECT peer FROM t WHERE id>=8 ORDER BY 1 NULLS LAST;",
+      "types": [
+        "float"
+      ],
+      "rows": [
+        [
+          {
+            "float": "fff0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "c024000000000000"
+          }
+        ],
+        [
+          {
+            "float": "bfd0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "float": "3fd0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "3fe0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "3ff0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "4024000000000000"
+          }
+        ],
+        [
+          {
+            "float": "7ff0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "except",
+      "ordered": true,
+      "sql": "SELECT reading FROM t WHERE id<24 EXCEPT SELECT peer FROM t WHERE id>=8 ORDER BY 1 NULLS LAST;",
+      "types": [
+        "float"
+      ],
+      "rows": []
+    },
+    {
+      "id": "union_all",
+      "ordered": true,
+      "sql": "SELECT reading FROM t WHERE id<24 UNION ALL SELECT peer FROM t WHERE id>=8 ORDER BY 1 NULLS LAST;",
+      "types": [
+        "float"
+      ],
+      "rows": [
+        [
+          {
+            "float": "fff0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "fff0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "fff0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "c024000000000000"
+          }
+        ],
+        [
+          {
+            "float": "c024000000000000"
+          }
+        ],
+        [
+          {
+            "float": "c024000000000000"
+          }
+        ],
+        [
+          {
+            "float": "bfd0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "bfd0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "bfd0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "bfd0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "float": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "float": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "float": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "float": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "float": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "float": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "float": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "float": "3fd0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "3fd0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "3fd0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "3fe0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "3fe0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "3fe0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "3fe0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "3ff0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "3ff0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "3ff0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "4024000000000000"
+          }
+        ],
+        [
+          {
+            "float": "4024000000000000"
+          }
+        ],
+        [
+          {
+            "float": "4024000000000000"
+          }
+        ],
+        [
+          {
+            "float": "4024000000000000"
+          }
+        ],
+        [
+          {
+            "float": "7ff0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "7ff0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "7ff0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "7ff0000000000000"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          {
+            "float": "NaN"
+          }
+        ],
+        [
+          null
+        ],
+        [
+          null
+        ],
+        [
+          null
+        ]
+      ]
+    }
+  ],
+  "repair": "Order a derived table containing the identical set operation; no row, value or case removed."
+}

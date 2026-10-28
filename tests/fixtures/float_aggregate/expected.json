@@ -1,0 +1,1202 @@
+{
+  "duckdb_version": "1.5.6",
+  "cases_sha256": "f41a98a5c1e91733a23887ec1b7a1e515cea97c0393059948903103cbe8d569a",
+  "float_tolerance": {
+    "relative": 1e-12,
+    "absolute": 1e-12
+  },
+  "cases": [
+    {
+      "id": "sum",
+      "ordered": false,
+      "sql": "SELECT SUM(x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "reference_sql": "SELECT SUM(x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          4.75
+        ]
+      ]
+    },
+    {
+      "id": "avg",
+      "ordered": false,
+      "sql": "SELECT AVG(x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "reference_sql": "SELECT AVG(x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1.1875
+        ]
+      ]
+    },
+    {
+      "id": "sum_avg_count",
+      "ordered": false,
+      "sql": "SELECT SUM(x),AVG(x),COUNT(x),COUNT(*) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "reference_sql": "SELECT SUM(x),AVG(x),COUNT(x),COUNT(*) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          4.75,
+          1.1875,
+          4,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "sum_alias",
+      "ordered": false,
+      "sql": "SELECT SUM(x) AS revenue,SUM(x) AS again,AVG(x) AS mean FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "reference_sql": "SELECT SUM(x) AS revenue,SUM(x) AS again,AVG(x) AS mean FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          4.75,
+          4.75,
+          1.1875
+        ]
+      ]
+    },
+    {
+      "id": "minmax",
+      "ordered": false,
+      "sql": "SELECT SUM(x),AVG(x),MIN(x),MAX(x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "reference_sql": "SELECT SUM(x),AVG(x),MIN(x),MAX(x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          4.75,
+          1.1875,
+          -0.5,
+          2.25
+        ]
+      ]
+    },
+    {
+      "id": "count_distinct",
+      "ordered": false,
+      "sql": "SELECT SUM(x),COUNT(DISTINCT x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "reference_sql": "SELECT SUM(x),COUNT(DISTINCT x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          4.75,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "negative",
+      "ordered": false,
+      "sql": "SELECT SUM(-x),AVG(-x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "reference_sql": "SELECT SUM(-x),AVG(-x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          -4.75,
+          -1.1875
+        ]
+      ]
+    },
+    {
+      "id": "arithmetic",
+      "ordered": false,
+      "sql": "SELECT SUM(x*2),AVG(x+1) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "reference_sql": "SELECT SUM(x*2),AVG(x+1) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          9.5,
+          2.1875
+        ]
+      ]
+    },
+    {
+      "id": "nullif",
+      "ordered": false,
+      "sql": "SELECT SUM(NULLIF(x,1.5/1)),AVG(NULLIF(x,1.5/1)) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "reference_sql": "SELECT SUM(NULLIF(x,1.5/1)),AVG(NULLIF(x,1.5/1)) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1.75,
+          0.875
+        ]
+      ]
+    },
+    {
+      "id": "case",
+      "ordered": false,
+      "sql": "SELECT SUM(CASE WHEN k=1 THEN x ELSE NULL END),AVG(CASE WHEN k=2 THEN x ELSE NULL END) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "reference_sql": "SELECT SUM(CASE WHEN k=1 THEN x ELSE NULL END),AVG(CASE WHEN k=2 THEN x ELSE NULL END) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          3.0,
+          0.875
+        ]
+      ]
+    },
+    {
+      "id": "coalesce",
+      "ordered": false,
+      "sql": "SELECT SUM(COALESCE(x,0.0/1)),AVG(COALESCE(x,0.0/1)) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "reference_sql": "SELECT SUM(COALESCE(x,0.0/1)),AVG(COALESCE(x,0.0/1)) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          4.75,
+          0.95
+        ]
+      ]
+    },
+    {
+      "id": "filtered",
+      "ordered": false,
+      "sql": "SELECT SUM(x),AVG(x),COUNT(x),COUNT(*) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t WHERE k=2;",
+      "reference_sql": "SELECT SUM(x),AVG(x),COUNT(x),COUNT(*) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t WHERE k=2;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          1.75,
+          0.875,
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "empty",
+      "ordered": false,
+      "sql": "SELECT SUM(x),AVG(x),COUNT(x),COUNT(*) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t WHERE k=9;",
+      "reference_sql": "SELECT SUM(x),AVG(x),COUNT(x),COUNT(*) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t WHERE k=9;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "all_null",
+      "ordered": false,
+      "sql": "SELECT SUM(x),AVG(x),COUNT(x),COUNT(*) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t WHERE x IS NULL;",
+      "reference_sql": "SELECT SUM(x),AVG(x),COUNT(x),COUNT(*) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t WHERE x IS NULL;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          0,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "group_numeric",
+      "ordered": true,
+      "sql": "SELECT k,SUM(x),AVG(x),COUNT(x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t GROUP BY k ORDER BY k;",
+      "reference_sql": "SELECT k,SUM(x),AVG(x),COUNT(x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t GROUP BY k ORDER BY k;",
+      "status": "ok",
+      "types": [
+        "INTEGER",
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          1,
+          3.0,
+          1.5,
+          2
+        ],
+        [
+          2,
+          1.75,
+          0.875,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "group_bag",
+      "ordered": false,
+      "sql": "SELECT k,SUM(x),AVG(x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t GROUP BY k;",
+      "reference_sql": "SELECT k,SUM(x),AVG(x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t GROUP BY k;",
+      "status": "ok",
+      "types": [
+        "INTEGER",
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          3.0,
+          1.5
+        ],
+        [
+          2,
+          1.75,
+          0.875
+        ]
+      ]
+    },
+    {
+      "id": "having",
+      "ordered": true,
+      "sql": "SELECT k,SUM(x) AS revenue,AVG(x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t GROUP BY k HAVING SUM(x)>2 ORDER BY k;",
+      "reference_sql": "SELECT k,SUM(x) AS revenue,AVG(x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t GROUP BY k HAVING SUM(x)>2 ORDER BY k;",
+      "status": "ok",
+      "types": [
+        "INTEGER",
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          3.0,
+          1.5
+        ]
+      ]
+    },
+    {
+      "id": "group_empty",
+      "ordered": false,
+      "sql": "SELECT k,SUM(x),AVG(x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t WHERE k=9 GROUP BY k;",
+      "reference_sql": "SELECT k,SUM(x),AVG(x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t WHERE k=9 GROUP BY k;",
+      "status": "ok",
+      "types": [
+        "INTEGER",
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": []
+    },
+    {
+      "id": "group_null_key",
+      "ordered": false,
+      "sql": "SELECT k,SUM(x),AVG(x) FROM (SELECT NULL AS k,1.5/1 AS x UNION ALL SELECT NULL,2.5/1) t GROUP BY k;",
+      "reference_sql": "SELECT k,SUM(x),AVG(x) FROM (SELECT NULL AS k,1.5/1 AS x UNION ALL SELECT NULL,2.5/1) t GROUP BY k;",
+      "status": "ok",
+      "types": [
+        "INTEGER",
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null,
+          4.0,
+          2.0
+        ]
+      ]
+    },
+    {
+      "id": "group_all_null",
+      "ordered": false,
+      "sql": "SELECT k,SUM(x),AVG(x),COUNT(x) FROM (SELECT 1 AS k,CAST(NULL AS REAL) AS x UNION ALL SELECT 1,NULL) t GROUP BY k;",
+      "reference_sql": "SELECT k,SUM(x),AVG(x),COUNT(x) FROM (SELECT 1 AS k,CAST(NULL AS DOUBLE) AS x UNION ALL SELECT 1,NULL) t GROUP BY k;",
+      "status": "ok",
+      "types": [
+        "INTEGER",
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          1,
+          null,
+          null,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "group_text",
+      "ordered": true,
+      "sql": "SELECT k,SUM(x),AVG(x) FROM (SELECT 'east' AS k,12.5/1 AS x UNION ALL SELECT 'west',2.25/1 UNION ALL SELECT 'east',-1.5/1) t GROUP BY k ORDER BY k;",
+      "reference_sql": "SELECT k,SUM(x),AVG(x) FROM (SELECT 'east' AS k,12.5/1 AS x UNION ALL SELECT 'west',2.25/1 UNION ALL SELECT 'east',-1.5/1) t GROUP BY k ORDER BY k;",
+      "status": "ok",
+      "types": [
+        "VARCHAR",
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          "east",
+          11.0,
+          5.5
+        ],
+        [
+          "west",
+          2.25,
+          2.25
+        ]
+      ]
+    },
+    {
+      "id": "group_date",
+      "ordered": true,
+      "sql": "SELECT k,SUM(x),AVG(x) FROM (SELECT DATE '2026-01-01' AS k,12.5/1 AS x UNION ALL SELECT DATE '2026-01-02',2.25/1 UNION ALL SELECT DATE '2026-01-01',-1.5/1) t GROUP BY k ORDER BY k;",
+      "reference_sql": "SELECT k,SUM(x),AVG(x) FROM (SELECT DATE '2026-01-01' AS k,12.5/1 AS x UNION ALL SELECT DATE '2026-01-02',2.25/1 UNION ALL SELECT DATE '2026-01-01',-1.5/1) t GROUP BY k ORDER BY k;",
+      "status": "ok",
+      "types": [
+        "DATE",
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          "2026-01-01",
+          11.0,
+          5.5
+        ],
+        [
+          "2026-01-02",
+          2.25,
+          2.25
+        ]
+      ]
+    },
+    {
+      "id": "integer_unchanged",
+      "ordered": false,
+      "sql": "SELECT SUM(x),AVG(x),COUNT(x) FROM (SELECT 1 AS x UNION ALL SELECT 2 UNION ALL SELECT NULL) t;",
+      "reference_sql": "SELECT SUM(x),AVG(x),COUNT(x) FROM (SELECT 1 AS x UNION ALL SELECT 2 UNION ALL SELECT NULL) t;",
+      "status": "ok",
+      "types": [
+        "HUGEINT",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          3,
+          1.5,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "decimal_unchanged",
+      "ordered": false,
+      "sql": "SELECT SUM(x),AVG(x) FROM (SELECT 1.25 AS x UNION ALL SELECT 2.50 UNION ALL SELECT NULL) t;",
+      "reference_sql": "SELECT SUM(x),AVG(x) FROM (SELECT 1.25 AS x UNION ALL SELECT 2.50 UNION ALL SELECT NULL) t;",
+      "status": "ok",
+      "types": [
+        "DECIMAL(38,2)",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          "3.75",
+          1.875
+        ]
+      ]
+    },
+    {
+      "id": "null_untyped",
+      "ordered": false,
+      "sql": "SELECT SUM(NULL),AVG(NULL),COUNT(NULL);",
+      "reference_sql": "SELECT SUM(NULL),AVG(NULL),COUNT(NULL);",
+      "status": "ok",
+      "types": [
+        "HUGEINT",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "scalar_real",
+      "ordered": false,
+      "sql": "SELECT SUM(CAST(3 AS REAL)),AVG(CAST(3 AS REAL));",
+      "reference_sql": "SELECT SUM(CAST(3 AS DOUBLE)),AVG(CAST(3 AS DOUBLE));",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          3.0,
+          3.0
+        ]
+      ]
+    },
+    {
+      "id": "singleton_negative",
+      "ordered": false,
+      "sql": "SELECT SUM(-2.5/1),AVG(-2.5/1);",
+      "reference_sql": "SELECT SUM(-2.5/1),AVG(-2.5/1);",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          -2.5,
+          -2.5
+        ]
+      ]
+    },
+    {
+      "id": "cancellation",
+      "ordered": false,
+      "sql": "SELECT SUM(x),AVG(x) FROM (SELECT 10000000000000000.0/1 AS x UNION ALL SELECT 1.0/1 UNION ALL SELECT -10000000000000000.0/1) t;",
+      "reference_sql": "SELECT SUM(x),AVG(x) FROM (SELECT 10000000000000000.0/1 AS x UNION ALL SELECT 1.0/1 UNION ALL SELECT -10000000000000000.0/1) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          0.0,
+          0.0
+        ]
+      ]
+    },
+    {
+      "id": "fractional",
+      "ordered": false,
+      "sql": "SELECT SUM(x),AVG(x) FROM (SELECT 0.1/1 AS x UNION ALL SELECT 0.2/1 UNION ALL SELECT 0.3/1) t;",
+      "reference_sql": "SELECT SUM(x),AVG(x) FROM (SELECT 0.1/1 AS x UNION ALL SELECT 0.2/1 UNION ALL SELECT 0.3/1) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          0.6000000000000001,
+          0.20000000000000004
+        ]
+      ]
+    },
+    {
+      "id": "nested",
+      "ordered": false,
+      "sql": "SELECT SUM(s),AVG(s) FROM (SELECT k,SUM(x) AS s FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t GROUP BY k) g;",
+      "reference_sql": "SELECT SUM(s),AVG(s) FROM (SELECT k,SUM(x) AS s FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t GROUP BY k) g;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          4.75,
+          2.375
+        ]
+      ]
+    },
+    {
+      "id": "join",
+      "ordered": false,
+      "sql": "SELECT SUM(t.x),AVG(t.x),COUNT(*) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t JOIN (SELECT 1 AS k UNION ALL SELECT 1 UNION ALL SELECT 2) d ON t.k=d.k;",
+      "reference_sql": "SELECT SUM(t.x),AVG(t.x),COUNT(*) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t JOIN (SELECT 1 AS k UNION ALL SELECT 1 UNION ALL SELECT 2) d ON t.k=d.k;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          7.75,
+          1.2916666666666667,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "left_join",
+      "ordered": true,
+      "sql": "SELECT d.k,SUM(t.x),AVG(t.x),COUNT(t.x) FROM (SELECT 1 AS k UNION ALL SELECT 3) d LEFT JOIN (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t ON d.k=t.k GROUP BY d.k ORDER BY d.k;",
+      "reference_sql": "SELECT d.k,SUM(t.x),AVG(t.x),COUNT(t.x) FROM (SELECT 1 AS k UNION ALL SELECT 3) d LEFT JOIN (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t ON d.k=t.k GROUP BY d.k ORDER BY d.k;",
+      "status": "ok",
+      "types": [
+        "INTEGER",
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          1,
+          3.0,
+          1.5,
+          2
+        ],
+        [
+          3,
+          null,
+          null,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "cte",
+      "ordered": false,
+      "sql": "WITH revenue AS (SELECT k,SUM(x) AS s FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t GROUP BY k) SELECT SUM(s),AVG(s) FROM revenue;",
+      "reference_sql": "WITH revenue AS (SELECT k,SUM(x) AS s FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t GROUP BY k) SELECT SUM(s),AVG(s) FROM revenue;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          4.75,
+          2.375
+        ]
+      ]
+    },
+    {
+      "id": "ratios",
+      "ordered": false,
+      "sql": "SELECT SUM(x)/COUNT(x),AVG(x)*2 FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "reference_sql": "SELECT SUM(x)/COUNT(x),AVG(x)*2 FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1.1875,
+          2.375
+        ]
+      ]
+    },
+    {
+      "id": "distinct_sum",
+      "ordered": false,
+      "sql": "SELECT SUM(DISTINCT x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "reference_sql": "SELECT SUM(DISTINCT x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          3.25
+        ]
+      ]
+    },
+    {
+      "id": "distinct_avg",
+      "ordered": false,
+      "sql": "SELECT AVG(DISTINCT x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "reference_sql": "SELECT AVG(DISTINCT x) FROM (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1.0833333333333333
+        ]
+      ]
+    },
+    {
+      "id": "bool_sum",
+      "ordered": false,
+      "refusal": "unsupported: expected numeric type, got Bool",
+      "sql": "SELECT SUM(TRUE);",
+      "reference_sql": "SELECT SUM(TRUE);",
+      "status": "ok",
+      "types": [
+        "HUGEINT"
+      ],
+      "rows": [
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "id": "bool_avg",
+      "ordered": false,
+      "refusal": "unsupported: expected numeric type, got Bool",
+      "sql": "SELECT AVG(TRUE);",
+      "reference_sql": "SELECT AVG(TRUE);",
+      "status": "error",
+      "error_class": "BinderException",
+      "error": "Binder Error: No function matches the given name and argument types 'avg(BOOLEAN)'. You might need to add explicit type casts.\n\tCandidate functions:\n\tavg(DECIMAL) -> DECIMAL\n\tavg(SMALLINT) -> DOUBLE\n\tavg(INTEGER) -> DOUBLE\n\tavg(BIGINT) -> DOUBLE\n\tavg(HUGEINT) -> DOUBLE\n\tavg(INTERVAL) -> INTERVAL\n\tavg(DOUBLE) -> DOUBLE\n\tavg(TIMESTAMP) -> TIMESTAMP\n\tavg(TIMESTAMP WITH TIME ZONE) -> TIMESTAMP WITH TIME ZONE\n\tavg(TIME) -> TIME\n\tavg(TIME WITH TIME ZONE) -> TIME WITH TIME ZONE\n\n\nLINE 1: SELECT AVG(TRUE);\n               ^"
+    },
+    {
+      "id": "text_sum",
+      "ordered": false,
+      "refusal": "expected numeric type, got Text",
+      "sql": "SELECT SUM('abc');",
+      "reference_sql": "SELECT SUM('abc');",
+      "status": "error",
+      "error_class": "BinderException",
+      "error": "Binder Error: No function matches the given name and argument types 'sum(VARCHAR)'. You might need to add explicit type casts.\n\tCandidate functions:\n\tsum(DECIMAL) -> DECIMAL\n\tsum(BOOLEAN) -> HUGEINT\n\tsum(SMALLINT) -> HUGEINT\n\tsum(INTEGER) -> HUGEINT\n\tsum(BIGINT) -> HUGEINT\n\tsum(HUGEINT) -> HUGEINT\n\tsum(DOUBLE) -> DOUBLE\n\tsum(BIGNUM) -> BIGNUM\n\n\nLINE 1: SELECT SUM('abc');\n               ^"
+    },
+    {
+      "id": "date_avg",
+      "ordered": false,
+      "refusal": "expected numeric type, got Date",
+      "sql": "SELECT AVG(DATE '2026-01-01');",
+      "reference_sql": "SELECT AVG(DATE '2026-01-01');",
+      "status": "ok",
+      "types": [
+        "TIMESTAMP"
+      ],
+      "rows": [
+        [
+          "2026-01-01 00:00:00"
+        ]
+      ]
+    },
+    {
+      "id": "window",
+      "ordered": false,
+      "refusal": "unsupported: Float/Double sum OVER",
+      "sql": "SELECT SUM(1.5/1) OVER ();",
+      "reference_sql": "SELECT SUM(1.5/1) OVER ();",
+      "status": "ok",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1.5
+        ]
+      ]
+    },
+    {
+      "id": "left_join_supported_order",
+      "ordered": true,
+      "sql": "SELECT d.k,SUM(t.x),AVG(t.x),COUNT(t.x) FROM (SELECT 1 AS k UNION ALL SELECT 3) d LEFT JOIN (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t ON d.k=t.k GROUP BY d.k ORDER BY 1;",
+      "reference_sql": "SELECT d.k,SUM(t.x),AVG(t.x),COUNT(t.x) FROM (SELECT 1 AS k UNION ALL SELECT 3) d LEFT JOIN (SELECT 1 AS k, 1.5/1 AS x UNION ALL SELECT 2, 2.25/1 UNION ALL SELECT 1, NULL UNION ALL SELECT 2, -0.5/1 UNION ALL SELECT 1, 1.5/1) t ON d.k=t.k GROUP BY d.k ORDER BY 1;",
+      "status": "ok",
+      "types": [
+        "INTEGER",
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          1,
+          3.0,
+          1.5,
+          2
+        ],
+        [
+          3,
+          null,
+          null,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "distinct_null_slt_104_17527",
+      "ordered": false,
+      "sql": "SELECT ALL 67 AS col1, + AVG ( DISTINCT + CAST ( NULL AS REAL ) ) col0;",
+      "reference_sql": "SELECT ALL 67 AS col1, + AVG ( DISTINCT + CAST ( NULL AS REAL ) ) col0;",
+      "status": "ok",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          67,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "distinct_null_slt_56_90834",
+      "ordered": false,
+      "sql": "SELECT ALL SUM ( DISTINCT + CAST ( NULL AS REAL ) ) col0;",
+      "reference_sql": "SELECT ALL SUM ( DISTINCT + CAST ( NULL AS REAL ) ) col0;",
+      "status": "ok",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "distinct_null_slt_80_32416",
+      "ordered": false,
+      "sql": "SELECT DISTINCT - 53 + + + COUNT ( * ) * AVG ( DISTINCT + CAST ( NULL AS REAL ) ) AS col1, - 80 * + 32;",
+      "reference_sql": "SELECT DISTINCT - 53 + + + COUNT ( * ) * AVG ( DISTINCT + CAST ( NULL AS REAL ) ) AS col1, - 80 * + 32;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "INTEGER"
+      ],
+      "rows": [
+        [
+          null,
+          -2560
+        ]
+      ]
+    },
+    {
+      "id": "distinct_null_slt_81_17090",
+      "ordered": false,
+      "sql": "SELECT ( 2 ) / + 87 / SUM ( DISTINCT - CAST ( + CAST ( NULL AS INTEGER ) AS REAL ) );",
+      "reference_sql": "SELECT ( 2 ) / + 87 / SUM ( DISTINCT - CAST ( + CAST ( NULL AS INTEGER ) AS REAL ) );",
+      "status": "ok",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "distinct_null_empty",
+      "ordered": false,
+      "sql": "SELECT SUM(DISTINCT CAST(NULL AS REAL)),AVG(DISTINCT CAST(NULL AS REAL)),COUNT(*) FROM (SELECT 1 AS k) t WHERE k=2;",
+      "reference_sql": "SELECT SUM(DISTINCT CAST(NULL AS DOUBLE)),AVG(DISTINCT CAST(NULL AS DOUBLE)),COUNT(*) FROM (SELECT 1 AS k) t WHERE k=2;",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "distinct_null_grouped",
+      "ordered": true,
+      "sql": "SELECT k,SUM(DISTINCT CAST(NULL AS REAL)),AVG(DISTINCT -CAST(NULL AS REAL)),COUNT(*) FROM (SELECT 1 AS k UNION ALL SELECT 2 UNION ALL SELECT 1) t GROUP BY k ORDER BY k;",
+      "reference_sql": "SELECT k,SUM(DISTINCT CAST(NULL AS DOUBLE)),AVG(DISTINCT -CAST(NULL AS DOUBLE)),COUNT(*) FROM (SELECT 1 AS k UNION ALL SELECT 2 UNION ALL SELECT 1) t GROUP BY k ORDER BY k;",
+      "status": "ok",
+      "types": [
+        "INTEGER",
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          1,
+          null,
+          null,
+          2
+        ],
+        [
+          2,
+          null,
+          null,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "distinct_nullif_constant",
+      "ordered": false,
+      "sql": "SELECT SUM(DISTINCT NULLIF(CAST(1 AS REAL),CAST(1 AS REAL))),AVG(DISTINCT NULLIF(CAST(1 AS REAL),CAST(1 AS REAL)));",
+      "reference_sql": "SELECT SUM(DISTINCT NULLIF(CAST(1 AS DOUBLE),CAST(1 AS DOUBLE))),AVG(DISTINCT NULLIF(CAST(1 AS DOUBLE),CAST(1 AS DOUBLE)));",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "distinct_nonnull_constant",
+      "ordered": false,
+      "sql": "SELECT SUM(DISTINCT CAST(1 AS REAL));",
+      "reference_sql": "SELECT SUM(DISTINCT CAST(1 AS DOUBLE));",
+      "status": "ok",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1.0
+        ]
+      ]
+    },
+    {
+      "id": "distinct_nullable_column",
+      "ordered": false,
+      "sql": "SELECT AVG(DISTINCT x) FROM (SELECT CAST(NULL AS REAL) AS x UNION ALL SELECT CAST(NULL AS REAL)) t;",
+      "reference_sql": "SELECT AVG(DISTINCT x) FROM (SELECT CAST(NULL AS DOUBLE) AS x UNION ALL SELECT CAST(NULL AS DOUBLE)) t;",
+      "status": "ok",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "distinct_fallible_null",
+      "ordered": false,
+      "refusal": "division by zero",
+      "difference": "DECIMAL 1.0/0.0 raises division by zero in Assay and PostgreSQL (DuckDB returns NULL); previously masked by the DISTINCT Float refusal",
+      "sql": "SELECT SUM(DISTINCT (CAST(NULL AS REAL)+(1.0/0.0)));",
+      "reference_sql": "SELECT SUM(DISTINCT (CAST(NULL AS DOUBLE)+(1.0/0.0)));",
+      "status": "ok",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "id": "positive_infinity",
+      "values": [
+        "inf",
+        "1",
+        "NULL"
+      ],
+      "reference_sql": "SELECT SUM(x), AVG(x), COUNT(x) FROM (VALUES (CAST('inf' AS DOUBLE)),(CAST('1' AS DOUBLE)),(CAST(NULL AS DOUBLE))) t(x)",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "+inf",
+          "+inf",
+          2
+        ]
+      ]
+    },
+    {
+      "id": "negative_infinity",
+      "values": [
+        "-inf",
+        "1"
+      ],
+      "reference_sql": "SELECT SUM(x), AVG(x), COUNT(x) FROM (VALUES (CAST('-inf' AS DOUBLE)),(CAST('1' AS DOUBLE))) t(x)",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "-inf",
+          "-inf",
+          2
+        ]
+      ]
+    },
+    {
+      "id": "opposite_infinities",
+      "values": [
+        "inf",
+        "-inf"
+      ],
+      "reference_sql": "SELECT SUM(x), AVG(x), COUNT(x) FROM (VALUES (CAST('inf' AS DOUBLE)),(CAST('-inf' AS DOUBLE))) t(x)",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "NaN",
+          "NaN",
+          2
+        ]
+      ]
+    },
+    {
+      "id": "nan",
+      "values": [
+        "nan",
+        "1",
+        "NULL"
+      ],
+      "reference_sql": "SELECT SUM(x), AVG(x), COUNT(x) FROM (VALUES (CAST('nan' AS DOUBLE)),(CAST('1' AS DOUBLE)),(CAST(NULL AS DOUBLE))) t(x)",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "NaN",
+          "NaN",
+          2
+        ]
+      ]
+    },
+    {
+      "id": "nan_and_infinities",
+      "values": [
+        "inf",
+        "nan",
+        "-inf"
+      ],
+      "reference_sql": "SELECT SUM(x), AVG(x), COUNT(x) FROM (VALUES (CAST('inf' AS DOUBLE)),(CAST('nan' AS DOUBLE)),(CAST('-inf' AS DOUBLE))) t(x)",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "NaN",
+          "NaN",
+          3
+        ]
+      ]
+    },
+    {
+      "id": "finite_positive_overflow",
+      "values": [
+        "1e308",
+        "1e308"
+      ],
+      "reference_sql": "SELECT SUM(x), AVG(x), COUNT(x) FROM (VALUES (CAST('1e308' AS DOUBLE)),(CAST('1e308' AS DOUBLE))) t(x)",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "+inf",
+          "+inf",
+          2
+        ]
+      ],
+      "decision": "2026-10-17 maintainer: finite-prefix overflow returns +/-infinity like DuckDB 1.5.6; PostgreSQL float8_pl raises 'value out of range: overflow'."
+    },
+    {
+      "id": "finite_negative_overflow",
+      "values": [
+        "-1e308",
+        "-1e308"
+      ],
+      "reference_sql": "SELECT SUM(x), AVG(x), COUNT(x) FROM (VALUES (CAST('-1e308' AS DOUBLE)),(CAST('-1e308' AS DOUBLE))) t(x)",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "-inf",
+          "-inf",
+          2
+        ]
+      ],
+      "decision": "2026-10-17 maintainer: finite-prefix overflow returns +/-infinity like DuckDB 1.5.6; PostgreSQL float8_pl raises 'value out of range: overflow'."
+    },
+    {
+      "id": "finite_overflow_then_cancel",
+      "values": [
+        "1e308",
+        "1e308",
+        "-1e308"
+      ],
+      "reference_sql": "SELECT SUM(x), AVG(x), COUNT(x) FROM (VALUES (CAST('1e308' AS DOUBLE)),(CAST('1e308' AS DOUBLE)),(CAST('-1e308' AS DOUBLE))) t(x)",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "+inf",
+          "+inf",
+          3
+        ]
+      ],
+      "decision": "2026-10-17 maintainer: finite-prefix overflow returns +/-infinity like DuckDB 1.5.6; PostgreSQL float8_pl raises 'value out of range: overflow'."
+    },
+    {
+      "id": "negative_zero",
+      "values": [
+        "-0.0",
+        "-0.0",
+        "NULL"
+      ],
+      "reference_sql": "SELECT SUM(x), AVG(x), COUNT(x) FROM (VALUES (CAST('-0.0' AS DOUBLE)),(CAST('-0.0' AS DOUBLE)),(CAST(NULL AS DOUBLE))) t(x)",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          0.0,
+          0.0,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "nulls",
+      "values": [
+        "NULL",
+        "NULL"
+      ],
+      "reference_sql": "SELECT SUM(x), AVG(x), COUNT(x) FROM (VALUES (CAST(NULL AS DOUBLE)),(CAST(NULL AS DOUBLE))) t(x)",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "subnormal",
+      "values": [
+        "5e-324",
+        "5e-324",
+        "-5e-324"
+      ],
+      "reference_sql": "SELECT SUM(x), AVG(x), COUNT(x) FROM (VALUES (CAST('5e-324' AS DOUBLE)),(CAST('5e-324' AS DOUBLE)),(CAST('-5e-324' AS DOUBLE))) t(x)",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          5e-324,
+          0.0,
+          3
+        ]
+      ]
+    }
+  ],
+  "postgresql_evidence": {
+    "kind": "installed PostgreSQL 17 header and catalog; not a server run",
+    "function": "float8_pl in server/utils/float.h: finite operands producing infinity call float_overflow_error"
+  }
+}

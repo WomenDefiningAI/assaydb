@@ -119,19 +119,76 @@ fn outer_join_and_empty_scalar_keep_null_extension() {
     for workers in [1, 10] {
         for optimized in [false, true] {
             let mut s = session(workers, optimized);
+            // Old: refused as row-dependent mixed Int/Float. New (Helen, Oct 15):
+            // the NULL-extended Int arm is promoted to DOUBLE. DuckDB 1.5.6
+            // returns 5.0 and 9007199254740992.0 (2^53+1 rounded) for both.
             for sql in [
-                "SELECT COALESCE(b.id,CAST(5 AS REAL)) FROM t a LEFT JOIN t b ON a.id=b.id AND b.id>2",
-                "SELECT CASE WHEN b.p THEN a.id ELSE CAST(5 AS REAL) END FROM t a LEFT JOIN (SELECT id,TRUE AS p FROM t) b ON a.id=b.id AND b.id>2",
+                "SELECT COALESCE(b.id,CAST(5 AS REAL)) FROM t a LEFT JOIN t b ON a.id=b.id AND b.id>2 ORDER BY 1",
+                "SELECT CASE WHEN b.p THEN a.id ELSE CAST(5 AS REAL) END FROM t a LEFT JOIN (SELECT id,TRUE AS p FROM t) b ON a.id=b.id AND b.id>2 ORDER BY 1",
             ] {
-                let error = query(&mut s, sql).unwrap_err();
-                assert!(error.contains("row-dependent mixed"), "{sql}: {error}");
-            }
-            for join in ["RIGHT", "FULL"] {
-                let sql = format!(
-                    "SELECT COALESCE(a.id,CAST(5 AS REAL)) FROM t a {join} JOIN t b ON a.id=b.id AND a.id>2"
+                let batch = query(&mut s, sql).unwrap_or_else(|e| panic!("{sql}: {e}"));
+                let values = batch
+                    .column(0)
+                    .as_any()
+                    .downcast_ref::<Float64Array>()
+                    .unwrap();
+                assert_eq!(
+                    values
+                        .iter()
+                        .map(|v| v.map(f64::to_bits))
+                        .collect::<Vec<_>>(),
+                    vec![
+                        Some(5.0_f64.to_bits()),
+                        Some(9007199254740992.0_f64.to_bits())
+                    ],
+                    "{sql}"
                 );
-                let error = query(&mut s, &sql).unwrap_err();
-                assert!(error.contains("unsupported: join kind"), "{sql}: {error}");
+            }
+            // RIGHT/FULL are supported now (tests/joins_sets.rs). Their
+            // NULL-extended Int side is promoted to DOUBLE like LEFT's (Helen,
+            // Oct 15: mixed Int/Float conditionals promote like DuckDB; this
+            // integration replaces the joins card's base-era refusal check).
+            // DuckDB 1.5.6 answers RIGHT 5.0, 2^53 and FULL 2.0, 5.0, 2^53
+            // (2^53+1 rounded); the integer form answers like DuckDB too.
+            for (join, wanted, floats) in [
+                (
+                    "RIGHT",
+                    [Some(3), Some(9007199254740993)].as_slice(),
+                    vec![Some(5.0_f64), Some(9007199254740992.0)],
+                ),
+                (
+                    "FULL",
+                    [Some(2), Some(3), Some(9007199254740993)].as_slice(),
+                    vec![Some(2.0_f64), Some(5.0), Some(9007199254740992.0)],
+                ),
+            ] {
+                let sql = format!(
+                    "SELECT COALESCE(a.id,CAST(5 AS REAL)) FROM t a {join} JOIN t b ON a.id=b.id AND a.id>2 ORDER BY 1"
+                );
+                let batch = query(&mut s, &sql).unwrap_or_else(|e| panic!("{sql}: {e}"));
+                let values = batch
+                    .column(0)
+                    .as_any()
+                    .downcast_ref::<Float64Array>()
+                    .unwrap();
+                assert_eq!(
+                    values
+                        .iter()
+                        .map(|v| v.map(f64::to_bits))
+                        .collect::<Vec<_>>(),
+                    floats
+                        .iter()
+                        .map(|v| v.map(f64::to_bits))
+                        .collect::<Vec<_>>(),
+                    "{sql}"
+                );
+                integers(
+                    &mut s,
+                    &format!(
+                        "SELECT COALESCE(a.id,3) FROM t a {join} JOIN t b ON a.id=b.id AND a.id>2 ORDER BY 1"
+                    ),
+                    wanted,
+                );
             }
             integers(
                 &mut s,
@@ -203,7 +260,7 @@ fn dead_values_bind_normally_and_live_conditions_keep_errors() {
     let sql = "SELECT COALESCE(NULLIF(id*99999999999999999999999999999999999999,id*99999999999999999999999999999999999999),3) FROM t";
     let error = query(&mut s, sql).unwrap_err();
     assert!(error.contains("overflow"), "{sql}: {error}");
-    // Float reflexivity is not a NULL proof (NaN can be unequal to itself).
+    // Float reflexivity cannot suppress evaluation errors in its operands.
     // Use a homogeneous Float fallback to inspect its eager Decimal error.
     let sql = "SELECT COALESCE(NULLIF(id/CAST('0' AS DECIMAL(10,0)),id/CAST('0' AS DECIMAL(10,0))),CAST(3 AS REAL)) FROM t";
     let error = query(&mut s, sql).unwrap_err();

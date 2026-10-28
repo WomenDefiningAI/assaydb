@@ -3,6 +3,7 @@ mod aggregate_workers;
 mod aggregation;
 pub(crate) use aggregation::SORTED_DISTINCT_DECLINED;
 pub(crate) use aggregation::having::Having;
+pub(crate) use aggregation::window::WindowAccumulator;
 use aggregation::{AggregateOutput, States};
 #[cfg(not(test))]
 type OrdinaryAggregation = aggregation::Aggregation;
@@ -25,7 +26,7 @@ use arrow::{
     record_batch::RecordBatch,
 };
 pub use error_replay::{ErrorReplay, ErrorReplayMetrics};
-use parquet::arrow::{ProjectionMask, arrow_reader::ParquetRecordBatchReaderBuilder};
+use parquet::arrow::ProjectionMask;
 use serde::Serialize;
 use std::{collections::HashMap, fs::File, path::PathBuf, sync::Arc, time::Instant};
 
@@ -78,6 +79,11 @@ pub struct Options {
     pub parquet_cache_bytes: Option<usize>,
     pub spill: Option<crate::spill::SpillOptions>,
     pub cancellation: crate::spill::Cancellation,
+    /// Session time zone for TIMESTAMPTZ calendar operations (default UTC).
+    pub time_zone: crate::zone::SessionZone,
+    /// Fixed statement clock (microseconds since 1970-01-01 UTC) for
+    /// reproducible NOW()/CURRENT_*; None reads the system clock.
+    pub fixed_clock: Option<i64>,
 }
 impl Default for Options {
     fn default() -> Self {
@@ -117,6 +123,8 @@ impl Default for Options {
             parquet_cache_bytes: Some(16 * 1024 * 1024),
             spill: None,
             cancellation: crate::spill::Cancellation::default(),
+            time_zone: crate::zone::SessionZone::default(),
+            fixed_clock: None,
         }
     }
 }
@@ -140,8 +148,8 @@ pub(crate) struct PipelineAttemptReport {
     pub candidate_peak_reserved_bytes: usize,
     pub peak_reserved_bytes: usize,
     pub peak_workers: usize,
-    pub candidate_error: Option<String>,
-    pub candidate_sql_error: Option<String>,
+    pub candidate_error: Option<crate::Error>,
+    pub candidate_sql_error: Option<crate::Error>,
 }
 #[derive(Debug, Default, Serialize)]
 pub struct Metrics {
@@ -180,12 +188,12 @@ pub struct Metrics {
     pub pipeline_candidate_seconds: f64,
     pub pipeline_fallback_seconds: f64,
     pub pipeline_candidate_peak_reserved_bytes: usize,
-    pub pipeline_candidate_error: Option<String>,
-    pub pipeline_candidate_sql_error: Option<String>,
+    pub pipeline_candidate_error: Option<crate::Error>,
+    pub pipeline_candidate_sql_error: Option<crate::Error>,
     pub auto_spill_retries: usize,
     pub auto_spill_initial_seconds: f64,
     pub auto_spill_initial_peak_reserved_bytes: usize,
-    pub auto_spill_initial_error: Option<String>,
+    pub auto_spill_initial_error: Option<crate::Error>,
     /// Live execution threads, including the coordinator and blocked workers.
     pub worker_threads_peak: usize,
     pub parallel_scan_tasks: usize,
@@ -268,6 +276,11 @@ pub struct Metrics {
     pub filtered_scan_reuses: usize,
     pub paired_existence_scans: usize,
     pub scan_materializations: usize,
+    /// Complete selective join results retained and replayed within this query.
+    pub subplan_materializations: usize,
+    pub subplan_reuses: usize,
+    pub subplan_rows: usize,
+    pub subplan_fallbacks: usize,
     pub cached_scan_filters: usize,
     pub buffered_parquet_scans: usize,
     pub parquet_cached_column_rows: usize,
@@ -283,6 +296,10 @@ pub struct Metrics {
     pub decoded_arrow_bytes_total: usize,
     pub peak_reserved_bytes: usize,
     pub selected_column_compressed_bytes: i64,
+    /// A parallel reservation refusal replayed with fresh state on the caller.
+    pub decoder_serial_retries: usize,
+    /// A parallel scan transform exhausted its budget before any result was published.
+    pub parallel_transform_serial_retries: usize,
     pub workers: usize,
     pub operator_profiles: Vec<serde_json::Value>,
     pub join_seconds: f64,
@@ -354,6 +371,7 @@ pub fn prepare(
     options: &Options,
 ) -> Result<Prepared> {
     validate_prepare_options(options)?;
+    let _statement = crate::zone::enter(options.time_zone, options.fixed_clock);
     if let Some(spill) = &options.spill {
         let mut prepared = crate::rel::prepare(sql, tables, options)?;
         if spill.mode == crate::spill::SpillMode::Auto
@@ -390,6 +408,7 @@ pub(crate) fn prepare_with_views(
     views: &HashMap<String, &crate::rel::ViewDefinition>,
 ) -> Result<Prepared> {
     validate_prepare_options(options)?;
+    let _statement = crate::zone::enter(options.time_zone, options.fixed_clock);
     crate::rel::prepare_with_views(sql, tables, options, views)
 }
 
@@ -402,6 +421,7 @@ pub(crate) fn prepare_with_local_files(
     reader: &crate::rel::LocalReader<'_>,
 ) -> Result<Prepared> {
     validate_prepare_options(options)?;
+    let _statement = crate::zone::enter(options.time_zone, options.fixed_clock);
     if views.is_empty()
         && options.spill.is_none()
         && let Ok(prepared) = prepare_simple(sql, tables, options)
@@ -431,14 +451,16 @@ fn prepare_simple(
         if !path.is_file() {
             return Err("M1 table must be a single Parquet file".into());
         }
-        ParquetRecordBatchReaderBuilder::try_new(File::open(path).map_err(|e| e.to_string())?)
-            .map_err(|e| e.to_string())?
-            .schema()
-            .clone()
+        let planning_budget = Budget::new(options.memory_bytes);
+        let (metadata, _metadata_lease) = crate::parquet_scan::accounted_metadata(
+            &File::open(path).map_err(|e| crate::Error::from(e.to_string()))?,
+            &planning_budget,
+        )?;
+        metadata.schema().clone()
     } else {
         Arc::new(Schema::empty())
     };
-    let schema = Arc::new(Type::external_schema(&schema));
+    let schema = Arc::new(Type::input_schema(&schema));
     let plan = bind::bind(&query, &schema, path, options.projection_pushdown)?;
     crate::mixed_numeric::validate_plan(&plan, &schema)?;
     Ok(Prepared {
@@ -458,6 +480,7 @@ pub(crate) enum Key {
     Bool(bool),
     Date(i32),
     Float(u64),
+    Timestamp(i64),
 }
 impl Key {
     pub(crate) fn payload_bytes(&self) -> usize {
@@ -479,6 +502,20 @@ pub(crate) fn binary_key_scratch(value: &Value, budget: &Budget) -> Result<Optio
             budget.reserve(bytes.saturating_add(128))
         })
         .transpose()
+}
+/// The canonical aggregate/grouping key of a REAL value: the engine's one
+/// canonical Float form (signed zeros equal, every NaN one value).
+pub(crate) fn float_key(n: f64) -> Key {
+    Key::Float(crate::expr::numeric_compare::canonical(n).to_bits())
+}
+/// MIN/MAX (and ARG_MIN/ARG_MAX) order of two non-NULL keys of one type:
+/// Float keys use the SQL NaN total order (NaN above +infinity).
+pub(crate) fn compare_extreme_keys(a: &Key, b: &Key) -> std::cmp::Ordering {
+    if let (Key::Float(a), Key::Float(b)) = (a, b) {
+        crate::expr::numeric_compare::real_order(f64::from_bits(*a), f64::from_bits(*b))
+    } else {
+        a.cmp(b)
+    }
 }
 pub(crate) fn key(v: &Value, ty: &Type, i: usize) -> Key {
     if is_sql_null(v.array.as_ref(), i) {
@@ -510,6 +547,9 @@ pub(crate) fn key(v: &Value, ty: &Type, i: usize) -> Key {
                 .unwrap()
                 .value(i),
         ),
+        Type::Timestamp | Type::TimestampTz => {
+            Key::Timestamp(crate::expr::timestamp::value(v.array.as_ref(), i))
+        }
         Type::Float => {
             let n = v
                 .array
@@ -517,7 +557,7 @@ pub(crate) fn key(v: &Value, ty: &Type, i: usize) -> Key {
                 .downcast_ref::<Float64Array>()
                 .unwrap()
                 .value(i);
-            Key::Float(if n == 0.0 { 0 } else { n.to_bits() })
+            float_key(n)
         }
         Type::Null => Key::Null,
     }
@@ -570,7 +610,9 @@ fn filter_input(
                 let _allocation =
                     budget.reserve(v.array.get_array_memory_size().saturating_mul(2))?;
                 Some(Value::adopt(
-                    predicate.filter(&v.array).map_err(|e| e.to_string())?,
+                    predicate
+                        .filter(&v.array)
+                        .map_err(|e| crate::Error::from(e.to_string()))?,
                     budget,
                 )?)
             } else {
@@ -606,7 +648,7 @@ impl Executor<'_> {
         self.metrics.batches += 1;
         let start = Instant::now();
         if !filter_applied && let Some(predicate) = &p.filter {
-            let mask = predicate.eval(&input, &self.budget)?;
+            let mask = predicate.eval_filter(&input, &self.budget)?;
             input = filter_input(&input, boolean(&mask.array), &self.budget, true)?;
         }
         self.metrics.filter_seconds += start.elapsed().as_secs_f64();
@@ -632,7 +674,7 @@ impl Executor<'_> {
                 })
                 .collect::<Result<Vec<_>>>()?;
             let batch = RecordBatch::try_new(self.output_schema.clone(), arrays)
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| crate::Error::from(e.to_string()))?;
             self.projection_leases
                 .push(self.budget.reserve(batch.get_array_memory_size() + 256)?);
             self.projected.push(batch);
@@ -839,7 +881,8 @@ impl<A: AggregateOutput> Executor<'_, A> {
         let mut batch = if p.aggregation {
             self.aggregate_batch(0..size)?
         } else {
-            concat_batches(&self.output_schema, &self.projected).map_err(|e| e.to_string())?
+            concat_batches(&self.output_schema, &self.projected)
+                .map_err(|e| crate::Error::from(e.to_string()))?
         };
         if !p.order.is_empty() && batch.num_rows() > 0 {
             let columns = p
@@ -870,17 +913,17 @@ impl<A: AggregateOutput> Executor<'_, A> {
                 (indices, Some(credit))
             } else {
                 (
-                    crate::external_sort::sort_indices(columns, batch.num_rows())?,
+                    crate::external_sort::sort_indices(columns, batch.num_rows(), &self.budget)?,
                     None,
                 )
             };
             let arrays = batch
                 .columns()
                 .iter()
-                .map(|a| take(a, &indices, None).map_err(|e| e.to_string()))
+                .map(|a| take(a, &indices, None).map_err(|e| crate::Error::from(e.to_string())))
                 .collect::<Result<Vec<_>>>()?;
             batch = RecordBatch::try_new(self.output_schema.clone(), arrays)
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| crate::Error::from(e.to_string()))?;
         }
         // Builders, temporary option vectors and sort indices have been freed.
         // Keep only the returned arrays charged during downstream consumption.
@@ -899,14 +942,14 @@ pub(crate) fn count_array(counts: impl Iterator<Item = u64>, ty: &Type) -> Resul
     if *ty == Type::Int {
         Ok(Arc::new(Int64Array::from(
             counts
-                .map(|n| i64::try_from(n).map_err(|_| "BIGINT overflow".to_string()))
+                .map(|n| i64::try_from(n).map_err(|_| crate::Error::from("BIGINT overflow")))
                 .collect::<Result<Vec<_>>>()?,
         )))
     } else {
         Ok(Arc::new(
             Decimal128Array::from(counts.map(i128::from).collect::<Vec<_>>())
                 .with_precision_and_scale(38, 0)
-                .map_err(|e| e.to_string())?,
+                .map_err(|e| crate::Error::from(e.to_string()))?,
         ))
     }
 }
@@ -921,7 +964,8 @@ pub(crate) fn physical_output_type(ty: &Type, internal: bool) -> Type {
 
 pub(crate) fn output_array(array: ArrayRef, field: &Field) -> Result<ArrayRef> {
     if Type::is_wide_integer(field) && array.data_type() != field.data_type() {
-        arrow::compute::cast(&array, field.data_type()).map_err(|e| e.to_string())
+        Ok(arrow::compute::cast(&array, field.data_type())
+            .map_err(|e| crate::Error::from(e.to_string()))?)
     } else {
         Ok(array)
     }
@@ -933,7 +977,7 @@ pub(crate) fn materialize(array: &ArrayRef, ty: &Type) -> Result<ArrayRef> {
     match ty {
         Type::Int => {
             let numbers = numeric(array);
-            let narrow = |v| i64::try_from(v).map_err(|_| "BIGINT overflow".to_string());
+            let narrow = |v| i64::try_from(v).map_err(|_| crate::Error::from("BIGINT overflow"));
             // Fallible iterator collection grows geometrically and Arrow keeps
             // that spare Vec capacity. The output length is known, so reserve
             // exactly that length before the checked loop instead of retaining
@@ -966,7 +1010,7 @@ pub(crate) fn materialize(array: &ArrayRef, ty: &Type) -> Result<ArrayRef> {
             numeric(array)
                 .clone()
                 .with_precision_and_scale(38, *scale)
-                .map_err(|e| e.to_string())?,
+                .map_err(|e| crate::Error::from(e.to_string()))?,
         )),
         _ => Ok(array.clone()),
     }
@@ -1017,6 +1061,18 @@ pub(crate) fn keys_array(keys: &[Key], ty: &Type) -> Result<ArrayRef> {
                 })
                 .collect::<Vec<_>>(),
         )),
+        Type::Timestamp | Type::TimestampTz => crate::expr::timestamp::labelled(
+            TimestampMicrosecondArray::from(
+                keys.iter()
+                    .map(|g| match g {
+                        Key::Timestamp(v) => Some(*v),
+                        Key::Null => None,
+                        _ => unreachable!(),
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            ty,
+        ),
         Type::Int | Type::Decimal(_) => {
             let values = keys
                 .iter()
@@ -1029,7 +1085,7 @@ pub(crate) fn keys_array(keys: &[Key], ty: &Type) -> Result<ArrayRef> {
             let a: ArrayRef = Arc::new(
                 Decimal128Array::from(values)
                     .with_precision_and_scale(38, ty.scale()?)
-                    .map_err(|e| e.to_string())?,
+                    .map_err(|e| crate::Error::from(e.to_string()))?,
             );
             materialize(&a, ty)?
         }
@@ -1045,6 +1101,7 @@ pub(crate) fn keys_array(keys: &[Key], ty: &Type) -> Result<ArrayRef> {
     })
 }
 pub fn execute(prepared: &Prepared, options: &Options) -> Result<Execution> {
+    let _statement = crate::zone::enter(options.time_zone, options.fixed_clock);
     if options.spill.is_some() && prepared.relational.is_none() {
         return Err("spill execution requires a plan prepared with spill options".into());
     }
@@ -1085,12 +1142,13 @@ pub(crate) fn execution_policy(
             if memory.used() != 0 {
                 return Err(format!(
                     "{error}; automatic spill: failed attempt retained reservations"
-                ));
+                )
+                .into());
             }
             let mut forced = options.clone();
             forced.spill.as_mut().unwrap().mode = crate::spill::SpillMode::Force;
             let mut result = run(&forced, Budget::new(options.memory_bytes))
-                .map_err(|retry| format!("{retry}; automatic spill retry after {error}"))?;
+                .map_err(|retry| retry.context(format!("; automatic spill retry after {error}")))?;
             result.metrics.auto_spill_retries = 1;
             result.metrics.auto_spill_initial_seconds = initial_seconds;
             result.metrics.auto_spill_initial_peak_reserved_bytes = memory.peak();
@@ -1193,8 +1251,8 @@ fn execute_baseline(prepared: &Prepared, options: &Options, budget: Budget) -> R
     )?;
     if let Some(path) = &p.path {
         let scan_start = Instant::now();
-        let file = File::open(path).map_err(|e| e.to_string())?;
-        let metadata = crate::parquet_scan::external_metadata(&file)?;
+        let file = File::open(path).map_err(|e| crate::Error::from(e.to_string()))?;
+        let (metadata, _metadata_lease) = crate::parquet_scan::accounted_metadata(&file, &budget)?;
         // First support independent states in ordinary direct scans. Admit
         // using runtime row count, keeping small inputs and spill execution on
         // their existing serial path. No table/query identity is consulted.
@@ -1234,7 +1292,7 @@ fn execute_baseline(prepared: &Prepared, options: &Options, budget: Budget) -> R
                     let schema = metadata
                         .schema()
                         .project(&p.columns)
-                        .map_err(|e| e.to_string())?;
+                        .map_err(|e| crate::Error::from(e.to_string()))?;
                     crate::parquet_scan::exact_filter(
                         expression,
                         &schema,
@@ -1286,7 +1344,7 @@ fn execute_baseline(prepared: &Prepared, options: &Options, budget: Budget) -> R
                 executor.metrics.scan_decode_seconds += scan_start.elapsed().as_secs_f64();
                 break;
             };
-            let batch = batch.map_err(|e| e.to_string())?;
+            let batch = batch.map_err(|e| crate::Error::from(e.to_string()))?;
             if let Some(projection) = &aggregate_projection {
                 let rows = batch.num_rows();
                 let (keys, values, encoded) = projection.unpack(&batch, &budget)?;
@@ -1303,9 +1361,7 @@ fn execute_baseline(prepared: &Prepared, options: &Options, budget: Budget) -> R
             if !transformed {
                 executor.metrics.decoded_arrow_bytes_total += bytes;
             }
-            // Decoder allocates independently; the returned live batch enters
-            // engine accounting here. This is deliberately not a hard RSS cap.
-            let decoded = budget.reserve(bytes)?;
+            let decoded = reader.take_batch_lease();
             let mut input = Input {
                 columns: vec![None; prepared.schema.fields().len()],
                 len: batch.num_rows(),
@@ -1773,7 +1829,8 @@ mod tests {
                             .iter()
                             .map(|v| {
                                 v.map(|v| {
-                                    i64::try_from(v).map_err(|_| "BIGINT overflow".to_string())
+                                    i64::try_from(v)
+                                        .map_err(|_| crate::Error::from("BIGINT overflow"))
                                 })
                                 .transpose()
                             })
@@ -1903,7 +1960,7 @@ mod tests {
                 calls.set(calls.get() + 1);
                 assert!(o.spill.is_none());
                 let _lease = budget.reserve(128)?;
-                Err(message.to_string())
+                Err(message.to_string().into())
             })
             .err()
             .unwrap();

@@ -75,7 +75,7 @@ impl Fixture {
         workers: usize,
         batch_size: usize,
         optimized: bool,
-    ) -> Result<Execution, String> {
+    ) -> Result<Execution, assaydb::Error> {
         let options = Options {
             workers,
             batch_size,

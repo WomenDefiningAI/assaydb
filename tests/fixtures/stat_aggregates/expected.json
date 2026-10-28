@@ -1,0 +1,3941 @@
+{
+ "duckdb_version": "1.5.6",
+ "cases_sha256": "0ffa7af60a14ae543430dde3df6d58ba8e1cff917d5f9f05cded174495b64231",
+ "tables": {
+  "stats": {
+   "bytes": 11380,
+   "sha256": "0c6694f2a8c551c647e13d6aa31b05da5a95159879b959c47d01b7671a3db4b0"
+  },
+  "empty": {
+   "bytes": 1620,
+   "sha256": "608e5a33695d06f7ac05c72d14d308c7dccdbcb341d24da853df7865caddf655"
+  },
+  "regions": {
+   "bytes": 695,
+   "sha256": "07bc890e831cbac86ee8d20ce41570cf320265a0887057d7db8a0a45a953aaef"
+  },
+  "nonfinite": {
+   "bytes": 2080,
+   "sha256": "58293c8a370dabdb96345d4adfd11308a2bb141be81d43f32406017e9b54907a"
+  },
+  "pairs": {
+   "bytes": 2948,
+   "sha256": "96917d8fc90917a14a3037a0a071f934fc4d16c4e9f8bd3d55aa6316d09a46f8"
+  },
+  "wide": {
+   "bytes": 5373,
+   "sha256": "12970a4ad2a24d32c290f4dd3c566323d02bb9d78a2d429603434dffc84bea6f"
+  },
+  "big": {
+   "bytes": 232206,
+   "sha256": "029c152d43fb993be9538dcfd6a43836390363deb7c10fb50672520f021cc584"
+  }
+ },
+ "postgresql_execution": "psql against PostgreSQL 17 TEMP tables with the same rows (text COLLATE \"C\"); pg is a loose numeric agreement note only",
+ "unexpected_reference_outcomes": [],
+ "cases": [
+  {
+   "id": "variance_family_int",
+   "ordered": true,
+   "sql": "SELECT STDDEV(x), STDDEV_SAMP(x), STDDEV_POP(x), VARIANCE(x), VAR_SAMP(x), VAR_POP(x) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "stddev(x)",
+    "stddev_samp(x)",
+    "stddev_pop(x)",
+    "variance(x)",
+    "var_samp(x)",
+    "var_pop(x)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "2.685055643655045"
+     },
+     {
+      "float": "2.685055643655045"
+     },
+     {
+      "float": "2.594010194445829"
+     },
+     {
+      "float": "7.209523809523809"
+     },
+     {
+      "float": "7.209523809523809"
+     },
+     {
+      "float": "6.728888888888888"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "variance_family_decimal",
+   "ordered": true,
+   "sql": "SELECT STDDEV(q), STDDEV_SAMP(q), STDDEV_POP(q), VARIANCE(q), VAR_SAMP(q), VAR_POP(q) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "stddev(q)",
+    "stddev_samp(q)",
+    "stddev_pop(q)",
+    "variance(q)",
+    "var_samp(q)",
+    "var_pop(q)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "23.17066924655681"
+     },
+     {
+      "float": "23.17066924655681"
+     },
+     {
+      "float": "22.434904028098718"
+     },
+     {
+      "float": "536.8799133333334"
+     },
+     {
+      "float": "536.8799133333334"
+     },
+     {
+      "float": "503.32491875000005"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "variance_family_real",
+   "ordered": true,
+   "sql": "SELECT STDDEV(f), STDDEV_SAMP(f), STDDEV_POP(f), VARIANCE(f), VAR_SAMP(f), VAR_POP(f) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "stddev(f)",
+    "stddev_samp(f)",
+    "stddev_pop(f)",
+    "variance(f)",
+    "var_samp(f)",
+    "var_pop(f)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "1.5155229776659058"
+     },
+     {
+      "float": "1.5155229776659058"
+     },
+     {
+      "float": "1.467398813323682"
+     },
+     {
+      "float": "2.2968098958333334"
+     },
+     {
+      "float": "2.2968098958333334"
+     },
+     {
+      "float": "2.15325927734375"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "variance_of_expressions",
+   "ordered": true,
+   "sql": "SELECT STDDEV(x * 2 + 1), VAR_POP(q - 1), STDDEV_POP(f * y), VAR_SAMP(CASE WHEN b THEN x END) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "stddev(((x * 2) + 1))",
+    "var_pop((q - 1))",
+    "stddev_pop((f * y))",
+    "var_samp(CASE  WHEN (b) THEN (x) ELSE NULL END)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "5.37011128731009"
+     },
+     {
+      "float": "503.32491875000005"
+     },
+     {
+      "float": "3.1970811883654124"
+     },
+     {
+      "float": "7.410714285714286"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "covariance_correlation_exact",
+   "ordered": true,
+   "sql": "SELECT COVAR_SAMP(z, x), COVAR_POP(z, x), CORR(z, x), CORR(x, z) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "covar_samp(z, x)",
+    "covar_pop(z, x)",
+    "corr(z, x)",
+    "corr(x, z)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "18.09340659340659"
+     },
+     {
+      "float": "16.801020408163264"
+     },
+     {
+      "float": "0.9915234954313749"
+     },
+     {
+      "float": "0.9915234954313749"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "covariance_correlation_mixed",
+   "ordered": true,
+   "sql": "SELECT COVAR_POP(f, q), COVAR_SAMP(q, x), CORR(q, x), CORR(f, y), CORR(y, x) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "covar_pop(f, q)",
+    "covar_samp(q, x)",
+    "corr(q, x)",
+    "corr(f, y)",
+    "corr(y, x)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "-6.045933333333333"
+     },
+     {
+      "float": "-21.614010989010982"
+     },
+     {
+      "float": "-0.3304847134127826"
+     },
+     {
+      "float": "-0.2342854013939736"
+     },
+     {
+      "float": "-0.002244234707669021"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "regression_family_exact",
+   "ordered": true,
+   "sql": "SELECT REGR_SLOPE(z, x), REGR_INTERCEPT(z, x), REGR_R2(z, x), REGR_SXX(z, x), REGR_SYY(z, x), REGR_SXY(z, x), REGR_AVGX(z, x), REGR_AVGY(z, x), REGR_COUNT(z, x) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "regr_slope(z, x)",
+    "regr_intercept(z, x)",
+    "regr_r2(z, x)",
+    "regr_sxx(z, x)",
+    "regr_syy(z, x)",
+    "regr_sxy(z, x)",
+    "regr_avgx(z, x)",
+    "regr_avgy(z, x)",
+    "regr_count(z, x)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "UINTEGER"
+   ],
+   "rows": [
+    [
+     {
+      "float": "2.37077033837293"
+     },
+     {
+      "float": "-0.3434125269978376"
+     },
+     {
+      "float": "0.9831188419924516"
+     },
+     {
+      "float": "99.21428571428571"
+     },
+     {
+      "float": "567.2142857142858"
+     },
+     {
+      "float": "235.2142857142857"
+     },
+     {
+      "float": "5.357142857142857"
+     },
+     {
+      "float": "12.357142857142858"
+     },
+     14
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "regression_family_real",
+   "ordered": true,
+   "sql": "SELECT REGR_SLOPE(y, f), REGR_INTERCEPT(y, f), REGR_R2(y, f), REGR_SXX(y, f), REGR_SYY(y, f), REGR_SXY(y, f), REGR_AVGX(y, f), REGR_AVGY(y, f), REGR_COUNT(y, f) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "regr_slope(y, f)",
+    "regr_intercept(y, f)",
+    "regr_r2(y, f)",
+    "regr_sxx(y, f)",
+    "regr_syy(y, f)",
+    "regr_sxy(y, f)",
+    "regr_avgx(y, f)",
+    "regr_avgy(y, f)",
+    "regr_count(y, f)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "UINTEGER"
+   ],
+   "rows": [
+    [
+     {
+      "float": "-0.4007997539218702"
+     },
+     {
+      "float": "2.116833282067056"
+     },
+     {
+      "float": "0.054889649306335345"
+     },
+     {
+      "float": "33.864583333333336"
+     },
+     {
+      "float": "99.10833333333332"
+     },
+     {
+      "float": "-13.57291666666667"
+     },
+     {
+      "float": "0.20833333333333334"
+     },
+     {
+      "float": "2.033333333333333"
+     },
+     15
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "regression_family_decimal_int",
+   "ordered": true,
+   "sql": "SELECT REGR_SLOPE(q, x), REGR_INTERCEPT(q, x), REGR_R2(q, x), REGR_SXX(q, x), REGR_SXY(q, x), REGR_AVGY(q, x), REGR_COUNT(q, x) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "regr_slope(q, x)",
+    "regr_intercept(q, x)",
+    "regr_r2(q, x)",
+    "regr_sxx(q, x)",
+    "regr_sxy(q, x)",
+    "regr_avgy(q, x)",
+    "regr_count(q, x)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "UINTEGER"
+   ],
+   "rows": [
+    [
+     {
+      "float": "-3.0236356648731744"
+     },
+     {
+      "float": "32.7762951575711"
+     },
+     {
+      "float": "0.10922014579952906"
+     },
+     {
+      "float": "92.92857142857142"
+     },
+     {
+      "float": "-280.9821428571428"
+     },
+     {
+      "float": "17.44214285714286"
+     },
+     14
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "grouped_variance",
+   "ordered": true,
+   "sql": "SELECT region, COUNT(*) AS n, STDDEV(x) AS sd_x, VAR_POP(q) AS vp_q, STDDEV_SAMP(f) AS sd_f, VAR_SAMP(y) AS vs_y FROM stats GROUP BY region ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "n",
+    "sd_x",
+    "vp_q",
+    "sd_f",
+    "vs_y"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "AMER",
+     5,
+     {
+      "float": "2.7748873851023212"
+     },
+     {
+      "float": "1293.6000399999998"
+     },
+     {
+      "float": "2.4691850882426776"
+     },
+     {
+      "float": "4.606249999999999"
+     }
+    ],
+    [
+     "APAC",
+     4,
+     {
+      "float": "1.7320508075688772"
+     },
+     {
+      "float": "11.855018750000001"
+     },
+     {
+      "float": "1.7017148213885114"
+     },
+     {
+      "float": "32.645833333333336"
+     }
+    ],
+    [
+     "EU",
+     6,
+     {
+      "float": "2.16794833886788"
+     },
+     {
+      "float": "26.540399999999998"
+     },
+     {
+      "float": "0.3535533905932738"
+     },
+     {
+      "float": "0.29375"
+     }
+    ],
+    [
+     "MEA",
+     1,
+     null,
+     {
+      "float": "0.0"
+     },
+     null,
+     null
+    ],
+    [
+     null,
+     2,
+     null,
+     {
+      "float": "0.0"
+     },
+     null,
+     null
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "grouped_correlation",
+   "ordered": true,
+   "sql": "SELECT region, CORR(z, x) AS c_zx, CORR(y, f) AS c_yf, COVAR_SAMP(q, x) AS cov_qx, REGR_SLOPE(y, f) AS slope, REGR_INTERCEPT(z, x) AS icpt, REGR_R2(y, f) AS r2 FROM stats WHERE region IN ('EU', 'AMER', 'APAC') GROUP BY region ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "c_zx",
+    "c_yf",
+    "cov_qx",
+    "slope",
+    "icpt",
+    "r2"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "AMER",
+     {
+      "float": "0.9977927963155577"
+     },
+     {
+      "float": "0.19430234518700049"
+     },
+     {
+      "float": "-45.995000000000005"
+     },
+     {
+      "float": "0.1688877498718606"
+     },
+     {
+      "float": "0.43902439024390216"
+     },
+     {
+      "float": "0.03775340134516829"
+     }
+    ],
+    [
+     "APAC",
+     {
+      "float": "0.9948497511671098"
+     },
+     {
+      "float": "-0.9588510348242388"
+     },
+     {
+      "float": "-5.565000000000001"
+     },
+     {
+      "float": "-3.2194244604316546"
+     },
+     {
+      "float": "-4.0"
+     },
+     {
+      "float": "0.9193953069835137"
+     }
+    ],
+    [
+     "EU",
+     {
+      "float": "0.9948320965219651"
+     },
+     {
+      "float": "-0.44501236673450423"
+     },
+     {
+      "float": "-6.266666666666666"
+     },
+     {
+      "float": "-0.8461538461538463"
+     },
+     {
+      "float": "-0.9468085106382932"
+     },
+     {
+      "float": "0.19803600654664488"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "grouped_regression_degenerate_groups",
+   "ordered": true,
+   "sql": "SELECT region, REGR_INTERCEPT(z, x) AS icpt, REGR_R2(z, x) AS r2, REGR_SXX(z, x) AS sxx, REGR_SYY(z, x) AS syy, REGR_AVGX(z, x) AS ax, REGR_COUNT(z, x) AS n, COVAR_POP(z, x) AS cp, COVAR_SAMP(z, x) AS cs, STDDEV_SAMP(x) AS sd FROM stats GROUP BY region ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "icpt",
+    "r2",
+    "sxx",
+    "syy",
+    "ax",
+    "n",
+    "cp",
+    "cs",
+    "sd"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "UINTEGER",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "AMER",
+     {
+      "float": "0.43902439024390216"
+     },
+     {
+      "float": "0.99559046437922"
+     },
+     {
+      "float": "30.75"
+     },
+     {
+      "float": "132.75"
+     },
+     {
+      "float": "4.25"
+     },
+     4,
+     {
+      "float": "15.937500000000002"
+     },
+     {
+      "float": "21.250000000000004"
+     },
+     {
+      "float": "2.7748873851023212"
+     }
+    ],
+    [
+     "APAC",
+     {
+      "float": "-4.0"
+     },
+     {
+      "float": "0.9897260273972603"
+     },
+     {
+      "float": "6.0"
+     },
+     {
+      "float": "48.66666666666666"
+     },
+     {
+      "float": "8.0"
+     },
+     3,
+     {
+      "float": "5.666666666666667"
+     },
+     {
+      "float": "8.5"
+     },
+     {
+      "float": "1.7320508075688772"
+     }
+    ],
+    [
+     "EU",
+     {
+      "float": "-0.9468085106382932"
+     },
+     {
+      "float": "0.9896909002702886"
+     },
+     {
+      "float": "18.8"
+     },
+     {
+      "float": "122.8"
+     },
+     {
+      "float": "5.8"
+     },
+     5,
+     {
+      "float": "9.559999999999999"
+     },
+     {
+      "float": "11.95"
+     },
+     {
+      "float": "2.16794833886788"
+     }
+    ],
+    [
+     "MEA",
+     null,
+     null,
+     {
+      "float": "0.0"
+     },
+     {
+      "float": "0.0"
+     },
+     {
+      "float": "3.0"
+     },
+     1,
+     {
+      "float": "0.0"
+     },
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     {
+      "float": "0.0"
+     },
+     {
+      "float": "0.0"
+     },
+     {
+      "float": "2.0"
+     },
+     1,
+     {
+      "float": "0.0"
+     },
+     null,
+     null
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "constant_y_r2_is_one",
+   "ordered": true,
+   "sql": "SELECT REGR_R2(c, x), REGR_SLOPE(c, x), REGR_INTERCEPT(c, x), REGR_SYY(c, x), COVAR_POP(c, x) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "regr_r2(c, x)",
+    "regr_slope(c, x)",
+    "regr_intercept(c, x)",
+    "regr_syy(c, x)",
+    "covar_pop(c, x)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "1.0"
+     },
+     {
+      "float": "0.0"
+     },
+     {
+      "float": "7.0"
+     },
+     {
+      "float": "0.0"
+     },
+     {
+      "float": "0.0"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "constant_x_intercept_and_r2_null",
+   "ordered": true,
+   "sql": "SELECT REGR_INTERCEPT(x, c), REGR_R2(x, c), REGR_SXX(x, c), REGR_AVGX(x, c), COVAR_SAMP(x, c), VAR_POP(c), STDDEV_SAMP(c) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "regr_intercept(x, c)",
+    "regr_r2(x, c)",
+    "regr_sxx(x, c)",
+    "regr_avgx(x, c)",
+    "covar_samp(x, c)",
+    "var_pop(c)",
+    "stddev_samp(c)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     null,
+     null,
+     {
+      "float": "0.0"
+     },
+     {
+      "float": "7.0"
+     },
+     {
+      "float": "0.0"
+     },
+     {
+      "float": "0.0"
+     },
+     {
+      "float": "0.0"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "empty_input",
+   "ordered": true,
+   "sql": "SELECT STDDEV(x), VAR_POP(f), COVAR_POP(z, x), CORR(z, x), REGR_SLOPE(z, x), REGR_SXX(z, x), REGR_COUNT(z, x), ARG_MAX(name, x), BOOL_AND(b), BOOL_OR(b), COUNT_IF(b) FROM empty;",
+   "reference_outcome": "rows",
+   "columns": [
+    "stddev(x)",
+    "var_pop(f)",
+    "covar_pop(z, x)",
+    "corr(z, x)",
+    "regr_slope(z, x)",
+    "regr_sxx(z, x)",
+    "regr_count(z, x)",
+    "arg_max(\"name\", x)",
+    "bool_and(b)",
+    "bool_or(b)",
+    "count_if(b)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "UINTEGER",
+    "VARCHAR",
+    "BOOLEAN",
+    "BOOLEAN",
+    "HUGEINT"
+   ],
+   "rows": [
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     0,
+     null,
+     null,
+     null,
+     null
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function arg_max(text, bigint) does not exist"
+  },
+  {
+   "id": "empty_input_grouped",
+   "ordered": true,
+   "sql": "SELECT region, STDDEV(x), CORR(z, x), REGR_COUNT(z, x), ARG_MIN(name, x), COUNT_IF(b) FROM empty GROUP BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "stddev(x)",
+    "corr(z, x)",
+    "regr_count(z, x)",
+    "arg_min(\"name\", x)",
+    "count_if(b)"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DOUBLE",
+    "UINTEGER",
+    "VARCHAR",
+    "HUGEINT"
+   ],
+   "rows": [],
+   "pg": "error: psql:<stdin>:2: ERROR:  function arg_min(text, bigint) does not exist"
+  },
+  {
+   "id": "all_null_group",
+   "ordered": true,
+   "sql": "SELECT STDDEV_POP(x), VAR_SAMP(x), COVAR_POP(z, x), REGR_AVGX(z, x), REGR_COUNT(z, x), CORR(z, x), REGR_SLOPE(z, x), ARG_MAX(name, x) FROM stats WHERE x IS NULL;",
+   "reference_outcome": "rows",
+   "columns": [
+    "stddev_pop(x)",
+    "var_samp(x)",
+    "covar_pop(z, x)",
+    "regr_avgx(z, x)",
+    "regr_count(z, x)",
+    "corr(z, x)",
+    "regr_slope(z, x)",
+    "arg_max(\"name\", x)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "UINTEGER",
+    "DOUBLE",
+    "DOUBLE",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     null,
+     null,
+     null,
+     null,
+     0,
+     null,
+     null,
+     null
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function arg_max(text, bigint) does not exist"
+  },
+  {
+   "id": "single_row",
+   "ordered": true,
+   "sql": "SELECT STDDEV_SAMP(x), STDDEV_POP(x), VAR_SAMP(q), VAR_POP(f), COVAR_POP(z, x), COVAR_SAMP(z, x), REGR_SXX(z, x), REGR_SXY(z, x), REGR_INTERCEPT(z, x), REGR_R2(z, x), REGR_AVGY(z, x), REGR_COUNT(z, x) FROM stats WHERE id = 1;",
+   "reference_outcome": "rows",
+   "columns": [
+    "stddev_samp(x)",
+    "stddev_pop(x)",
+    "var_samp(q)",
+    "var_pop(f)",
+    "covar_pop(z, x)",
+    "covar_samp(z, x)",
+    "regr_sxx(z, x)",
+    "regr_sxy(z, x)",
+    "regr_intercept(z, x)",
+    "regr_r2(z, x)",
+    "regr_avgy(z, x)",
+    "regr_count(z, x)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "UINTEGER"
+   ],
+   "rows": [
+    [
+     null,
+     {
+      "float": "0.0"
+     },
+     null,
+     {
+      "float": "0.0"
+     },
+     {
+      "float": "0.0"
+     },
+     null,
+     {
+      "float": "0.0"
+     },
+     {
+      "float": "0.0"
+     },
+     null,
+     null,
+     {
+      "float": "12.0"
+     },
+     1
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "null_arguments",
+   "ordered": true,
+   "sql": "SELECT STDDEV(NULL), VAR_POP(NULL), CORR(NULL, x), REGR_COUNT(NULL, x), REGR_AVGX(x, NULL), COUNT_IF(NULL) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "stddev(NULL)",
+    "var_pop(NULL)",
+    "corr(NULL, x)",
+    "regr_count(NULL, x)",
+    "regr_avgx(x, NULL)",
+    "count_if(NULL)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "UINTEGER",
+    "DOUBLE",
+    "HUGEINT"
+   ],
+   "rows": [
+    [
+     null,
+     null,
+     null,
+     0,
+     null,
+     null
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function count_if(unknown) does not exist"
+  },
+  {
+   "id": "distinct_one_argument",
+   "ordered": true,
+   "sql": "SELECT STDDEV(DISTINCT x), VAR_POP(DISTINCT q), VAR_SAMP(DISTINCT f), STDDEV_POP(DISTINCT y) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "stddev(DISTINCT x)",
+    "var_pop(DISTINCT q)",
+    "var_samp(DISTINCT f)",
+    "stddev_pop(DISTINCT y)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "2.7386127875258306"
+     },
+     {
+      "float": "618.0289159763313"
+     },
+     {
+      "float": "2.367779356060606"
+     },
+     {
+      "float": "2.7256181102348576"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "distinct_two_argument_exact",
+   "ordered": true,
+   "sql": "SELECT CORR(DISTINCT z, x), REGR_COUNT(DISTINCT z, x), COVAR_POP(DISTINCT q, x), REGR_SLOPE(DISTINCT z, x) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "corr(DISTINCT z, x)",
+    "regr_count(DISTINCT z, x)",
+    "covar_pop(DISTINCT q, x)",
+    "regr_slope(DISTINCT z, x)"
+   ],
+   "types": [
+    "DOUBLE",
+    "UINTEGER",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "0.9929748144677638"
+     },
+     13,
+     {
+      "float": "-21.223846153846146"
+     },
+     {
+      "float": "2.393769968051118"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "distinct_grouped",
+   "ordered": true,
+   "sql": "SELECT region, STDDEV(DISTINCT x) AS sd, VAR_POP(DISTINCT f) AS vp, COUNT_IF(DISTINCT b) AS ci FROM stats GROUP BY region ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "sd",
+    "vp",
+    "ci"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DOUBLE",
+    "HUGEINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     {
+      "float": "2.6457513110645903"
+     },
+     {
+      "float": "4.5498046875"
+     },
+     1
+    ],
+    [
+     "APAC",
+     {
+      "float": "2.1213203435596424"
+     },
+     {
+      "float": "1.9305555555555556"
+     },
+     1
+    ],
+    [
+     "EU",
+     {
+      "float": "2.5166114784235836"
+     },
+     {
+      "float": "0.125"
+     },
+     1
+    ],
+    [
+     "MEA",
+     null,
+     {
+      "float": "0.0"
+     },
+     0
+    ],
+    [
+     null,
+     null,
+     {
+      "float": "0.0"
+     },
+     1
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function count_if(boolean) does not exist"
+  },
+  {
+   "id": "boolean_family",
+   "ordered": true,
+   "sql": "SELECT BOOL_AND(b), BOOL_OR(b), COUNT_IF(b), COUNT_IF(x > 4), BOOL_AND(x > 0), BOOL_OR(x > 100) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "bool_and(b)",
+    "bool_or(b)",
+    "count_if(b)",
+    "count_if((x > 4))",
+    "bool_and((x > 0))",
+    "bool_or((x > 100))"
+   ],
+   "types": [
+    "BOOLEAN",
+    "BOOLEAN",
+    "HUGEINT",
+    "HUGEINT",
+    "BOOLEAN",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     false,
+     true,
+     8,
+     9,
+     true,
+     false
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function count_if(boolean) does not exist"
+  },
+  {
+   "id": "boolean_grouped",
+   "ordered": true,
+   "sql": "SELECT region, BOOL_AND(b) AS all_b, BOOL_OR(b) AS any_b, COUNT_IF(b) AS n_b, COUNT_IF(NOT b) AS n_not_b, COUNT_IF(b IS NULL) AS n_null FROM stats GROUP BY region ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "all_b",
+    "any_b",
+    "n_b",
+    "n_not_b",
+    "n_null"
+   ],
+   "types": [
+    "VARCHAR",
+    "BOOLEAN",
+    "BOOLEAN",
+    "HUGEINT",
+    "HUGEINT",
+    "HUGEINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     false,
+     true,
+     2,
+     3,
+     0
+    ],
+    [
+     "APAC",
+     false,
+     true,
+     1,
+     2,
+     1
+    ],
+    [
+     "EU",
+     false,
+     true,
+     4,
+     1,
+     1
+    ],
+    [
+     "MEA",
+     false,
+     false,
+     0,
+     1,
+     0
+    ],
+    [
+     null,
+     true,
+     true,
+     1,
+     0,
+     1
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function count_if(boolean) does not exist"
+  },
+  {
+   "id": "boolean_all_null_and_distinct",
+   "ordered": true,
+   "sql": "SELECT BOOL_AND(b), BOOL_OR(b), COUNT_IF(b), BOOL_AND(DISTINCT b), COUNT_IF(DISTINCT b) FROM stats WHERE b IS NULL;",
+   "reference_outcome": "rows",
+   "columns": [
+    "bool_and(b)",
+    "bool_or(b)",
+    "count_if(b)",
+    "bool_and(DISTINCT b)",
+    "count_if(DISTINCT b)"
+   ],
+   "types": [
+    "BOOLEAN",
+    "BOOLEAN",
+    "HUGEINT",
+    "BOOLEAN",
+    "HUGEINT"
+   ],
+   "rows": [
+    [
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function count_if(boolean) does not exist"
+  },
+  {
+   "id": "boolean_distinct",
+   "ordered": true,
+   "sql": "SELECT BOOL_AND(DISTINCT b), BOOL_OR(DISTINCT b), COUNT_IF(DISTINCT b), COUNT_IF(DISTINCT x > 4) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "bool_and(DISTINCT b)",
+    "bool_or(DISTINCT b)",
+    "count_if(DISTINCT b)",
+    "count_if(DISTINCT (x > 4))"
+   ],
+   "types": [
+    "BOOLEAN",
+    "BOOLEAN",
+    "HUGEINT",
+    "HUGEINT"
+   ],
+   "rows": [
+    [
+     false,
+     true,
+     1,
+     1
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function count_if(boolean) does not exist"
+  },
+  {
+   "id": "arg_extremes_unique_values",
+   "ordered": true,
+   "sql": "SELECT ARG_MAX(name, id), ARG_MIN(name, id), MAX_BY(q, dt), MIN_BY(dt, y), ARG_MAX(x, name), ARG_MIN(f, name), ARG_MAX(b, z), ARG_MIN(id, q) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "arg_max(\"name\", id)",
+    "arg_min(\"name\", id)",
+    "max_by(q, dt)",
+    "min_by(dt, y)",
+    "arg_max(x, \"name\")",
+    "arg_min(f, \"name\")",
+    "arg_max(b, z)",
+    "arg_min(id, q)"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR",
+    "DECIMAL(12,2)",
+    "DATE",
+    "BIGINT",
+    "DOUBLE",
+    "BOOLEAN",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "pe",
+     "ana",
+     "15.00",
+     "2024-02-02",
+     7,
+     {
+      "float": "0.25"
+     },
+     true,
+     9
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function arg_max(text, bigint) does not exist"
+  },
+  {
+   "id": "arg_extremes_grouped",
+   "ordered": true,
+   "sql": "SELECT region, ARG_MAX(name, id) AS last_name, ARG_MIN(x, id) AS first_x, MAX_BY(q, dt) AS latest_q, MIN_BY(f, dt) AS earliest_f FROM stats GROUP BY region ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "last_name",
+    "first_x",
+    "latest_q",
+    "earliest_f"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR",
+    "BIGINT",
+    "DECIMAL(12,2)",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "AMER",
+     "pe",
+     2,
+     "15.00",
+     {
+      "float": "0.0"
+     }
+    ],
+    [
+     "APAC",
+     "lu",
+     6,
+     "8.00",
+     {
+      "float": "-1.25"
+     }
+    ],
+    [
+     "EU",
+     "ot",
+     5,
+     "20.00",
+     {
+      "float": "0.25"
+     }
+    ],
+    [
+     "MEA",
+     "mo",
+     3,
+     "4.50",
+     {
+      "float": "0.75"
+     }
+    ],
+    [
+     null,
+     "na",
+     2,
+     "6.00",
+     {
+      "float": "1.5"
+     }
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function arg_max(text, bigint) does not exist"
+  },
+  {
+   "id": "arg_extremes_skip_null_arguments",
+   "ordered": true,
+   "sql": "SELECT ARG_MAX(q, z), ARG_MIN(x, f), ARG_MAX(name, y), MAX_BY(b, id), ARG_MAX(f, y) FROM stats WHERE region = 'EU';",
+   "reference_outcome": "rows",
+   "columns": [
+    "arg_max(q, z)",
+    "arg_min(x, f)",
+    "arg_max(\"name\", y)",
+    "max_by(b, id)",
+    "arg_max(f, y)"
+   ],
+   "types": [
+    "DECIMAL(12,2)",
+    "BIGINT",
+    "VARCHAR",
+    "BOOLEAN",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "12.30",
+     5,
+     "cy",
+     true,
+     {
+      "float": "-0.0"
+     }
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function arg_max(numeric, bigint) does not exist"
+  },
+  {
+   "id": "arg_extremes_real_and_decimal_values",
+   "ordered": true,
+   "sql": "SELECT ARG_MAX(name, f), ARG_MIN(name, y), ARG_MAX(name, q), ARG_MAX(dt, y) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "arg_max(\"name\", f)",
+    "arg_min(\"name\", y)",
+    "arg_max(\"name\", q)",
+    "arg_max(dt, y)"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "DATE"
+   ],
+   "rows": [
+    [
+     "io",
+     "ka",
+     "fa",
+     "2024-03-16"
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function arg_max(text, double precision) does not exist"
+  },
+  {
+   "id": "arg_max_ties_grouped",
+   "ordered": true,
+   "ties": "SELECT s.region, list(s.name ORDER BY s.id) FROM stats s JOIN (SELECT region, max(x) AS m FROM stats WHERE name IS NOT NULL GROUP BY region) t ON s.region IS NOT DISTINCT FROM t.region AND s.x = t.m WHERE s.name IS NOT NULL GROUP BY s.region ORDER BY s.region NULLS LAST",
+   "sql": "SELECT region, ARG_MAX(name, x) AS top FROM stats GROUP BY region ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "top"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "AMER",
+     "gu"
+    ],
+    [
+     "APAC",
+     "ka"
+    ],
+    [
+     "EU",
+     "di"
+    ],
+    [
+     "MEA",
+     "mo"
+    ],
+    [
+     null,
+     "na"
+    ]
+   ],
+   "permitted": [
+    [
+     "AMER",
+     [
+      "gu",
+      "pe"
+     ]
+    ],
+    [
+     "APAC",
+     [
+      "ka",
+      "lu"
+     ]
+    ],
+    [
+     "EU",
+     [
+      "di",
+      "ed"
+     ]
+    ],
+    [
+     "MEA",
+     [
+      "mo"
+     ]
+    ],
+    [
+     null,
+     [
+      "na"
+     ]
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function arg_max(text, bigint) does not exist"
+  },
+  {
+   "id": "arg_min_ties_boolean_value",
+   "ordered": true,
+   "ties": "SELECT 0, list(id ORDER BY id) FROM stats WHERE b = false",
+   "sql": "SELECT 0 AS k, ARG_MIN(id, b) AS first_false FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "k",
+    "first_false"
+   ],
+   "types": [
+    "INTEGER",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     0,
+     2
+    ]
+   ],
+   "permitted": [
+    [
+     0,
+     [
+      2,
+      7,
+      8,
+      10,
+      12,
+      14,
+      18
+     ]
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function arg_min(bigint, boolean) does not exist"
+  },
+  {
+   "id": "arg_max_distinct_is_ignored",
+   "ordered": true,
+   "sql": "SELECT ARG_MAX(DISTINCT name, id), MIN_BY(DISTINCT x, id) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "arg_max(DISTINCT \"name\", id)",
+    "min_by(DISTINCT x, id)"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "pe",
+     5
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function arg_max(text, bigint) does not exist"
+  },
+  {
+   "id": "composed_expressions",
+   "ordered": true,
+   "sql": "SELECT region, STDDEV(x) * 2 AS twice_sd, VAR_POP(q) + COVAR_POP(z, x) AS combo, CASE WHEN COUNT_IF(b) > 1 THEN 'many' ELSE 'few' END AS flag, REGR_COUNT(z, x) - COUNT(*) AS missing FROM stats GROUP BY region ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "twice_sd",
+    "combo",
+    "flag",
+    "missing"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DOUBLE",
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     {
+      "float": "5.5497747702046425"
+     },
+     {
+      "float": "1309.5375399999998"
+     },
+     "many",
+     -1
+    ],
+    [
+     "APAC",
+     {
+      "float": "3.4641016151377544"
+     },
+     {
+      "float": "17.521685416666667"
+     },
+     "few",
+     -1
+    ],
+    [
+     "EU",
+     {
+      "float": "4.33589667773576"
+     },
+     {
+      "float": "36.10039999999999"
+     },
+     "many",
+     -1
+    ],
+    [
+     "MEA",
+     null,
+     {
+      "float": "0.0"
+     },
+     "few",
+     0
+    ],
+    [
+     null,
+     null,
+     {
+      "float": "0.0"
+     },
+     "few",
+     -1
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function count_if(boolean) does not exist"
+  },
+  {
+   "id": "having_on_statistic",
+   "ordered": true,
+   "sql": "SELECT region, COUNT(*) AS n FROM stats GROUP BY region HAVING STDDEV_POP(x) > 1 ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "AMER",
+     5
+    ],
+    [
+     "APAC",
+     4
+    ],
+    [
+     "EU",
+     6
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "order_by_statistic",
+   "ordered": true,
+   "sql": "SELECT region, VAR_SAMP(x) AS v FROM stats GROUP BY region ORDER BY v DESC NULLS LAST, region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "v"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "AMER",
+     {
+      "float": "7.699999999999999"
+     }
+    ],
+    [
+     "EU",
+     {
+      "float": "4.7"
+     }
+    ],
+    [
+     "APAC",
+     {
+      "float": "3.0"
+     }
+    ],
+    [
+     "MEA",
+     null
+    ],
+    [
+     null,
+     null
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "derived_table_filter",
+   "ordered": true,
+   "sql": "SELECT region, s FROM (SELECT region, STDDEV(x) AS s FROM stats GROUP BY region) t WHERE s > 1 ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "s"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "AMER",
+     {
+      "float": "2.7748873851023212"
+     }
+    ],
+    [
+     "APAC",
+     {
+      "float": "1.7320508075688772"
+     }
+    ],
+    [
+     "EU",
+     {
+      "float": "2.16794833886788"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "join_then_group",
+   "ordered": true,
+   "sql": "SELECT r.zone, CORR(s.z, s.x) AS c, STDDEV_SAMP(s.q) AS sd, ARG_MAX(s.name, s.id) AS last_name, BOOL_OR(s.b) AS any_b FROM stats s JOIN regions r ON s.region = r.region GROUP BY r.zone ORDER BY r.zone;",
+   "reference_outcome": "rows",
+   "columns": [
+    "zone",
+    "c",
+    "sd",
+    "last_name",
+    "any_b"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DOUBLE",
+    "VARCHAR",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     "east",
+     {
+      "float": "0.9973067551418334"
+     },
+     {
+      "float": "3.6520432637086873"
+     },
+     "mo",
+     true
+    ],
+    [
+     "west",
+     {
+      "float": "0.988865193214608"
+     },
+     {
+      "float": "28.210424491666195"
+     },
+     "pe",
+     true
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function arg_max(text, bigint) does not exist"
+  },
+  {
+   "id": "wide_integer_and_decimal_extremes",
+   "ordered": true,
+   "sql": "SELECT STDDEV_SAMP(w) AS sd_w, VAR_POP(w) AS vp_w, VAR_POP(d) AS vp_d, STDDEV_SAMP(e) AS sd_e, COVAR_POP(d, w) AS cov_dw, REGR_SXX(e, d) AS sxx, CORR(d, w) AS c FROM wide WHERE g = 1;",
+   "reference_outcome": "rows",
+   "columns": [
+    "sd_w",
+    "vp_w",
+    "vp_d",
+    "sd_e",
+    "cov_dw",
+    "sxx",
+    "c"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "7.875953263148282e+18"
+     },
+     {
+      "float": "4.652297985247206e+37"
+     },
+     {
+      "float": "5.028577960162322e+75"
+     },
+     {
+      "float": "8.188266369354237e+27"
+     },
+     {
+      "float": "4.71843800863392e+56"
+     },
+     {
+      "float": "2.0114311840649288e+76"
+     },
+     {
+      "float": "0.975532848758917"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "exact_beyond_double_precision",
+   "ordered": true,
+   "exact": "wide_g2",
+   "difference": "DuckDB rounds inputs to DOUBLE; exact by decision 2026-10-17. Inputs 2^53+1, 2^53+3, 2^53+5 become 2^53, 2^53+4, 2^53+4 in DuckDB; Assay equals PostgreSQL's exact NUMERIC VAR/STDDEV and the true value",
+   "sql": "SELECT VAR_POP(w), VAR_SAMP(d), STDDEV_POP(e), COVAR_POP(d, w), REGR_SXY(d, w) FROM wide WHERE g = 2;",
+   "reference_outcome": "rows",
+   "columns": [
+    "var_pop(w)",
+    "var_samp(d)",
+    "stddev_pop(e)",
+    "covar_pop(d, w)",
+    "regr_sxy(d, w)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "4.0"
+     },
+     {
+      "float": "6.0"
+     },
+     {
+      "float": "1.9466795466607238e-07"
+     },
+     {
+      "float": "4.0"
+     },
+     {
+      "float": "12.0"
+     }
+    ]
+   ],
+   "exact_rows": [
+    [
+     {
+      "float": "2.6666666666666665"
+     },
+     {
+      "float": "4.0"
+     },
+     {
+      "float": "1.632993161855452e-07"
+     },
+     {
+      "float": "2.6666666666666665"
+     },
+     {
+      "float": "8.0"
+     }
+    ]
+   ],
+   "duckdb_max_relative_error_vs_exact": 0.5000000000000001,
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "2.6666666666666667",
+     "4.0000000000000000",
+     "0.00000016329931618554520655669181",
+     "3.5555555555555554",
+     "10.666666666666666"
+    ]
+   ]
+  },
+  {
+   "id": "real_cancellation",
+   "ordered": true,
+   "sql": "SELECT g, VAR_SAMP(r) AS vs, STDDEV_POP(r) AS sp, REGR_SXX(r, r) AS sxx FROM wide GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "vs",
+    "sp",
+    "sxx"
+   ],
+   "types": [
+    "BIGINT",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     1,
+     {
+      "float": "30.0"
+     },
+     {
+      "float": "4.743416490252569"
+     },
+     {
+      "float": "90.0"
+     }
+    ],
+    [
+     2,
+     {
+      "float": "0.0625"
+     },
+     {
+      "float": "0.2041241452319315"
+     },
+     {
+      "float": "0.125"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "many_batches_grouped",
+   "ordered": true,
+   "exact": "big_grouped",
+   "sql": "SELECT g, COUNT(*) AS n, STDDEV_SAMP(x) AS sd_x, VAR_POP(q) AS vp_q, STDDEV_POP(f) AS sp_f, CORR(y, f) AS c, REGR_SLOPE(y, f) AS slope, REGR_INTERCEPT(y, f) AS icpt, COVAR_SAMP(q, x) AS cov, REGR_R2(y, f) AS r2 FROM big GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "n",
+    "sd_x",
+    "vp_q",
+    "sp_f",
+    "c",
+    "slope",
+    "icpt",
+    "cov",
+    "r2"
+   ],
+   "types": [
+    "BIGINT",
+    "BIGINT",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     0,
+     817,
+     {
+      "float": "594545.5748866023"
+     },
+     {
+      "float": "3275926054.016821"
+     },
+     {
+      "float": "245.2333740563353"
+     },
+     {
+      "float": "0.9965006474835114"
+     },
+     {
+      "float": "0.501108257860641"
+     },
+     {
+      "float": "-1108.5182254389467"
+     },
+     {
+      "float": "1125724393.854346"
+     },
+     {
+      "float": "0.9930135404350575"
+     }
+    ],
+    [
+     1,
+     826,
+     {
+      "float": "561358.5071915609"
+     },
+     {
+      "float": "3352472968.0707636"
+     },
+     {
+      "float": "507.30109443684677"
+     },
+     {
+      "float": "0.9992351754177794"
+     },
+     {
+      "float": "0.5008594600806092"
+     },
+     {
+      "float": "-859.086643223988"
+     },
+     {
+      "float": "1311848470.4927602"
+     },
+     {
+      "float": "0.9984709357922004"
+     }
+    ],
+    [
+     2,
+     875,
+     {
+      "float": "583295.5770255842"
+     },
+     {
+      "float": "3561059111.6819134"
+     },
+     {
+      "float": "775.3582023781227"
+     },
+     {
+      "float": "0.9996679863834353"
+     },
+     {
+      "float": "0.4997312891475235"
+     },
+     {
+      "float": "267.9564851448193"
+     },
+     {
+      "float": "-1316970027.128864"
+     },
+     {
+      "float": "0.9993360829999123"
+     }
+    ],
+    [
+     3,
+     825,
+     {
+      "float": "587609.577890307"
+     },
+     {
+      "float": "3261822544.9099665"
+     },
+     {
+      "float": "1047.8085037628684"
+     },
+     {
+      "float": "0.999823213386512"
+     },
+     {
+      "float": "0.5004546774729743"
+     },
+     {
+      "float": "-454.1274297224662"
+     },
+     {
+      "float": "1563848630.6925485"
+     },
+     {
+      "float": "0.9996464580265307"
+     }
+    ],
+    [
+     4,
+     871,
+     {
+      "float": "580352.390319245"
+     },
+     {
+      "float": "3451645979.285739"
+     },
+     {
+      "float": "1204.5615667345407"
+     },
+     {
+      "float": "0.9998632789288738"
+     },
+     {
+      "float": "0.500068171053113"
+     },
+     {
+      "float": "-68.08081838580372"
+     },
+     {
+      "float": "-1566278512.5303643"
+     },
+     {
+      "float": "0.999726576550399"
+     }
+    ],
+    [
+     5,
+     879,
+     {
+      "float": "572426.2817633647"
+     },
+     {
+      "float": "3219676250.088672"
+     },
+     {
+      "float": "1518.6190025075184"
+     },
+     {
+      "float": "0.9999212466345517"
+     },
+     {
+      "float": "0.5001413053198365"
+     },
+     {
+      "float": "-141.16300782118816"
+     },
+     {
+      "float": "-1096820367.7901714"
+     },
+     {
+      "float": "0.9998424994711961"
+     }
+    ],
+    [
+     6,
+     845,
+     {
+      "float": "585956.9006855326"
+     },
+     {
+      "float": "3457631119.3934083"
+     },
+     {
+      "float": "1761.005666419375"
+     },
+     {
+      "float": "0.999932529152963"
+     },
+     {
+      "float": "0.4999365294016572"
+     },
+     {
+      "float": "63.16317912348182"
+     },
+     {
+      "float": "1173632697.6302695"
+     },
+     {
+      "float": "0.9998650628582413"
+     }
+    ],
+    [
+     null,
+     62,
+     {
+      "float": "582862.5196357989"
+     },
+     {
+      "float": "3976551673.050775"
+     },
+     {
+      "float": "223.66126239618714"
+     },
+     {
+      "float": "0.9969181250041427"
+     },
+     {
+      "float": "0.5134041453096491"
+     },
+     {
+      "float": "-13402.390242494517"
+     },
+     {
+      "float": "5296026049.385348"
+     },
+     {
+      "float": "0.9938457479617755"
+     }
+    ]
+   ],
+   "exact_rows": [
+    [
+     0,
+     817,
+     {
+      "float": "594545.5748866022"
+     },
+     {
+      "float": "3275926054.016826"
+     },
+     {
+      "float": "245.233374056344"
+     },
+     {
+      "float": "0.9965006474835166"
+     },
+     {
+      "float": "0.5011082578606435"
+     },
+     {
+      "float": "-1108.518225440566"
+     },
+     {
+      "float": "1125724393.8543477"
+     },
+     {
+      "float": "0.9930135404350682"
+     }
+    ],
+    [
+     1,
+     826,
+     {
+      "float": "561358.507191561"
+     },
+     {
+      "float": "3352472968.070762"
+     },
+     {
+      "float": "507.30109443681357"
+     },
+     {
+      "float": "0.9992351754177791"
+     },
+     {
+      "float": "0.5008594600806037"
+     },
+     {
+      "float": "-859.086643219098"
+     },
+     {
+      "float": "1311848470.4927616"
+     },
+     {
+      "float": "0.9984709357921996"
+     }
+    ],
+    [
+     2,
+     875,
+     {
+      "float": "583295.5770255846"
+     },
+     {
+      "float": "3561059111.681914"
+     },
+     {
+      "float": "775.3582023781203"
+     },
+     {
+      "float": "0.9996679863834379"
+     },
+     {
+      "float": "0.4997312891475273"
+     },
+     {
+      "float": "267.9564851411549"
+     },
+     {
+      "float": "-1316970027.1288645"
+     },
+     {
+      "float": "0.9993360829999174"
+     }
+    ],
+    [
+     3,
+     825,
+     {
+      "float": "587609.5778903071"
+     },
+     {
+      "float": "3261822544.9099703"
+     },
+     {
+      "float": "1047.808503762858"
+     },
+     {
+      "float": "0.9998232133865136"
+     },
+     {
+      "float": "0.5004546774729648"
+     },
+     {
+      "float": "-454.1274297121389"
+     },
+     {
+      "float": "1563848630.692549"
+     },
+     {
+      "float": "0.9996464580265337"
+     }
+    ],
+    [
+     4,
+     871,
+     {
+      "float": "580352.3903192452"
+     },
+     {
+      "float": "3451645979.28574"
+     },
+     {
+      "float": "1204.5615667345355"
+     },
+     {
+      "float": "0.9998632789288732"
+     },
+     {
+      "float": "0.5000681710531101"
+     },
+     {
+      "float": "-68.08081838288307"
+     },
+     {
+      "float": "-1566278512.5303636"
+     },
+     {
+      "float": "0.9997265765503976"
+     }
+    ],
+    [
+     5,
+     879,
+     {
+      "float": "572426.2817633648"
+     },
+     {
+      "float": "3219676250.0886674"
+     },
+     {
+      "float": "1518.6190025075216"
+     },
+     {
+      "float": "0.9999212466345541"
+     },
+     {
+      "float": "0.5001413053198402"
+     },
+     {
+      "float": "-141.1630078255715"
+     },
+     {
+      "float": "-1096820367.7901702"
+     },
+     {
+      "float": "0.9998424994712006"
+     }
+    ],
+    [
+     6,
+     845,
+     {
+      "float": "585956.9006855326"
+     },
+     {
+      "float": "3457631119.3934016"
+     },
+     {
+      "float": "1761.0056664193755"
+     },
+     {
+      "float": "0.9999325291529643"
+     },
+     {
+      "float": "0.499936529401653"
+     },
+     {
+      "float": "63.16317912770768"
+     },
+     {
+      "float": "1173632697.6302688"
+     },
+     {
+      "float": "0.9998650628582435"
+     }
+    ],
+    [
+     null,
+     62,
+     {
+      "float": "582862.5196357989"
+     },
+     {
+      "float": "3976551673.050775"
+     },
+     {
+      "float": "223.66126239618228"
+     },
+     {
+      "float": "0.9969181250041624"
+     },
+     {
+      "float": "0.513404145309675"
+     },
+     {
+      "float": "-13402.390242520141"
+     },
+     {
+      "float": "5296026049.385347"
+     },
+     {
+      "float": "0.9938457479618148"
+     }
+    ]
+   ],
+   "duckdb_max_relative_error_vs_exact": 6.690386090024712e-11,
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "0",
+     "817",
+     "594545.57488660",
+     "3275926054.01682592",
+     "245.23337405631295",
+     "0.9965006474835131",
+     "0.5011082578607173",
+     "-1108.518225515316",
+     "1125724393.8543456",
+     "0.9930135404350608"
+    ],
+    [
+     "1",
+     "826",
+     "561358.50719156",
+     "3352472968.07076218",
+     "507.30109443682835",
+     "0.9992351754177806",
+     "0.5008594600806101",
+     "-859.0866432247796",
+     "1311848470.4927604",
+     "0.9984709357922029"
+    ],
+    [
+     "2",
+     "875",
+     "583295.57702558",
+     "3561059111.68191401",
+     "775.3582023781265",
+     "0.9996679863834365",
+     "0.4997312891475207",
+     "267.9564851476542",
+     "-1316970027.1288638",
+     "0.9993360829999145"
+    ],
+    [
+     "3",
+     "825",
+     "587609.57789031",
+     "3261822544.90997034",
+     "1047.8085037628782",
+     "0.9998232133865147",
+     "0.500454677472952",
+     "-454.1274297002015",
+     "1563848630.6925504",
+     "0.9996464580265361"
+    ],
+    [
+     "4",
+     "871",
+     "580352.39031925",
+     "3451645979.28573993",
+     "1204.5615667345587",
+     "0.9998632789288717",
+     "0.5000681710531012",
+     "-68.08081837401586",
+     "-1566278512.5303643",
+     "0.9997265765503948"
+    ],
+    [
+     "5",
+     "879",
+     "572426.28176336",
+     "3219676250.08866759",
+     "1518.6190025075261",
+     "0.9999212466345542",
+     "0.5001413053198404",
+     "-141.16300782511274",
+     "-1096820367.7901716",
+     "0.999842499471201"
+    ],
+    [
+     "6",
+     "845",
+     "585956.90068553",
+     "3457631119.39340161",
+     "1761.0056664193617",
+     "0.9999325291529625",
+     "0.4999365294016545",
+     "63.16317912620744",
+     "1173632697.6302695",
+     "0.9998650628582401"
+    ],
+    [
+     null,
+     "62",
+     "582862.51963580",
+     "3976551673.05077497",
+     "223.66126239618688",
+     "0.9969181250041768",
+     "0.5134041453097176",
+     "-13402.39024256296",
+     "5296026049.385347",
+     "0.9938457479618434"
+    ]
+   ]
+  },
+  {
+   "id": "many_batches_scalar",
+   "ordered": true,
+   "exact": "big_scalar",
+   "sql": "SELECT STDDEV_SAMP(x), VAR_POP(q), STDDEV_SAMP(f), CORR(y, f), REGR_SLOPE(y, x), REGR_INTERCEPT(q, x), REGR_COUNT(y, x), COUNT_IF(x > 0), BOOL_OR(f > 1003000) FROM big;",
+   "reference_outcome": "rows",
+   "columns": [
+    "stddev_samp(x)",
+    "var_pop(q)",
+    "stddev_samp(f)",
+    "corr(y, f)",
+    "regr_slope(y, x)",
+    "regr_intercept(q, x)",
+    "regr_count(y, x)",
+    "count_if((x > 0))",
+    "bool_or((f > 1003000))"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "UINTEGER",
+    "HUGEINT",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     {
+      "float": "580671.0354221667"
+     },
+     {
+      "float": "3380352267.33984"
+     },
+     {
+      "float": "1127.082032543302"
+     },
+     {
+      "float": "0.9998425472279214"
+     },
+     {
+      "float": "3.981190465753043e-06"
+     },
+     {
+      "float": "771.8743912053554"
+     },
+     5532,
+     2894,
+     true
+    ]
+   ],
+   "exact_rows": [
+    [
+     {
+      "float": "580671.0354221668"
+     },
+     {
+      "float": "3380352267.339839"
+     },
+     {
+      "float": "1127.0820325433058"
+     },
+     {
+      "float": "0.9998425472279252"
+     },
+     {
+      "float": "3.981190465753163e-06"
+     },
+     {
+      "float": "771.8743912053554"
+     },
+     5532,
+     2894,
+     true
+    ]
+   ],
+   "duckdb_max_relative_error_vs_exact": 2.999897809216275e-14,
+   "pg": "error: psql:<stdin>:2: ERROR:  function count_if(boolean) does not exist"
+  },
+  {
+   "id": "many_batches_arg_extremes",
+   "ordered": true,
+   "sql": "SELECT g, ARG_MAX(id, f) AS id_max_f, ARG_MIN(id, q) AS id_min_q, MAX_BY(x, id) AS last_x FROM big GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "id_max_f",
+    "id_min_q",
+    "last_x"
+   ],
+   "types": [
+    "BIGINT",
+    "BIGINT",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     0,
+     5523,
+     2519,
+     -224931
+    ],
+    [
+     1,
+     1574,
+     1736,
+     -553685
+    ],
+    [
+     2,
+     2216,
+     2441,
+     422784
+    ],
+    [
+     3,
+     904,
+     3962,
+     200976
+    ],
+    [
+     4,
+     2483,
+     762,
+     -509202
+    ],
+    [
+     5,
+     1441,
+     1255,
+     -184
+    ],
+    [
+     6,
+     2076,
+     2142,
+     -656588
+    ],
+    [
+     null,
+     5432,
+     2619,
+     365311
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function arg_max(bigint, double precision) does not exist"
+  },
+  {
+   "id": "finite_control_group",
+   "ordered": true,
+   "sql": "SELECT VAR_POP(v), STDDEV_SAMP(v) FROM nonfinite WHERE g = 6;",
+   "reference_outcome": "rows",
+   "columns": [
+    "var_pop(v)",
+    "stddev_samp(v)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "0.25"
+     },
+     {
+      "float": "0.7071067811865476"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "corr_constant_argument_is_null",
+   "ordered": true,
+   "expected_from": "postgresql",
+   "difference": "DuckDB returns NaN; NULL by decision 2026-10-17 (PostgreSQL and the SQL standard)",
+   "sql": "SELECT CORR(x, c), CORR(c, x), REGR_SLOPE(x, c) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "corr(x, c)",
+    "corr(c, x)",
+    "regr_slope(x, c)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ]
+   ],
+   "expected_rows": [
+    [
+     null,
+     null,
+     null
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     null,
+     null,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "degenerate_groups_are_null_beside_others",
+   "ordered": true,
+   "expected_from": "postgresql",
+   "difference": "DuckDB returns NaN for the one-row MEA and NULL-region groups; NULL by decision 2026-10-17 (PostgreSQL and the SQL standard)",
+   "sql": "SELECT region, COUNT(*) AS n, CORR(z, x) AS c, REGR_SLOPE(z, x) AS slope, REGR_INTERCEPT(z, x) AS icpt FROM stats GROUP BY region ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "n",
+    "c",
+    "slope",
+    "icpt"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "AMER",
+     5,
+     {
+      "float": "0.9977927963155577"
+     },
+     {
+      "float": "2.073170731707317"
+     },
+     {
+      "float": "0.43902439024390216"
+     }
+    ],
+    [
+     "APAC",
+     4,
+     {
+      "float": "0.9948497511671098"
+     },
+     {
+      "float": "2.8333333333333335"
+     },
+     {
+      "float": "-4.0"
+     }
+    ],
+    [
+     "EU",
+     6,
+     {
+      "float": "0.9948320965219651"
+     },
+     {
+      "float": "2.542553191489361"
+     },
+     {
+      "float": "-0.9468085106382932"
+     }
+    ],
+    [
+     "MEA",
+     1,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     null
+    ],
+    [
+     null,
+     2,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     null
+    ]
+   ],
+   "expected_rows": [
+    [
+     "AMER",
+     5,
+     {
+      "float": "0.9977927963155577"
+     },
+     {
+      "float": "2.073170731707317"
+     },
+     {
+      "float": "0.43902439024390283"
+     }
+    ],
+    [
+     "APAC",
+     4,
+     {
+      "float": "0.9948497511671099"
+     },
+     {
+      "float": "2.8333333333333335"
+     },
+     {
+      "float": "-4.0"
+     }
+    ],
+    [
+     "EU",
+     6,
+     {
+      "float": "0.9948320965219654"
+     },
+     {
+      "float": "2.5425531914893615"
+     },
+     {
+      "float": "-0.9468085106382944"
+     }
+    ],
+    [
+     "MEA",
+     1,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     2,
+     null,
+     null,
+     null
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "AMER",
+     "5",
+     "0.9977927963155577",
+     "2.073170731707317",
+     "0.43902439024390283"
+    ],
+    [
+     "APAC",
+     "4",
+     "0.9948497511671099",
+     "2.8333333333333335",
+     "-4"
+    ],
+    [
+     "EU",
+     "6",
+     "0.9948320965219654",
+     "2.5425531914893615",
+     "-0.9468085106382944"
+    ],
+    [
+     "MEA",
+     "1",
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     "2",
+     null,
+     null,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "degenerate_groups_having_is_null",
+   "ordered": true,
+   "expected_from": "postgresql",
+   "difference": "DuckDB's NaN is not NULL, so DuckDB returns no rows; NULL by decision 2026-10-17 (PostgreSQL and the SQL standard)",
+   "sql": "SELECT region, COUNT(*) AS n, CORR(z, x) AS c FROM stats GROUP BY region HAVING CORR(z, x) IS NULL ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "n",
+    "c"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "DOUBLE"
+   ],
+   "rows": [],
+   "expected_rows": [
+    [
+     "MEA",
+     1,
+     null
+    ],
+    [
+     null,
+     2,
+     null
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "MEA",
+     "1",
+     null
+    ],
+    [
+     null,
+     "2",
+     null
+    ]
+   ]
+  },
+  {
+   "id": "degenerate_groups_excluded_by_having_count",
+   "ordered": true,
+   "sql": "SELECT region, COUNT(*) AS n, REGR_COUNT(z, x) AS pairs, CORR(z, x) AS c, REGR_SLOPE(z, x) AS slope FROM stats GROUP BY region HAVING REGR_COUNT(z, x) > 1 ORDER BY region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "region",
+    "n",
+    "pairs",
+    "c",
+    "slope"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "UINTEGER",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "AMER",
+     5,
+     4,
+     {
+      "float": "0.9977927963155577"
+     },
+     {
+      "float": "2.073170731707317"
+     }
+    ],
+    [
+     "APAC",
+     4,
+     3,
+     {
+      "float": "0.9948497511671098"
+     },
+     {
+      "float": "2.8333333333333335"
+     }
+    ],
+    [
+     "EU",
+     6,
+     5,
+     {
+      "float": "0.9948320965219651"
+     },
+     {
+      "float": "2.542553191489361"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "regr_slope_single_row_is_null",
+   "ordered": true,
+   "expected_from": "postgresql",
+   "difference": "DuckDB returns NaN; NULL by decision 2026-10-17 (PostgreSQL and the SQL standard)",
+   "sql": "SELECT REGR_SLOPE(z, x), CORR(z, x), REGR_INTERCEPT(z, x), REGR_R2(z, x) FROM stats WHERE id = 1;",
+   "reference_outcome": "rows",
+   "columns": [
+    "regr_slope(z, x)",
+    "corr(z, x)",
+    "regr_intercept(z, x)",
+    "regr_r2(z, x)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     null,
+     null
+    ]
+   ],
+   "expected_rows": [
+    [
+     null,
+     null,
+     null,
+     null
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     null,
+     null,
+     null,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "refuse_nonfinite_input",
+   "ordered": true,
+   "assay_error": "unsupported: STDDEV_SAMP over a NaN or infinite REAL input",
+   "difference": "DuckDB raises an out-of-range error; PostgreSQL returns NaN",
+   "sql": "SELECT STDDEV_SAMP(v) FROM nonfinite WHERE g = 1;",
+   "reference_outcome": "error",
+   "reference_error": "Out of Range Error: STDDEV_SAMP is out of range!",
+   "pg": "rows (DuckDB errors)",
+   "pg_rows": [
+    [
+     "NaN"
+    ]
+   ]
+  },
+  {
+   "id": "refuse_nonfinite_nan_input",
+   "ordered": true,
+   "assay_error": "unsupported: CORR over a NaN or infinite REAL input",
+   "difference": "DuckDB raises an out-of-range error; PostgreSQL returns NaN",
+   "sql": "SELECT CORR(v, v) FROM nonfinite WHERE g = 2;",
+   "reference_outcome": "error",
+   "reference_error": "Out of Range Error: STDDEV_POP for X is out of range!",
+   "pg": "rows (DuckDB errors)",
+   "pg_rows": [
+    [
+     "NaN"
+    ]
+   ]
+  },
+  {
+   "id": "refuse_single_infinity",
+   "ordered": true,
+   "assay_error": "unsupported: VAR_POP over a NaN or infinite REAL input",
+   "difference": "DuckDB returns 0 for VAR_POP of one infinity; PostgreSQL returns NaN",
+   "sql": "SELECT VAR_POP(v) FROM nonfinite WHERE g = 3;",
+   "reference_outcome": "rows",
+   "columns": [
+    "var_pop(v)"
+   ],
+   "types": [
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "0.0"
+     }
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "NaN"
+    ]
+   ]
+  },
+  {
+   "id": "nonfinite_single_row_sample_is_null",
+   "ordered": true,
+   "sql": "SELECT STDDEV_SAMP(v), VAR_SAMP(v) FROM nonfinite WHERE g = 3;",
+   "reference_outcome": "rows",
+   "columns": [
+    "stddev_samp(v)",
+    "var_samp(v)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     null,
+     null
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "nonfinite_pair_averages_and_counts",
+   "ordered": true,
+   "sql": "SELECT g, REGR_AVGX(y, x) AS ax, REGR_AVGY(y, x) AS ay, REGR_COUNT(y, x) AS n FROM pairs GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "ax",
+    "ay",
+    "n"
+   ],
+   "types": [
+    "BIGINT",
+    "DOUBLE",
+    "DOUBLE",
+    "UINTEGER"
+   ],
+   "rows": [
+    [
+     1,
+     {
+      "float": "1.0"
+     },
+     {
+      "float": "+inf"
+     },
+     1
+    ],
+    [
+     2,
+     {
+      "float": "+inf"
+     },
+     {
+      "float": "1.0"
+     },
+     1
+    ],
+    [
+     3,
+     {
+      "float": "+inf"
+     },
+     {
+      "float": "+inf"
+     },
+     1
+    ],
+    [
+     4,
+     {
+      "float": "1.0"
+     },
+     {
+      "float": "NaN"
+     },
+     3
+    ],
+    [
+     5,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "1.5"
+     },
+     2
+    ],
+    [
+     6,
+     {
+      "float": "+inf"
+     },
+     {
+      "float": "1.5"
+     },
+     2
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "nonfinite_single_pairs",
+   "ordered": true,
+   "expected_from": "postgresql",
+   "difference": "CORR of one pair with exactly one nonfinite value and REGR_SLOPE of one pair with finite X: DuckDB NaN, PostgreSQL NULL; NULL by decision 2026-10-17. The other cells agree",
+   "sql": "SELECT g, CORR(y, x) AS c, REGR_SLOPE(y, x) AS slope, COVAR_POP(y, x) AS cp, REGR_SXY(y, x) AS sxy, COVAR_SAMP(y, x) AS cs FROM pairs WHERE g IN (1, 2, 3) GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "c",
+    "slope",
+    "cp",
+    "sxy",
+    "cs"
+   ],
+   "types": [
+    "BIGINT",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     1,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     null
+    ],
+    [
+     2,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     null
+    ],
+    [
+     3,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     null
+    ]
+   ],
+   "expected_rows": [
+    [
+     1,
+     null,
+     null,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     null
+    ],
+    [
+     2,
+     null,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     null
+    ],
+    [
+     3,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     null
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "1",
+     null,
+     null,
+     "NaN",
+     "NaN",
+     null
+    ],
+    [
+     "2",
+     null,
+     "NaN",
+     "NaN",
+     "NaN",
+     null
+    ],
+    [
+     "3",
+     "NaN",
+     "NaN",
+     "NaN",
+     "NaN",
+     null
+    ]
+   ]
+  },
+  {
+   "id": "nonfinite_y_with_constant_finite_x",
+   "ordered": true,
+   "expected_from": "postgresql",
+   "difference": "REGR_SLOPE: DuckDB NaN, PostgreSQL NULL; NULL by decision 2026-10-17. The other cells agree",
+   "sql": "SELECT g, REGR_SLOPE(y, x) AS slope, REGR_INTERCEPT(y, x) AS icpt, REGR_R2(y, x) AS r2, REGR_SXX(y, x) AS sxx FROM pairs WHERE g IN (1, 4) GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "slope",
+    "icpt",
+    "r2",
+    "sxx"
+   ],
+   "types": [
+    "BIGINT",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     1,
+     {
+      "float": "NaN"
+     },
+     null,
+     null,
+     {
+      "float": "0.0"
+     }
+    ],
+    [
+     4,
+     {
+      "float": "NaN"
+     },
+     null,
+     null,
+     {
+      "float": "0.0"
+     }
+    ]
+   ],
+   "expected_rows": [
+    [
+     1,
+     null,
+     null,
+     null,
+     {
+      "float": "0.0"
+     }
+    ],
+    [
+     4,
+     null,
+     null,
+     null,
+     {
+      "float": "0.0"
+     }
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "1",
+     null,
+     null,
+     null,
+     "0"
+    ],
+    [
+     "4",
+     null,
+     null,
+     null,
+     "0"
+    ]
+   ]
+  },
+  {
+   "id": "nonfinite_x_with_finite_y_sums",
+   "ordered": true,
+   "sql": "SELECT g, REGR_SYY(y, x) AS syy FROM pairs WHERE g IN (2, 5, 6) GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "syy"
+   ],
+   "types": [
+    "BIGINT",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     2,
+     {
+      "float": "0.0"
+     }
+    ],
+    [
+     5,
+     {
+      "float": "0.5"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "0.5"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "refuse_nonfinite_covariance_order_dependent",
+   "ordered": true,
+   "assay_error": "unsupported: COVAR_POP over a NaN or infinite REAL input",
+   "difference": "DuckDB returns +inf for these rows (its value depends on row order); PostgreSQL returns NaN",
+   "sql": "SELECT COVAR_POP(y, x) FROM pairs WHERE g = 6;",
+   "reference_outcome": "rows",
+   "columns": [
+    "covar_pop(y, x)"
+   ],
+   "types": [
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "+inf"
+     }
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "NaN"
+    ]
+   ]
+  },
+  {
+   "id": "refuse_nonfinite_corr_constant_y",
+   "ordered": true,
+   "assay_error": "unsupported: CORR over a NaN or infinite REAL input",
+   "difference": "DuckDB raises an out-of-range error; PostgreSQL returns NULL",
+   "sql": "SELECT CORR(y, x) FROM pairs WHERE g = 4;",
+   "reference_outcome": "error",
+   "reference_error": "Out of Range Error: STDDEV_POP for Y is out of range!",
+   "pg": "rows (DuckDB errors)",
+   "pg_rows": [
+    [
+     null
+    ]
+   ]
+  },
+  {
+   "id": "refuse_nonfinite_regr_sxx",
+   "ordered": true,
+   "assay_error": "unsupported: REGR_SXX over a NaN or infinite REAL input",
+   "difference": "DuckDB returns 0; PostgreSQL returns NaN",
+   "sql": "SELECT REGR_SXX(y, x) FROM pairs WHERE g = 2;",
+   "reference_outcome": "rows",
+   "columns": [
+    "regr_sxx(y, x)"
+   ],
+   "types": [
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "0.0"
+     }
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "NaN"
+    ]
+   ]
+  },
+  {
+   "id": "finite_overflow_error",
+   "ordered": true,
+   "assay_error": "statistical aggregate out of range: intermediate value exceeds DOUBLE",
+   "sql": "SELECT VAR_POP(v) FROM nonfinite WHERE g = 4;",
+   "reference_outcome": "error",
+   "reference_error": "Out of Range Error: VARPOP is out of range!",
+   "pg": "error: psql:<stdin>:2: ERROR:  value out of range: overflow"
+  },
+  {
+   "id": "refuse_every",
+   "ordered": true,
+   "assay_error": "unsupported: EVERY (DuckDB 1.5.6 has no EVERY; BOOL_AND is equivalent)",
+   "sql": "SELECT EVERY(b) FROM stats;",
+   "reference_outcome": "error",
+   "reference_error": "Catalog Error: Scalar Function with name every does not exist!",
+   "pg": "rows (DuckDB errors)",
+   "pg_rows": [
+    [
+     "f"
+    ]
+   ]
+  },
+  {
+   "id": "refuse_arg_max_count_argument",
+   "ordered": true,
+   "assay_error": "unsupported: ARG_MAX with a count argument",
+   "difference": "DuckDB returns a LIST; Assay has no LIST type",
+   "sql": "SELECT ARG_MAX(name, x, 2) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "arg_max(\"name\", x, 2)"
+   ],
+   "types": [
+    "VARCHAR[]"
+   ],
+   "rows": [
+    [
+     [
+      "lu",
+      "ka"
+     ]
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function arg_max(text, bigint, integer) does not exist"
+  },
+  {
+   "id": "refuse_distinct_two_argument_real",
+   "ordered": true,
+   "assay_error": "unsupported: CORR(DISTINCT ...) over REAL",
+   "difference": "Remaining limit: DISTINCT pairs with a REAL argument are not yet supported",
+   "sql": "SELECT CORR(DISTINCT y, f) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "corr(DISTINCT y, f)"
+   ],
+   "types": [
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "-0.359915482824095"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "refuse_filter_on_this_base",
+   "ordered": true,
+   "difference": "Integration candidate 2: FILTER arrived with the aggregate-modifier change (#100); the case now compares with DuckDB (PostgreSQL agrees); the id keeps its original name",
+   "sql": "SELECT STDDEV(x) FILTER (WHERE x > 2) FROM stats;",
+   "reference_outcome": "rows",
+   "columns": [
+    "stddev(x) FILTER (WHERE (x > 2))"
+   ],
+   "types": [
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "2.1672493389016636"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "refuse_window",
+   "ordered": true,
+   "sql": "SELECT id, STDDEV(x) OVER () FROM stats ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "stddev(x) OVER ()"
+   ],
+   "types": [
+    "BIGINT",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     1,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     2,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     3,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     4,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     5,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     7,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     8,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     9,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     10,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     11,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     12,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     13,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     14,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     15,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     16,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     17,
+     {
+      "float": "2.685055643655045"
+     }
+    ],
+    [
+     18,
+     {
+      "float": "2.685055643655045"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "error_text_argument",
+   "ordered": true,
+   "assay_error": "STDDEV requires a numeric argument, got Text",
+   "sql": "SELECT STDDEV(name) FROM stats;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: No function matches the given name and argument types 'stddev(VARCHAR)'. You might need to add explicit type casts.",
+   "pg": "error: psql:<stdin>:2: ERROR:  function stddev(text) does not exist"
+  },
+  {
+   "id": "error_boolean_on_integer",
+   "ordered": true,
+   "assay_error": "BOOL_AND requires a BOOLEAN argument, got Int",
+   "sql": "SELECT BOOL_AND(x) FROM stats;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: No function matches the given name and argument types 'bool_and(BIGINT)'. You might need to add explicit type casts.",
+   "pg": "error: psql:<stdin>:2: ERROR:  function bool_and(bigint) does not exist"
+  },
+  {
+   "id": "error_count_if_integer",
+   "ordered": true,
+   "assay_error": "COUNT_IF requires a BOOLEAN argument, got Int",
+   "sql": "SELECT COUNT_IF(x) FROM stats;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: No function matches the given name and argument types 'count_if(BIGINT)'. You might need to add explicit type casts.",
+   "pg": "error: psql:<stdin>:2: ERROR:  function count_if(bigint) does not exist"
+  },
+  {
+   "id": "error_corr_text",
+   "ordered": true,
+   "assay_error": "CORR requires numeric arguments, got Text",
+   "sql": "SELECT CORR(name, x) FROM stats;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: No function matches the given name and argument types 'corr(VARCHAR, BIGINT)'. You might need to add explicit type casts.",
+   "pg": "error: psql:<stdin>:2: ERROR:  function corr(text, bigint) does not exist"
+  },
+  {
+   "id": "error_corr_arity",
+   "ordered": true,
+   "assay_error": "CORR requires two arguments",
+   "sql": "SELECT CORR(x) FROM stats;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: No function matches the given name and argument types 'corr(BIGINT)'. You might need to add explicit type casts.",
+   "pg": "error: psql:<stdin>:2: ERROR:  function corr(bigint) does not exist"
+  }
+ ]
+}

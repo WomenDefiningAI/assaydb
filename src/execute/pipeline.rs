@@ -28,6 +28,11 @@ pub(crate) fn integer_totals_reorder_safe(plan: &Plan, schema: &Schema) -> bool 
         let Some(e) = &a.input else {
             return true;
         };
+        if e.ty == Type::Float {
+            // Plain IEEE addition is not associative. Float states are updated
+            // by one owner in input order, never producer/partition partials.
+            return false;
+        }
         if e.ty != Type::Int {
             return true;
         }
@@ -319,7 +324,9 @@ impl Producer {
         }
         let start = Instant::now();
         if let Some(predicate) = &self.plan.filter {
-            let mask = predicate.eval(&input, &self.budget).map_err(Failure::sql)?;
+            let mask = predicate
+                .eval_filter(&input, &self.budget)
+                .map_err(Failure::sql)?;
             let mask = boolean(&mask.array);
             input = filter_input(&input, mask, &self.budget, true)?;
         }
@@ -514,7 +521,7 @@ fn drain_bounded(
     // cannot consume the slots needed to release their own private backing.
     let mut queue = VecDeque::<Exchange>::with_capacity(active.len());
     let mut flight: Option<Flight> = None;
-    let mut first_error: Option<(usize, String)> = None;
+    let mut first_error: Option<(usize, crate::Error)> = None;
     loop {
         if flight.as_ref().is_some_and(|f| f.remaining == 0) {
             let finished = flight.take().unwrap();
@@ -703,7 +710,7 @@ fn execute_attempt(
         let plan = Arc::new(prepared.plan.clone());
         let path = plan.path.clone().expect("pipeline admitted path");
         let file = File::open(&path).map_err(|e| e.to_string())?;
-        let metadata = crate::parquet_scan::external_metadata(&file)?;
+        let (metadata, _metadata_lease) = crate::parquet_scan::accounted_metadata(&file, &budget)?;
         drop(file);
         // Match baseline physical-group batches only when its parallel reader is
         // guaranteed; otherwise preserve serial cross-group batch chronology.
@@ -831,7 +838,7 @@ fn execute_attempt(
             hooks.submitted(runtime);
         }
         let mut partials = Vec::with_capacity(producers);
-        let mut first_error: Option<(usize, String)> = None;
+        let mut first_error: Option<(usize, crate::Error)> = None;
         if slice_bytes.is_some() {
             if reverse_source_flush {
                 return Err("bounded exchange cannot defer all source flushes".into());

@@ -243,8 +243,22 @@ fn repeated_cte_uses_query_owned_spilled_materialization() {
 #[test]
 fn paired_wide_mark_joins_do_not_retain_unused_right_payload() {
     let fixture = Fixture::with_text_domain(513, 16384, 4096, 1024, 4096);
+    let footer_bytes: usize = fixture
+        .tables
+        .values()
+        .map(|path| {
+            parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder::try_new(
+                File::open(path).unwrap(),
+            )
+            .unwrap()
+            .metadata()
+            .memory_size()
+        })
+        .sum();
     for optimized in [false, true] {
-        let options = fixture.options(128, 4 << 20, optimized);
+        // Preserve the original 4 MiB operator allowance, plus the footers
+        // newly charged while the two mark-join scans overlap.
+        let options = fixture.options(128, (4 << 20) + footer_bytes, optimized);
         fixture.check("SELECT a.id AS l,a.s IN(SELECT s FROM b) AS yes,a.s NOT IN(SELECT s FROM b) AS no FROM a ORDER BY l", &options);
     }
 }

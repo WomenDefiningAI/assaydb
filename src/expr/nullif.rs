@@ -15,7 +15,16 @@ fn equal(a: &Expr, av: &Value, b: &Expr, bv: &Value, row: usize) -> Result<bool>
                 .unwrap()
                 .value(row)
         };
+        // A promoted mixed Int/Float operand compares in DOUBLE (Helen,
+        // October 15); ordinary Int/Float NULLIF operands stay exact.
+        let promoted = |e: &Expr| {
+            matches!(&e.kind, Kind::Function(name, _)
+                if name == crate::mixed_numeric::PROMOTED_COMPARE)
+        };
         return Ok(match (&a.ty, &b.ty) {
+            (Type::Int, Type::Float) if promoted(b) => {
+                numeric(&av.array).value(row) as f64 == real(bv)
+            }
             (Type::Int, Type::Float) => {
                 numeric_compare::integer_real(numeric(&av.array).value(row), real(bv))
                     == Some(std::cmp::Ordering::Equal)
@@ -24,7 +33,7 @@ fn equal(a: &Expr, av: &Value, b: &Expr, bv: &Value, row: usize) -> Result<bool>
                 numeric_compare::integer_real(numeric(&bv.array).value(row), real(av))
                     == Some(std::cmp::Ordering::Equal)
             }
-            (Type::Float, Type::Float) => real(av) == real(bv),
+            (Type::Float, Type::Float) => numeric_compare::real_equal(real(av), real(bv)),
             // DECIMAL is the engine's existing exact-numeric extension; retain
             // its ordinary Float comparison conversion without a common cast.
             (Type::Decimal(scale), Type::Float) => {
@@ -81,6 +90,10 @@ fn equal(a: &Expr, av: &Value, b: &Expr, bv: &Value, row: usize) -> Result<bool>
                     .downcast_ref::<Date32Array>()
                     .unwrap()
                     .value(row)
+        }
+        (Type::Timestamp, Type::Timestamp) | (Type::TimestampTz, Type::TimestampTz) => {
+            crate::expr::timestamp::value(av.array.as_ref(), row)
+                == crate::expr::timestamp::value(bv.array.as_ref(), row)
         }
         _ => return Err("invalid NULLIF comparison types".into()),
     })

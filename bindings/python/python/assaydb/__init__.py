@@ -75,15 +75,32 @@ class Connection:
                  workers: int = 1, memory_bytes: int = 256 * 1024**2,
                  catalog_bytes: int = 64 * 1024**2,
                  max_result_bytes: int = 64 * 1024**2,
-                 allow_local_files: bool = True) -> None:
+                 allow_local_files: bool = True,
+                 timezone: str = "UTC",
+                 fixed_clock: str | None = None) -> None:
         for name, value in locals().copy().items():
             if name in {"workers", "memory_bytes", "catalog_bytes", "max_result_bytes"}:
                 if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
                     raise ValueError(f"{name} must be a positive integer")
         if not isinstance(allow_local_files, bool):
             raise ValueError("allow_local_files must be a boolean")
+        if not isinstance(timezone, str):
+            raise ValueError("timezone must be a string (IANA Area/City, UTC or GMT)")
+        if fixed_clock is not None and not isinstance(fixed_clock, str):
+            raise ValueError("fixed_clock must be TIMESTAMPTZ text or None")
         parent = tempfile.gettempdir() if directory is None else os.fspath(directory)
         self._native = NativeConnection(parent, workers, memory_bytes, catalog_bytes, max_result_bytes, allow_local_files)
+        # Session time zone (default UTC) and an optional fixed statement clock
+        # for reproducible NOW()/CURRENT_*; both are ordinary session SETs.
+        quote = lambda text: "'" + text.replace("'", "''") + "'"
+        try:
+            if timezone != "UTC":
+                self._native.execute("SET TimeZone = " + quote(timezone))
+            if fixed_clock is not None:
+                self._native.execute("SET assay_fixed_clock = " + quote(fixed_clock))
+        except BaseException:
+            self._native.close()
+            raise
 
     def execute(self, sql: str) -> Result:
         """Execute one SQL statement without rewriting it or auto-retrying it."""

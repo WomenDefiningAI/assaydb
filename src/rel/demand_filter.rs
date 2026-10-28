@@ -161,6 +161,7 @@ pub(super) fn prepare(
         lane_transforms: Default::default(),
         replay_transforms: Default::default(),
         materialized: Default::default(),
+        recursive_bindings: None,
         sideways_registry_lease: None,
         spill: None,
         budget: budget.clone(),

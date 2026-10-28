@@ -63,7 +63,7 @@ impl Fixture {
         writer.close().unwrap();
         Self(path)
     }
-    fn run(&self, sql: &str, options: &Options) -> Result<Execution, String> {
+    fn run(&self, sql: &str, options: &Options) -> Result<Execution, assaydb::Error> {
         let prepared = prepare(sql, &HashMap::from([("t".into(), self.0.clone())]), options)?;
         execute(&prepared, options)
     }

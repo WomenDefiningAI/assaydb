@@ -1,0 +1,1065 @@
+{
+ "duckdb_version": "1.5.6",
+ "setup": [
+  "CREATE TABLE w(id INTEGER, p INTEGER, v DOUBLE)",
+  "INSERT INTO w VALUES (1,0,1e308),(2,1,1e308),(3,0,-1e308),(4,1,-1e308),(5,0,1.0),(6,1,1e308),(7,0,NULL),(8,1,5e307),(9,0,7e307),(10,1,-1.5e308)"
+ ],
+ "cases": [
+  {
+   "id": "sum_rows_1_preceding",
+   "sql": "SELECT id, SUM(v) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS s FROM w ORDER BY id",
+   "rows": [
+    [
+     1,
+     {
+      "float_bits": "7fe1ccf385ebc8a0"
+     }
+    ],
+    [
+     2,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float_bits": "0000000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float_bits": "fff0000000000000"
+     }
+    ],
+    [
+     5,
+     {
+      "float_bits": "ffe1ccf385ebc8a0"
+     }
+    ],
+    [
+     6,
+     {
+      "float_bits": "7fe1ccf385ebc8a0"
+     }
+    ],
+    [
+     7,
+     {
+      "float_bits": "7fe1ccf385ebc8a0"
+     }
+    ],
+    [
+     8,
+     {
+      "float_bits": "7fd1ccf385ebc8a0"
+     }
+    ],
+    [
+     9,
+     {
+      "float_bits": "7fe55c576d815726"
+     }
+    ],
+    [
+     10,
+     {
+      "float_bits": "ffdc7b1f3cac7433"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "avg_rows_1_preceding",
+   "sql": "SELECT id, AVG(v) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS s FROM w ORDER BY id",
+   "rows": [
+    [
+     1,
+     {
+      "float_bits": "7fe1ccf385ebc8a0"
+     }
+    ],
+    [
+     2,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float_bits": "0000000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float_bits": "fff0000000000000"
+     }
+    ],
+    [
+     5,
+     {
+      "float_bits": "ffd1ccf385ebc8a0"
+     }
+    ],
+    [
+     6,
+     {
+      "float_bits": "7fd1ccf385ebc8a0"
+     }
+    ],
+    [
+     7,
+     {
+      "float_bits": "7fe1ccf385ebc8a0"
+     }
+    ],
+    [
+     8,
+     {
+      "float_bits": "7fd1ccf385ebc8a0"
+     }
+    ],
+    [
+     9,
+     {
+      "float_bits": "7fd55c576d815726"
+     }
+    ],
+    [
+     10,
+     {
+      "float_bits": "ffcc7b1f3cac7433"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "sum_rows_2_preceding_1_following",
+   "sql": "SELECT id, SUM(v) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 FOLLOWING) AS s FROM w ORDER BY id",
+   "rows": [
+    [
+     1,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float_bits": "ffe1ccf385ebc8a0"
+     }
+    ],
+    [
+     5,
+     {
+      "float_bits": "fff0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float_bits": "0000000000000000"
+     }
+    ],
+    [
+     7,
+     {
+      "float_bits": "7feab36d48e1acf0"
+     }
+    ],
+    [
+     8,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     9,
+     {
+      "float_bits": "ffc55c576d815728"
+     }
+    ],
+    [
+     10,
+     {
+      "float_bits": "ffc55c576d815728"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "avg_rows_2_preceding_1_following",
+   "sql": "SELECT id, AVG(v) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 FOLLOWING) AS s FROM w ORDER BY id",
+   "rows": [
+    [
+     1,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float_bits": "ffc1ccf385ebc8a0"
+     }
+    ],
+    [
+     5,
+     {
+      "float_bits": "fff0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float_bits": "0000000000000000"
+     }
+    ],
+    [
+     7,
+     {
+      "float_bits": "7fd1ccf385ebc8a0"
+     }
+    ],
+    [
+     8,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     9,
+     {
+      "float_bits": "ffac7b1f3cac7435"
+     }
+    ],
+    [
+     10,
+     {
+      "float_bits": "ffac7b1f3cac7435"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "sum_rows_unbounded_preceding",
+   "sql": "SELECT id, SUM(v) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS s FROM w ORDER BY id",
+   "rows": [
+    [
+     1,
+     {
+      "float_bits": "7fe1ccf385ebc8a0"
+     }
+    ],
+    [
+     2,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     5,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     7,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     8,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     9,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     10,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "avg_rows_unbounded_preceding",
+   "sql": "SELECT id, AVG(v) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS s FROM w ORDER BY id",
+   "rows": [
+    [
+     1,
+     {
+      "float_bits": "7fe1ccf385ebc8a0"
+     }
+    ],
+    [
+     2,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     5,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     7,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     8,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     9,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     10,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "sum_rows_unbounded_preceding_1_following",
+   "sql": "SELECT id, SUM(v) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 FOLLOWING) AS s FROM w ORDER BY id",
+   "rows": [
+    [
+     1,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     5,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     7,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     8,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     9,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     10,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "avg_rows_unbounded_preceding_1_following",
+   "sql": "SELECT id, AVG(v) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 FOLLOWING) AS s FROM w ORDER BY id",
+   "rows": [
+    [
+     1,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     5,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     7,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     8,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     9,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     10,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "sum_rows_current_unbounded_following",
+   "sql": "SELECT id, SUM(v) OVER (ORDER BY id ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) AS s FROM w ORDER BY id",
+   "rows": [
+    [
+     1,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float_bits": "ffc55c576d815728"
+     }
+    ],
+    [
+     3,
+     {
+      "float_bits": "fff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float_bits": "ffc55c576d815728"
+     }
+    ],
+    [
+     5,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     7,
+     {
+      "float_bits": "ffc55c576d815728"
+     }
+    ],
+    [
+     8,
+     {
+      "float_bits": "ffc55c576d815728"
+     }
+    ],
+    [
+     9,
+     {
+      "float_bits": "ffdc7b1f3cac7433"
+     }
+    ],
+    [
+     10,
+     {
+      "float_bits": "ffeab36d48e1acf0"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "avg_rows_current_unbounded_following",
+   "sql": "SELECT id, AVG(v) OVER (ORDER BY id ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) AS s FROM w ORDER BY id",
+   "rows": [
+    [
+     1,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float_bits": "ff955c576d815728"
+     }
+    ],
+    [
+     3,
+     {
+      "float_bits": "fff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float_bits": "ff9c7b1f3cac7435"
+     }
+    ],
+    [
+     5,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     7,
+     {
+      "float_bits": "ffac7b1f3cac7435"
+     }
+    ],
+    [
+     8,
+     {
+      "float_bits": "ffac7b1f3cac7435"
+     }
+    ],
+    [
+     9,
+     {
+      "float_bits": "ffcc7b1f3cac7433"
+     }
+    ],
+    [
+     10,
+     {
+      "float_bits": "ffeab36d48e1acf0"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "sum_range_2_2",
+   "sql": "SELECT id, SUM(v) OVER (ORDER BY id RANGE BETWEEN 2 PRECEDING AND 2 FOLLOWING) AS s FROM w ORDER BY id",
+   "rows": [
+    [
+     1,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float_bits": "0000000000000000"
+     }
+    ],
+    [
+     5,
+     {
+      "float_bits": "fff0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float_bits": "7fd1ccf385ebc8a0"
+     }
+    ],
+    [
+     7,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     8,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     9,
+     {
+      "float_bits": "ffc55c576d815728"
+     }
+    ],
+    [
+     10,
+     {
+      "float_bits": "ffc55c576d815728"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "avg_range_2_2",
+   "sql": "SELECT id, AVG(v) OVER (ORDER BY id RANGE BETWEEN 2 PRECEDING AND 2 FOLLOWING) AS s FROM w ORDER BY id",
+   "rows": [
+    [
+     1,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float_bits": "0000000000000000"
+     }
+    ],
+    [
+     5,
+     {
+      "float_bits": "fff0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float_bits": "7fb1ccf385ebc8a0"
+     }
+    ],
+    [
+     7,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     8,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     9,
+     {
+      "float_bits": "ffac7b1f3cac7435"
+     }
+    ],
+    [
+     10,
+     {
+      "float_bits": "ffac7b1f3cac7435"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "sum_partitioned_rows_1_1",
+   "sql": "SELECT id, SUM(v) OVER (PARTITION BY p ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS s FROM w ORDER BY id",
+   "rows": [
+    [
+     1,
+     {
+      "float_bits": "0000000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float_bits": "0000000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float_bits": "3ff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float_bits": "7fe1ccf385ebc8a0"
+     }
+    ],
+    [
+     5,
+     {
+      "float_bits": "ffe1ccf385ebc8a0"
+     }
+    ],
+    [
+     6,
+     {
+      "float_bits": "7fd1ccf385ebc8a0"
+     }
+    ],
+    [
+     7,
+     {
+      "float_bits": "7fd8ebbb5516e5ad"
+     }
+    ],
+    [
+     8,
+     {
+      "float_bits": "0000000000000000"
+     }
+    ],
+    [
+     9,
+     {
+      "float_bits": "7fd8ebbb5516e5ad"
+     }
+    ],
+    [
+     10,
+     {
+      "float_bits": "ffe1ccf385ebc8a0"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "avg_partitioned_rows_1_1",
+   "sql": "SELECT id, AVG(v) OVER (PARTITION BY p ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS s FROM w ORDER BY id",
+   "rows": [
+    [
+     1,
+     {
+      "float_bits": "0000000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float_bits": "0000000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float_bits": "3fd5555555555555"
+     }
+    ],
+    [
+     4,
+     {
+      "float_bits": "7fc7bbef5d3a60d5"
+     }
+    ],
+    [
+     5,
+     {
+      "float_bits": "ffd1ccf385ebc8a0"
+     }
+    ],
+    [
+     6,
+     {
+      "float_bits": "7fb7bbef5d3a60d5"
+     }
+    ],
+    [
+     7,
+     {
+      "float_bits": "7fc8ebbb5516e5ad"
+     }
+    ],
+    [
+     8,
+     {
+      "float_bits": "0000000000000000"
+     }
+    ],
+    [
+     9,
+     {
+      "float_bits": "7fd8ebbb5516e5ad"
+     }
+    ],
+    [
+     10,
+     {
+      "float_bits": "ffd1ccf385ebc8a0"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "sum_whole_partition",
+   "sql": "SELECT id, SUM(v) OVER () AS s FROM w ORDER BY id",
+   "rows": [
+    [
+     1,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     5,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     7,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     8,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     9,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     10,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "avg_whole_partition",
+   "sql": "SELECT id, AVG(v) OVER () AS s FROM w ORDER BY id",
+   "rows": [
+    [
+     1,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     5,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     7,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     8,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     9,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ],
+    [
+     10,
+     {
+      "float_bits": "7ff0000000000000"
+     }
+    ]
+   ]
+  }
+ ]
+}

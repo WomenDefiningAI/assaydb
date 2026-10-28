@@ -70,8 +70,8 @@ pub struct ErrorReplayMetrics {
     pub unavailable: usize,
     pub peak_reserved_bytes: usize,
     pub peak_workers: usize,
-    pub original_error: Option<String>,
-    pub replay_error: Option<String>,
+    pub original_error: Option<crate::Error>,
+    pub replay_error: Option<crate::Error>,
 }
 
 impl ErrorReplay {
@@ -100,22 +100,70 @@ pub(crate) fn semantic_error(message: &str) -> bool {
     {
         message = cause;
     }
-    matches!(
-        message,
-        "division by zero"
-            | "floating arithmetic overflow"
-            | "numeric overflow"
-            | "decimal precision 38 overflow"
-            | "FACTORIAL argument outside 0..20"
-            | "date out of range"
-            | "BIGINT overflow"
-            | "aggregate count overflow"
-            | "aggregate accumulator overflow"
-            | "scalar subquery returned multiple rows"
-            | "unsupported: REAL cast nonfinite result"
-            | "unsupported: cast from NaN"
-            | "unsupported: BLOB to TEXT requires valid UTF-8"
-    )
+    crate::expr::text::RUNTIME_ERRORS.contains(&message)
+        || crate::expr::math::RUNTIME_ERRORS.contains(&message)
+        || cast_data_error(message)
+        || crate::expr::regexp::RUNTIME_ERRORS.contains(&message)
+        || matches!(
+            message,
+            "division by zero"
+                | "floating arithmetic overflow"
+                | "numeric overflow"
+                | "decimal precision 38 overflow"
+                | "FACTORIAL argument outside 0..20"
+                | "date out of range"
+                | "BIGINT overflow"
+                | "aggregate count overflow"
+                | "aggregate accumulator overflow"
+                | "scalar subquery returned multiple rows"
+                | "unsupported: REAL cast nonfinite result"
+                | "unsupported: cast from NaN"
+                | "unsupported: BLOB to TEXT requires valid UTF-8"
+        )
+}
+
+/// Data errors of CAST and of the promoted Int/Float consumer checks. Their
+/// messages carry the offending value, so they are matched by prefix. Like
+/// the errors above they depend only on one row's values, so canonical replay
+/// selects the first failing row, and guarded AND/OR may skip a row the other
+/// operand decides (see `expr::guard`).
+fn cast_data_error(message: &str) -> bool {
+    message.starts_with("invalid input syntax for type ")
+        || message.starts_with("date/time field value out of range: \"")
+        || message.starts_with("INTEGER out of range: CAST of promoted Int/Float value ")
+        || matches!(
+            message,
+            "integer out of range"
+                | "bigint out of range"
+                | "decimal cast precision overflow"
+                | "decimal cast nonfinite source"
+                | "unsupported: floating cast nonfinite result"
+                | "unsupported: CAST Text AS Date (PostgreSQL/DuckDB agreement unestablished)"
+                | "unsupported: DATE to TEXT requires a year in 0001..9999"
+                | "unsupported: DATE field outside supported calendar range"
+                | "unsupported: numeric-to-REAL magnitude overflow"
+                | "unsupported: numeric-to-REAL exponent outside bounded domain"
+        )
+        || timestamp_data_error(message)
+}
+
+/// Row-dependent TIMESTAMP/TIMESTAMPTZ failures (integration candidate 3):
+/// out-of-range calendar results, text outside the grammar both references
+/// share, value-dependent EXTRACT refusals and TO_TIMESTAMP data errors. Like
+/// the CAST data errors they depend only on one row's values.
+fn timestamp_data_error(message: &str) -> bool {
+    message.starts_with("unsupported: TIMESTAMP text ")
+        || message.starts_with("unsupported: TIMESTAMP outside the supported range ")
+        || message.starts_with("unsupported: EXTRACT(SECOND) of a fractional second ")
+        || message
+            .starts_with("unsupported: EXTRACT(MILLISECOND) with a sub-millisecond remainder ")
+        || message.starts_with("unsupported: TO_TIMESTAMP ")
+        || matches!(
+            message,
+            "timestamp cannot be NaN"
+                | "timestamp out of range"
+                | "unsupported: ISOYEAR before AD 1 requires a BC year-numbering decision"
+        )
 }
 
 pub(crate) fn select(
@@ -189,7 +237,7 @@ mod tests {
         ] {
             let original = format!("floating arithmetic overflow{context}{context}");
             let options = Options::default();
-            let result = select(Err(original.clone()), &options, |_, _| {
+            let result = select(Err(original.clone().into()), &options, |_, _| {
                 Err("decimal precision 38 overflow".into())
             });
             assert_eq!(result.err().unwrap(), "decimal precision 38 overflow");

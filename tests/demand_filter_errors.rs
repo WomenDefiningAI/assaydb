@@ -290,7 +290,8 @@ fn demand_declines_fallible_expressions_and_preserves_first_error() {
         // failure must not take precedence through optional pre-evaluation.
         "SELECT p.k,a.s FROM (SELECT k FROM p WHERE CAST(1 AS DECIMAL(38,0))/0>0) p LEFT JOIN \
          (SELECT k,SUM(v*v*v) s FROM r GROUP BY k) a ON p.k=a.k ORDER BY 1",
-        // Float SUM/AVG retain the binder's explicit refusal.
+        // Float SUM/AVG now execute, but arbitrary Float columns cannot prove
+        // finite-prefix totality, so demand pruning must still decline.
         "SELECT p.k,a.s FROM p LEFT JOIN \
          (SELECT k,SUM(f) s FROM r GROUP BY k) a ON p.k=a.k ORDER BY 1",
         "SELECT p.k,a.s FROM p LEFT JOIN \
@@ -309,6 +310,28 @@ fn demand_declines_fallible_expressions_and_preserves_first_error() {
             relational_optimizations: false,
             ..Options::default()
         };
+        if sql.contains("SUM(f)") || sql.contains("AVG(f)") {
+            let expected =
+                execute(&prepare(sql, &fixture.tables(), &serial).unwrap(), &serial).unwrap();
+            for workers in [1, 2, 4, 10] {
+                for relational_optimizations in [false, true] {
+                    let options = Options {
+                        workers,
+                        relational_optimizations,
+                        batch_size: 37,
+                        ..Options::default()
+                    };
+                    let actual = execute(
+                        &prepare(sql, &fixture.tables(), &options).unwrap(),
+                        &options,
+                    )
+                    .unwrap();
+                    assert_bits(&actual.batch, &expected.batch, sql);
+                    assert_eq!(actual.metrics.demand_filtered_aggregates, 0, "{sql}");
+                }
+            }
+            continue;
+        }
         let expected = prepare(sql, &fixture.tables(), &serial)
             .and_then(|p| execute(&p, &serial))
             .err()

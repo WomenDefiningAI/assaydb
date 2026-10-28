@@ -81,6 +81,9 @@ pub(super) fn insert_distinct(
     ty: &Type,
     row: usize,
 ) -> Result<bool> {
+    // DISTINCT value identity follows DuckDB and PostgreSQL through the one
+    // shared canonical Float key (numeric_compare::canonical via key()):
+    // -0.0 equals 0.0 and every NaN payload/sign is one value.
     let candidate = FundedKey::new(value, ty, row, retained)?;
     if slot
         .as_ref()
@@ -130,6 +133,56 @@ pub(super) fn insert_distinct(
     Ok(true)
 }
 
+/// Append one packed STRING_AGG entry, prefixed by its u32 length, to the
+/// group's buffer. Growth is funded before allocating; the old buffer stays
+/// funded until it is freed, exactly like DISTINCT table replacement.
+pub(super) fn append_entry(
+    slot: &mut Option<Key>,
+    retained: &mut Reservation,
+    value: &Value,
+    row: usize,
+) -> Result<()> {
+    let entry = value
+        .array
+        .as_any()
+        .downcast_ref::<BinaryArray>()
+        .ok_or("internal: STRING_AGG state expects packed input")?
+        .value(row);
+    let length = u32::try_from(entry.len()).map_err(|_| "STRING_AGG entry too large")?;
+    let needed = entry.len() + 4;
+    let buffer = match slot.get_or_insert_with(|| Key::Binary(Vec::new())) {
+        Key::Binary(buffer) => buffer,
+        _ => return Err("internal: STRING_AGG state is not a buffer".into()),
+    };
+    if buffer.capacity() - buffer.len() < needed {
+        let target = buffer
+            .len()
+            .checked_add(needed)
+            .ok_or("STRING_AGG state size overflow")?
+            .max(buffer.capacity().saturating_mul(2))
+            .max(64);
+        let old = buffer.capacity();
+        let kept = retained
+            .bytes()
+            .checked_sub(old)
+            .ok_or("internal: insufficient STRING_AGG buffer credit")?;
+        let mut allocation = retained.budget().reserve(target)?;
+        let mut next = Vec::with_capacity(target);
+        next.extend_from_slice(buffer);
+        let actual = next.capacity();
+        if actual > allocation.bytes() {
+            return Err("internal: STRING_AGG buffer exceeds funded capacity".into());
+        }
+        *buffer = next; // Free the old buffer while its credit is still held.
+        retained.release_excess(kept);
+        allocation.release_excess(actual);
+        retained.absorb(allocation);
+    }
+    buffer.extend_from_slice(&length.to_le_bytes());
+    buffer.extend_from_slice(entry);
+    Ok(())
+}
+
 pub(super) fn update_extreme(
     slot: &mut Option<Key>,
     retained: &mut Reservation,
@@ -168,11 +221,7 @@ pub(super) fn update_extreme(
     }
     let candidate = FundedKey::new(value, ty, row, retained)?;
     let replace = slot.as_ref().is_none_or(|old| {
-        let cmp = if let (Key::Float(a), Key::Float(b)) = (&candidate.key, old) {
-            f64::from_bits(*a).total_cmp(&f64::from_bits(*b))
-        } else {
-            candidate.key.cmp(old)
-        };
+        let cmp = crate::execute::compare_extreme_keys(&candidate.key, old);
         if minimum { cmp.is_lt() } else { cmp.is_gt() }
     });
     if replace {
@@ -186,6 +235,32 @@ pub(super) fn update_extreme(
         if let Some(lease) = candidate.lease {
             retained.absorb(lease);
         }
+    }
+    Ok(())
+}
+
+/// Fund and store a copy of `bytes` as the slot's key (ARG_MAX/ARG_MIN).
+pub(super) fn replace_binary(
+    slot: &mut Option<Key>,
+    retained: &mut Reservation,
+    bytes: &[u8],
+) -> Result<()> {
+    let lease = if bytes.is_empty() {
+        None
+    } else {
+        Some(retained.budget().reserve(bytes.len())?)
+    };
+    let key = Key::Binary(bytes.to_vec());
+    debug_assert_eq!(payload_capacity(&key), bytes.len());
+    let old = slot.as_ref().map_or(0, payload_capacity);
+    let kept = retained
+        .bytes()
+        .checked_sub(old)
+        .ok_or("internal: insufficient extreme payload credit")?;
+    *slot = Some(key); // Old payload drops while still funded.
+    retained.release_excess(kept);
+    if let Some(lease) = lease {
+        retained.absorb(lease);
     }
     Ok(())
 }

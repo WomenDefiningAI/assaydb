@@ -107,9 +107,9 @@ fn null_facts_keep_binding_errors_and_cardinality() {
             assert!(e.contains("division by zero"), "{e}");
             // Option B keeps the cast exact; returning its wide INTEGER errors.
             let e=query(&mut s,"SELECT CASE WHEN NULL=v THEN 0 ELSE CAST(9223372036854775808 AS INTEGER) END FROM t GROUP BY k").unwrap_err();
-            assert!(e.contains("BIGINT overflow"), "{e}");
+            assert_eq!(e, "engine: BIGINT overflow");
             let e=query(&mut s,"SELECT CASE WHEN NULL=v THEN 0 ELSE CAST(9223372036854775808 AS BIGINT) END FROM t GROUP BY k").unwrap_err();
-            assert!(e.contains("BIGINT overflow"), "{e}");
+            assert_eq!(e, "engine: bigint out of range");
             s.execute_sql("CREATE TABLE d(k INT,v DECIMAL(38,1),w DECIMAL(38,0))")
                 .unwrap();
             s.execute_sql("INSERT INTO d VALUES(1,1.0,99999999999999999999999999999999999999)")

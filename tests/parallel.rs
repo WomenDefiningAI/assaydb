@@ -223,55 +223,94 @@ fn worker_sweep_preserves_order_filters_joins_shared_scans_and_spilled_results()
 
 #[test]
 fn direct_filter_keeps_projected_type_validation_even_when_all_rows_reject() {
-    use arrow::array::UInt64Array;
+    use arrow::array::{TimestampMicrosecondArray, UInt64Array};
     let root = std::env::temp_dir().join(format!("assaydb-filter-types-{}", std::process::id()));
     fs::create_dir(&root).unwrap();
-    let path = root.join("t.parquet");
-    let schema = Arc::new(Schema::new(vec![
-        Field::new("i", DataType::Int64, false),
-        Field::new("unsupported", DataType::UInt64, false),
-    ]));
-    let arrays: Vec<ArrayRef> = vec![
-        Arc::new(Int64Array::from_iter_values(0..69)),
-        Arc::new(UInt64Array::from_iter_values(0..69)),
-    ];
-    let mut writer = ArrowWriter::try_new(
-        File::create_new(&path).unwrap(),
-        schema.clone(),
-        Some(
-            WriterProperties::builder()
-                .set_max_row_group_size(17)
-                .build(),
+    // Old -> new (exact Parquet widening): an in-range UInt64 column used to
+    // refuse here; it is now an exact Int64 input, so the all-rows-rejected
+    // aggregate returns COUNT(*) = 0 and SUM = NULL (DuckDB 1.5.6 gives the
+    // same 0 / NULL over this file). Old -> new (TIMESTAMP and TIMESTAMPTZ
+    // cards, Oct 17): wall-clock and time-zone-aware Timestamp columns are now
+    // TIMESTAMP and TIMESTAMPTZ and join the supported side; the
+    // projected-type validation this test guards is kept with a TIME column,
+    // which remains refused.
+    let cases: [(&str, ArrayRef, bool); 4] = [
+        (
+            "u.parquet",
+            Arc::new(UInt64Array::from_iter_values(0..69)),
+            true,
         ),
-    )
-    .unwrap();
-    writer
-        .write(&RecordBatch::try_new(schema, arrays).unwrap())
+        (
+            "ts.parquet",
+            Arc::new(TimestampMicrosecondArray::from_iter_values(0..69)),
+            true,
+        ),
+        (
+            "tz.parquet",
+            Arc::new(TimestampMicrosecondArray::from_iter_values(0..69).with_timezone("UTC")),
+            true,
+        ),
+        (
+            "time.parquet",
+            Arc::new(arrow::array::Time64MicrosecondArray::from_iter_values(
+                0..69,
+            )),
+            false,
+        ),
+    ];
+    for (name, column, supported) in cases {
+        let path = root.join(name);
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("i", DataType::Int64, false),
+            Field::new("unsupported", column.data_type().clone(), false),
+        ]));
+        let arrays: Vec<ArrayRef> = vec![Arc::new(Int64Array::from_iter_values(0..69)), column];
+        let mut writer = ArrowWriter::try_new(
+            File::create_new(&path).unwrap(),
+            schema.clone(),
+            Some(
+                WriterProperties::builder()
+                    .set_max_row_group_size(17)
+                    .build(),
+            ),
+        )
         .unwrap();
-    writer.close().unwrap();
-    let tables = HashMap::from([("t".into(), path)]);
-    for workers in [1, 4] {
-        let options = Options {
-            workers,
-            batch_size: 7,
-            ..Options::default()
-        };
-        let sql = "SELECT COUNT(*) AS n,SUM(i) AS s FROM t WHERE i<0";
-        let prepared = prepare(sql, &tables, &options).unwrap();
-        let result = execute(&prepared, &options).unwrap();
-        assert_eq!(result.metrics.rows_after_filter, 0);
-        let options = Options {
-            projection_pushdown: false,
-            ..options
-        };
-        for sql in [sql, "SELECT COUNT(*) AS n,SUM(i) AS s FROM t WHERE FALSE"] {
+        writer
+            .write(&RecordBatch::try_new(schema, arrays).unwrap())
+            .unwrap();
+        writer.close().unwrap();
+        let tables = HashMap::from([("t".into(), path)]);
+        for workers in [1, 4] {
+            let options = Options {
+                workers,
+                batch_size: 7,
+                ..Options::default()
+            };
+            let sql = "SELECT COUNT(*) AS n,SUM(i) AS s FROM t WHERE i<0";
             let prepared = prepare(sql, &tables, &options).unwrap();
-            assert!(
-                execute(&prepared, &options)
-                    .err()
-                    .unwrap()
-                    .contains("unsupported input type")
-            );
+            let result = execute(&prepared, &options).unwrap();
+            assert_eq!(result.metrics.rows_after_filter, 0);
+            let options = Options {
+                projection_pushdown: false,
+                ..options
+            };
+            for sql in [sql, "SELECT COUNT(*) AS n,SUM(i) AS s FROM t WHERE FALSE"] {
+                let prepared = prepare(sql, &tables, &options).unwrap();
+                let result = execute(&prepared, &options);
+                if supported {
+                    let batch = result.unwrap().batch;
+                    assert_eq!(batch.num_rows(), 1, "{name} {workers} {sql}");
+                    let n = batch.column(0).as_any().downcast_ref::<Int64Array>();
+                    assert_eq!(n.unwrap().value(0), 0, "{name} {workers} {sql}");
+                    assert!(batch.column(1).is_null(0), "{name} {workers} {sql}");
+                } else {
+                    assert_eq!(
+                        result.err().unwrap(),
+                        "unsupported: unsupported input type: Time64(µs)",
+                        "{name} {workers} {sql}"
+                    );
+                }
+            }
         }
     }
     fs::remove_dir_all(root).unwrap();

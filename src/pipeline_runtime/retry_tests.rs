@@ -46,7 +46,7 @@ fn restored(budget: &Budget) {
 
 #[test]
 fn retry_discards_queued_and_ready_owners_but_joins_active_work_without_cancel() {
-    let budget = Budget::new(1 << 20);
+    let budget = Budget::new(16 << 20);
     let cancel = Cancellation::default();
     let mut runtime = Runtime::new(&budget, 2, 3, cancel.clone()).unwrap();
     let (active, active_dropped) = payload(&budget, 16 << 10);
@@ -101,7 +101,7 @@ fn retry_discards_queued_and_ready_owners_but_joins_active_work_without_cancel()
 
 #[test]
 fn retry_preserves_caller_cancellation_arriving_during_join() {
-    let budget = Budget::new(1 << 20);
+    let budget = Budget::new(16 << 20);
     let cancel = Cancellation::default();
     let mut runtime = Runtime::new(&budget, 2, 2, cancel.clone()).unwrap();
     let (active, active_dropped) = payload(&budget, 4096);
@@ -136,7 +136,7 @@ fn retry_preserves_caller_cancellation_arriving_during_join() {
 #[test]
 fn retry_surfaces_job_panic_after_ready_completion_was_discarded_or_consumed() {
     for consume in [false, true] {
-        let budget = Budget::new(1 << 20);
+        let budget = Budget::new(16 << 20);
         let cancel = Cancellation::default();
         let mut runtime = Runtime::<usize>::new(&budget, 1, 1, cancel.clone()).unwrap();
         let credit = budget.reserve(4096).unwrap();
@@ -164,7 +164,7 @@ fn retry_surfaces_job_panic_after_ready_completion_was_discarded_or_consumed() {
 
 #[test]
 fn retry_surfaces_panic_in_active_job_during_shutdown_and_releases_backing() {
-    let budget = Budget::new(1 << 20);
+    let budget = Budget::new(16 << 20);
     let cancel = Cancellation::default();
     let mut runtime = Runtime::<Payload>::new(&budget, 2, 2, cancel.clone()).unwrap();
     let (active, active_dropped) = payload(&budget, 4096);
@@ -191,7 +191,7 @@ fn retry_surfaces_panic_in_active_job_during_shutdown_and_releases_backing() {
 
 #[test]
 fn retry_single_worker_discards_unstarted_work_and_does_not_classify_operator_errors() {
-    let budget = Budget::new(1 << 20);
+    let budget = Budget::new(16 << 20);
     let cancel = Cancellation::default();
     let mut runtime = Runtime::<usize>::new(&budget, 1, 2, cancel.clone()).unwrap();
     submit(&mut runtime, JobKind::Morsel, |_| {

@@ -10,7 +10,12 @@ use std::{path::Path, sync::atomic::Ordering};
 fn visit(node: &Node, f: &mut impl FnMut(&Node) -> Result<()>) -> Result<()> {
     f(node)?;
     match &node.op {
-        RelOp::Scan { .. } | RelOp::One | RelOp::Empty => Ok(()),
+        RelOp::RecursiveCte { anchor, step, .. } => {
+            visit(anchor, f)?;
+            visit(step, f)
+        }
+        RelOp::Generate { .. } => Ok(()),
+        RelOp::Scan { .. } | RelOp::One | RelOp::Empty | RelOp::RecursiveScan { .. } => Ok(()),
         RelOp::WindowOrder { input, .. }
         | RelOp::Window { input, .. }
         | RelOp::Unary { input, .. }
@@ -87,7 +92,14 @@ impl<'a> Sources<'a> {
                 ));
             }
             match &node.op {
-                RelOp::Scan { .. } | RelOp::One | RelOp::Empty => Ok(()),
+                RelOp::RecursiveCte { anchor, step, .. } => {
+                    collect(anchor, sources, options)?;
+                    collect(step, sources, options)
+                }
+                RelOp::Generate { .. } => Ok(()),
+                RelOp::Scan { .. } | RelOp::One | RelOp::Empty | RelOp::RecursiveScan { .. } => {
+                    Ok(())
+                }
                 RelOp::WindowOrder { input, .. }
                 | RelOp::Window { input, .. }
                 | RelOp::Unary { input, .. }

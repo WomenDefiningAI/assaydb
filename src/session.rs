@@ -19,7 +19,7 @@ use arrow::{
     record_batch::RecordBatch,
 };
 use parquet::{arrow::ArrowWriter, file::properties::WriterProperties};
-use sqlparser::{ast as s, dialect::GenericDialect, parser::Parser};
+use sqlparser::{ast as s, dialect::GenericDialect};
 use std::{
     collections::{HashMap, HashSet},
     fs::{self, File},
@@ -43,6 +43,7 @@ static NEXT: AtomicU64 = AtomicU64::new(0);
 #[derive(Debug)]
 pub struct Error {
     pub kind: &'static str,
+    pub cause: Option<crate::ErrorCause>,
     pub message: String,
 }
 type Result<T> = std::result::Result<T, Error>;
@@ -56,23 +57,14 @@ impl Error {
     /// Optional human-facing advice; stable native error text/classification is unchanged.
     /// Casts choose a new explicit type policy, not a universal equivalent rewrite.
     pub fn guidance(&self) -> Option<&'static str> {
-        if self.message.contains(
-            "row-dependent mixed Int/Float conditional requires tagged numeric representation",
-        ) {
-            Some(
-                "Choose a common type explicitly by casting each reachable CASE/COALESCE value arm before the conditional. REAL may round integers beyond 2^53; INTEGER truncates fractions and has range limits.",
-            )
-        } else if self
-            .message
-            .contains("mixed Int/Float IN subquery comparison")
-        {
-            Some(
-                "Choose the same explicit type for the left expression and the subquery output. REAL may round integers beyond 2^53; INTEGER truncates fractions and has range limits. These casts choose semantics rather than preserve every original result.",
-            )
-        } else if self
+        // The former mixed Int/Float conditional and IN-subquery refusals (and
+        // their cast advice) were replaced by DOUBLE promotion on October 15.
+        if self
             .message
             .to_ascii_lowercase()
             .contains("recursion limit")
+            || self.message.contains("nesting limit")
+            || self.message.contains("height limit")
         {
             Some(
                 "Simplify deeply nested expressions or materialize intermediate results in separate statements. A CTE may still be expanded; it does not guarantee a lower nesting depth.",
@@ -86,6 +78,7 @@ impl Error {
 fn err(kind: &'static str, message: impl Into<String>) -> Error {
     Error {
         kind,
+        cause: None,
         message: message.into(),
     }
 }
@@ -206,8 +199,8 @@ fn parse(sql: &str) -> Result<s::Statement> {
     if sql.len() > MAX_SQL_BYTES {
         return Err(resource("SQL exceeds 1 MiB"));
     }
-    let mut statements = Parser::parse_sql(&crate::dialect::QueryDialect, sql)
-        .map_err(|e| unsupported(format!("SQL parser: {e}")))?;
+    let mut statements =
+        crate::nesting::parse(sql).map_err(|e| unsupported(format!("SQL parser: {e}")))?;
     if statements.len() != 1 {
         return Err(unsupported("exactly one SQL statement required"));
     }
@@ -290,6 +283,59 @@ impl Session {
             cancel_at: None,
         })
     }
+    /// The session time zone (`SET TimeZone = '...'`; default UTC).
+    pub fn time_zone(&self) -> crate::zone::SessionZone {
+        self.options.time_zone
+    }
+
+    /// `SET TimeZone = 'Area/City'` / `SET TIME ZONE '...'` (both
+    /// references' spelling) and `SET assay_fixed_clock = '<TIMESTAMPTZ>'`
+    /// (`'system'` restores the system clock) for reproducible NOW().
+    fn set(&mut self, set: s::Set) -> Result<Output> {
+        let text = |value: &s::Expr| match value {
+            s::Expr::Value(v) => match &v.value {
+                s::Value::SingleQuotedString(text) => Ok(text.clone()),
+                _ => Err(unsupported("SET value must be a string literal")),
+            },
+            _ => Err(unsupported("SET value must be a string literal")),
+        };
+        let (variable, value) = match &set {
+            s::Set::SetTimeZone {
+                local: false,
+                value,
+            } => ("timezone".to_string(), text(value)?),
+            s::Set::SingleAssignment {
+                scope: None,
+                hivevar: false,
+                variable,
+                values,
+            } if values.len() == 1 => (variable.to_string().to_lowercase(), text(&values[0])?),
+            _ => return Err(unsupported("SET form")),
+        };
+        let convert = |e: crate::Error| {
+            if e.starts_with("unsupported") {
+                unsupported(e)
+            } else {
+                semantic(e)
+            }
+        };
+        match variable.as_str() {
+            "timezone" | "time zone" => {
+                self.options.time_zone =
+                    crate::zone::SessionZone::parse(&value).map_err(convert)?;
+            }
+            "assay_fixed_clock" => {
+                self.options.fixed_clock = if value.eq_ignore_ascii_case("system") {
+                    None
+                } else {
+                    Some(crate::zone::fixed_clock(&value).map_err(convert)?)
+                };
+            }
+            other => return Err(unsupported(format!("SET {other}"))),
+        }
+        Ok(Output::Statement { affected_rows: 0 })
+    }
+
     pub fn directory(&self) -> &Path {
         &self.directory
     }
@@ -305,7 +351,8 @@ impl Session {
     }
 
     pub fn execute_sql(&mut self, sql: &str) -> Result<Output> {
-        self.execute_sql_mode(sql, false)
+        crate::engine_stack::run(|| self.execute_sql_mode(sql, false))
+            .map_err(|e| resource(format!("engine stack thread: {e}")))?
     }
 
     // INSERT sources are query-internal values. The target assignment performs
@@ -343,6 +390,7 @@ impl Session {
                 }
             }
             statement @ s::Statement::Update { .. } => self.update(statement),
+            s::Statement::Set(set) => self.set(set),
             s::Statement::Drop {
                 object_type: s::ObjectType::Table,
                 if_exists,
@@ -377,7 +425,7 @@ impl Session {
                     .collect();
                 let mut options = self.options.clone();
                 options.memory_bytes -= self.bytes;
-                let convert = |e: String| {
+                let convert = |e: crate::Error| {
                     let kind = if e.starts_with("unsupported") {
                         "unsupported"
                     } else if e.starts_with("semantic:") {
@@ -391,7 +439,10 @@ impl Session {
                     } else {
                         "engine"
                     };
-                    err(kind, e)
+                    let cause = e.cause();
+                    let mut result = err(kind, e);
+                    result.cause = cause;
+                    result
                 };
                 let imports = if self.local_files_enabled {
                     Some(local_files::Imports::new(self)?)
@@ -405,7 +456,9 @@ impl Session {
                     .collect();
                 let mut plan = if let Some(imports) = &imports {
                     let reader = |function: &str, path: &Path| {
-                        imports.read(function, path).map_err(|e| e.to_string())
+                        imports
+                            .read(function, path)
+                            .map_err(|e| crate::Error::from(e.to_string()))
                     };
                     execute::prepare_with_local_files(sql, &paths, &options, &views, &reader)
                 } else if self.views.is_empty() {
@@ -419,7 +472,9 @@ impl Session {
                         options.memory_bytes.saturating_sub(imports.memory_bytes());
                 }
                 plan.internal_output = internal_output;
-                let result = execute::execute(&plan, &options).map_err(convert)?;
+                let mut result = execute::execute(&plan, &options).map_err(convert)?;
+                result.batch = crate::zone::relabel(&result.batch, &self.options.time_zone)
+                    .map_err(internal)?;
                 Ok(Output::Query {
                     execution: Box::new(result),
                     types: plan.plan.types.clone(),
@@ -521,6 +576,8 @@ impl Session {
     }
 
     fn insert(&mut self, insert: s::Insert) -> Result<Output> {
+        // TIMESTAMPTZ literals read wall clocks in the session zone.
+        let _statement = crate::zone::enter(self.options.time_zone, self.options.fixed_clock);
         let s::Statement::Insert(mut allowed) = parse("INSERT INTO t VALUES (0)")? else {
             unreachable!()
         };
@@ -891,6 +948,9 @@ impl Session {
 }
 impl Drop for Session {
     fn drop(&mut self) {
+        // Stored view ASTs must also be destroyed on an engine-owned stack.
+        let views = std::mem::take(&mut self.views);
+        crate::engine_stack::drop_on_stack(views);
         for table in self.tables.values() {
             let _ = fs::remove_file(&table.path);
         }
@@ -936,6 +996,12 @@ fn column(def: &s::ColumnDef) -> Result<Column> {
             Type::Decimal(scale as i8)
         }
         D::Date => Type::Date,
+        D::Timestamp(None, s::TimezoneInfo::None | s::TimezoneInfo::WithoutTimeZone) => {
+            Type::Timestamp
+        }
+        D::Timestamp(None, s::TimezoneInfo::WithTimeZone | s::TimezoneInfo::Tz) => {
+            Type::TimestampTz
+        }
         _ => return Err(unsupported(format!("column type: {}", def.data_type))),
     };
     let mut nullable = true;
@@ -974,6 +1040,7 @@ enum Cell {
     Bool(bool),
     Text(String),
     Date(i32),
+    Timestamp(i64),
 }
 fn validate_assignment_type(source: &Type, target: &Type) -> Result<()> {
     if source == target
@@ -1070,6 +1137,15 @@ fn array_cell(array: &dyn Array, source: &Type, row: usize, column: &Column) -> 
                 .ok_or_else(|| internal("invalid date array"))?
                 .value(row),
         )),
+        (Type::Timestamp, Type::Timestamp) | (Type::TimestampTz, Type::TimestampTz) => {
+            Ok(Cell::Timestamp(
+                array
+                    .as_any()
+                    .downcast_ref::<TimestampMicrosecondArray>()
+                    .ok_or_else(|| internal("invalid timestamp array"))?
+                    .value(row),
+            ))
+        }
         _ => Err(semantic(format!(
             "assignment type mismatch: {source:?} to {:?}",
             column.ty
@@ -1211,6 +1287,44 @@ fn literal(expr: &s::Expr, column: &Column) -> Result<Cell> {
                 i32::try_from(days).map_err(|_| semantic("DATE outside range"))?,
             ))
         }
+        (
+            s::Expr::TypedString {
+                data_type: s::DataType::Timestamp(None, s::TimezoneInfo::None),
+                value,
+            },
+            Type::Timestamp,
+        ) => {
+            let s::Value::SingleQuotedString(value) = &value.value else {
+                return Err(unsupported("TIMESTAMP literal syntax"));
+            };
+            match crate::expr::timestamp::parse(value) {
+                Ok(micros) => Ok(Cell::Timestamp(micros)),
+                Err(crate::expr::timestamp::TextError::Invalid(message)) => Err(semantic(message)),
+                Err(crate::expr::timestamp::TextError::Unsupported(reason)) => {
+                    Err(unsupported(format!("TIMESTAMP text {reason}")))
+                }
+            }
+        }
+        (
+            s::Expr::TypedString {
+                data_type:
+                    s::DataType::Timestamp(None, s::TimezoneInfo::Tz | s::TimezoneInfo::WithTimeZone),
+                value,
+            },
+            Type::TimestampTz,
+        ) => {
+            let s::Value::SingleQuotedString(value) = &value.value else {
+                return Err(unsupported("TIMESTAMPTZ literal syntax"));
+            };
+            let zone = crate::zone::statement().map_err(internal)?.zone;
+            match crate::zone::parse_text(value, &zone) {
+                Ok(micros) => Ok(Cell::Timestamp(micros)),
+                Err(crate::expr::timestamp::TextError::Invalid(message)) => Err(semantic(message)),
+                Err(crate::expr::timestamp::TextError::Unsupported(reason)) => {
+                    Err(unsupported(format!("TIMESTAMPTZ text {reason}")))
+                }
+            }
+        }
         (s::Expr::Value(_), _) => Err(semantic("literal does not match column type")),
         _ => Err(unsupported(
             "INSERT supports typed literals, NULL and signed numeric literals",
@@ -1244,6 +1358,10 @@ fn make_batch(schema: Arc<Schema>, columns: &[Column], rows: &[Vec<Cell>]) -> Re
             Type::Float => Arc::new(Float64Array::from(values!(Float))),
             Type::Bool => Arc::new(BooleanArray::from(values!(Bool))),
             Type::Date => Arc::new(Date32Array::from(values!(Date))),
+            Type::Timestamp | Type::TimestampTz => crate::expr::timestamp::labelled(
+                TimestampMicrosecondArray::from(values!(Timestamp)),
+                &column.ty,
+            ),
             Type::Decimal(s) => Arc::new(
                 Decimal128Array::from(values!(Decimal))
                     .with_precision_and_scale(38, s)

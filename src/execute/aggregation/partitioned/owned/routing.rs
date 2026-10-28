@@ -41,6 +41,12 @@ fn function_id(function: &Aggregate) -> u8 {
         Aggregate::Avg => 2,
         Aggregate::Min => 3,
         Aggregate::Max => 4,
+        // Never admitted to partition routing (no mergeable partial state).
+        Aggregate::StringAgg(_) => 5,
+        Aggregate::Moment { .. } => 6,
+        Aggregate::ArgExtreme { .. } => 7,
+        Aggregate::Quantile(_) => 8,
+        Aggregate::Mode { .. } => 9,
     }
 }
 impl RoutingPlan {

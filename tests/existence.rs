@@ -155,6 +155,272 @@ fn orientation(node: &mut Node, reverse: bool) {
     }
 }
 
+// Change only cost estimates at existence nodes; physical Scan row bounds and
+// the scalar/aggregate plans remain untouched.
+fn scalar_orientation(node: &mut Node, reverse: bool, actual_cost_miss: bool) {
+    match &mut node.op {
+        RelOp::Join {
+            left, right, kind, ..
+        } => {
+            if matches!(kind, JoinKind::Semi | JoinKind::Anti) {
+                left.estimated_rows = if reverse { 0 } else { usize::MAX / 4 };
+                right.estimated_rows = if actual_cost_miss { 1 } else { 1_000_000 };
+            }
+            scalar_orientation(left, reverse, actual_cost_miss);
+            scalar_orientation(right, reverse, actual_cost_miss);
+        }
+        RelOp::Unary { input, .. }
+        | RelOp::Filter { input, .. }
+        | RelOp::Project { input, .. }
+        | RelOp::Rename { input }
+        | RelOp::Limit { input, .. } => scalar_orientation(input, reverse, actual_cost_miss),
+        _ => {}
+    }
+}
+
+fn ids(batch: &RecordBatch) -> Vec<i64> {
+    batch
+        .column(0)
+        .as_any()
+        .downcast_ref::<Int64Array>()
+        .unwrap()
+        .values()
+        .to_vec()
+}
+
+#[test]
+fn scalar_candidate_existence_preserves_ordinals_duplicates_nulls_and_empty_inputs() {
+    let l = Fixture::new(1, true);
+    let r = Fixture::new(8, false);
+    let empty = Fixture::new(0, false);
+    let tables = HashMap::from([
+        ("l".into(), l.0.clone()),
+        ("r".into(), r.0.clone()),
+        ("empty".into(), empty.0.clone()),
+    ]);
+    for (source, predicate, anti, semi) in [
+        ("r", "b.id<2", vec![8, 9, 11], vec![6, 7, 10]),
+        ("r", "b.k IS NULL", vec![6, 7, 8, 9, 10, 11], vec![]),
+        ("r", "b.id<0", vec![6, 7, 8, 9, 10, 11], vec![]),
+        ("empty", "b.id<2", vec![6, 7, 8, 9, 10, 11], vec![]),
+    ] {
+        for (not, expected) in [("NOT ", anti), ("", semi)] {
+            // The candidate has duplicate keys and a NULL key (id=9); the
+            // larger source has duplicate keys and NULLs too. AVG completes
+            // before the candidate comparison and before any membership work.
+            let sql = format!(
+                "SELECT a.id FROM l a WHERE a.id > (SELECT AVG(id) FROM l) AND {not}EXISTS(SELECT 1 FROM {source} b WHERE a.k=b.k AND {predicate})"
+            );
+            for batch_size in [1, 7, 8192] {
+                for workers in [1, 2, 4, 10] {
+                    let options = Options {
+                        workers,
+                        batch_size,
+                        ..Options::default()
+                    };
+                    for (reverse, cost_miss) in [(false, false), (true, false), (true, true)] {
+                        let mut plan = prepare(&sql, &tables, &options).unwrap();
+                        scalar_orientation(plan.relational.as_mut().unwrap(), reverse, cost_miss);
+                        let result = execute(&plan, &options).unwrap();
+                        assert_eq!(
+                            ids(&result.batch),
+                            expected,
+                            "{sql}, workers={workers}, batch={batch_size}, reverse={reverse}, miss={cost_miss}"
+                        );
+                        assert_eq!(
+                            result.metrics.reverse_existence_joins,
+                            usize::from(reverse && !cost_miss),
+                            "{sql}"
+                        );
+                        assert!(result.metrics.peak_reserved_bytes <= options.memory_bytes);
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn scalar_candidate_errors_keep_scalar_completion_and_build_precedence() {
+    let l = Fixture::new(1, true);
+    let r = Fixture::new(8, false);
+    let tables = HashMap::from([("l".into(), l.0.clone()), ("r".into(), r.0.clone())]);
+    for (condition, probe, expected) in [
+        (
+            "a.id > (SELECT id FROM l)",
+            "b.id<0",
+            "scalar subquery returned multiple rows",
+        ),
+        (
+            "a.id<0 AND a.id > (SELECT id FROM l)",
+            "b.id<2",
+            "scalar subquery returned multiple rows",
+        ),
+        (
+            "a.id > (SELECT MAX(f*CAST('1e308' AS REAL)) FROM l)",
+            "b.id<0",
+            "floating arithmetic overflow",
+        ),
+        // The ordinary RHS build must still win when it is fallible. This
+        // shape is refused by reversal even though its estimate is favorable.
+        (
+            "a.id > (SELECT id FROM l)",
+            "b.f*CAST('1e308' AS REAL)>0",
+            "floating arithmetic overflow",
+        ),
+        // Two scalar consumers keep the existing right-before-left order.
+        (
+            "a.id > (SELECT id FROM l) AND a.id > (SELECT MAX(f*CAST('1e308' AS REAL)) FROM l)",
+            "b.id<2",
+            "floating arithmetic overflow",
+        ),
+    ] {
+        for not in ["", "NOT "] {
+            let sql = format!(
+                "SELECT a.id FROM l a WHERE {condition} AND {not}EXISTS(SELECT 1 FROM r b WHERE a.k=b.k AND {probe})"
+            );
+            for batch_size in [1, 7, 8192] {
+                for workers in [1, 2, 4, 10] {
+                    for reverse in [false, true] {
+                        let options = Options {
+                            workers,
+                            batch_size,
+                            ..Options::default()
+                        };
+                        let mut plan = prepare(&sql, &tables, &options).unwrap();
+                        scalar_orientation(plan.relational.as_mut().unwrap(), reverse, false);
+                        assert_eq!(
+                            execute(&plan, &options).err().unwrap(),
+                            expected,
+                            "{sql}, workers={workers}, batch={batch_size}, reverse={reverse}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn scalar_candidate_budget_spill_and_cancellation_match_original_path() {
+    use assaydb::spill::{SpillMode, SpillOptions};
+    let l = Fixture::new(1, true);
+    let r = Fixture::new(8, false);
+    let tables = HashMap::from([("l".into(), l.0.clone()), ("r".into(), r.0.clone())]);
+    let spill_dir = l.0.with_extension("spill");
+    std::fs::create_dir(&spill_dir).unwrap();
+    for (not, expected) in [("NOT ", vec![8, 9, 11]), ("", vec![6, 7, 10])] {
+        let sql = format!(
+            "SELECT a.id FROM l a WHERE a.id > (SELECT AVG(id) FROM l) AND {not}EXISTS(SELECT 1 FROM r b WHERE a.k=b.k AND b.id<2)"
+        );
+        for batch_size in [1, 7, 8192] {
+            for workers in [1, 2, 4, 10] {
+                for mode in [None, Some(SpillMode::Force), Some(SpillMode::Auto)] {
+                    let mut successes = 0;
+                    let mut failures = 0;
+                    for memory_bytes in [1024, 32 << 10, 256 << 10, 4 << 20] {
+                        let options = Options {
+                            workers,
+                            batch_size,
+                            memory_bytes,
+                            parquet_cache_bytes: Some(0),
+                            spill: mode.map(|mode| SpillOptions {
+                                mode,
+                                directory: spill_dir.clone(),
+                                sort_run_bytes: 8192,
+                                ..SpillOptions::default()
+                            }),
+                            ..Options::default()
+                        };
+                        // These controls exercise execution/cancellation of a
+                        // retained plan. Fund its planning metadata separately
+                        // from the deliberately tiny execution budgets.
+                        let planning = Options {
+                            memory_bytes: 4 << 20,
+                            ..options.clone()
+                        };
+                        let mut plan = prepare(&sql, &tables, &planning).unwrap();
+                        scalar_orientation(plan.relational.as_mut().unwrap(), true, false);
+                        match execute(&plan, &options) {
+                            Ok(result) => {
+                                successes += 1;
+                                assert_eq!(ids(&result.batch), expected, "{sql}, {mode:?}");
+                                assert!(result.metrics.peak_reserved_bytes <= memory_bytes);
+                                if mode == Some(SpillMode::Force) {
+                                    assert_eq!(result.metrics.reverse_existence_joins, 0);
+                                }
+                            }
+                            Err(error) => {
+                                failures += 1;
+                                assert!(error.starts_with("resource-limit:"), "{error}");
+                            }
+                        }
+                        assert_eq!(std::fs::read_dir(&spill_dir).unwrap().count(), 0);
+                        options.cancellation.cancel();
+                        assert_eq!(
+                            execute(&plan, &options).err().unwrap(),
+                            "cancelled: query execution"
+                        );
+                    }
+                    assert!(successes > 0 && failures > 0);
+                }
+            }
+        }
+    }
+    std::fs::remove_dir(spill_dir).unwrap();
+}
+
+#[test]
+fn scalar_candidate_natural_costing_decimal_average_and_empty_candidates() {
+    let l = Fixture::new(1, true);
+    let r = Fixture::new(16, false);
+    let empty = Fixture::new(0, false);
+    let tables = HashMap::from([
+        ("l".into(), l.0.clone()),
+        ("r".into(), r.0.clone()),
+        ("empty".into(), empty.0.clone()),
+    ]);
+    for (filter, anti, semi) in [
+        (
+            "SUBSTRING(a.txt,1,1) IN ('é','x') AND a.d > (SELECT AVG(d) FROM l)",
+            vec![],
+            vec![1, 3, 6],
+        ),
+        ("a.id > (SELECT AVG(id) FROM empty)", vec![], vec![]),
+        ("a.id<0 AND a.id > (SELECT AVG(id) FROM l)", vec![], vec![]),
+    ] {
+        for (not, expected) in [("NOT ", anti), ("", semi)] {
+            let sql = format!(
+                "SELECT a.id FROM l a WHERE {filter} AND {not}EXISTS(SELECT 1 FROM r b WHERE a.k=b.k)"
+            );
+            let mut baseline = prepare(&sql, &tables, &Options::default()).unwrap();
+            scalar_orientation(baseline.relational.as_mut().unwrap(), false, false);
+            let baseline = execute(&baseline, &Options::default()).unwrap().batch;
+            assert_eq!(ids(&baseline), expected, "{sql}");
+            for batch_size in [1, 7, 8192] {
+                for workers in [1, 2, 4, 10] {
+                    let options = Options {
+                        workers,
+                        batch_size,
+                        ..Options::default()
+                    };
+                    let plan = prepare(&sql, &tables, &options).unwrap();
+                    let result = execute(&plan, &options).unwrap();
+                    assert_eq!(
+                        result.batch, baseline,
+                        "{sql}, workers={workers}, batch={batch_size}"
+                    );
+                    assert_eq!(
+                        result.metrics.reverse_existence_joins, 1,
+                        "natural admission: {sql}; plan={:?}",
+                        plan.relational
+                    );
+                }
+            }
+        }
+    }
+}
+
 #[test]
 fn inequality_existence_preserves_types_nulls_duplicates_order_and_orientation() {
     let l = Fixture::new(2, true);
@@ -322,9 +588,11 @@ fn no_equality_key_and_small_budgets_keep_exact_results_or_resource_errors() {
                         batch_size: 7,
                         ..Options::default()
                     };
-                    let mut p = prepare(&sql, &tables, &on).unwrap();
-                    orientation(p.relational.as_mut().unwrap(), reverse);
-                    match execute(&p, &on) {
+                    let result = prepare(&sql, &tables, &on).and_then(|mut p| {
+                        orientation(p.relational.as_mut().unwrap(), reverse);
+                        execute(&p, &on)
+                    });
+                    match result {
                         Ok(result) => {
                             successes += 1;
                             assert_eq!(result.batch, expected);
@@ -413,7 +681,9 @@ fn reverse_text_keys_decline_lanes_under_a_tight_budget() {
         for batch_size in [1, 7, 8192] {
             let serial = Options {
                 batch_size,
-                memory_bytes: 64 << 10,
+                // Include the two footer/decoder lifetimes. This remains too
+                // small for a helper and keeps the serial lane-decline check.
+                memory_bytes: 128 << 10,
                 parquet_cache_bytes: None,
                 ..Options::default()
             };
@@ -479,7 +749,7 @@ fn reverse_lane_empty_inputs_coercions_and_errors_match_serial() {
                     let actual = execute(&plan, &options);
                     if condition.contains("1e308") {
                         assert_eq!(
-                            actual.as_ref().err().map(String::as_str),
+                            actual.as_ref().err().map(assaydb::Error::as_str),
                             Some("floating arithmetic overflow"),
                             "{sql}"
                         );

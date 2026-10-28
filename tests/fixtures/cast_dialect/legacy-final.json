@@ -1,0 +1,591 @@
+{
+  "duckdb_version": "1.5.6",
+  "numeric": [
+    {
+      "sql": "SELECT CAST(0 AS INTEGER)",
+      "oracle_sql": "SELECT CAST(0 AS INTEGER)",
+      "status": "ok",
+      "rows": [
+        [
+          0
+        ]
+      ],
+      "types": [
+        "INTEGER"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(0 AS REAL)",
+      "oracle_sql": "SELECT CAST(0 AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "0000000000000000"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(1 AS INTEGER)",
+      "oracle_sql": "SELECT CAST(1 AS INTEGER)",
+      "status": "ok",
+      "rows": [
+        [
+          1
+        ]
+      ],
+      "types": [
+        "INTEGER"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(1 AS REAL)",
+      "oracle_sql": "SELECT CAST(1 AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "3ff0000000000000"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(-1 AS INTEGER)",
+      "oracle_sql": "SELECT CAST(-1 AS INTEGER)",
+      "status": "ok",
+      "rows": [
+        [
+          -1
+        ]
+      ],
+      "types": [
+        "INTEGER"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(-1 AS REAL)",
+      "oracle_sql": "SELECT CAST(-1 AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "bff0000000000000"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(9007199254740991 AS INTEGER)",
+      "oracle_sql": "SELECT CAST(9007199254740991 AS INTEGER)",
+      "status": "error",
+      "message": "Conversion Error: Type INT64 with value 9007199254740991 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(9007199254740991 AS INTEGER)\n               ^"
+    },
+    {
+      "sql": "SELECT CAST(9007199254740991 AS REAL)",
+      "oracle_sql": "SELECT CAST(9007199254740991 AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "433fffffffffffff"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(9007199254740992 AS INTEGER)",
+      "oracle_sql": "SELECT CAST(9007199254740992 AS INTEGER)",
+      "status": "error",
+      "message": "Conversion Error: Type INT64 with value 9007199254740992 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(9007199254740992 AS INTEGER)\n               ^"
+    },
+    {
+      "sql": "SELECT CAST(9007199254740992 AS REAL)",
+      "oracle_sql": "SELECT CAST(9007199254740992 AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "4340000000000000"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(9007199254740993 AS INTEGER)",
+      "oracle_sql": "SELECT CAST(9007199254740993 AS INTEGER)",
+      "status": "error",
+      "message": "Conversion Error: Type INT64 with value 9007199254740993 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(9007199254740993 AS INTEGER)\n               ^"
+    },
+    {
+      "sql": "SELECT CAST(9007199254740993 AS REAL)",
+      "oracle_sql": "SELECT CAST(9007199254740993 AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "4340000000000000"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(-9007199254740993 AS INTEGER)",
+      "oracle_sql": "SELECT CAST(-9007199254740993 AS INTEGER)",
+      "status": "error",
+      "message": "Conversion Error: Type INT64 with value -9007199254740993 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(-9007199254740993 AS INTEGER)\n               ^"
+    },
+    {
+      "sql": "SELECT CAST(-9007199254740993 AS REAL)",
+      "oracle_sql": "SELECT CAST(-9007199254740993 AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "c340000000000000"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(9223372036854775807 AS INTEGER)",
+      "oracle_sql": "SELECT CAST(9223372036854775807 AS INTEGER)",
+      "status": "error",
+      "message": "Conversion Error: Type INT64 with value 9223372036854775807 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(9223372036854775807 AS INTEGER)\n               ^"
+    },
+    {
+      "sql": "SELECT CAST(9223372036854775807 AS REAL)",
+      "oracle_sql": "SELECT CAST(9223372036854775807 AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "43e0000000000000"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(-9223372036854775808 AS INTEGER)",
+      "oracle_sql": "SELECT CAST(-9223372036854775808 AS INTEGER)",
+      "status": "error",
+      "message": "Conversion Error: Type INT64 with value -9223372036854775808 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(-9223372036854775808 AS INTEGER)\n               ^"
+    },
+    {
+      "sql": "SELECT CAST(-9223372036854775808 AS REAL)",
+      "oracle_sql": "SELECT CAST(-9223372036854775808 AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "c3e0000000000000"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(0.0 AS REAL) AS INTEGER)",
+      "oracle_sql": "SELECT CAST(CAST(0.0 AS DOUBLE) AS INTEGER)",
+      "status": "ok",
+      "rows": [
+        [
+          0
+        ]
+      ],
+      "types": [
+        "INTEGER"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(0.0 AS REAL) AS REAL)",
+      "oracle_sql": "SELECT CAST(CAST(0.0 AS DOUBLE) AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "0000000000000000"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(-0.0 AS REAL) AS INTEGER)",
+      "oracle_sql": "SELECT CAST(CAST(CAST('-0.0' AS DOUBLE) AS DOUBLE) AS INTEGER)",
+      "status": "ok",
+      "rows": [
+        [
+          0
+        ]
+      ],
+      "types": [
+        "INTEGER"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(-0.0 AS REAL) AS REAL)",
+      "oracle_sql": "SELECT CAST(CAST(CAST('-0.0' AS DOUBLE) AS DOUBLE) AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "8000000000000000"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(0.5 AS REAL) AS INTEGER)",
+      "oracle_sql": "SELECT CAST(CAST(0.5 AS DOUBLE) AS INTEGER)",
+      "status": "ok",
+      "rows": [
+        [
+          0
+        ]
+      ],
+      "types": [
+        "INTEGER"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(0.5 AS REAL) AS REAL)",
+      "oracle_sql": "SELECT CAST(CAST(0.5 AS DOUBLE) AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "3fe0000000000000"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(-0.5 AS REAL) AS INTEGER)",
+      "oracle_sql": "SELECT CAST(CAST(-0.5 AS DOUBLE) AS INTEGER)",
+      "status": "ok",
+      "rows": [
+        [
+          0
+        ]
+      ],
+      "types": [
+        "INTEGER"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(-0.5 AS REAL) AS REAL)",
+      "oracle_sql": "SELECT CAST(CAST(-0.5 AS DOUBLE) AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "bfe0000000000000"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(1.5 AS REAL) AS INTEGER)",
+      "oracle_sql": "SELECT CAST(CAST(1.5 AS DOUBLE) AS INTEGER)",
+      "status": "ok",
+      "rows": [
+        [
+          2
+        ]
+      ],
+      "types": [
+        "INTEGER"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(1.5 AS REAL) AS REAL)",
+      "oracle_sql": "SELECT CAST(CAST(1.5 AS DOUBLE) AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "3ff8000000000000"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(-1.5 AS REAL) AS INTEGER)",
+      "oracle_sql": "SELECT CAST(CAST(-1.5 AS DOUBLE) AS INTEGER)",
+      "status": "ok",
+      "rows": [
+        [
+          -2
+        ]
+      ],
+      "types": [
+        "INTEGER"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(-1.5 AS REAL) AS REAL)",
+      "oracle_sql": "SELECT CAST(CAST(-1.5 AS DOUBLE) AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "bff8000000000000"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(1.9999999999999998 AS REAL) AS INTEGER)",
+      "oracle_sql": "SELECT CAST(CAST(1.9999999999999998 AS DOUBLE) AS INTEGER)",
+      "status": "ok",
+      "rows": [
+        [
+          2
+        ]
+      ],
+      "types": [
+        "INTEGER"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(1.9999999999999998 AS REAL) AS REAL)",
+      "oracle_sql": "SELECT CAST(CAST(1.9999999999999998 AS DOUBLE) AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "3fffffffffffffff"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(-1.9999999999999998 AS REAL) AS INTEGER)",
+      "oracle_sql": "SELECT CAST(CAST(-1.9999999999999998 AS DOUBLE) AS INTEGER)",
+      "status": "ok",
+      "rows": [
+        [
+          -2
+        ]
+      ],
+      "types": [
+        "INTEGER"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(-1.9999999999999998 AS REAL) AS REAL)",
+      "oracle_sql": "SELECT CAST(CAST(-1.9999999999999998 AS DOUBLE) AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "bfffffffffffffff"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(9223372036854774784 AS REAL) AS INTEGER)",
+      "oracle_sql": "SELECT CAST(CAST(9223372036854774784 AS DOUBLE) AS INTEGER)",
+      "status": "error",
+      "message": "Conversion Error: Type DOUBLE with value 9.223372036854775e+18 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST(9223372036854774784 AS DOUBLE) AS INTEGER)\n               ^"
+    },
+    {
+      "sql": "SELECT CAST(CAST(9223372036854774784 AS REAL) AS REAL)",
+      "oracle_sql": "SELECT CAST(CAST(9223372036854774784 AS DOUBLE) AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "43dfffffffffffff"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(-9223372036854774784 AS REAL) AS INTEGER)",
+      "oracle_sql": "SELECT CAST(CAST(-9223372036854774784 AS DOUBLE) AS INTEGER)",
+      "status": "error",
+      "message": "Conversion Error: Type DOUBLE with value -9.223372036854775e+18 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST(-9223372036854774784 AS DOUBLE) AS INTEGER)\n               ^"
+    },
+    {
+      "sql": "SELECT CAST(CAST(-9223372036854774784 AS REAL) AS REAL)",
+      "oracle_sql": "SELECT CAST(CAST(-9223372036854774784 AS DOUBLE) AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "c3dfffffffffffff"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(9223372036854775807 AS REAL) AS INTEGER)",
+      "oracle_sql": "SELECT CAST(CAST(9223372036854775807 AS DOUBLE) AS INTEGER)",
+      "status": "error",
+      "message": "Conversion Error: Type DOUBLE with value 9.223372036854776e+18 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST(9223372036854775807 AS DOUBLE) AS INTEGER)\n               ^"
+    },
+    {
+      "sql": "SELECT CAST(CAST(9223372036854775807 AS REAL) AS REAL)",
+      "oracle_sql": "SELECT CAST(CAST(9223372036854775807 AS DOUBLE) AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "43e0000000000000"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(-9223372036854775808 AS REAL) AS INTEGER)",
+      "oracle_sql": "SELECT CAST(CAST(-9223372036854775808 AS DOUBLE) AS INTEGER)",
+      "status": "error",
+      "message": "Conversion Error: Type DOUBLE with value -9.223372036854776e+18 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST(-9223372036854775808 AS DOUBLE) AS INTEGER)\n               ^"
+    },
+    {
+      "sql": "SELECT CAST(CAST(-9223372036854775808 AS REAL) AS REAL)",
+      "oracle_sql": "SELECT CAST(CAST(-9223372036854775808 AS DOUBLE) AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "c3e0000000000000"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(9223372036854777856 AS REAL) AS INTEGER)",
+      "oracle_sql": "SELECT CAST(CAST(9223372036854777856 AS DOUBLE) AS INTEGER)",
+      "status": "error",
+      "message": "Conversion Error: Type DOUBLE with value 9.223372036854778e+18 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST(9223372036854777856 AS DOUBLE) AS INTEGER)\n               ^"
+    },
+    {
+      "sql": "SELECT CAST(CAST(9223372036854777856 AS REAL) AS REAL)",
+      "oracle_sql": "SELECT CAST(CAST(9223372036854777856 AS DOUBLE) AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "43e0000000000001"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(CAST(-9223372036854777856 AS REAL) AS INTEGER)",
+      "oracle_sql": "SELECT CAST(CAST(-9223372036854777856 AS DOUBLE) AS INTEGER)",
+      "status": "error",
+      "message": "Conversion Error: Type DOUBLE with value -9.223372036854778e+18 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST(-9223372036854777856 AS DOUBLE) AS INTEGER)\n               ^"
+    },
+    {
+      "sql": "SELECT CAST(CAST(-9223372036854777856 AS REAL) AS REAL)",
+      "oracle_sql": "SELECT CAST(CAST(-9223372036854777856 AS DOUBLE) AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          {
+            "f64": "c3e0000000000001"
+          }
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(NULL AS INTEGER)",
+      "oracle_sql": "SELECT CAST(NULL AS INTEGER)",
+      "status": "ok",
+      "rows": [
+        [
+          null
+        ]
+      ],
+      "types": [
+        "INTEGER"
+      ]
+    },
+    {
+      "sql": "SELECT CAST(NULL AS REAL)",
+      "oracle_sql": "SELECT CAST(NULL AS DOUBLE)",
+      "status": "ok",
+      "rows": [
+        [
+          null
+        ]
+      ],
+      "types": [
+        "DOUBLE"
+      ]
+    }
+  ]
+}

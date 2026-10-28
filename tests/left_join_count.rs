@@ -28,7 +28,7 @@ impl Fixture {
             ..Options::default()
         }
     }
-    fn run(&self, sql: &str, options: &Options) -> Result<Execution, String> {
+    fn run(&self, sql: &str, options: &Options) -> Result<Execution, assaydb::Error> {
         execute(&rel::prepare(sql, &self.tables, options)?, options)
     }
     fn compare(&self, sql: &str, batch: usize, fused: Option<usize>) -> RecordBatch {
@@ -62,7 +62,7 @@ impl Fixture {
         }
         expected.batch
     }
-    fn compare_error(&self, sql: &str, batch: usize) -> String {
+    fn compare_error(&self, sql: &str, batch: usize) -> assaydb::Error {
         let expected = self.run(sql, &self.options(1, batch, false)).err().unwrap();
         for workers in [1, 2, 4, 10] {
             let generic = self
@@ -353,11 +353,33 @@ fn counted_scan_and_probe_waves_keep_serial_order_with_mixed_integer_widths() {
 fn left_count_declines_other_aggregates_residuals_and_error_expressions() {
     let f = Fixture::new(8, 8, false);
     let sql = "SELECT l.g,COUNT(r.v),SUM(r.z),AVG(r.z),SUM(r.f) FROM l LEFT JOIN r ON l.k=r.k GROUP BY l.g";
-    assert_eq!(f.compare_error(sql, 3), "expected numeric type, got Float");
-    assert_eq!(f.compare_error("SELECT l.g,COUNT(r.v) FROM l LEFT JOIN r ON l.k=CAST(100.0/(r.k-r.k) AS BIGINT) GROUP BY l.g", 3), "unsupported: only lossless literal casts in M1");
-    // ORDER BY binds in the projected scope; keep the unsupported spelling as
-    // error parity, and exercise HAVING/order/LIMIT above with a supported alias.
-    f.compare_error("SELECT l.g,COUNT(*) FROM l LEFT JOIN r ON l.k=r.k GROUP BY l.g HAVING COUNT(*)>1 ORDER BY l.g DESC LIMIT 2", 3);
+    // Float SUM succeeds through the ordinary LEFT path; COUNT-only fusion
+    // still declines the mixed aggregate list.
+    f.compare(sql, 3, Some(0));
+    assert_eq!(f.compare_error("SELECT l.g,COUNT(r.v) FROM l LEFT JOIN r ON l.k=CAST(100.0/(r.k-r.k) AS BIGINT) GROUP BY l.g", 3), "division by zero");
+    // Qualified GROUP BY keys now bind in ORDER BY as well. Keep the fixture
+    // and assert its exact descending groups after HAVING and LIMIT.
+    let ordered = f.compare("SELECT l.g,COUNT(*) FROM l LEFT JOIN r ON l.k=r.k GROUP BY l.g HAVING COUNT(*)>1 ORDER BY l.g DESC LIMIT 2", 3, None);
+    assert_eq!(
+        ordered
+            .column(0)
+            .as_any()
+            .downcast_ref::<Int64Array>()
+            .unwrap()
+            .values()
+            .as_ref(),
+        &[30, 20]
+    );
+    assert_eq!(
+        ordered
+            .column(1)
+            .as_any()
+            .downcast_ref::<Int64Array>()
+            .unwrap()
+            .values()
+            .as_ref(),
+        &[2, 6]
+    );
     for sql in [
         "SELECT l.g,COUNT(r.v),SUM(r.z),AVG(r.z),MIN(r.f),MAX(r.f) FROM l LEFT JOIN r ON l.k=r.k GROUP BY l.g",
         "SELECT l.g,COUNT(DISTINCT r.v) FROM l LEFT JOIN r ON l.k=r.k GROUP BY l.g",

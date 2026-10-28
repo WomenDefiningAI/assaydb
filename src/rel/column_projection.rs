@@ -1,5 +1,5 @@
-//! Column projections share identical arrays; INTEGER widening is lossless
-//! and computed once per unique source column, including duplicate aliases.
+//! Column projections share identical arrays; INTEGER widening and same-scale
+//! DECIMAL precision widening are lossless, including duplicate aliases.
 use crate::{
     Result,
     bind::{Output, Plan},
@@ -13,6 +13,17 @@ use arrow::{
     record_batch::{RecordBatch, RecordBatchOptions},
 };
 use std::sync::Arc;
+
+fn widened_decimal(source: &DataType, output: &DataType) -> Option<Type> {
+    match (source, output) {
+        (DataType::Decimal128(precision, scale), DataType::Decimal128(38, target))
+            if (1..=38).contains(precision) && (0..=38).contains(scale) && scale == target =>
+        {
+            Some(Type::Decimal(*scale))
+        }
+        _ => None,
+    }
+}
 
 pub(super) fn output_schema(plan: &Plan, source: &Schema) -> SchemaRef {
     let wide = super::schema(&plan.names, &plan.types);
@@ -68,8 +79,10 @@ pub(super) fn columns(plan: &Plan, source: &Schema, output: &Schema) -> Option<V
             let lossless_integer_widening = expression.ty == Type::Int
                 && matches!(source_type, DataType::Int32 | DataType::Int64)
                 && Type::is_wide_integer(output.field(i));
+            let lossless_decimal_widening =
+                widened_decimal(source_type, ty).as_ref() == Some(&expression.ty);
             (expression.ty == plan.types[i]
-                && (source_type == ty || lossless_integer_widening)
+                && (source_type == ty || lossless_integer_widening || lossless_decimal_widening)
                 && output.field(i).name() == &plan.names[i])
                 .then_some(column)
         })
@@ -94,7 +107,11 @@ pub(super) fn project(
         .iter()
         .enumerate()
         .try_fold(256_usize, |n, (out, i)| {
-            let extra = if batch.column(*i).data_type() != schema.field(out).data_type() {
+            let extra = if batch.column(*i).data_type() != schema.field(out).data_type()
+                && matches!(
+                    batch.column(*i).data_type(),
+                    DataType::Int32 | DataType::Int64
+                ) {
                 batch
                     .num_rows()
                     .checked_mul(16)
@@ -122,12 +139,21 @@ pub(super) fn project(
         {
             arrays.push(arrays[previous].clone());
         } else {
-            if !matches!(source.data_type(), DataType::Int32 | DataType::Int64)
-                || !Type::is_wide_integer(schema.field(out))
+            let ty = if matches!(source.data_type(), DataType::Int32 | DataType::Int64)
+                && Type::is_wide_integer(schema.field(out))
             {
+                Type::Int
+            } else if let Some(ty) =
+                widened_decimal(source.data_type(), schema.field(out).data_type())
+            {
+                ty
+            } else {
                 return Err("internal: invalid column projection conversion".into());
-            }
-            let value = normalize_input(source, &Type::Int, budget)?;
+            };
+            // DECIMAL retains its i128 values and validity without rescaling;
+            // use the same normalization as ordinary expression evaluation.
+            // All required dependencies still pass through this projection.
+            let value = normalize_input(source, &ty, budget)?;
             arrays.push(value.array.clone());
             normalized.push(value);
         }
@@ -338,7 +364,11 @@ mod tests {
         for datatype in [DataType::Int32, DataType::Decimal128(16, 2)] {
             let source = Schema::new(vec![Field::new("x", datatype, true)]);
             let (p, out) = plan(&source, &[0]);
-            assert!(columns(&p, &source, &out).is_none());
+            // Same-scale precision widening now shares the original mantissas;
+            // the native Int32 -> Int64 representation change still declines.
+            let expected =
+                matches!(source.field(0).data_type(), DataType::Decimal128(16, 2)).then(|| vec![0]);
+            assert_eq!(columns(&p, &source, &out), expected);
         }
         let source = Schema::new(vec![Field::new("x", DataType::Int64, true)]);
         let (base, out) = plan(&source, &[0]);
@@ -367,6 +397,74 @@ mod tests {
                 _ => p.columns.push(1),
             }
             assert!(columns(&p, &source, &out).is_none());
+        }
+    }
+
+    #[test]
+    fn decimal_precision_widening_preserves_slices_aliases_nulls_and_credit() {
+        let edge = 10_i128.pow(16) - 1;
+        let input = Arc::new(
+            Decimal128Array::from(vec![Some(0), Some(-edge), None, Some(edge), Some(0)])
+                .with_precision_and_scale(16, 2)
+                .unwrap(),
+        ) as ArrayRef;
+        let source = Arc::new(Schema::new(vec![Field::new(
+            "x",
+            DataType::Decimal128(16, 2),
+            true,
+        )]));
+        let raw = RecordBatch::try_new(source.clone(), vec![input]).unwrap();
+        let (p, schema) = plan(&source, &[0, 0]);
+        assert_eq!(columns(&p, &source, &schema), Some(vec![0, 0]));
+        for batch in [raw.slice(1, 3), raw.slice(2, 0)] {
+            let budget = Budget::new(1 << 20);
+            let (actual, credit) = project(&batch, &[0, 0], schema.clone(), &budget).unwrap();
+            assert!(Arc::ptr_eq(actual.column(0), actual.column(1)));
+            let values = actual
+                .column(0)
+                .as_any()
+                .downcast_ref::<Decimal128Array>()
+                .unwrap();
+            let original = batch
+                .column(0)
+                .as_any()
+                .downcast_ref::<Decimal128Array>()
+                .unwrap();
+            assert_eq!(values.values().as_ptr(), original.values().as_ptr());
+            assert_eq!(
+                values.iter().collect::<Vec<_>>(),
+                original.iter().collect::<Vec<_>>()
+            );
+            assert_eq!(values.data_type(), &DataType::Decimal128(38, 2));
+            let prepared = Prepared {
+                auto_simple: None,
+                internal_output: false,
+                plan: p.clone(),
+                schema: source.clone(),
+                relational: None,
+            };
+            let expected = execute::execute_stream(
+                &prepared,
+                &Options::default(),
+                Budget::new(1 << 20),
+                |send| send(batch.clone()),
+            )
+            .unwrap();
+            assert_eq!(actual, expected.batch);
+            assert!(budget.used() >= actual.get_array_memory_size());
+            drop(actual);
+            drop(credit);
+            assert_eq!(budget.used(), 0);
+            let tiny = Budget::new(1);
+            assert!(project(&batch, &[0, 0], schema.clone(), &tiny).is_err());
+            assert_eq!(tiny.used(), 0);
+        }
+        for datatype in [DataType::Decimal128(15, 2), DataType::Decimal128(38, 3)] {
+            let changed = Schema::new(vec![
+                Field::new("alias_0", datatype.clone(), true),
+                Field::new("alias_1", datatype, true),
+            ]);
+            assert!(columns(&p, &source, &changed).is_none());
         }
     }
 

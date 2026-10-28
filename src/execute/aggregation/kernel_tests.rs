@@ -5,7 +5,10 @@ fn states(groups: usize, integer_sum: bool) -> States {
         integer_sum,
         counts: vec![0; groups],
         sums: Some(vec![i256::ZERO; groups]),
+        float_sums: None,
         extremes: None,
+        moments: None,
+        ordered: None,
         distinct: None,
         heap_lease: None,
     }

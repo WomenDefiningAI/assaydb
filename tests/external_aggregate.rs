@@ -219,6 +219,12 @@ fn high_cardinality_repartitions_without_publishing_failed_attempts() {
 #[test]
 fn high_cardinality_in_memory_output_streams_into_downstream_aggregation() {
     let fixture = Fixture::new(32768, 16384, 8);
+    let footer_bytes = parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder::try_new(
+        File::open(&fixture.tables["t"]).unwrap(),
+    )
+    .unwrap()
+    .metadata()
+    .memory_size();
     let sql = "SELECT COUNT(*) AS groups,SUM(n) AS rows,SUM(total) AS total FROM (SELECT k,COUNT(*) AS n,SUM(v) AS total FROM t GROUP BY k) g";
     let control = Options {
         memory_bytes: 256 << 20,
@@ -230,7 +236,9 @@ fn high_cardinality_in_memory_output_streams_into_downstream_aggregation() {
     for batch_size in [17, 128] {
         for workers in [1, 4, 10] {
             let options = Options {
-                memory_bytes: 8 << 20,
+                // Keep the original working allowance, while also funding the
+                // footer and helper lifetimes that used to be unaccounted.
+                memory_bytes: (8 << 20) + footer_bytes + (workers - 1) * 512 * 1024,
                 batch_size,
                 workers,
                 parquet_cache_bytes: None,

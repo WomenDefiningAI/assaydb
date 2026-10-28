@@ -1,5 +1,9 @@
 # SQL coverage
 
+The proposed current source adds the features described in [candidate SQL coverage](SQL-CANDIDATE-COVERAGE.md). Qualification remains incomplete. The table below is retained as the explicitly historical PR6 contract; it must not be read as the new candidate feature inventory.
+
+## Historical PR6 coverage
+
 This table describes current source at PR6 merge
 `b07d7e876dfde65dda09c06808ba811b9fca49fd`, reviewed on October 16, 2026 against
 engine code and regression tests. It does not describe every published package:

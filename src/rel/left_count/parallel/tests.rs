@@ -319,7 +319,7 @@ fn count_wave_late_exits_hold_slots_through_delivery_errors_and_unwind() {
                         assert_eq!(
                             result.unwrap().unwrap_err(),
                             format!(
-                                "unsupported input type: {}",
+                                "unsupported: unsupported input type: {}",
                                 DataType::Time32(TimeUnit::Second)
                             )
                         );
@@ -538,7 +538,7 @@ fn ordered_waves_release_funding_on_success_error_and_cancellation() {
                         assert_eq!(
                             result.unwrap_err(),
                             format!(
-                                "unsupported input type: {}",
+                                "unsupported: unsupported input type: {}",
                                 DataType::Time32(TimeUnit::Second)
                             )
                         );

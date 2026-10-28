@@ -32,6 +32,8 @@ fn planner_filters_and_reverse_joins_release_state_on_active_cancellation() {
         "SELECT p.k FROM p JOIN r ON p.k=r.k AND r.k IN (0,1,2)",
         "SELECT p.k FROM p WHERE EXISTS(SELECT 1 FROM r WHERE p.k=r.k AND r.k IN (0,1,2))",
         "SELECT p.k FROM p WHERE NOT EXISTS(SELECT 1 FROM r WHERE p.k=r.k AND r.k IN (0,1,2))",
+        "SELECT p.k FROM p WHERE p.k > (SELECT MIN(k) FROM p) AND EXISTS(SELECT 1 FROM r WHERE p.k=r.k AND r.k IN (0,1,2))",
+        "SELECT p.k FROM p WHERE p.k > (SELECT MIN(k) FROM p) AND NOT EXISTS(SELECT 1 FROM r WHERE p.k=r.k AND r.k IN (0,1,2))",
     ] {
         for relational_optimizations in [false, true] {
             let base = Options {
@@ -48,10 +50,11 @@ fn planner_filters_and_reverse_joins_release_state_on_active_cancellation() {
                         ..base.clone()
                     };
                     let budget = Budget::new(options.memory_bytes);
+                    let optional_used = std::sync::atomic::AtomicBool::new(false);
                     let mut ctx = Context {
                         filtered_reuse: None,
                         build_groups: None,
-                        demand_cache: None,
+                        demand_cache: Some(&optional_used),
                         shared_attempt: None,
                         options: &options,
                         scan_filters: HashMap::new(),
@@ -60,6 +63,7 @@ fn planner_filters_and_reverse_joins_release_state_on_active_cancellation() {
                         lane_transforms: HashMap::new(),
                         replay_transforms: HashMap::new(),
                         materialized: HashMap::new(),
+                        recursive_bindings: None,
                         sideways_registry_lease: None,
                         spill: None,
                         budget: budget.clone(),
@@ -85,6 +89,10 @@ fn planner_filters_and_reverse_joins_release_state_on_active_cancellation() {
                     assert!(delivered > 0, "{sql}");
                     assert!(ctx.scan_filters.is_empty(), "{sql}");
                     assert!(ctx.static_filters.is_empty(), "{sql}");
+                    if relational_optimizations && sql.contains("SELECT MIN(k)") {
+                        assert_eq!(ctx.metrics.reverse_existence_joins, 1, "{sql}");
+                        assert!(optional_used.load(std::sync::atomic::Ordering::Relaxed));
+                    }
                     drop(ctx);
                     assert_eq!(budget.used(), 0, "{sql}");
                     assert_eq!(budget.active_workers(), 0, "{sql}");

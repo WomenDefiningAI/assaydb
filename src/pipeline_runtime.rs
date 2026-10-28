@@ -122,12 +122,15 @@ impl<T: Send + 'static> Runtime<T> {
         if !(1..=64).contains(&workers) || slots == 0 {
             return Err("invalid pipeline worker/slot count".into());
         }
-        let permits = budget.workers(workers - 1, workers - 1);
+        let affordable = budget.limit().saturating_sub(budget.used())
+            / (2 * (crate::memory::THREAD_MEMORY_BYTES + 4096));
+        let permits = budget.workers((workers - 1).min(affordable), workers - 1);
         let metadata = slots
             .checked_mul(std::mem::size_of::<Slot<T>>() + 2 * std::mem::size_of::<usize>() + 128)
             .and_then(|n| n.checked_add((permits.count + 1) * 4096))
             .ok_or("pipeline metadata overflow")?;
         let metadata = budget.reserve(metadata)?;
+        let mut threads = budget.reserve(permits.count * crate::memory::THREAD_MEMORY_BYTES)?;
         let mut runtime = Self {
             shared: Arc::new(Shared {
                 state: Mutex::new(State {
@@ -151,9 +154,11 @@ impl<T: Send + 'static> Runtime<T> {
         };
         for lane in 0..runtime.permits.as_ref().unwrap().count {
             let shared = runtime.shared.clone();
-            let live = budget.thread_started();
+            let live =
+                budget.thread_started_with(threads.split_off(crate::memory::THREAD_MEMORY_BYTES)?);
             runtime.handles.push(crate::memory::Joined::new(
                 thread::Builder::new()
+                    .stack_size(crate::engine_stack::WORKER_STACK_BYTES)
                     .name(format!("assaydb-pipeline-{lane}"))
                     .spawn(move || {
                         loop {
@@ -544,7 +549,7 @@ mod tests {
     }
     #[test]
     fn caller_progress_bounded_slots_and_returned_owners() {
-        let budget = Budget::new(1 << 20);
+        let budget = Budget::new(16 << 20);
         let drops = Arc::new(AtomicUsize::new(0));
         let mut runtime = Runtime::new(&budget, 1, 1, Cancellation::default()).unwrap();
         assert_eq!(runtime.background_workers(), 0);
@@ -587,7 +592,7 @@ mod tests {
     }
     #[test]
     fn completion_order_is_not_error_order_and_workers_survive_source_eof() {
-        let budget = Budget::new(1 << 20);
+        let budget = Budget::new(16 << 20);
         let mut runtime = Runtime::new(&budget, 3, 2, Cancellation::default()).unwrap();
         let (started, wait_start) = mpsc::channel();
         let (release, gate) = mpsc::channel();
@@ -638,7 +643,7 @@ mod tests {
     }
     #[test]
     fn panic_and_cancellation_complete_without_discarding_other_jobs() {
-        let budget = Budget::new(1 << 20);
+        let budget = Budget::new(16 << 20);
         let cancel = Cancellation::default();
         let mut runtime = Runtime::<usize>::new(&budget, 2, 3, cancel.clone()).unwrap();
         submit(&mut runtime, JobKind::Morsel, |_| {
@@ -664,7 +669,7 @@ mod tests {
     }
     #[test]
     fn drop_joins_running_jobs_before_releasing_permits_and_owned_payloads() {
-        let budget = Budget::new(1 << 20);
+        let budget = Budget::new(16 << 20);
         let cancel = Cancellation::default();
         let mut runtime = Runtime::new(&budget, 2, 3, cancel.clone()).unwrap();
         let drops = Arc::new(AtomicUsize::new(0));
@@ -700,7 +705,7 @@ mod tests {
     }
     #[test]
     fn completed_payload_keeps_its_operator_funding_until_acceptance_or_drop() {
-        let budget = Budget::new(1 << 20);
+        let budget = Budget::new(16 << 20);
         let mut runtime = Runtime::new(&budget, 2, 1, Cancellation::default()).unwrap();
         let baseline = budget.used();
         let credit = budget.reserve(4096).unwrap();
@@ -720,7 +725,7 @@ mod tests {
     }
     #[test]
     fn exact_once_under_caller_stealing_and_saturated_completion_slots() {
-        let budget = Budget::new(1 << 20);
+        let budget = Budget::new(16 << 20);
         let mut runtime = Runtime::new(&budget, 4, 3, Cancellation::default()).unwrap();
         let counts = Arc::new((0..128).map(|_| AtomicUsize::new(0)).collect::<Vec<_>>());
         let mut completed = Vec::new();

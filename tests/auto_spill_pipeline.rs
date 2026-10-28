@@ -128,21 +128,18 @@ fn every_direct_fixture_matches_relational_bits_with_auto_and_force() {
 #[test]
 fn auto_pipeline_keeps_sql_errors_and_noneligible_dispatch() {
     let fixture = Fixture::new();
-    // Float SUM/AVG are rejected at binding; compare failures across the entire
-    // prepare/execute boundary instead of assuming this query can be prepared.
+    // Float SUM now succeeds, but cannot use reassociated partial aggregation.
     let sql = "SELECT k,SUM(f) FROM t GROUP BY k";
     for workers in [1, 2, 4, 10] {
         let options = options(&fixture, workers, SpillMode::Auto);
         let expected = rel::prepare(sql, &fixture.tables, &options)
             .and_then(|p| execute(&p, &options))
-            .err()
             .unwrap();
-        assert_eq!(expected, "expected numeric type, got Float");
         let actual = prepare(sql, &fixture.tables, &options)
             .and_then(|p| execute(&p, &options))
-            .err()
             .unwrap();
-        assert_eq!(actual, expected, "workers={workers}: {sql}");
+        assert_bits(&actual.batch, &expected.batch, sql);
+        assert_eq!(actual.metrics.pipeline_producers, 0);
         fixture.assert_clean();
     }
     for sql in [

@@ -1,8 +1,10 @@
 // Zero-NULL approval: unrelated error/laziness sentinels retain an Int type
 // via CAST of DECIMAL zero division, whose checked error contract is unchanged.
-//! Approved IN-subquery comparisons retain existing equality rules except the
-//! explicitly refused mixed Int/Float pair (pending SQLite affinity semantics).
+//! Approved IN-subquery comparisons retain existing equality rules; the mixed
+//! Int/Float pair, formerly refused, compares in DOUBLE (Helen, October 15).
 //! Explicit decimal division preserves Float coverage after approved Int/Int truncation.
+#[path = "support/promoted_reference.rs"]
+mod promoted_reference;
 use arrow::array::{BooleanArray, Int64Array};
 use assaydb::{
     execute::{Options, execute, prepare},
@@ -225,8 +227,10 @@ fn numeric_pair_rules_match_ordinary_equality_without_eager_overflow() {
                     expected.iter().map(|v| v.map(|b| !b)).collect::<Vec<_>>()
                 );
             }
-            // Same original mixed pairs: the new blanket refusal applies
-            // even to exactly representable values and signed zero.
+            // Same original mixed pairs. Old: the blanket refusal applied even
+            // to exactly representable values and signed zero. New (Helen,
+            // Oct 15): DOUBLE comparison, independent DuckDB 1.5.6 answers.
+            let group = promoted_reference::group("membership_pairs");
             for (a, b) in [
                 ("(9007199254740992.0/1)", "9007199254740993"),
                 ("9007199254740993", "(9007199254740992.0/1)"),
@@ -234,12 +238,7 @@ fn numeric_pair_rules_match_ordinary_equality_without_eager_overflow() {
             ] {
                 for operator in ["IN", "NOT IN"] {
                     let sql = format!("SELECT {a} {operator}(SELECT {b})");
-                    let error = s.execute_sql(&sql).err().expect("mixed membership refusal");
-                    assert_eq!(error.kind, "unsupported");
-                    assert!(
-                        error.message.contains("mixed Int/Float IN subquery"),
-                        "{sql}: {error}"
-                    );
+                    promoted_reference::check(&mut s, &group, &sql, "membership pair");
                 }
             }
             let huge = "CAST('99999999999999999999999999999999999999' AS DECIMAL(38,0))";
@@ -297,7 +296,7 @@ fn incompatible_types_bind_fail_on_empty_sets_and_arity_is_semantic() {
 }
 
 #[test]
-fn float_nan_signed_zero_preserve_equality_and_mixed_membership_is_refused() {
+fn float_nan_signed_zero_preserve_equality_and_mixed_membership_uses_double() {
     use arrow::{
         array::{ArrayRef, Float64Array},
         datatypes::{DataType, Field, Schema},
@@ -348,7 +347,7 @@ fn float_nan_signed_zero_preserve_equality_and_mixed_membership_is_refused() {
                 (
                     "SELECT f IN(SELECT f FROM t WHERE id=0), id FROM t ORDER BY id",
                     vec![
-                        Some(false),
+                        Some(true),
                         Some(false),
                         Some(false),
                         Some(false),
@@ -373,15 +372,28 @@ fn float_nan_signed_zero_preserve_equality_and_mixed_membership_is_refused() {
                     expected
                 );
             }
-            // Preserve the original mixed-pair SQL/Parquet values; the
-            // approved blanket policy now refuses it before execution.
+            // Preserve the original mixed-pair SQL/Parquet values. Old: refused
+            // before execution. New: DOUBLE membership; DuckDB 1.5.6 answers
+            // false for NaN, -0.0, 0.0 and inf, true for 2^53, NULL for NULL.
             let sql = "SELECT f IN(SELECT 9007199254740993), id FROM t ORDER BY id";
-            let error = prepare(sql, &tables, &options)
-                .err()
-                .expect("mixed membership refusal");
-            assert!(
-                error.contains("mixed Int/Float IN subquery"),
-                "{sql}: {error}"
+            let out = execute(&prepare(sql, &tables, &options).unwrap(), &options).unwrap();
+            assert_eq!(
+                out.batch
+                    .column(0)
+                    .as_any()
+                    .downcast_ref::<BooleanArray>()
+                    .unwrap()
+                    .iter()
+                    .collect::<Vec<_>>(),
+                vec![
+                    Some(false),
+                    Some(false),
+                    Some(false),
+                    Some(true),
+                    Some(false),
+                    None
+                ],
+                "{sql}"
             );
             let out = execute(
                 &prepare(
@@ -393,7 +405,16 @@ fn float_nan_signed_zero_preserve_equality_and_mixed_membership_is_refused() {
                 &options,
             )
             .unwrap();
-            assert_eq!(out.batch.num_rows(), 0);
+            assert_eq!(out.batch.num_rows(), 1);
+            assert_eq!(
+                out.batch
+                    .column(0)
+                    .as_any()
+                    .downcast_ref::<Int64Array>()
+                    .unwrap()
+                    .value(0),
+                0
+            );
         }
     }
     fs::remove_file(path).unwrap();

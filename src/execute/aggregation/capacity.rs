@@ -98,6 +98,9 @@ impl Aggregation {
             if let Some(values) = &state.sums {
                 add(growth(values, groups)?)?;
             }
+            if let Some(values) = &state.float_sums {
+                add(growth(values, groups)?)?;
+            }
             if let Some(values) = &state.extremes {
                 add(growth(values, groups)?)?;
             }
@@ -188,6 +191,9 @@ impl Aggregation {
                 }
                 grow(&mut state.counts, groups, retained, &mut credit)?;
                 if let Some(values) = &mut state.sums {
+                    grow(values, groups, retained, &mut credit)?;
+                }
+                if let Some(values) = &mut state.float_sums {
                     grow(values, groups, retained, &mut credit)?;
                 }
                 if let Some(values) = &mut state.extremes {

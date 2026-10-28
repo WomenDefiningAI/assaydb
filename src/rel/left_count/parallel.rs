@@ -190,7 +190,7 @@ pub(super) fn build(
     };
     let budget = &ctx.budget;
     let file = File::open(path).map_err(|e| e.to_string())?;
-    let metadata = crate::parquet_scan::external_metadata(&file)?;
+    let (metadata, _metadata_lease) = crate::parquet_scan::accounted_metadata(&file, budget)?;
     let owners = ctx
         .options
         .workers
@@ -264,11 +264,10 @@ pub(super) fn build(
         let slots = slots.clone();
         let budget = budget.clone();
         let empty_schema = Arc::new(Schema::empty());
-        Arc::new(move |batch| {
+        Arc::new(move |batch, _decoded| {
             cancellation.check()?;
             let start = Instant::now();
             let bytes = batch.get_array_memory_size();
-            let _decoded = budget.reserve(bytes)?;
             let _workspace = budget.reserve(descriptors)?;
             let input = input(&batch, &budget, filters.iter())?;
             let masks = filters
@@ -434,7 +433,8 @@ impl Probe<'_> {
                 .checked_mul(per_row)?
                 .checked_add(batch.get_array_memory_size().checked_mul(2)?)?
                 .checked_add(self.descriptors.checked_mul(4)?)?
-                .checked_add(65536 + 8192)?;
+                .checked_add(65536 + 8192)?
+                .checked_add(crate::memory::THREAD_MEMORY_BYTES)?;
             let available = self
                 .budget
                 .limit()
@@ -627,7 +627,7 @@ impl Wave {
         enum Task<'scope> {
             Inline(Pending),
             Running(crate::memory::Joined<std::thread::ScopedJoinHandle<'scope, Result<Weighted>>>),
-            Failed(String),
+            Failed(crate::Error),
         }
         let pending = std::mem::replace(&mut self.pending, Vec::with_capacity(1));
         // All input is present before any permit is acquired. Workers do only
@@ -638,25 +638,35 @@ impl Wave {
             let mut tasks = Vec::with_capacity(count - 1);
             for pending in pending {
                 let permit = probe.budget.workers(1, probe.options.workers - 1);
-                let task = if permit.count == 0 {
-                    Task::Inline(pending)
-                } else {
+                let memory = (permit.count > 0)
+                    .then(|| {
+                        probe
+                            .budget
+                            .reserve(crate::memory::THREAD_MEMORY_BYTES)
+                            .ok()
+                    })
+                    .flatten();
+                let task = if let Some(memory) = memory {
                     self.background += 1;
-                    match crate::memory::Joined::spawn_scoped(
+                    match crate::memory::Joined::spawn_scoped_funded(
                         scope,
                         "assaydb-count-probe",
                         permit,
+                        memory,
                         move || {
                             let result = probe.run(&pending.batch);
-                            // Capture the whole owner, not just its batch field:
-                            // the source lease must survive worker execution.
                             drop(pending);
                             result
                         },
                     ) {
                         Ok(handle) => Task::Running(handle),
-                        Err(error) => Task::Failed(format!("count probe worker spawn: {error}")),
+                        Err(error) => {
+                            Task::Failed(format!("count probe worker spawn: {error}").into())
+                        }
                     }
+                } else {
+                    drop(permit);
+                    Task::Inline(pending)
                 };
                 tasks.push(task);
             }

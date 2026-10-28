@@ -225,7 +225,7 @@ fn capture_fusion_and_post_decode_barriers_do_not_mix_replay_outputs() {
     assert_eq!(ctx.metrics.filtered_scan_materializations, 1);
     let id = right.as_ref() as *const Node as usize;
     ctx.lane_transforms
-        .insert(id, Arc::new(|_| panic!("admission must not run a lane")));
+        .insert(id, Arc::new(|_, _| panic!("admission must not run a lane")));
     assert!(Pending::new(right, &ctx).is_none());
     assert!(!replay(right, &mut ctx, &mut |_| panic!("transformed replay")).unwrap());
     ctx.lane_transforms.clear();

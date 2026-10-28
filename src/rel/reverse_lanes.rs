@@ -331,9 +331,8 @@ impl Prepared {
             let budget = ctx.budget.clone();
             let cancel = cancel.clone();
             let schema = Arc::new(Schema::empty());
-            Arc::new(move |batch| {
+            Arc::new(move |batch, decoded| {
                 cancel.check()?;
-                let decoded = budget.reserve(batch.get_array_memory_size())?;
                 let result = pool.probe(&batch, &budget, &cancel);
                 drop(batch);
                 drop(decoded);
@@ -347,7 +346,7 @@ impl Prepared {
                 })
             })
         };
-        let (suffix, _) = lane_fusion::Suffix::prepend(transform, None);
+        let (suffix, _) = lane_fusion::Suffix::prepend_eager(transform, None, cancel.clone());
         lane_fusion::run(right, ctx, suffix, &mut |_| Ok(()))?;
         let mut pool =
             Arc::try_unwrap(pool).map_err(|_| "internal: reverse existence scan still active")?;

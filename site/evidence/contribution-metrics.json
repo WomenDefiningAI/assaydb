@@ -64,6 +64,60 @@
         ],
         "limits": "Sequential role phases pair matching rotations; descriptive intervals do not eliminate temporal drift. Quietness was sampled; a connection interruption had unknown timing impact. Query 16 was slower and remains included. Timed samples retain row counts, not every output payload. Engine-accounted resources are not hard process caps. No Alpha 3 or 0.95 goal qualification."
       }
+    },
+    {
+      "pr": 13,
+      "status": "accepted",
+      "evidence_commit": "merged-pr",
+      "evidence_path": "docs/evidence/pr13-validation.json",
+      "measured_source": "db9f965e8ae3adb9d4589bc41ba7b546585ea767",
+      "accuracy": {
+        "suite": "SQLLogicTest",
+        "applicable": 5939714,
+        "passed": 5939628,
+        "unsupported": 31,
+        "wrong": 0,
+        "error": 55,
+        "not-run": 0,
+        "excluded": 1481625
+      },
+      "speed": {
+        "status": "accepted",
+        "baseline_kind": "tested-public-main",
+        "baseline_source": "7ed1fa5cc8400368682d8e9c1ef217305ccc1e18",
+        "candidate_source": "db9f965e8ae3adb9d4589bc41ba7b546585ea767",
+        "suite": "SF10",
+        "queries": 22,
+        "workers": 10,
+        "rounds": 3,
+        "warmups": 1,
+        "timed_repetitions": 5,
+        "host": "Test Mini",
+        "configuration": "ordinary release; no PGO; Rust 1.90.0; debug=0, strip=none",
+        "aggregation": "sum-query-round-medians",
+        "candidate_seconds": 20.251780752,
+        "baseline_seconds": 20.542645211,
+        "ratio": 0.9858409442400217,
+        "confidence_95": [
+          0.9817659911430048,
+          0.9900208322479388
+        ],
+        "limits": "Sequential role phases; descriptive intervals do not eliminate temporal drift. Quietness was sampled. Queries17,18,19 were slower at10workers; queries01,05,06,11,18,22 slower at1worker by intervals wholly above1. Timed samples retain row counts, not every output payload. Engine-accounted budgets are not hard process caps. Internal workload measurements, not official TPC results. No general superiority, Alpha3 or package-release qualification.",
+        "final_engine_equivalent_head": "344121363c23a6398f86c8c66c00cfdb9daec3eb"
+      },
+      "review": {
+        "decision": "accepted",
+        "reviewer": "helenlkupp",
+        "audited_head": "344121363c23a6398f86c8c66c00cfdb9daec3eb",
+        "evidence_sha256": "37c7af48d7bc18189554b814838b142f01917e4800768e850ff7a9a6851dd4a7",
+        "audited_delta": [
+          {
+            "path": "docs/evidence/pr13-validation.json",
+            "entry": "100644 blob d36978b6a8bef7251b55cf9263aa329feb3bdaf3\tdocs/evidence/pr13-validation.json"
+          }
+        ],
+        "acceptance_scope": "PR13-only explicit zero-error exception; no global policy change and no result_contract pass claim."
+      }
     }
   ]
 }

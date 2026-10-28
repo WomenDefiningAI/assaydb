@@ -70,7 +70,8 @@ impl OwnedBuild {
     /// Admission proves a unique equality build; fund scratch and input through one ordered gather.
     pub fn probe_unique(
         &self,
-        batch: RecordBatch,
+        batch: &RecordBatch,
+        selection: Option<&[u32]>,
         keys: &[(Expr, Expr)],
         kind: JoinKind,
         output_schema: SchemaRef,
@@ -85,7 +86,6 @@ impl OwnedBuild {
             .checked_mul(32)
             .and_then(|n| n.checked_add(output_schema.fields().len().checked_mul(256)?))
             .and_then(|n| n.checked_add(keys.len().checked_mul(128)?))
-            .and_then(|n| n.checked_add(batch.get_array_memory_size()))
             .and_then(|n| n.checked_add(1280))
             .ok_or("join candidate size overflow")?;
         let _workspace = self.budget.reserve(workspace)?;
@@ -105,7 +105,7 @@ impl OwnedBuild {
             batch_size: batch.num_rows().max(1),
             reserve_gathers: true,
         }
-        .unique(batch, &|| cancel.check())
+        .unique(batch, selection, &|| cancel.check())
     }
     /// Adopt the same fully built keys and prepaid payload used by the serial join.
     pub fn from_index(

@@ -170,7 +170,7 @@ fn shared_schema_preserves_consumer_headroom_for_long_aliases() {
                 let budget = Budget::new(options.memory_bytes);
                 let mut ctx = context(&options, &budget);
                 let root = prepared.relational.as_ref().unwrap();
-                let RelOp::Limit { count, input } = &root.op else {
+                let RelOp::Limit { count, input, .. } = &root.op else {
                     panic!("expected LIMIT");
                 };
                 let order_schema = &input.schema;

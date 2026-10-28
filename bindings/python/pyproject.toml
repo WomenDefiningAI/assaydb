@@ -33,6 +33,7 @@ python-source = "python"
 module-name = "assaydb._native"
 # Source distributions are produced from the reviewed allowlist staging script.
 include = [
+  { path = "vendor/parquet-57.0.0-decoder-v1/**/*", format = "sdist" },
   { path = "tests/**", format = "sdist" },
   { path = "notebooks/**", format = "sdist" },
   { path = "BUILDING.md", format = "sdist" },

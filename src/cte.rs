@@ -1,9 +1,69 @@
 //! Keep materialization boundaries only for CTEs referenced more than once.
 use crate::rel::{Node, RelOp};
-use std::collections::HashMap;
+use arrow::datatypes::Schema;
+use sqlparser::ast::TableAliasColumnDef;
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
-fn children(node: &mut Node) -> Vec<&mut Node> {
+/// Expose a CTE's positional aliases without rebinding or evaluating its body.
+/// DuckDB permits partial and excess alias lists, and disambiguates repeated
+/// output names from left to right. Keep this opt-in for explicit lists so the
+/// existing unaliased CTE contract is unchanged.
+pub(crate) fn column_aliases(node: Node, aliases: &[TableAliasColumnDef]) -> crate::Result<Node> {
+    if aliases.is_empty() {
+        return Ok(node);
+    }
+    if aliases.iter().any(|alias| alias.data_type.is_some()) {
+        return Err("unsupported: typed CTE column aliases".into());
+    }
+    let mut used = HashSet::new();
+    let mut suffixes = HashMap::new();
+    let mut fields = Vec::with_capacity(node.schema.fields().len());
+    for (index, field) in node.schema.fields().iter().enumerate() {
+        let original = aliases
+            .get(index)
+            .map(|alias| alias.name.value.as_str())
+            .unwrap_or_else(|| field.name());
+        // Relational field names still encode qualifiers with a dot. Refuse
+        // an unrepresentable name rather than silently expose only its suffix.
+        if original.contains('.') {
+            return Err("unsupported: CTE column aliases over dotted output names".into());
+        }
+        let mut name = original.to_owned();
+        if !used.insert(name.to_lowercase()) {
+            let suffix = suffixes.entry(original.to_lowercase()).or_insert(1_usize);
+            loop {
+                name = format!("{original}_{suffix}");
+                *suffix += 1;
+                if used.insert(name.to_lowercase()) {
+                    break;
+                }
+            }
+        }
+        fields.push(field.as_ref().clone().with_name(name));
+    }
+    let schema = Arc::new(Schema::new_with_metadata(
+        fields,
+        node.schema.metadata().clone(),
+    ));
+    if schema == node.schema {
+        return Ok(node);
+    }
+    Ok(Node {
+        schema,
+        estimated_rows: node.estimated_rows,
+        op: RelOp::Rename {
+            input: Box::new(node),
+        },
+    })
+}
+
+pub(crate) fn children(node: &mut Node) -> Vec<&mut Node> {
     match &mut node.op {
+        RelOp::RecursiveCte { anchor, step, .. } => vec![anchor, step],
+        RelOp::RecursiveScan { .. } => vec![],
         RelOp::WindowOrder { input, .. }
         | RelOp::Window { input, .. }
         | RelOp::Unary { input, .. }
@@ -21,6 +81,7 @@ fn children(node: &mut Node) -> Vec<&mut Node> {
         RelOp::ScalarDefault {
             input, fallback, ..
         } => vec![input, fallback],
+        RelOp::Generate { .. } => vec![],
         RelOp::Scan { .. } | RelOp::One | RelOp::Empty => vec![],
     }
 }
@@ -36,7 +97,9 @@ fn inline(node: &mut Node, uses: &HashMap<usize, usize>) {
     for child in children(node) {
         inline(child, uses);
     }
-    if let RelOp::Materialize { id, .. } = &node.op
+    if let RelOp::Materialize {
+        id, forced: false, ..
+    } = &node.op
         && uses[id] == 1
     {
         let RelOp::Materialize { input, .. } = std::mem::replace(&mut node.op, RelOp::Empty) else {
@@ -103,7 +166,10 @@ fn subset(
 fn scan_counts(node: &mut Node, counts: &mut std::collections::BTreeMap<ScanKey, ScanInfo>) {
     // Repeated CTE bodies already execute once. Do not count their cloned plan
     // bodies as additional reads or retain a redundant cache inside them.
-    if matches!(node.op, RelOp::Materialize { .. }) {
+    if matches!(
+        node.op,
+        RelOp::Materialize { .. } | RelOp::RecursiveCte { .. } | RelOp::RecursiveScan { .. }
+    ) {
         return;
     }
     if let Some(key) = scan_key(node) {
@@ -130,7 +196,10 @@ fn scan_counts(node: &mut Node, counts: &mut std::collections::BTreeMap<ScanKey,
     }
 }
 fn wrap_scans(node: &mut Node, ids: &HashMap<ScanKey, ScanReuse>) {
-    if matches!(node.op, RelOp::Materialize { .. }) {
+    if matches!(
+        node.op,
+        RelOp::Materialize { .. } | RelOp::RecursiveCte { .. } | RelOp::RecursiveScan { .. }
+    ) {
         return;
     }
     if let Some(key) = scan_key(node)
@@ -143,6 +212,7 @@ fn wrap_scans(node: &mut Node, ids: &HashMap<ScanKey, ScanReuse>) {
                 id: reuse.id,
                 input: Box::new(reuse.scan.clone()),
                 shared_scan: true,
+                forced: false,
             },
         };
         // Project after lookup: the cache schema remains canonical, even when

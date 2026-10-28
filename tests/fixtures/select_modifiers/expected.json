@@ -1,0 +1,2413 @@
+{
+  "duckdb_version": "1.5.6",
+  "cases_sha256": "a2c6721031adcc505b11bb108482925b6ca5a9d9e6f1c90ba341b4fb07b50c0c",
+  "cases": [
+    {
+      "id": "group_key",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k AS k, COUNT(*) AS n FROM data GROUP BY 1 ORDER BY k NULLS FIRST;",
+      "columns": [
+        "k",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          null,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "group_two",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k AS k, txt AS txt, COUNT(*) AS n FROM data GROUP BY 1, 2 ORDER BY k NULLS LAST, txt NULLS FIRST;",
+      "columns": [
+        "k",
+        "txt",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "text",
+        "integer"
+      ],
+      "rows": [
+        [
+          1,
+          "ANT",
+          1
+        ],
+        [
+          1,
+          "ant",
+          1
+        ],
+        [
+          2,
+          "Bee",
+          2
+        ],
+        [
+          3,
+          "",
+          1
+        ],
+        [
+          3,
+          "cat",
+          1
+        ],
+        [
+          null,
+          null,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "group_case",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT CASE WHEN amount < 5 THEN 'low' ELSE 'high' END AS band, COUNT(*) AS n FROM data GROUP BY 1 ORDER BY 1;",
+      "columns": [
+        "band",
+        "n"
+      ],
+      "types": [
+        "text",
+        "integer"
+      ],
+      "rows": [
+        [
+          "high",
+          5
+        ],
+        [
+          "low",
+          3
+        ]
+      ]
+    },
+    {
+      "id": "group_mixed",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k AS key, LOWER(txt) AS label, SUM(amount) AS total FROM data GROUP BY 1, label ORDER BY key NULLS FIRST, label NULLS FIRST;",
+      "columns": [
+        "key",
+        "label",
+        "total"
+      ],
+      "types": [
+        "integer",
+        "text",
+        "decimal"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          null
+        ],
+        [
+          1,
+          "ant",
+          "0.75"
+        ],
+        [
+          2,
+          "bee",
+          "25.00"
+        ],
+        [
+          3,
+          "",
+          "0.00"
+        ],
+        [
+          3,
+          "cat",
+          "7.75"
+        ]
+      ]
+    },
+    {
+      "id": "group_expr",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k+1 AS key, txt AS label, COUNT(*) AS n FROM data GROUP BY 1, txt ORDER BY 1 NULLS FIRST, 2 NULLS FIRST;",
+      "columns": [
+        "key",
+        "label",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "text",
+        "integer"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          2
+        ],
+        [
+          2,
+          "ANT",
+          1
+        ],
+        [
+          2,
+          "ant",
+          1
+        ],
+        [
+          3,
+          "Bee",
+          2
+        ],
+        [
+          4,
+          "",
+          1
+        ],
+        [
+          4,
+          "cat",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "group_decimal",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT amount AS amount, COUNT(*) AS n FROM data GROUP BY 1 ORDER BY 1 NULLS LAST;",
+      "columns": [
+        "amount",
+        "n"
+      ],
+      "types": [
+        "decimal",
+        "integer"
+      ],
+      "rows": [
+        [
+          "-2.25",
+          1
+        ],
+        [
+          "0.00",
+          1
+        ],
+        [
+          "3.00",
+          1
+        ],
+        [
+          "7.75",
+          1
+        ],
+        [
+          "12.50",
+          2
+        ],
+        [
+          null,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "group_date",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT day AS day, COUNT(*) AS n FROM data GROUP BY 1 ORDER BY 1 NULLS FIRST;",
+      "columns": [
+        "day",
+        "n"
+      ],
+      "types": [
+        "date",
+        "integer"
+      ],
+      "rows": [
+        [
+          null,
+          2
+        ],
+        [
+          "2024-01-02",
+          2
+        ],
+        [
+          "2024-02-01",
+          2
+        ],
+        [
+          "2024-03-03",
+          2
+        ]
+      ]
+    },
+    {
+      "id": "group_text",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT LOWER(txt) AS label, COUNT(*) AS n FROM data GROUP BY 1 ORDER BY 1 NULLS FIRST;",
+      "columns": [
+        "label",
+        "n"
+      ],
+      "types": [
+        "text",
+        "integer"
+      ],
+      "rows": [
+        [
+          null,
+          2
+        ],
+        [
+          "",
+          1
+        ],
+        [
+          "ant",
+          2
+        ],
+        [
+          "bee",
+          2
+        ],
+        [
+          "cat",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "group_duplicate",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k AS k, COUNT(*) AS n FROM data GROUP BY 1, 1 ORDER BY 1 NULLS FIRST;",
+      "columns": [
+        "k",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          null,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "group_having",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k AS k, SUM(amount) AS total FROM data GROUP BY 1 HAVING SUM(amount)>5 ORDER BY total DESC, k;",
+      "columns": [
+        "k",
+        "total"
+      ],
+      "types": [
+        "integer",
+        "decimal"
+      ],
+      "rows": [
+        [
+          2,
+          "25.00"
+        ],
+        [
+          3,
+          "7.75"
+        ]
+      ]
+    },
+    {
+      "id": "group_empty",
+      "ordered": false,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k AS k, COUNT(*) AS n FROM data WHERE id<0 GROUP BY 1;",
+      "columns": [
+        "k",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": []
+    },
+    {
+      "id": "group_allnull",
+      "ordered": false,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT txt AS txt, COUNT(*) AS n FROM data WHERE k IS NULL GROUP BY 1;",
+      "columns": [
+        "txt",
+        "n"
+      ],
+      "types": [
+        "text",
+        "integer"
+      ],
+      "rows": [
+        [
+          null,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "group_constant",
+      "ordered": false,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT 9 AS value, COUNT(*) AS n FROM data GROUP BY 1;",
+      "columns": [
+        "value",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          9,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "group_constant_empty",
+      "ordered": false,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT 9 AS value, COUNT(*) AS n FROM data WHERE id<0 GROUP BY 1;",
+      "columns": [
+        "value",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": []
+    },
+    {
+      "id": "group_nested",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k AS k, COUNT(*) AS n FROM data GROUP BY (1) ORDER BY 1 NULLS FIRST;",
+      "columns": [
+        "k",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          null,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "group_derived",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT q.k AS k, q.n AS n FROM (SELECT k, COUNT(*) AS n FROM data GROUP BY 1) q ORDER BY 1 NULLS FIRST;",
+      "columns": [
+        "k",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          null,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "group_window",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k AS k, COUNT(*) AS n, RANK() OVER (ORDER BY COUNT(*) DESC) AS r FROM data GROUP BY 1 ORDER BY k NULLS FIRST;",
+      "columns": [
+        "k",
+        "n",
+        "r"
+      ],
+      "types": [
+        "integer",
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          null,
+          2,
+          1
+        ],
+        [
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "group_unordered",
+      "ordered": false,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k AS k, COUNT(*) AS n FROM data GROUP BY 1;",
+      "columns": [
+        "k",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          2,
+          2
+        ],
+        [
+          null,
+          2
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "group_star",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT * FROM (SELECT k FROM data) q GROUP BY 1 ORDER BY 1 NULLS FIRST;",
+      "columns": [
+        "k"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          null
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ]
+      ]
+    },
+    {
+      "id": "offset",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY id LIMIT 3 OFFSET 2;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          3
+        ],
+        [
+          4
+        ],
+        [
+          5
+        ]
+      ]
+    },
+    {
+      "id": "offset_only",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY id OFFSET 5;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          6
+        ],
+        [
+          7
+        ],
+        [
+          8
+        ]
+      ]
+    },
+    {
+      "id": "offset_zero",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY id LIMIT 3 OFFSET 0;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ]
+      ]
+    },
+    {
+      "id": "offset_end",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY id LIMIT 3 OFFSET 8;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": []
+    },
+    {
+      "id": "offset_beyond",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY id LIMIT 3 OFFSET 99;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": []
+    },
+    {
+      "id": "offset_only_beyond",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY id OFFSET 99;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": []
+    },
+    {
+      "id": "limit_zero",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY id LIMIT 0 OFFSET 2;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": []
+    },
+    {
+      "id": "limit_big",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY id LIMIT 99 OFFSET 2;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          3
+        ],
+        [
+          4
+        ],
+        [
+          5
+        ],
+        [
+          6
+        ],
+        [
+          7
+        ],
+        [
+          8
+        ]
+      ]
+    },
+    {
+      "id": "offset_empty",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data WHERE id<0 ORDER BY id LIMIT 3 OFFSET 2;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": []
+    },
+    {
+      "id": "offset_distinct",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT DISTINCT k AS k FROM data ORDER BY k NULLS FIRST LIMIT 2 OFFSET 1;",
+      "columns": [
+        "k"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "id": "offset_group",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k AS k, COUNT(*) AS n FROM data GROUP BY 1 ORDER BY k NULLS FIRST LIMIT 2 OFFSET 1;",
+      "columns": [
+        "k",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "offset_window",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id, ROW_NUMBER() OVER (ORDER BY id) AS r FROM data ORDER BY id LIMIT 2 OFFSET 3;",
+      "columns": [
+        "id",
+        "r"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          4,
+          4
+        ],
+        [
+          5,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "offset_nested",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT q.id AS id FROM (SELECT id FROM data ORDER BY id LIMIT 5 OFFSET 2) q ORDER BY id DESC LIMIT 2 OFFSET 1;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          6
+        ],
+        [
+          5
+        ]
+      ]
+    },
+    {
+      "id": "offset_scalar",
+      "ordered": false,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT COUNT(*) AS n FROM data OFFSET 1;",
+      "columns": [
+        "n"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": []
+    },
+    {
+      "id": "sort_count",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k AS k FROM data GROUP BY k ORDER BY COUNT(*) DESC, k NULLS FIRST;",
+      "columns": [
+        "k"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          null
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ]
+      ]
+    },
+    {
+      "id": "sort_count_projected",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k AS k, COUNT(*) AS n FROM data GROUP BY 1 ORDER BY COUNT(*) DESC, k NULLS FIRST;",
+      "columns": [
+        "k",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          null,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "sort_sum",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k AS k FROM data GROUP BY 1 ORDER BY SUM(amount) DESC NULLS LAST, k NULLS FIRST;",
+      "columns": [
+        "k"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          2
+        ],
+        [
+          3
+        ],
+        [
+          1
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "sort_agg_arithmetic",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k AS k FROM data GROUP BY 1 ORDER BY COUNT(*)+1 DESC, k NULLS FIRST;",
+      "columns": [
+        "k"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          null
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ]
+      ]
+    },
+    {
+      "id": "sort_lower",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY LOWER(txt) NULLS FIRST, id;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          4
+        ],
+        [
+          8
+        ],
+        [
+          6
+        ],
+        [
+          2
+        ],
+        [
+          5
+        ],
+        [
+          1
+        ],
+        [
+          3
+        ],
+        [
+          7
+        ]
+      ]
+    },
+    {
+      "id": "sort_upper",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY UPPER(txt) DESC NULLS LAST, id;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          7
+        ],
+        [
+          1
+        ],
+        [
+          3
+        ],
+        [
+          2
+        ],
+        [
+          5
+        ],
+        [
+          6
+        ],
+        [
+          4
+        ],
+        [
+          8
+        ]
+      ]
+    },
+    {
+      "id": "sort_hidden",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT txt AS txt FROM data ORDER BY id DESC;",
+      "columns": [
+        "txt"
+      ],
+      "types": [
+        "text"
+      ],
+      "rows": [
+        [
+          null
+        ],
+        [
+          "cat"
+        ],
+        [
+          ""
+        ],
+        [
+          "ANT"
+        ],
+        [
+          null
+        ],
+        [
+          "Bee"
+        ],
+        [
+          "ant"
+        ],
+        [
+          "Bee"
+        ]
+      ]
+    },
+    {
+      "id": "sort_qualified",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT txt AS txt FROM data t ORDER BY t.id;",
+      "columns": [
+        "txt"
+      ],
+      "types": [
+        "text"
+      ],
+      "rows": [
+        [
+          "Bee"
+        ],
+        [
+          "ant"
+        ],
+        [
+          "Bee"
+        ],
+        [
+          null
+        ],
+        [
+          "ANT"
+        ],
+        [
+          ""
+        ],
+        [
+          "cat"
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "sort_projected_qualified",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data t ORDER BY t.id DESC;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          8
+        ],
+        [
+          7
+        ],
+        [
+          6
+        ],
+        [
+          5
+        ],
+        [
+          4
+        ],
+        [
+          3
+        ],
+        [
+          2
+        ],
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "id": "sort_decimal",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY amount DESC NULLS FIRST, id;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          4
+        ],
+        [
+          8
+        ],
+        [
+          1
+        ],
+        [
+          3
+        ],
+        [
+          7
+        ],
+        [
+          2
+        ],
+        [
+          6
+        ],
+        [
+          5
+        ]
+      ]
+    },
+    {
+      "id": "sort_date",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY day NULLS LAST, id;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          2
+        ],
+        [
+          5
+        ],
+        [
+          1
+        ],
+        [
+          3
+        ],
+        [
+          6
+        ],
+        [
+          7
+        ],
+        [
+          4
+        ],
+        [
+          8
+        ]
+      ]
+    },
+    {
+      "id": "sort_arithmetic",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY k+1 NULLS LAST, id;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          2
+        ],
+        [
+          5
+        ],
+        [
+          1
+        ],
+        [
+          3
+        ],
+        [
+          6
+        ],
+        [
+          7
+        ],
+        [
+          4
+        ],
+        [
+          8
+        ]
+      ]
+    },
+    {
+      "id": "sort_case",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY CASE WHEN k IS NULL THEN 0 ELSE k END, id;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          4
+        ],
+        [
+          8
+        ],
+        [
+          2
+        ],
+        [
+          5
+        ],
+        [
+          1
+        ],
+        [
+          3
+        ],
+        [
+          6
+        ],
+        [
+          7
+        ]
+      ]
+    },
+    {
+      "id": "sort_empty",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data WHERE id<0 ORDER BY LOWER(txt), day;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": []
+    },
+    {
+      "id": "sort_alias_wins",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT -id AS k FROM data ORDER BY k;",
+      "columns": [
+        "k"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          -8
+        ],
+        [
+          -7
+        ],
+        [
+          -6
+        ],
+        [
+          -5
+        ],
+        [
+          -4
+        ],
+        [
+          -3
+        ],
+        [
+          -2
+        ],
+        [
+          -1
+        ]
+      ]
+    },
+    {
+      "id": "sort_qualified_input_wins",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT -id AS k FROM data t ORDER BY t.k NULLS FIRST, t.id;",
+      "columns": [
+        "k"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          -4
+        ],
+        [
+          -8
+        ],
+        [
+          -2
+        ],
+        [
+          -5
+        ],
+        [
+          -1
+        ],
+        [
+          -3
+        ],
+        [
+          -6
+        ],
+        [
+          -7
+        ]
+      ]
+    },
+    {
+      "id": "sort_alias_expression_input",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT -id AS k, id AS id FROM data ORDER BY k+1 NULLS FIRST, id;",
+      "columns": [
+        "k",
+        "id"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          -4,
+          4
+        ],
+        [
+          -8,
+          8
+        ],
+        [
+          -2,
+          2
+        ],
+        [
+          -5,
+          5
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          -3,
+          3
+        ],
+        [
+          -6,
+          6
+        ],
+        [
+          -7,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "sort_projected_expr",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT LOWER(txt) AS label FROM data ORDER BY LOWER(txt) NULLS FIRST;",
+      "columns": [
+        "label"
+      ],
+      "types": [
+        "text"
+      ],
+      "rows": [
+        [
+          null
+        ],
+        [
+          null
+        ],
+        [
+          ""
+        ],
+        [
+          "ant"
+        ],
+        [
+          "ant"
+        ],
+        [
+          "bee"
+        ],
+        [
+          "bee"
+        ],
+        [
+          "cat"
+        ]
+      ]
+    },
+    {
+      "id": "sort_distinct_expr",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT DISTINCT LOWER(txt) AS label FROM data ORDER BY LOWER(txt) NULLS FIRST;",
+      "columns": [
+        "label"
+      ],
+      "types": [
+        "text"
+      ],
+      "rows": [
+        [
+          null
+        ],
+        [
+          ""
+        ],
+        [
+          "ant"
+        ],
+        [
+          "bee"
+        ],
+        [
+          "cat"
+        ]
+      ]
+    },
+    {
+      "id": "sort_distinct_qualified",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT DISTINCT k AS k FROM data t ORDER BY t.k NULLS FIRST;",
+      "columns": [
+        "k"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          null
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ]
+      ]
+    },
+    {
+      "id": "sort_distinct_count",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT DISTINCT COUNT(*) AS n FROM data GROUP BY k ORDER BY COUNT(*);",
+      "columns": [
+        "n"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "id": "sort_hidden_pagination",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT txt AS txt FROM data ORDER BY id DESC LIMIT 3 OFFSET 2;",
+      "columns": [
+        "txt"
+      ],
+      "types": [
+        "text"
+      ],
+      "rows": [
+        [
+          ""
+        ],
+        [
+          "ANT"
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "sort_group_having",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k AS k FROM data GROUP BY 1 HAVING COUNT(*)>1 ORDER BY SUM(amount) NULLS LAST, k NULLS FIRST;",
+      "columns": [
+        "k"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          3
+        ],
+        [
+          2
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "sort_join",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT a.txt AS txt FROM data a JOIN data b ON a.id=b.id ORDER BY b.id DESC LIMIT 3 OFFSET 1;",
+      "columns": [
+        "txt"
+      ],
+      "types": [
+        "text"
+      ],
+      "rows": [
+        [
+          "cat"
+        ],
+        [
+          ""
+        ],
+        [
+          "ANT"
+        ]
+      ]
+    },
+    {
+      "id": "sort_window_hidden",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY ROW_NUMBER() OVER (ORDER BY id DESC) LIMIT 3 OFFSET 1;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          7
+        ],
+        [
+          6
+        ],
+        [
+          5
+        ]
+      ]
+    },
+    {
+      "id": "sort_multiple_hidden",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY LOWER(txt) NULLS LAST, amount DESC NULLS LAST, id;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          6
+        ],
+        [
+          2
+        ],
+        [
+          5
+        ],
+        [
+          1
+        ],
+        [
+          3
+        ],
+        [
+          7
+        ],
+        [
+          4
+        ],
+        [
+          8
+        ]
+      ]
+    },
+    {
+      "id": "group_aggregate_only_sort",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT COUNT(*) AS n FROM data ORDER BY SUM(amount);",
+      "columns": [
+        "n"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          8
+        ]
+      ]
+    },
+    {
+      "id": "group_zero",
+      "ordered": false,
+      "assay_error": "GROUP BY ordinal out of range",
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k FROM data GROUP BY 0;",
+      "duckdb_error": "Binder Error: GROUP BY term out of range - should be between 1 and 1"
+    },
+    {
+      "id": "group_too_far",
+      "ordered": false,
+      "assay_error": "GROUP BY ordinal out of range",
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k FROM data GROUP BY 2;",
+      "duckdb_error": "Binder Error: GROUP BY term out of range - should be between 1 and 1"
+    },
+    {
+      "id": "group_negative",
+      "ordered": false,
+      "assay_error": "GROUP BY ordinal out of range",
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT k FROM data GROUP BY -1;",
+      "duckdb_error": "Binder Error: GROUP BY term out of range - should be between 1 and 1"
+    },
+    {
+      "id": "group_aggregate",
+      "ordered": false,
+      "assay_error": "GROUP BY ordinal refers to an aggregate expression",
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT COUNT(*) FROM data GROUP BY 1;",
+      "duckdb_error": "Binder Error: GROUP BY clause cannot contain aggregates!\n\nLINE 11: SELECT COUNT(*) FROM data GROUP BY 1;\n                ^"
+    },
+    {
+      "id": "group_aggregate_nested",
+      "ordered": false,
+      "assay_error": "GROUP BY ordinal refers to an aggregate expression",
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT COUNT(*)+1 FROM data GROUP BY 1;",
+      "duckdb_error": "Binder Error: GROUP BY clause cannot contain aggregates!\n\nLINE 11: SELECT COUNT(*)+1 FROM data GROUP BY 1;\n                ^"
+    },
+    {
+      "id": "group_window_invalid",
+      "ordered": false,
+      "assay_error": "GROUP BY ordinal refers to a window expression",
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT ROW_NUMBER() OVER () FROM data GROUP BY 1;",
+      "duckdb_error": "Binder Error: GROUP BY clause cannot contain window functions!\n\nLINE 11: SELECT ROW_NUMBER() OVER () FROM data GROUP BY 1;\n                ^"
+    },
+    {
+      "id": "distinct_hidden",
+      "ordered": false,
+      "assay_error": "DISTINCT ORDER BY expression must appear in SELECT",
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT DISTINCT k FROM data ORDER BY id;",
+      "columns": [
+        "k"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          2
+        ],
+        [
+          1
+        ],
+        [
+          3
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "group_fraction",
+      "ordered": false,
+      "assay_error": "unsupported: GROUP BY non-integer literals",
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT COUNT(*) AS n FROM data GROUP BY 1.5;",
+      "columns": [
+        "n"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          8
+        ]
+      ]
+    },
+    {
+      "id": "sort_invalid_ordinal",
+      "ordered": false,
+      "assay_error": "ORDER BY ordinal out of range",
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id FROM data ORDER BY txt, 2;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          6
+        ],
+        [
+          5
+        ],
+        [
+          1
+        ],
+        [
+          3
+        ],
+        [
+          2
+        ],
+        [
+          7
+        ],
+        [
+          8
+        ],
+        [
+          4
+        ]
+      ]
+    },
+    {
+      "id": "distinct_hidden_expr",
+      "ordered": false,
+      "assay_error": "DISTINCT ORDER BY expression must appear in SELECT",
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT DISTINCT k FROM data ORDER BY k+1;",
+      "columns": [
+        "k"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "distinct_aggregate_case",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT DISTINCT COUNT(*) AS n FROM data GROUP BY k ORDER BY count(*);",
+      "columns": [
+        "n"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "id": "distinct_qualified_function",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT DISTINCT LOWER(t.txt) AS label FROM data t ORDER BY lower(txt) NULLS FIRST;",
+      "columns": [
+        "label"
+      ],
+      "types": [
+        "text"
+      ],
+      "rows": [
+        [
+          null
+        ],
+        [
+          ""
+        ],
+        [
+          "ant"
+        ],
+        [
+          "bee"
+        ],
+        [
+          "cat"
+        ]
+      ]
+    },
+    {
+      "id": "group_alias_conflict",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT -id AS k, COUNT(*) AS n FROM data GROUP BY 1 ORDER BY k;",
+      "columns": [
+        "k",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          -8,
+          1
+        ],
+        [
+          -7,
+          1
+        ],
+        [
+          -6,
+          1
+        ],
+        [
+          -5,
+          1
+        ],
+        [
+          -4,
+          1
+        ],
+        [
+          -3,
+          1
+        ],
+        [
+          -2,
+          1
+        ],
+        [
+          -1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "offset_rows",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY id OFFSET 2 ROWS;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          3
+        ],
+        [
+          4
+        ],
+        [
+          5
+        ],
+        [
+          6
+        ],
+        [
+          7
+        ],
+        [
+          8
+        ]
+      ]
+    },
+    {
+      "id": "sort_quoted_alias",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT -id AS \"K\" FROM data ORDER BY \"K\";",
+      "columns": [
+        "K"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          -8
+        ],
+        [
+          -7
+        ],
+        [
+          -6
+        ],
+        [
+          -5
+        ],
+        [
+          -4
+        ],
+        [
+          -3
+        ],
+        [
+          -2
+        ],
+        [
+          -1
+        ]
+      ]
+    },
+    {
+      "id": "limit_overflow",
+      "ordered": false,
+      "assay_error": "LIMIT out of range",
+      "sql": "SELECT 1 AS n LIMIT 9223372036854775808;",
+      "duckdb_error": "Conversion Error: Type INT128 with value 9223372036854775808 can't be cast because the value is out of range for the destination type INT64\n\nLINE 1: SELECT 1 AS n LIMIT 9223372036854775808;\n                            ^"
+    },
+    {
+      "id": "offset_overflow",
+      "ordered": false,
+      "assay_error": "OFFSET out of range",
+      "sql": "SELECT 1 AS n OFFSET 9223372036854775808;",
+      "duckdb_error": "Conversion Error: Type INT128 with value 9223372036854775808 can't be cast because the value is out of range for the destination type INT64\n\nLINE 1: SELECT 1 AS n OFFSET 9223372036854775808;\n                             ^"
+    },
+    {
+      "id": "group_huge",
+      "ordered": false,
+      "assay_error": "GROUP BY ordinal out of range",
+      "sql": "SELECT 1 AS n GROUP BY 999999999999999999999999999999999999;",
+      "duckdb_error": "Invalid Input Error: Type INT128 with value 999999999999999999999999999999999999 can't be cast because the value is out of range for the destination type INT64"
+    },
+    {
+      "id": "offset_only_zero",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY id OFFSET 0;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ],
+        [
+          4
+        ],
+        [
+          5
+        ],
+        [
+          6
+        ],
+        [
+          7
+        ],
+        [
+          8
+        ]
+      ]
+    },
+    {
+      "id": "limit_bigint_max",
+      "ordered": true,
+      "sql": "WITH data AS (\n SELECT 1 AS id, 2 AS k, 'Bee' AS txt, CAST(12.50 AS DECIMAL(10,2)) AS amount, DATE '2024-02-01' AS day\n UNION ALL SELECT 2, 1, 'ant', CAST(3.00 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 3, 2, 'Bee', CAST(12.50 AS DECIMAL(10,2)), DATE '2024-02-01'\n UNION ALL SELECT 4, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n UNION ALL SELECT 5, 1, 'ANT', CAST(-2.25 AS DECIMAL(10,2)), DATE '2024-01-02'\n UNION ALL SELECT 6, 3, '', CAST(0 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 7, 3, 'cat', CAST(7.75 AS DECIMAL(10,2)), DATE '2024-03-03'\n UNION ALL SELECT 8, NULL, NULL, CAST(NULL AS DECIMAL(10,2)), CAST(NULL AS DATE)\n)\nSELECT id AS id FROM data ORDER BY id LIMIT 9223372036854775807 OFFSET 0;",
+      "columns": [
+        "id"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ],
+        [
+          4
+        ],
+        [
+          5
+        ],
+        [
+          6
+        ],
+        [
+          7
+        ],
+        [
+          8
+        ]
+      ]
+    },
+    {
+      "id": "combined_qualified_group",
+      "ordered": true,
+      "assay_columns": [
+        "d.k",
+        "n"
+      ],
+      "difference": "Assay retains the qualifier in an unaliased projection display name; DuckDB reports the bare column name. Values, types and ordering compare exactly.",
+      "sql": "SELECT d.k, COUNT(*) AS n FROM (SELECT 3 AS k UNION ALL SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT NULL) d GROUP BY d.k ORDER BY d.k;",
+      "columns": [
+        "k",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          null,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "combined_unqualified_group",
+      "ordered": true,
+      "sql": "SELECT k, COUNT(*) AS n FROM (SELECT 3 AS k UNION ALL SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT NULL) d GROUP BY k ORDER BY k;",
+      "columns": [
+        "k",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          null,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "combined_qualified_group_alias",
+      "ordered": true,
+      "sql": "SELECT d.k AS key, COUNT(*) AS n FROM (SELECT 3 AS k UNION ALL SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT NULL) d GROUP BY d.k ORDER BY d.k;",
+      "columns": [
+        "key",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          null,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "combined_unqualified_group_alias",
+      "ordered": true,
+      "sql": "SELECT k AS key, COUNT(*) AS n FROM (SELECT 3 AS k UNION ALL SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT NULL) d GROUP BY k ORDER BY k;",
+      "columns": [
+        "key",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          null,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "combined_group_output_alias",
+      "ordered": true,
+      "sql": "SELECT d.k AS key, COUNT(*) AS n FROM (SELECT 3 AS k UNION ALL SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT NULL) d GROUP BY 1 ORDER BY key;",
+      "columns": [
+        "key",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          null,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "combined_qualified_distinct",
+      "ordered": true,
+      "assay_columns": [
+        "d.k"
+      ],
+      "difference": "Assay retains the qualifier in an unaliased projection display name; DuckDB reports the bare column name. Values, types and ordering compare exactly.",
+      "sql": "SELECT DISTINCT d.k FROM (SELECT 3 AS k UNION ALL SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT NULL) d ORDER BY d.k;",
+      "columns": [
+        "k"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          3
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_unqualified_distinct",
+      "ordered": true,
+      "sql": "SELECT DISTINCT k FROM (SELECT 3 AS k UNION ALL SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT NULL) d ORDER BY k;",
+      "columns": [
+        "k"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          3
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_qualified_distinct_alias",
+      "ordered": true,
+      "sql": "SELECT DISTINCT d.k AS key FROM (SELECT 3 AS k UNION ALL SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT NULL) d ORDER BY d.k;",
+      "columns": [
+        "key"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          3
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_unqualified_distinct_alias",
+      "ordered": true,
+      "sql": "SELECT DISTINCT k AS key FROM (SELECT 3 AS k UNION ALL SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT NULL) d ORDER BY k;",
+      "columns": [
+        "key"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          3
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_distinct_group_alias",
+      "ordered": true,
+      "sql": "SELECT DISTINCT d.k AS key, COUNT(*) AS n FROM (SELECT 3 AS k UNION ALL SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT NULL) d GROUP BY 1 ORDER BY d.k;",
+      "columns": [
+        "key",
+        "n"
+      ],
+      "types": [
+        "integer",
+        "integer"
+      ],
+      "rows": [
+        [
+          1,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          null,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "combined_qualified_union",
+      "ordered": true,
+      "assay_columns": [
+        "u.k"
+      ],
+      "difference": "Assay retains the qualifier in an unaliased projection display name; DuckDB reports the bare column name. Values, types and ordering compare exactly.",
+      "sql": "SELECT u.k FROM (SELECT 3 AS k UNION SELECT 1 UNION SELECT 3) u ORDER BY u.k;",
+      "columns": [
+        "k"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          3
+        ]
+      ]
+    },
+    {
+      "id": "combined_unqualified_union_alias",
+      "ordered": true,
+      "sql": "SELECT k AS key FROM (SELECT 3 AS k UNION SELECT 1 UNION SELECT 3) u ORDER BY k;",
+      "columns": [
+        "key"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          3
+        ]
+      ]
+    },
+    {
+      "id": "combined_unknown_qualifier",
+      "ordered": true,
+      "assay_error": "unknown or ambiguous column: missing.k",
+      "sql": "SELECT d.k FROM (SELECT 3 AS k UNION ALL SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT NULL) d ORDER BY missing.k;",
+      "duckdb_error": "Binder Error: Referenced table \"missing\" not found!\nCandidate tables: \"d\"\n\nLINE 1: ... SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT NULL) d ORDER BY missing.k;\n                                                                          ^"
+    },
+    {
+      "id": "combined_unknown_column",
+      "ordered": true,
+      "assay_error": "unknown or ambiguous column: d.missing",
+      "sql": "SELECT d.k FROM (SELECT 3 AS k UNION ALL SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT NULL) d ORDER BY d.missing;",
+      "duckdb_error": "Binder Error: Values list \"d\" does not have a column named \"missing\"\n\nLINE 1: ... SELECT 1 UNION ALL SELECT 3 UNION ALL SELECT NULL) d ORDER BY d.missing;\n                                                                          ^"
+    },
+    {
+      "id": "combined_ambiguous_input",
+      "ordered": true,
+      "assay_error": "unknown or ambiguous column: k",
+      "sql": "SELECT a.k AS first_key FROM (SELECT 1 AS k) a CROSS JOIN (SELECT 2 AS k) b ORDER BY k;",
+      "duckdb_error": "Binder Error: Ambiguous reference to column name \"k\" (use: \"a.k\" or \"b.k\")\n\nLINE 1: ... FROM (SELECT 1 AS k) a CROSS JOIN (SELECT 2 AS k) b ORDER BY k;\n                                                                         ^"
+    },
+    {
+      "id": "combined_distinct_unselected",
+      "ordered": true,
+      "assay_error": "DISTINCT ORDER BY expression must appear in SELECT",
+      "sql": "SELECT DISTINCT d.k FROM (SELECT 1 AS k, 2 AS x) d ORDER BY d.x;",
+      "columns": [
+        "k"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "id": "combined_compound_qualified",
+      "ordered": true,
+      "assay_error": "unsupported: qualified ORDER BY name over a set operation (PostgreSQL rejects it; name the output column or use its position)",
+      "sql": "SELECT d.k FROM (SELECT 3 AS k) d UNION SELECT d.k FROM (SELECT 1 AS k) d ORDER BY d.k;",
+      "columns": [
+        "k"
+      ],
+      "types": [
+        "integer"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          3
+        ]
+      ]
+    }
+  ]
+}

@@ -50,19 +50,36 @@ impl<'scope, T: Send + 'scope> Joined<ScopedJoinHandle<'scope, T>> {
     pub(crate) fn spawn_scoped<'env, F>(
         scope: &'scope Scope<'scope, 'env>,
         name: &str,
+        permit: Workers,
+        run: F,
+    ) -> std::io::Result<Self>
+    where
+        F: FnOnce() -> T + Send + 'scope,
+    {
+        let memory = permit
+            .budget
+            .reserve(super::THREAD_MEMORY_BYTES)
+            .map_err(std::io::Error::other)?;
+        Self::spawn_scoped_funded(scope, name, permit, memory, run)
+    }
+    pub(crate) fn spawn_scoped_funded<'env, F>(
+        scope: &'scope Scope<'scope, 'env>,
+        name: &str,
         mut permit: Workers,
+        memory: super::Reservation,
         run: F,
     ) -> std::io::Result<Self>
     where
         F: FnOnce() -> T + Send + 'scope,
     {
         let slots = permit.take_thread_slots();
-        let live = permit.budget.thread_started();
+        let live = permit.budget.thread_started_with(memory);
         #[cfg(test)]
         let hook = permit.budget.0.helper_exit.lock().unwrap().clone();
         #[cfg(test)]
         let worker_hook = hook.clone();
         let handle = thread::Builder::new()
+            .stack_size(crate::engine_stack::WORKER_STACK_BYTES)
             .name(name.into())
             .spawn_scoped(scope, move || {
                 // The test parks during late teardown, after runnable work has
@@ -155,7 +172,7 @@ pub(crate) mod testing {
 
     #[test]
     fn scoped_spawn_panic_returns_admission_and_live_count() {
-        let budget = Budget::new(1024);
+        let budget = Budget::new(1 << 20);
         let result = std::panic::catch_unwind(|| {
             std::thread::scope(|scope| {
                 // A NUL in a thread name deterministically rejects construction

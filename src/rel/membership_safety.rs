@@ -83,6 +83,11 @@ fn column_bound(node: &Node, column: usize) -> Option<u128> {
                     // the absolute sum bound also covers binary64 rounding;
                     // the aggregate's own totality is checked at admission.
                     Aggregate::Avg => sum_bound(aggregate.input.as_ref()?, input)?.checked_mul(2),
+                    Aggregate::StringAgg(_)
+                    | Aggregate::Moment { .. }
+                    | Aggregate::ArgExtreme { .. }
+                    | Aggregate::Quantile(_)
+                    | Aggregate::Mode { .. } => None,
                 }
             }
         },
@@ -185,6 +190,7 @@ pub(in crate::rel) fn expression_is_total(e: &Expr, input: &Node) -> bool {
 /// The caller still preserves cardinality boundaries and remaps demanded keys.
 pub(super) fn can_move_membership_across(node: &Node) -> bool {
     match &node.op {
+        RelOp::Generate { .. } => false, // argument evaluation may fail
         RelOp::Scan { .. }
         | RelOp::Rename { .. }
         | RelOp::Project { .. }
@@ -277,6 +283,13 @@ pub(in crate::rel) fn aggregate_is_total(plan: &Plan, input: &Node) -> bool {
                 .input
                 .as_ref()
                 .is_some_and(|e| e.ty == Type::Null || sum_bound(e, input).is_some()),
+            // Output size limits, tie refusals, degenerate-group refusals and
+            // overflow are errors at finalization.
+            Aggregate::StringAgg(_) | Aggregate::Moment { .. } | Aggregate::ArgExtreme { .. } => {
+                false
+            }
+            // Some groups are refused at finalization where the references disagree.
+            Aggregate::Quantile(_) | Aggregate::Mode { .. } => false,
         }
     })
 }

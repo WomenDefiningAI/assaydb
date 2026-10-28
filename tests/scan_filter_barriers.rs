@@ -1,5 +1,5 @@
 use arrow::{
-    array::{ArrayRef, Decimal128Array, Float64Array, Int64Array, StringArray},
+    array::{ArrayRef, Date32Array, Decimal128Array, Float64Array, Int64Array, StringArray},
     datatypes::{DataType, Field, Schema},
     record_batch::RecordBatch,
 };
@@ -116,6 +116,104 @@ fn assert_error_matrix(sql: &str, expected: &str) {
         }
     }
     assert!(failures.is_empty(), "expected {expected}: {failures:#?}");
+}
+
+#[test]
+fn literal_date_casts_keep_scan_filters_and_join_paths() {
+    let mut tables = Tables::new();
+    tables.write(
+        "dates",
+        vec![
+            ("k", Arc::new(Int64Array::from_iter_values(0..512))),
+            (
+                "d",
+                // A narrow range within decades of dates satisfies the real
+                // reader-filter cost gate; retain NULLs in the source too.
+                Arc::new(Date32Array::from_iter(
+                    (0..512).map(|i| (i % 5 != 4).then_some(i * 31)),
+                )),
+            ),
+            ("payload", Arc::new(StringArray::from(vec!["p"; 512]))),
+        ],
+    );
+    let query = |lo: &str, hi: &str| {
+        format!(
+            "SELECT p.k,p.payload FROM (SELECT k,payload FROM dates WHERE d>={lo} AND d<{hi}) p JOIN b ON p.k=b.k"
+        )
+    };
+    let base = Options {
+        parquet_cache_bytes: Some(16 * 1024 * 1024),
+        ..Options::default()
+    };
+    let literal = prepare(
+        &query("DATE '1970-02-01'", "DATE '1970-04-01'"),
+        &tables.0,
+        &base,
+    )
+    .unwrap();
+    for (lo, hi) in [
+        ("CAST('1970-02-01' AS DATE)", "CAST('1970-04-01' AS DATE)"),
+        ("'1970-02-01'::DATE", "'1970-04-01'::DATE"),
+        ("CAST(' 1970-02-01 ' AS DATE)", "' 1970-04-01 '::DATE"),
+    ] {
+        let sql = query(lo, hi);
+        let prepared = prepare(&sql, &tables.0, &base).unwrap();
+        // DATE constants must reach the optimizer in the same form as typed
+        // literals, including all relational filters and join decisions.
+        assert_eq!(
+            serde_json::to_value(&prepared.relational).unwrap(),
+            serde_json::to_value(&literal.relational).unwrap(),
+            "{sql}"
+        );
+        assert_eq!(
+            serde_json::to_value(&prepared.plan).unwrap(),
+            serde_json::to_value(&literal.plan).unwrap(),
+            "{sql}"
+        );
+        for workers in [1, 4, 10] {
+            for batch_size in [1, 7, 8192] {
+                let options = Options {
+                    workers,
+                    batch_size,
+                    ..base.clone()
+                };
+                let expected = execute(&literal, &options).unwrap();
+                let actual = execute(&prepared, &options).unwrap();
+                assert_eq!(actual.batch, expected.batch, "{sql}");
+                assert_eq!(actual.batch.num_rows(), 1);
+                assert_eq!(
+                    actual.batch.column(0).as_ref(),
+                    &Int64Array::from(vec![1]) as &dyn arrow::array::Array
+                );
+                assert_eq!(
+                    actual.batch.column(1).as_ref(),
+                    &StringArray::from(vec!["p"]) as &dyn arrow::array::Array
+                );
+                assert_eq!(
+                    actual.metrics.static_scan_filters,
+                    expected.metrics.static_scan_filters
+                );
+                assert!(
+                    actual.metrics.static_scan_filters > 0,
+                    "{sql}; workers={workers}, batch={batch_size}"
+                );
+                if workers > 1 {
+                    assert!(
+                        actual.metrics.lane_fused_joins > 0,
+                        "{sql}; workers={workers}, batch={batch_size}"
+                    );
+                }
+                assert_eq!(
+                    actual.metrics.dynamic_scan_filters,
+                    expected.metrics.dynamic_scan_filters
+                );
+                assert_eq!(
+                    actual.metrics.lane_fused_joins,
+                    expected.metrics.lane_fused_joins
+                );
+            }
+        }
+    }
 }
 
 #[test]
@@ -462,12 +560,40 @@ fn key_payload(keys: Vec<i64>) -> Vec<ArrayRef> {
 fn positive_in_rewrite_observes_filter_residual_and_join_key_barriers() {
     let tables = Tables::new();
     // The first two queries are the review's exact positive-IN reproducers.
-    for sql in [
+    // Guarded AND (Helen, October 17, 2026; SEMANTICS-LOG "Guarded AND/OR
+    // planner rules"): a conjunct of the same WHERE that is FALSE decides the
+    // row, so the overflow on k=-1 (not in b) is no longer raised; DuckDB
+    // 1.5.6 and PostgreSQL 17 return these rows. Old expectation: OVERFLOW.
+    check_membership_matrix(
+        &tables,
         "SELECT r.k,r.payload FROM r WHERE r.a*10000000000000000000000000000000000000 > 0 AND r.k IN (SELECT k FROM b)",
+        Ok(key_payload(vec![1])),
+        FilterMetric::None,
+    );
+    check_membership_matrix(
+        &tables,
+        "SELECT r.k,r.payload FROM r WHERE r.a*10000000000000000000000000000000000000 > 0 AND r.k IN (SELECT k FROM b WHERE k<0)",
+        Ok(key_payload(vec![])),
+        FilterMetric::None,
+    );
+    // An inner join's ON conjuncts and WHERE form one conjunction, so the IN
+    // conjunct guards the ON residual too (old expectation: OVERFLOW; DuckDB
+    // and PostgreSQL return k=1).
+    check_membership_matrix(
+        &tables,
         "SELECT r.k,r.payload FROM r JOIN c ON r.k=c.k AND r.a*10000000000000000000000000000000000000 > c.a WHERE r.k IN (SELECT k FROM b)",
+        Ok(key_payload(vec![1])),
+        FilterMetric::None,
+    );
+    // A join key that may fail is computed for every row passing the total
+    // conditions on its own table; an IN subquery is not one of them, so
+    // these errors stay required (DuckDB and PostgreSQL return no rows).
+    for sql in [
         "SELECT r.k,r.payload FROM r JOIN c ON r.a*10000000000000000000000000000000000000=c.k WHERE r.k IN (SELECT k FROM b)",
         "SELECT r.k,r.payload FROM c JOIN r ON c.k=r.a*10000000000000000000000000000000000000 WHERE r.k IN (SELECT k FROM b)",
-        "SELECT r.k,r.payload FROM r WHERE r.a*10000000000000000000000000000000000000 > 0 AND r.k IN (SELECT k FROM b WHERE k<0)",
+        // Unguarded: k=-1 is a member of c, so its overflow is needed.
+        "SELECT r.k,r.payload FROM r WHERE r.a*10000000000000000000000000000000000000 > 0 AND r.k IN (SELECT k FROM c)",
+        "SELECT r.k,r.payload FROM r WHERE r.k IN (SELECT k FROM b) OR r.a*10000000000000000000000000000000000000 > 0",
     ] {
         check_membership_matrix(&tables, sql, Err(OVERFLOW), FilterMetric::None);
     }
@@ -722,16 +848,15 @@ fn aggregate_demand_keeps_k1_bounded_avg_min_and_sum_admission() {
             relational_optimizations,
             ..Options::default()
         };
-        assert_eq!(
-            prepare(
-                "SELECT k FROM r WHERE k IN (SELECT f FROM c)",
-                &tables.0,
-                &options
-            )
-            .err()
-            .as_deref(),
-            Some("unsupported: mixed Int/Float IN subquery comparison")
-        );
+        // Old: refused as a mixed Int/Float IN subquery. New (Helen, Oct 15):
+        // DOUBLE membership. No key in -1..511 equals 1e308 (DuckDB: no rows).
+        let prepared = prepare(
+            "SELECT k FROM r WHERE k IN (SELECT f FROM c)",
+            &tables.0,
+            &options,
+        )
+        .unwrap();
+        assert_eq!(execute(&prepared, &options).unwrap().batch.num_rows(), 0);
     }
 }
 
@@ -770,18 +895,59 @@ fn aggregate_demand_cannot_hide_unbounded_decimal_sum() {
 }
 
 #[test]
-fn planner_on_and_comma_pushdown_preserve_required_key_and_residual_errors() {
+fn planner_on_and_comma_guards_decide_fallible_keys_and_residuals() {
     let mut tables = Tables::with_tail(0);
     tables.write("z", vec![("k", Arc::new(Int64Array::from(vec![0])))]);
     // The first SQL is the review's exact suppressed-overflow reproducer.
-    // Its total IN predicate must not remove the -1 row before key evaluation.
+    // Guarded AND (Helen, October 17, 2026; SEMANTICS-LOG "Guarded AND/OR
+    // planner rules"): the total conjunct r.k IN (1) of the same ON/WHERE
+    // rejects the -1 row, so its key/residual overflow is not raised; DuckDB
+    // 1.5.6 and PostgreSQL 17 return these answers. Old expectation: OVERFLOW
+    // for all six (test formerly named
+    // planner_on_and_comma_pushdown_preserve_required_key_and_residual_errors).
+    let one = || Ok(vec![Arc::new(Int64Array::from(vec![1])) as ArrayRef]);
+    let none = || {
+        Ok(vec![
+            Arc::new(Int64Array::from(Vec::<i64>::new())) as ArrayRef
+        ])
+    };
+    for (sql, expected) in [
+        (
+            "SELECT r.k FROM r JOIN z ON r.a*10000000000000000000000000000000000000=z.k AND r.k IN (1)",
+            one(),
+        ),
+        (
+            "SELECT r.k FROM z JOIN r ON r.a*10000000000000000000000000000000000000=z.k AND r.k IN (1)",
+            one(),
+        ),
+        (
+            "SELECT r.k FROM r,z WHERE r.a*10000000000000000000000000000000000000=z.k AND r.k IN (1)",
+            one(),
+        ),
+        (
+            "SELECT r.k FROM r JOIN z ON r.a*10000000000000000000000000000000000000>z.k AND r.k IN (1)",
+            none(),
+        ),
+        (
+            "SELECT r.k FROM r,z WHERE r.a*10000000000000000000000000000000000000>z.k AND r.k IN (1)",
+            none(),
+        ),
+        (
+            "SELECT r.k FROM r WHERE EXISTS(SELECT 1 FROM z WHERE r.a*10000000000000000000000000000000000000=z.k AND r.k IN (1))",
+            one(),
+        ),
+    ] {
+        check_membership_matrix(&tables, sql, expected, FilterMetric::None);
+    }
+    // The same shapes with no conjunct rejecting k=-1 still raise at every
+    // setting, as before.
     for sql in [
-        "SELECT r.k FROM r JOIN z ON r.a*10000000000000000000000000000000000000=z.k AND r.k IN (1)",
-        "SELECT r.k FROM z JOIN r ON r.a*10000000000000000000000000000000000000=z.k AND r.k IN (1)",
-        "SELECT r.k FROM r,z WHERE r.a*10000000000000000000000000000000000000=z.k AND r.k IN (1)",
-        "SELECT r.k FROM r JOIN z ON r.a*10000000000000000000000000000000000000>z.k AND r.k IN (1)",
-        "SELECT r.k FROM r,z WHERE r.a*10000000000000000000000000000000000000>z.k AND r.k IN (1)",
-        "SELECT r.k FROM r WHERE EXISTS(SELECT 1 FROM z WHERE r.a*10000000000000000000000000000000000000=z.k AND r.k IN (1))",
+        "SELECT r.k FROM r JOIN z ON r.a*10000000000000000000000000000000000000=z.k",
+        "SELECT r.k FROM z JOIN r ON r.a*10000000000000000000000000000000000000=z.k AND r.k IN (-1, 1)",
+        "SELECT r.k FROM r,z WHERE r.a*10000000000000000000000000000000000000=z.k AND r.k < 2",
+        "SELECT r.k FROM r JOIN z ON r.a*10000000000000000000000000000000000000>z.k AND r.k IN (-1, 1)",
+        "SELECT r.k FROM r,z WHERE r.a*10000000000000000000000000000000000000>z.k",
+        "SELECT r.k FROM r WHERE EXISTS(SELECT 1 FROM z WHERE r.a*10000000000000000000000000000000000000=z.k)",
     ] {
         check_membership_matrix(&tables, sql, Err(OVERFLOW), FilterMetric::None);
     }

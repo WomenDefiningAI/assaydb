@@ -45,6 +45,7 @@ fn admitted(schema: &SchemaRef) -> bool {
                 | DataType::Int64
                 | DataType::Float64
                 | DataType::Date32
+                | DataType::Timestamp(arrow::datatypes::TimeUnit::Microsecond, _)
                 | DataType::Decimal128(_, _)
                 | DataType::Utf8
         )

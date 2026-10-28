@@ -177,7 +177,7 @@ fn clustered_run(
     sql: &str,
     workers: usize,
     baseline: bool,
-) -> Result<Execution, String> {
+) -> Result<Execution, assaydb::Error> {
     let options = Options {
         workers,
         batch_size: 7,

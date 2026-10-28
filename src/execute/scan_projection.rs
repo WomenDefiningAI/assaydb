@@ -41,15 +41,14 @@ pub(super) fn transform(
     let projection = layout.clone();
     let budget = budget.clone();
     let cancellation = options.cancellation.clone();
-    let transform: BatchTransform = Arc::new(move |batch| {
+    let transform: BatchTransform = Arc::new(move |batch, lease| {
         cancellation.check()?;
         let raw_rows = batch.num_rows();
         let raw_bytes = batch.get_array_memory_size();
         let (batch, lease) = if let Some(filter) = &filter {
-            let output = filter(batch)?;
+            let output = filter(batch, lease)?;
             (output.batch, output.lease)
         } else {
-            let lease = budget.reserve(raw_bytes)?;
             (batch, lease)
         };
         let start = Instant::now();
@@ -306,7 +305,15 @@ mod tests {
                 };
                 let budget = Budget::new(bytes);
                 let result = execute_in_budget(
-                    &prepare("SELECT SUM(k) AS s FROM t WHERE k<4", &tables, &options).unwrap(),
+                    &prepare(
+                        "SELECT SUM(k) AS s FROM t WHERE k<4",
+                        &tables,
+                        &Options {
+                            memory_bytes: 16 << 20,
+                            ..options.clone()
+                        },
+                    )
+                    .unwrap(),
                     &options,
                     budget.clone(),
                 );
@@ -552,7 +559,15 @@ mod tests {
             let budget = Budget::new(bytes);
             let sql = "SELECT s,COUNT(*) AS n,SUM(k+1) AS total,AVG(k+1) AS a FROM t GROUP BY s";
             match execute_in_budget(
-                &prepare(sql, &tables, &options).unwrap(),
+                &prepare(
+                    sql,
+                    &tables,
+                    &Options {
+                        memory_bytes: 16 << 20,
+                        ..options.clone()
+                    },
+                )
+                .unwrap(),
                 &options,
                 budget.clone(),
             ) {

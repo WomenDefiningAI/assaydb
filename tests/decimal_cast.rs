@@ -15,7 +15,7 @@ fn coefficients(batch: &RecordBatch) -> Vec<Option<i128>> {
         .iter()
         .collect()
 }
-fn controls(run: &mut impl FnMut(&str) -> Result<RecordBatch, String>) {
+fn controls(run: &mut impl FnMut(&str) -> Result<RecordBatch, assaydb::Error>) {
     for (source, p, s, expected) in [
         ("'1.25'", 3, 2, 125),
         ("1.245", 5, 2, 125),
@@ -99,11 +99,19 @@ fn controls(run: &mut impl FnMut(&str) -> Result<RecordBatch, String>) {
         "SELECT CAST(1 AS NUMERIC(39,0))",
         "SELECT CAST(1 AS DEC(20,19))",
         "SELECT CAST(1 AS DECIMAL(2,3))",
-        "SELECT CAST(1 AS DECIMAL)",
         "SELECT 1::NUMERIC(5)",
-        "SELECT CAST(CAST(1 AS REAL) AS DECIMAL(4,2))",
     ] {
         assert!(run(sql).is_err(), "{sql}");
+    }
+    for (sql, coefficient) in [
+        ("SELECT CAST(1 AS DECIMAL)", 1000),
+        ("SELECT CAST(CAST(1 AS REAL) AS DECIMAL(4,2))", 100),
+    ] {
+        assert_eq!(
+            coefficients(&run(sql).unwrap()),
+            vec![Some(coefficient)],
+            "{sql}"
+        );
     }
     for sql in [
         "SELECT CASE WHEN FALSE THEN CAST(10 AS DECIMAL(1,0)) ELSE CAST(7 AS DECIMAL(1,0)) END",
@@ -111,12 +119,16 @@ fn controls(run: &mut impl FnMut(&str) -> Result<RecordBatch, String>) {
     ] {
         assert_eq!(coefficients(&run(sql).unwrap()), vec![Some(7)], "{sql}");
     }
-    // Retain lossless literal text behavior, including rejecting scale loss.
+    // Retain lossless literal text behavior. Scale loss, refused on the base,
+    // now rounds half away from zero like DuckDB 1.5.6 (1.26).
     assert_eq!(
         coefficients(&run("SELECT CAST('1.25' AS DECIMAL(3,2))").unwrap()),
         vec![Some(125)]
     );
-    assert!(run("SELECT CAST('1.255' AS DECIMAL(3,2))").is_err());
+    assert_eq!(
+        coefficients(&run("SELECT CAST('1.255' AS DECIMAL(3,2))").unwrap()),
+        vec![Some(126)]
+    );
 }
 
 #[test]
@@ -220,11 +232,17 @@ fn explicit_decimal_columns_aggregates_and_reached_rows() {
                     "{sql}: {error}"
                 );
             }
-            let error = session
+            // TEXT columns, refused on the base, now convert complete input.
+            let Output::Query { execution, .. } = session
                 .execute_sql("SELECT CAST(t AS DECIMAL(4,2)) FROM dc")
-                .err()
-                .expect("expected unsupported text source");
-            assert!(error.message.contains("exact numeric source"), "{error}");
+                .unwrap()
+            else {
+                panic!("query")
+            };
+            assert_eq!(
+                coefficients(&execution.batch),
+                vec![Some(100), Some(200), Some(300), Some(400)]
+            );
         }
     }
 }

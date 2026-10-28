@@ -7,12 +7,24 @@ use arrow::array::*;
 use arrow::datatypes::DataType;
 use serde::Serialize;
 use std::sync::Arc;
+pub mod cast_dialect;
 pub(crate) mod casts;
+pub(crate) mod date;
+mod guard;
 mod integer;
+pub mod timestamp;
 use integer::{add_sub, multiply};
+pub mod math;
 mod nullif;
 pub(crate) mod numeric_compare;
+pub(crate) mod pack;
+pub mod regexp;
 mod remainder;
+pub(crate) mod round;
+pub(crate) mod sort_pack;
+pub mod text;
+mod text_case;
+pub use text::{Call, Escape};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum Literal {
@@ -21,6 +33,8 @@ pub enum Literal {
     Text(String),
     Binary(Vec<u8>),
     Date(i32),
+    /// TIMESTAMP microseconds since 1970-01-01 00:00:00.
+    Timestamp(i64),
     Null,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -55,7 +69,18 @@ pub enum Kind {
     Substring(Box<Expr>, usize, usize),
     Case(Vec<(Expr, Expr)>, Box<Expr>),
     Cast(Box<Expr>),
+    DialectCast(Box<Expr>, cast_dialect::Target),
+    CastVarchar(Box<Expr>, u64),
     CastDecimal(Box<Expr>, u8, i8),
+    /// String functions; see `text::Call` for argument order.
+    Call(Call, Vec<Expr>),
+    /// STRING_AGG input only: memcmp-ordered `(key, descending, nulls_first)`
+    /// sort key bytes followed by the TEXT value; NULL when the value is NULL.
+    SortPack(Vec<(Expr, bool, bool)>, Box<Expr>),
+    /// Two aggregate arguments as one Binary value; see [`pack`].
+    Pack(Box<Expr>, Box<Expr>),
+    /// Scalar math functions; see `math::Function` for argument order.
+    Math(math::Function, Vec<Expr>),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Expr {
@@ -76,6 +101,14 @@ impl Value {
         Ok(Self {
             array,
             _lease: Arc::new(lease),
+        })
+    }
+    /// A view (such as a slice) of an array whose buffers are already funded
+    /// by a lease the caller holds for longer than this value.
+    pub(crate) fn view(array: ArrayRef, budget: &Budget) -> Result<Self> {
+        Ok(Self {
+            array,
+            _lease: Arc::new(budget.reserve(0)?),
         })
     }
     fn allocated(array: ArrayRef, lease: Reservation) -> Self {
@@ -109,14 +142,14 @@ fn decimal(values: Vec<Option<i128>>, scale: i8) -> Result<ArrayRef> {
     Ok(Arc::new(
         Decimal128Array::from(values)
             .with_precision_and_scale(38, scale)
-            .map_err(|e| e.to_string())?,
+            .map_err(|e| crate::Error::from(e.to_string()))?,
     ))
 }
 fn decimal_non_null(values: Vec<i128>, scale: i8) -> Result<ArrayRef> {
     Ok(Arc::new(
         Decimal128Array::from(values)
             .with_precision_and_scale(38, scale)
-            .map_err(|e| e.to_string())?,
+            .map_err(|e| crate::Error::from(e.to_string()))?,
     ))
 }
 // Keep the new checked operation's row loop outside the common evaluator.
@@ -267,12 +300,15 @@ impl Expr {
             Kind::Binary(_, a, b)
             | Kind::Like(a, b, _)
             | Kind::Position(a, b)
-            | Kind::NullIf(a, b) => {
+            | Kind::NullIf(a, b)
+            | Kind::Pack(a, b) => {
                 a.remap_columns(mapping)?;
                 b.remap_columns(mapping)?;
             }
             Kind::Function(_, a)
             | Kind::Cast(a)
+            | Kind::DialectCast(a, _)
+            | Kind::CastVarchar(a, _)
             | Kind::CastDecimal(a, _, _)
             | Kind::Not(a)
             | Kind::Neg(a)
@@ -285,6 +321,17 @@ impl Expr {
                     value.remap_columns(mapping)?;
                 }
                 other.remap_columns(mapping)?;
+            }
+            Kind::Call(_, args) | Kind::Math(_, args) => {
+                for arg in args {
+                    arg.remap_columns(mapping)?;
+                }
+            }
+            Kind::SortPack(keys, value) => {
+                for (key, _, _) in keys {
+                    key.remap_columns(mapping)?;
+                }
+                value.remap_columns(mapping)?;
             }
             Kind::Literal(_) => {}
         }
@@ -299,12 +346,15 @@ impl Expr {
             Kind::Binary(_, a, b)
             | Kind::Like(a, b, _)
             | Kind::Position(a, b)
-            | Kind::NullIf(a, b) => {
+            | Kind::NullIf(a, b)
+            | Kind::Pack(a, b) => {
                 a.columns(set);
                 b.columns(set);
             }
             Kind::Function(_, a)
             | Kind::Cast(a)
+            | Kind::DialectCast(a, _)
+            | Kind::CastVarchar(a, _)
             | Kind::CastDecimal(a, _, _)
             | Kind::Not(a)
             | Kind::Neg(a)
@@ -318,9 +368,327 @@ impl Expr {
                 }
                 other.columns(set);
             }
+            Kind::Call(_, args) | Kind::Math(_, args) => {
+                for arg in args {
+                    arg.columns(set);
+                }
+            }
+            Kind::SortPack(keys, value) => {
+                for (key, _, _) in keys {
+                    key.columns(set);
+                }
+                value.columns(set);
+            }
             _ => {}
         }
     }
+    /// `Kind::Binary` evaluation. Operands are evaluated in this small frame;
+    /// the arithmetic/comparison kernels run in `combine_binary` after both
+    /// operands return, so a long operator chain recurses only through
+    /// `eval` and this function.
+    #[inline(never)]
+    fn eval_binary(
+        &self,
+        op: Op,
+        a: &Expr,
+        b: &Expr,
+        input: &Input,
+        budget: &Budget,
+        lease: Reservation,
+    ) -> Result<Value> {
+        if op == Op::Or
+            && let Some(array) = string_membership(self, input, budget)?
+        {
+            return Ok(Value::allocated(array, lease));
+        }
+        if matches!(op, Op::And | Op::Or) {
+            return self.eval_boolean(op, a, b, input, budget, lease);
+        }
+        if let Some(array) = scalar_comparison(op, a, b, input, budget)? {
+            return Ok(Value::allocated(array, lease));
+        }
+        if let Some(array) = scalar_arithmetic(op, a, b, &self.ty, input, budget)? {
+            return Ok(Value::allocated(array, lease));
+        }
+        let av = a.eval(input, budget)?;
+        let bv = b.eval(input, budget)?;
+        self.combine_binary(op, a, b, av, bv, input.len, lease)
+    }
+    #[inline(never)]
+    #[allow(clippy::too_many_arguments)]
+    fn combine_binary(
+        &self,
+        op: Op,
+        a: &Expr,
+        b: &Expr,
+        av: Value,
+        bv: Value,
+        n: usize,
+        lease: Reservation,
+    ) -> Result<Value> {
+        if a.ty == Type::Null && b.ty == Type::Null {
+            return Ok(Value::allocated(
+                new_null_array(&internal_type(&self.ty), n),
+                lease,
+            ));
+        }
+        if matches!(op, Op::Add | Op::Sub) && (a.ty == Type::Date || b.ty == Type::Date) {
+            return Ok(Value::allocated(
+                date::arithmetic(op, &av.array, &a.ty, &bv.array, &b.ty)?,
+                lease,
+            ));
+        }
+        if op == Op::Mod {
+            return Ok(Value::allocated(
+                remainder::evaluate(&av.array, &a.ty, &bv.array, &b.ty, &self.ty)?,
+                lease,
+            ));
+        }
+        if self.ty == Type::Float && matches!(op, Op::Add | Op::Sub | Op::Mul | Op::Div) {
+            let aa = to_float(&av.array, &a.ty)?;
+            let bb = to_float(&bv.array, &b.ty)?;
+            let out = aa
+                .iter()
+                .zip(bb.iter())
+                .map(|(x, y)| match (x, y) {
+                    (Some(x), Some(y)) => {
+                        if op == Op::Div && y == 0.0 {
+                            // NaN / zero is NaN in both DuckDB 1.5.6 and
+                            // PostgreSQL 17, for Float and DECIMAL zeros
+                            // (maintainer decision 2026-10-17). Other
+                            // dividends keep the approved rules below.
+                            if x.is_nan() {
+                                return Ok(Some(x));
+                            }
+                            // The approved SQLite change covers Int/Float.
+                            // Preserve the separate exact DECIMAL contract.
+                            if matches!(a.ty, Type::Decimal(_)) || matches!(b.ty, Type::Decimal(_))
+                            {
+                                return Err("division by zero".into());
+                            }
+                            return Ok(None);
+                        }
+                        let v = match op {
+                            Op::Add => x + y,
+                            Op::Sub => x - y,
+                            Op::Mul => x * y,
+                            _ => x / y,
+                        };
+                        // NaN/infinite operands propagate as IEEE results
+                        // (DuckDB 1.5.6 = PostgreSQL 17). Finite operands that
+                        // overflow stay an error: PostgreSQL raises one where
+                        // DuckDB returns infinity. Finite operands never yield NaN.
+                        if !v.is_finite() && x.is_finite() && y.is_finite() {
+                            return Err("floating arithmetic overflow".into());
+                        }
+                        Ok(Some(v))
+                    }
+                    _ => Ok(None),
+                })
+                .collect::<Result<Vec<_>>>()?;
+            return Ok(Value::allocated(Arc::new(Float64Array::from(out)), lease));
+        }
+        if matches!(op, Op::Eq | Op::Ne | Op::Lt | Op::Le | Op::Gt | Op::Ge)
+            && (a.ty == Type::Float || b.ty == Type::Float)
+        {
+            if matches!(
+                (&a.ty, &b.ty),
+                (Type::Int, Type::Float) | (Type::Float, Type::Int)
+            ) {
+                return Ok(Value::allocated(
+                    numeric_compare::compare(op, &av, &bv, a.ty == Type::Int),
+                    lease,
+                ));
+            }
+            let aa = to_float(&av.array, &a.ty)?;
+            let bb = to_float(&bv.array, &b.ty)?;
+            let out = aa.iter().zip(bb.iter()).map(|(x, y)| match (x, y) {
+                (Some(x), Some(y)) => Some(numeric_compare::real_compare(op, x, y)),
+                _ => None,
+            });
+            return Ok(Value::allocated(
+                Arc::new(BooleanArray::from_iter(out)),
+                lease,
+            ));
+        }
+        let array: ArrayRef = match op {
+            // Float/Decimal division has already returned above. The
+            // binder admits this remaining division only for Int/Int.
+            Op::Div => integer_division(&av.array, &bv.array)?,
+            Op::Mod => unreachable!("remainder returned above"),
+            Op::And | Op::Or => {
+                let aa = boolean(&av.array);
+                let bb = boolean(&bv.array);
+                Arc::new(
+                    if op == Op::And {
+                        arrow::compute::and_kleene(aa, bb)
+                    } else {
+                        arrow::compute::or_kleene(aa, bb)
+                    }
+                    .map_err(|e| crate::Error::from(e.to_string()))?,
+                )
+            }
+            Op::Add | Op::Sub | Op::Mul => {
+                let sa = a.ty.scale()?;
+                let sb = b.ty.scale()?;
+                let scale = self.ty.scale()?;
+                let (af, bf) = if op == Op::Mul {
+                    (1, 1)
+                } else {
+                    (factor(scale - sa)?, factor(scale - sb)?)
+                };
+                let aa = numeric(&av.array);
+                let bb = numeric(&bv.array);
+                let calculate = |x: i128, y: i128| -> Result<i128> {
+                    if op == Op::Mul {
+                        multiply(x, y)
+                    } else {
+                        add_sub(x, y, af, bf, op == Op::Sub)
+                    }
+                };
+                if aa.null_count() == 0 && bb.null_count() == 0 {
+                    if n >= 64
+                        && let Some(values) =
+                            narrow_batch_arithmetic(aa.values(), bb.values(), op, af, bf)
+                    {
+                        return Ok(Value::allocated(decimal_non_null(values, scale)?, lease));
+                    }
+                    // Avoid Option<i128> temporaries and validity-building
+                    // passes when the input batches have no NULL values.
+                    let mut values = Vec::with_capacity(n);
+                    for (x, y) in aa.values().iter().zip(bb.values()) {
+                        values.push(calculate(*x, *y)?);
+                    }
+                    decimal_non_null(values, scale)?
+                } else {
+                    let mut values = Vec::with_capacity(n);
+                    for (x, y) in aa.iter().zip(bb.iter()) {
+                        values.push(match (x, y) {
+                            (Some(x), Some(y)) => Some(calculate(x, y)?),
+                            _ => None,
+                        });
+                    }
+                    decimal(values, scale)?
+                }
+            }
+            _ => {
+                // Compare whole typed arrays when scales already agree.
+                // This avoids checked decimal rescaling on every row of
+                // the common scan predicates; mixed scales retain the
+                // exact checked path below.
+                if a.ty == b.ty && a.ty != Type::Null {
+                    use arrow::compute::kernels::cmp;
+                    let left = av.array.as_ref();
+                    let right = bv.array.as_ref();
+                    let values = match op {
+                        Op::Eq => cmp::eq(&left, &right),
+                        Op::Ne => cmp::neq(&left, &right),
+                        Op::Lt => cmp::lt(&left, &right),
+                        Op::Le => cmp::lt_eq(&left, &right),
+                        Op::Gt => cmp::gt(&left, &right),
+                        Op::Ge => cmp::gt_eq(&left, &right),
+                        _ => unreachable!(),
+                    }
+                    .map_err(|e| crate::Error::from(e.to_string()))?;
+                    return Ok(Value::allocated(Arc::new(values), lease));
+                }
+                if let (Ok(sa), Ok(sb)) = (a.ty.scale(), b.ty.scale()) {
+                    let scale = sa.max(sb);
+                    let af = factor(scale - sa)?;
+                    let bf = factor(scale - sb)?;
+                    let aa = numeric(&av.array);
+                    let bb = numeric(&bv.array);
+                    let values = aa
+                        .iter()
+                        .zip(bb.iter())
+                        .map(|(x, y)| match (x, y) {
+                            (Some(x), Some(y)) => {
+                                let x = checked(x.checked_mul(af))?;
+                                let y = checked(y.checked_mul(bf))?;
+                                Ok(Some(match op {
+                                    Op::Eq => x == y,
+                                    Op::Ne => x != y,
+                                    Op::Lt => x < y,
+                                    Op::Le => x <= y,
+                                    Op::Gt => x > y,
+                                    Op::Ge => x >= y,
+                                    _ => unreachable!(),
+                                }))
+                            }
+                            _ => Ok(None),
+                        })
+                        .collect::<Result<Vec<_>>>()?;
+                    return Ok(Value::allocated(
+                        Arc::new(BooleanArray::from(values)),
+                        lease,
+                    ));
+                }
+                let values = (0..n)
+                    .map(|i| {
+                        if is_sql_null(av.array.as_ref(), i) || is_sql_null(bv.array.as_ref(), i) {
+                            return Ok(None);
+                        }
+                        let cmp = match &a.ty {
+                            Type::Int | Type::Decimal(_) => {
+                                let scale = a.ty.scale()?.max(b.ty.scale()?);
+                                rescale(numeric(&av.array).value(i), a.ty.scale()?, scale)?.cmp(
+                                    &rescale(numeric(&bv.array).value(i), b.ty.scale()?, scale)?,
+                                )
+                            }
+                            Type::Date => av
+                                .array
+                                .as_any()
+                                .downcast_ref::<Date32Array>()
+                                .unwrap()
+                                .value(i)
+                                .cmp(
+                                    &bv.array
+                                        .as_any()
+                                        .downcast_ref::<Date32Array>()
+                                        .unwrap()
+                                        .value(i),
+                                ),
+                            Type::Timestamp | Type::TimestampTz => {
+                                timestamp::value(av.array.as_ref(), i)
+                                    .cmp(&timestamp::value(bv.array.as_ref(), i))
+                            }
+                            Type::Text => av
+                                .array
+                                .as_any()
+                                .downcast_ref::<StringArray>()
+                                .unwrap()
+                                .value(i)
+                                .cmp(
+                                    bv.array
+                                        .as_any()
+                                        .downcast_ref::<StringArray>()
+                                        .unwrap()
+                                        .value(i),
+                                ),
+                            Type::Bool => boolean(&av.array)
+                                .value(i)
+                                .cmp(&boolean(&bv.array).value(i)),
+                            _ => return Err("unsupported comparison type".into()),
+                        };
+                        Ok(Some(match op {
+                            Op::Eq => cmp.is_eq(),
+                            Op::Ne => !cmp.is_eq(),
+                            Op::Lt => cmp.is_lt(),
+                            Op::Le => !cmp.is_gt(),
+                            Op::Gt => cmp.is_gt(),
+                            Op::Ge => !cmp.is_lt(),
+                            _ => unreachable!(),
+                        }))
+                    })
+                    .collect::<Result<Vec<_>>>()?;
+                Arc::new(BooleanArray::from(values))
+            }
+        };
+
+        Ok(Value::allocated(array, lease))
+    }
+    /// Kinds that repeat along operator and postfix chains recurse through
+    /// this small frame (and `eval_binary`); the rest run in `eval_node`.
     pub fn eval(&self, input: &Input, budget: &Budget) -> Result<Value> {
         let n = input.len;
         if let Kind::Column(i) = &self.kind {
@@ -338,24 +706,84 @@ impl Expr {
             }
             _ => 0,
         };
+        if let Kind::SortPack(keys, value) = &self.kind {
+            return sort_pack::evaluate(keys, value, input, budget);
+        }
         let lease = budget.reserve(workspace(n, extra)?)?;
+        match &self.kind {
+            Kind::Binary(op, a, b) => self.eval_binary(*op, a, b, input, budget, lease),
+            Kind::Cast(a) => {
+                drop(lease);
+                casts::evaluate(a, &self.ty, input, budget)
+            }
+            Kind::Not(a) | Kind::IsNull(a, _) => {
+                let v = a.eval(input, budget)?;
+                Ok(Value::allocated(self.eval_unary(&v.array, n), lease))
+            }
+            _ => self.eval_node(input, budget, lease),
+        }
+    }
+    #[inline(never)]
+    fn eval_unary(&self, v: &ArrayRef, n: usize) -> ArrayRef {
+        match &self.kind {
+            Kind::Not(_) => Arc::new(BooleanArray::from_iter(
+                boolean(v).iter().map(|v| v.map(|x| !x)),
+            )),
+            Kind::IsNull(_, neg) => Arc::new(BooleanArray::from_iter(
+                (0..n).map(|i| Some(is_sql_null(v.as_ref(), i) != *neg)),
+            )),
+            _ => unreachable!("dispatched by eval"),
+        }
+    }
+    #[inline(never)]
+    fn eval_node(&self, input: &Input, budget: &Budget, lease: Reservation) -> Result<Value> {
+        let n = input.len;
         let array: ArrayRef = match &self.kind {
+            Kind::Binary(..) | Kind::Cast(_) | Kind::Not(_) | Kind::IsNull(..) => {
+                unreachable!("dispatched by eval")
+            }
             Kind::NullIf(a, b) => {
                 drop(lease);
                 return nullif::evaluate(a, b, &self.ty, input, budget);
+            }
+            Kind::DialectCast(a, target) => {
+                drop(lease);
+                return cast_dialect::evaluate(a, target, input, budget);
+            }
+            Kind::Pack(a, b) => {
+                drop(lease);
+                return pack::evaluate(a, b, input, budget);
             }
             Kind::CastDecimal(a, precision, scale) => {
                 drop(lease);
                 return casts::evaluate_decimal(a, *precision, *scale, input, budget);
             }
-            Kind::Cast(a) => {
+            // Promotion is exactly the Int-to-REAL conversion; the marker only
+            // carries provenance for the consumer checks below.
+            Kind::Function(name, a) if name == crate::mixed_numeric::PROMOTE => {
                 drop(lease);
-                return casts::evaluate(a, &self.ty, input, budget);
+                return casts::evaluate(a, &Type::Float, input, budget);
+            }
+            Kind::CastVarchar(a, limit) => {
+                drop(lease);
+                return casts::evaluate_varchar(a, *limit, input, budget);
+            }
+            Kind::Call(call, args) => {
+                drop(lease);
+                return text::evaluate(*call, args, input, budget);
+            }
+            Kind::SortPack(..) => unreachable!("evaluated before the workspace lease"),
+            Kind::Math(function, args) => {
+                drop(lease);
+                return math::evaluate(*function, args, &self.ty, input, budget);
             }
             Kind::Literal(v) => match v {
                 Literal::Num(x) => decimal_non_null(vec![*x; n], self.ty.scale()?)?,
                 Literal::Bool(x) => Arc::new(BooleanArray::from(vec![*x; n])),
                 Literal::Date(x) => Arc::new(Date32Array::from(vec![*x; n])),
+                Literal::Timestamp(x) => {
+                    timestamp::labelled(TimestampMicrosecondArray::from(vec![*x; n]), &self.ty)
+                }
                 Literal::Text(x) => Arc::new(StringArray::from(vec![x.as_str(); n])),
                 Literal::Binary(x) => {
                     // The payload product was checked before reserving above.
@@ -372,18 +800,6 @@ impl Expr {
                     _ => new_null_array(&self.ty.arrow(), n),
                 },
             },
-            Kind::Not(a) => {
-                let v = a.eval(input, budget)?;
-                Arc::new(BooleanArray::from_iter(
-                    boolean(&v.array).iter().map(|v| v.map(|x| !x)),
-                ))
-            }
-            Kind::IsNull(a, neg) => {
-                let v = a.eval(input, budget)?;
-                Arc::new(BooleanArray::from_iter(
-                    (0..n).map(|i| Some(is_sql_null(v.array.as_ref(), i) != *neg)),
-                ))
-            }
             Kind::Neg(a) => {
                 let v = a.eval(input, budget)?;
                 if a.ty == Type::Null {
@@ -406,277 +822,13 @@ impl Expr {
                     .collect::<Result<Vec<_>>>()?;
                 decimal(values, self.ty.scale()?)?
             }
-            Kind::Binary(op, a, b) => {
-                if *op == Op::Or
-                    && let Some(array) = string_membership(self, input, budget)?
-                {
-                    return Ok(Value::allocated(array, lease));
-                }
-                if let Some(array) = scalar_comparison(*op, a, b, input, budget)? {
-                    return Ok(Value::allocated(array, lease));
-                }
-                if let Some(array) = scalar_arithmetic(*op, a, b, &self.ty, input, budget)? {
-                    return Ok(Value::allocated(array, lease));
-                }
-                let av = a.eval(input, budget)?;
-                let bv = b.eval(input, budget)?;
-                if a.ty == Type::Null && b.ty == Type::Null {
-                    return Ok(Value::allocated(
-                        new_null_array(&internal_type(&self.ty), n),
-                        lease,
-                    ));
-                }
-                if *op == Op::Mod {
-                    return Ok(Value::allocated(
-                        remainder::evaluate(&av.array, &a.ty, &bv.array, &b.ty, &self.ty)?,
-                        lease,
-                    ));
-                }
-                if self.ty == Type::Float && matches!(op, Op::Add | Op::Sub | Op::Mul | Op::Div) {
-                    let aa = to_float(&av.array, &a.ty)?;
-                    let bb = to_float(&bv.array, &b.ty)?;
-                    let out = aa
-                        .iter()
-                        .zip(bb.iter())
-                        .map(|(x, y)| match (x, y) {
-                            (Some(x), Some(y)) => {
-                                if *op == Op::Div && y == 0.0 {
-                                    // The approved SQLite change covers Int/Float.
-                                    // Preserve the separate exact DECIMAL contract.
-                                    if matches!(a.ty, Type::Decimal(_))
-                                        || matches!(b.ty, Type::Decimal(_))
-                                    {
-                                        return Err("division by zero".into());
-                                    }
-                                    return Ok(None);
-                                }
-                                let v = match op {
-                                    Op::Add => x + y,
-                                    Op::Sub => x - y,
-                                    Op::Mul => x * y,
-                                    _ => x / y,
-                                };
-                                if !v.is_finite() {
-                                    return Err("floating arithmetic overflow".into());
-                                }
-                                Ok(Some(v))
-                            }
-                            _ => Ok(None),
-                        })
-                        .collect::<Result<Vec<_>>>()?;
-                    return Ok(Value::allocated(Arc::new(Float64Array::from(out)), lease));
-                }
-                if matches!(op, Op::Eq | Op::Ne | Op::Lt | Op::Le | Op::Gt | Op::Ge)
-                    && (a.ty == Type::Float || b.ty == Type::Float)
-                {
-                    if matches!(
-                        (&a.ty, &b.ty),
-                        (Type::Int, Type::Float) | (Type::Float, Type::Int)
-                    ) {
-                        return Ok(Value::allocated(
-                            numeric_compare::compare(*op, &av, &bv, a.ty == Type::Int),
-                            lease,
-                        ));
-                    }
-                    let aa = to_float(&av.array, &a.ty)?;
-                    let bb = to_float(&bv.array, &b.ty)?;
-                    let out = aa.iter().zip(bb.iter()).map(|(x, y)| match (x, y) {
-                        (Some(x), Some(y)) => Some(match op {
-                            Op::Eq => x == y,
-                            Op::Ne => x != y,
-                            Op::Lt => x < y,
-                            Op::Le => x <= y,
-                            Op::Gt => x > y,
-                            _ => x >= y,
-                        }),
-                        _ => None,
-                    });
-                    return Ok(Value::allocated(
-                        Arc::new(BooleanArray::from_iter(out)),
-                        lease,
-                    ));
-                }
-                match op {
-                    // Float/Decimal division has already returned above. The
-                    // binder admits this remaining division only for Int/Int.
-                    Op::Div => integer_division(&av.array, &bv.array)?,
-                    Op::Mod => unreachable!("remainder returned above"),
-                    Op::And | Op::Or => {
-                        let aa = boolean(&av.array);
-                        let bb = boolean(&bv.array);
-                        Arc::new(
-                            if *op == Op::And {
-                                arrow::compute::and_kleene(aa, bb)
-                            } else {
-                                arrow::compute::or_kleene(aa, bb)
-                            }
-                            .map_err(|e| e.to_string())?,
-                        )
-                    }
-                    Op::Add | Op::Sub | Op::Mul => {
-                        let sa = a.ty.scale()?;
-                        let sb = b.ty.scale()?;
-                        let scale = self.ty.scale()?;
-                        let (af, bf) = if *op == Op::Mul {
-                            (1, 1)
-                        } else {
-                            (factor(scale - sa)?, factor(scale - sb)?)
-                        };
-                        let aa = numeric(&av.array);
-                        let bb = numeric(&bv.array);
-                        let calculate = |x: i128, y: i128| -> Result<i128> {
-                            if *op == Op::Mul {
-                                multiply(x, y)
-                            } else {
-                                add_sub(x, y, af, bf, *op == Op::Sub)
-                            }
-                        };
-                        if aa.null_count() == 0 && bb.null_count() == 0 {
-                            if n >= 64
-                                && let Some(values) =
-                                    narrow_batch_arithmetic(aa.values(), bb.values(), *op, af, bf)
-                            {
-                                return Ok(Value::allocated(
-                                    decimal_non_null(values, scale)?,
-                                    lease,
-                                ));
-                            }
-                            // Avoid Option<i128> temporaries and validity-building
-                            // passes when the input batches have no NULL values.
-                            let mut values = Vec::with_capacity(n);
-                            for (x, y) in aa.values().iter().zip(bb.values()) {
-                                values.push(calculate(*x, *y)?);
-                            }
-                            decimal_non_null(values, scale)?
-                        } else {
-                            let mut values = Vec::with_capacity(n);
-                            for (x, y) in aa.iter().zip(bb.iter()) {
-                                values.push(match (x, y) {
-                                    (Some(x), Some(y)) => Some(calculate(x, y)?),
-                                    _ => None,
-                                });
-                            }
-                            decimal(values, scale)?
-                        }
-                    }
-                    _ => {
-                        // Compare whole typed arrays when scales already agree.
-                        // This avoids checked decimal rescaling on every row of
-                        // the common scan predicates; mixed scales retain the
-                        // exact checked path below.
-                        if a.ty == b.ty && a.ty != Type::Null {
-                            use arrow::compute::kernels::cmp;
-                            let left = av.array.as_ref();
-                            let right = bv.array.as_ref();
-                            let values = match op {
-                                Op::Eq => cmp::eq(&left, &right),
-                                Op::Ne => cmp::neq(&left, &right),
-                                Op::Lt => cmp::lt(&left, &right),
-                                Op::Le => cmp::lt_eq(&left, &right),
-                                Op::Gt => cmp::gt(&left, &right),
-                                Op::Ge => cmp::gt_eq(&left, &right),
-                                _ => unreachable!(),
-                            }
-                            .map_err(|e| e.to_string())?;
-                            return Ok(Value::allocated(Arc::new(values), lease));
-                        }
-                        if let (Ok(sa), Ok(sb)) = (a.ty.scale(), b.ty.scale()) {
-                            let scale = sa.max(sb);
-                            let af = factor(scale - sa)?;
-                            let bf = factor(scale - sb)?;
-                            let aa = numeric(&av.array);
-                            let bb = numeric(&bv.array);
-                            let values = aa
-                                .iter()
-                                .zip(bb.iter())
-                                .map(|(x, y)| match (x, y) {
-                                    (Some(x), Some(y)) => {
-                                        let x = checked(x.checked_mul(af))?;
-                                        let y = checked(y.checked_mul(bf))?;
-                                        Ok(Some(match op {
-                                            Op::Eq => x == y,
-                                            Op::Ne => x != y,
-                                            Op::Lt => x < y,
-                                            Op::Le => x <= y,
-                                            Op::Gt => x > y,
-                                            Op::Ge => x >= y,
-                                            _ => unreachable!(),
-                                        }))
-                                    }
-                                    _ => Ok(None),
-                                })
-                                .collect::<Result<Vec<_>>>()?;
-                            return Ok(Value::allocated(
-                                Arc::new(BooleanArray::from(values)),
-                                lease,
-                            ));
-                        }
-                        let values = (0..n)
-                            .map(|i| {
-                                if is_sql_null(av.array.as_ref(), i)
-                                    || is_sql_null(bv.array.as_ref(), i)
-                                {
-                                    return Ok(None);
-                                }
-                                let cmp = match &a.ty {
-                                    Type::Int | Type::Decimal(_) => {
-                                        let scale = a.ty.scale()?.max(b.ty.scale()?);
-                                        rescale(numeric(&av.array).value(i), a.ty.scale()?, scale)?
-                                            .cmp(&rescale(
-                                                numeric(&bv.array).value(i),
-                                                b.ty.scale()?,
-                                                scale,
-                                            )?)
-                                    }
-                                    Type::Date => av
-                                        .array
-                                        .as_any()
-                                        .downcast_ref::<Date32Array>()
-                                        .unwrap()
-                                        .value(i)
-                                        .cmp(
-                                            &bv.array
-                                                .as_any()
-                                                .downcast_ref::<Date32Array>()
-                                                .unwrap()
-                                                .value(i),
-                                        ),
-                                    Type::Text => av
-                                        .array
-                                        .as_any()
-                                        .downcast_ref::<StringArray>()
-                                        .unwrap()
-                                        .value(i)
-                                        .cmp(
-                                            bv.array
-                                                .as_any()
-                                                .downcast_ref::<StringArray>()
-                                                .unwrap()
-                                                .value(i),
-                                        ),
-                                    Type::Bool => boolean(&av.array)
-                                        .value(i)
-                                        .cmp(&boolean(&bv.array).value(i)),
-                                    _ => return Err("unsupported comparison type".into()),
-                                };
-                                Ok(Some(match op {
-                                    Op::Eq => cmp.is_eq(),
-                                    Op::Ne => !cmp.is_eq(),
-                                    Op::Lt => cmp.is_lt(),
-                                    Op::Le => !cmp.is_gt(),
-                                    Op::Gt => cmp.is_gt(),
-                                    Op::Ge => !cmp.is_lt(),
-                                    _ => unreachable!(),
-                                }))
-                            })
-                            .collect::<Result<Vec<_>>>()?;
-                        Arc::new(BooleanArray::from(values))
-                    }
-                }
-            }
             Kind::Function(name, a) => {
                 let v = a.eval(input, budget)?;
                 match name.as_str() {
+                    "lower" | "upper" => {
+                        drop(lease);
+                        return text_case::evaluate(&v.array, name == "upper", budget);
+                    }
                     "length" => decimal(
                         v.array
                             .as_any()
@@ -690,7 +842,9 @@ impl Expr {
                     "abs" if a.ty == Type::Float => Arc::new(Float64Array::from_iter(
                         to_float(&v.array, &a.ty)?
                             .iter()
-                            .map(|v| v.map(|x| if x < 0.0 { -x } else { x })),
+                            // f64::abs clears the sign bit: ABS(-0.0) is 0.0 as in
+                            // DuckDB 1.5.6 and PostgreSQL 17 (decision 2026-10-17).
+                            .map(|v| v.map(f64::abs)),
                     )),
                     "abs" => decimal(
                         numeric(&v.array)
@@ -714,6 +868,29 @@ impl Expr {
                             .collect::<Result<Vec<_>>>()?,
                         0,
                     )?,
+                    crate::mixed_numeric::PROMOTED_COMPARE => v.array.clone(),
+                    crate::mixed_numeric::PROMOTED_INTEGER => {
+                        crate::mixed_numeric::check_promoted_integer(&v.array)?;
+                        v.array.clone()
+                    }
+                    name if name.starts_with("$round_") => {
+                        round::evaluate(name, &v.array, &a.ty, &self.ty)?
+                    }
+                    name if name.starts_with("$date_part_") => {
+                        date::DateField::parse(name.strip_prefix("$date_part_").unwrap())
+                            .expect("bound DATE field")
+                            .eval(&v.array)?
+                    }
+                    name if name.starts_with("$date_trunc_")
+                        || name.starts_with("$date_shift_") =>
+                    {
+                        date::toolkit(name, &v.array)?
+                    }
+                    name if timestamp::is_function(name) => timestamp::evaluate(name, &v.array)?,
+                    name if crate::zone::is_function(name) => {
+                        crate::zone::evaluate(name, &v.array)?
+                    }
+                    "$to_timestamp" => crate::zone::to_timestamp(&v.array, &a.ty)?,
                     _ => unreachable!(),
                 }
             }
@@ -766,7 +943,7 @@ impl Expr {
                                 origin
                                     .checked_add_signed(chrono::Duration::days(i64::from(d)))
                                     .map(|d| i128::from(d.year()))
-                                    .ok_or_else(|| "date out of range".to_string())
+                                    .ok_or_else(|| crate::Error::from("date out of range"))
                             })
                             .transpose()
                         })
@@ -832,9 +1009,10 @@ impl Expr {
                     new_null_array(&internal_type(&self.ty), n)
                 } else {
                     let refs = pieces.iter().map(|a| a.as_ref()).collect::<Vec<_>>();
-                    let merged = arrow::compute::concat(&refs).map_err(|e| e.to_string())?;
+                    let merged = arrow::compute::concat(&refs)
+                        .map_err(|e| crate::Error::from(e.to_string()))?;
                     arrow::compute::take(&merged, &UInt32Array::from(positions), None)
-                        .map_err(|e| e.to_string())?
+                        .map_err(|e| crate::Error::from(e.to_string()))?
                 }
             }
             Kind::Column(_) => unreachable!(),
@@ -866,7 +1044,7 @@ where
         .collect::<Vec<i128>>();
     let array = Decimal128Array::new(values.into(), a.nulls().cloned())
         .with_precision_and_scale(38, 0)
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::Error::from(e.to_string()))?;
     Ok(Value::allocated(Arc::new(array), lease))
 }
 
@@ -884,11 +1062,10 @@ pub fn normalize_input(a: &ArrayRef, ty: &Type, budget: &Budget) -> Result<Value
             numeric(a)
                 .clone()
                 .with_precision_and_scale(38, *scale)
-                .map_err(|e| e.to_string())?,
+                .map_err(|e| crate::Error::from(e.to_string()))?,
         ) as ArrayRef,
-        Type::Int => {
-            arrow::compute::cast(a, &DataType::Decimal128(38, 0)).map_err(|e| e.to_string())?
-        }
+        Type::Int => arrow::compute::cast(a, &DataType::Decimal128(38, 0))
+            .map_err(|e| crate::Error::from(e.to_string()))?,
         _ => a.clone(),
     };
     Value::adopt(a, budget)
@@ -941,13 +1118,13 @@ fn take_input(input: &Input, rows: &[u32], budget: &Budget) -> Result<Input> {
                                     .ok_or("binary selection size overflow")?,
                             )?;
                             let array = arrow::compute::take(&v.array, &indices, None)
-                                .map_err(|e| e.to_string())?;
+                                .map_err(|e| crate::Error::from(e.to_string()))?;
                             lease.release_excess(array.get_array_memory_size());
                             return Ok(Value::allocated(array, lease));
                         }
                         Value::adopt(
                             arrow::compute::take(&v.array, &indices, None)
-                                .map_err(|e| e.to_string())?,
+                                .map_err(|e| crate::Error::from(e.to_string()))?,
                             budget,
                         )
                     })
@@ -1037,9 +1214,10 @@ fn binary_case(
             .iter()
             .map(|value| value.array.as_ref())
             .collect::<Vec<_>>();
-        let merged = arrow::compute::concat(&refs).map_err(|e| e.to_string())?;
+        let merged =
+            arrow::compute::concat(&refs).map_err(|e| crate::Error::from(e.to_string()))?;
         arrow::compute::take(&merged, &UInt32Array::from(positions), None)
-            .map_err(|e| e.to_string())?
+            .map_err(|e| crate::Error::from(e.to_string()))?
     };
     lease.release_excess(array.get_array_memory_size());
     Ok(Value::allocated(array, lease))
@@ -1088,7 +1266,7 @@ fn append_case(
 }
 // Borrow a character-aligned slice and let the Arrow builder copy it once.
 // This avoids a separate String allocation for every row, including NULLs.
-fn substring(text: &str, start: usize, length: usize) -> &str {
+pub(crate) fn substring(text: &str, start: usize, length: usize) -> &str {
     if length == 0 {
         return "";
     }
@@ -1130,6 +1308,7 @@ fn like(text: &str, pattern: &str) -> bool {
 // Broadcast comparison constants without constructing a batch-sized literal
 // array. Failed literal rescaling falls back to the nullable checked path:
 // an all-NULL column must not raise an otherwise unobserved overflow.
+#[inline(never)]
 fn scalar_comparison(
     op: Op,
     a: &Expr,
@@ -1187,13 +1366,14 @@ fn scalar_comparison(
         Op::Ge => cmp::gt_eq(left, right),
         _ => unreachable!(),
     }
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| crate::Error::from(e.to_string()))?;
     Ok(Some(Arc::new(result)))
 }
 
 // Broadcast direct numeric literals without a batch-sized constant buffer.
 // Both operands are still evaluated in their original order. NULL literals,
 // floating arithmetic and division retain the ordinary path.
+#[inline(never)]
 fn scalar_arithmetic(
     op: Op,
     a: &Expr,
@@ -1228,6 +1408,24 @@ fn scalar_arithmetic(
         let values = expression.eval(input, budget)?;
         (literal.eval(&scalar_input, budget)?, values)
     };
+    scalar_arithmetic_values(
+        op, literal, expression, reversed, &constant, &values, output, input,
+    )
+}
+// The arithmetic of `scalar_arithmetic`, after both operands are evaluated
+// (outside the frame that recursion passes through).
+#[inline(never)]
+#[allow(clippy::too_many_arguments)]
+fn scalar_arithmetic_values(
+    op: Op,
+    literal: &Expr,
+    expression: &Expr,
+    reversed: bool,
+    constant: &Value,
+    values: &Value,
+    output: &Type,
+    input: &Input,
+) -> Result<Option<ArrayRef>> {
     let constant = numeric(&constant.array).value(0);
     let values = numeric(&values.array);
     let scale = output.scale()?;
@@ -1303,15 +1501,31 @@ fn scalar_arithmetic(
 // expression may be computed, but must be identical in every branch. Current
 // scalar expressions are deterministic and pure; evaluate it once without
 // skipping its errors. Mixed predicates and NULL constants keep Kleene OR.
-fn string_terms<'a>(
+// A left-deep OR chain is walked down its left spine without recursion
+// (terms are still visited left to right); right operands recurse.
+pub(crate) fn string_terms<'a>(
+    expr: &'a Expr,
+    common: &mut Option<&'a Expr>,
+    visit: &mut impl FnMut(&'a str),
+) -> bool {
+    let mut rights = Vec::new();
+    let mut leftmost = expr;
+    while let Kind::Binary(Op::Or, a, b) = &leftmost.kind {
+        rights.push(b.as_ref());
+        leftmost = a;
+    }
+    string_term(leftmost, common, visit)
+        && rights
+            .into_iter()
+            .rev()
+            .all(|right| string_terms(right, common, visit))
+}
+fn string_term<'a>(
     expr: &'a Expr,
     common: &mut Option<&'a Expr>,
     visit: &mut impl FnMut(&'a str),
 ) -> bool {
     match &expr.kind {
-        Kind::Binary(Op::Or, a, b) => {
-            string_terms(a, common, visit) && string_terms(b, common, visit)
-        }
         Kind::Literal(Literal::Bool(false)) => true,
         Kind::Binary(Op::Eq, a, b) if a.ty == Type::Text && b.ty == Type::Text => {
             let (value, literal) = match (&a.kind, &b.kind) {
@@ -1349,6 +1563,7 @@ fn string_membership_mask(values: &StringArray, mut member: impl FnMut(&str) -> 
     };
     Arc::new(BooleanArray::new(bits, nulls))
 }
+#[inline(never)]
 fn string_membership(expr: &Expr, input: &Input, budget: &Budget) -> Result<Option<ArrayRef>> {
     let mut common = None;
     let mut count = 0_usize;

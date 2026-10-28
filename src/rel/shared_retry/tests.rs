@@ -86,6 +86,7 @@ fn root(path: &std::path::Path) -> Node {
                     id: 1,
                     input: Box::new(scan(path)),
                     shared_scan: true,
+                    forced: false,
                 },
             }),
         },
@@ -377,6 +378,7 @@ fn allocation_failure_during_materialization_is_not_an_admitted_attempt_or_repla
             lane_transforms: HashMap::new(),
             replay_transforms: HashMap::new(),
             materialized: HashMap::new(),
+            recursive_bindings: None,
             sideways_registry_lease: None,
             spill: None,
             budget: budget.clone(),
@@ -451,6 +453,7 @@ fn nonnumeric_source_owned_shapes_never_capture_or_hold_guard_credit() {
                     op: RelOp::Materialize {
                         id: 1,
                         shared_scan: true,
+                        forced: false,
                         input: Box::new(Node {
                             schema,
                             estimated_rows: 4096,
@@ -528,4 +531,114 @@ fn source_guard_and_visitor_include_both_typed_membership_inputs() {
     sources.verify(&opt).unwrap();
     drop(sources);
     assert_eq!(budget.used(), 0);
+}
+
+#[test]
+fn parallel_transform_pressure_replays_once_without_weakening_failure_guards() {
+    use crate::parquet_scan::{TransformedBatch, test_support::Observer};
+    use std::sync::atomic::AtomicUsize;
+    for mode in [
+        "parallel-pressure",
+        "still-too-large",
+        "semantic-error",
+        "cancel",
+        "serial-pressure",
+    ] {
+        let fixture = Fixture::new();
+        let node = scan(&fixture.0);
+        let mut opt = Options {
+            workers: if mode == "serial-pressure" { 1 } else { 4 },
+            batch_size: 2,
+            memory_bytes: 16 << 20,
+            ..Options::default()
+        };
+        let reference = super::super::execute(
+            &node,
+            &Options {
+                workers: 1,
+                ..opt.clone()
+            },
+        )
+        .unwrap();
+        let budget = Budget::new(opt.memory_bytes);
+        let calls = Arc::new(AtomicUsize::new(0));
+        let mut observer = Observer::new(fixture.0.clone());
+        observer.after = Some({
+            let budget = budget.clone();
+            let calls = calls.clone();
+            let cancellation = opt.cancellation.clone();
+            Arc::new(move |batch, lease| {
+                calls.fetch_add(1, Ordering::SeqCst);
+                // Runnable permits may be zero while the parallel caller
+                // consumes these tiny groups. Parent-owned Joined handles keep
+                // live_threads above one until shutdown joins every helper,
+                // even when a helper already finished. Use that lifetime to
+                // inject pressure deterministically in the parallel attempt;
+                // the serial replay has only its coordinator left.
+                if matches!(mode, "still-too-large" | "serial-pressure")
+                    || budget.live_threads() > 1
+                {
+                    match mode {
+                        "semantic-error" => {
+                            return Err("semantic: injected transform failure".into());
+                        }
+                        "cancel" => {
+                            cancellation.cancel();
+                            return Err("cancelled: transform".into());
+                        }
+                        _ => {}
+                    }
+                    // A real refusal while a decoded batch owns live credit.
+                    // No budget/expected answer is enlarged for the replay.
+                    budget.reserve(budget.limit())?;
+                    unreachable!("the live decoded batch must prevent this reservation");
+                }
+                Ok(TransformedBatch {
+                    batch,
+                    lease,
+                    preserve_empty: true,
+                })
+            })
+        });
+        opt.test_scan_observer = Some(Arc::new(observer));
+        let outcome = super::super::execute_in_budget(&node, &opt, budget.clone(), false);
+        assert!(calls.load(Ordering::SeqCst) > 0, "{mode}");
+        match mode {
+            "parallel-pressure" => {
+                let result = outcome.unwrap();
+                assert_eq!(result.batch, reference.batch);
+                assert_eq!(result.metrics.parallel_transform_serial_retries, 1);
+                assert_eq!(result.metrics.decoder_serial_retries, 0);
+                assert!(result.metrics.peak_reserved_bytes <= opt.memory_bytes);
+                drop(result);
+            }
+            "still-too-large" => assert!(
+                outcome
+                    .err()
+                    .unwrap()
+                    .starts_with("resource-limit: accounted memory ")
+            ),
+            "semantic-error" => assert!(
+                outcome
+                    .err()
+                    .unwrap()
+                    .starts_with("semantic: injected transform failure")
+            ),
+            "cancel" => assert!(outcome.err().unwrap().starts_with("cancelled:")),
+            "serial-pressure" => assert!(
+                outcome
+                    .err()
+                    .unwrap()
+                    .starts_with("resource-limit: accounted memory ")
+            ),
+            _ => unreachable!(),
+        }
+        if matches!(mode, "semantic-error" | "cancel" | "serial-pressure") {
+            assert_eq!(budget.parallel_transform_refusals(), 0);
+        } else {
+            assert!(budget.parallel_transform_refusals() > 0);
+        }
+        assert_eq!(budget.used(), 0, "{mode}");
+        assert_eq!(budget.active_workers(), 0, "{mode}");
+    }
 }

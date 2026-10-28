@@ -14,12 +14,11 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[3]
 PACKAGE = Path("bindings/python")
+DECODER = Path("vendor/parquet-57.0.0-decoder-v1")
 PACKAGE_DIRS = ("src", "python", "tests", "notebooks")
 PACKAGE_FILES = ("Cargo.toml", "Cargo.lock", "pyproject.toml", "README.md", "BUILDING.md", "LICENSE-MIT", "LICENSE-APACHE", "THIRD-PARTY-NOTICES", "THIRD-PARTY-LICENSES")
 ENGINE_FILES = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "LICENSE-MIT", "LICENSE-APACHE", "THIRD-PARTY-NOTICES", "THIRD-PARTY-LICENSES", "docs/CRATE-README.md")
-ENGINE_FIXTURES = ("tests/fixtures/sqlite-real-conversion.tsv", "tests/fixtures/exact-ratio-rounding.json",
-                   "tests/fixtures/auto-spill-pipeline.sql", "tests/support/auto_spill.rs",
-                   "tests/left_join_count/fixture.rs")
+ENGINE_FIXTURES = ("tests/fixtures/sqlite-real-conversion.tsv", "tests/fixtures/exact-ratio-rounding.json", "tests/fixtures/offset_windows/expected.json", "tests/fixtures/expression_nesting/cases.json")
 
 
 def git(root: Path, *args: str) -> bytes:
@@ -28,7 +27,7 @@ def git(root: Path, *args: str) -> bytes:
 
 def selected(path: str) -> bool:
     p = Path(path)
-    if path in ENGINE_FILES or path.startswith("src/"):
+    if path in ENGINE_FILES or path.startswith("src/") or p.is_relative_to(DECODER):
         return True
     # Compile-time unit-test fixtures referenced by the engine, not benchmark data.
     if path in ENGINE_FIXTURES:
@@ -51,6 +50,7 @@ def stage(root: Path, output: Path) -> dict:
     root = root.resolve()
     paths = sorted(p for p in git(root, "ls-files", "-z").decode().split("\0") if p and selected(p))
     required = {str(PACKAGE / p) for p in PACKAGE_FILES} | set(ENGINE_FILES) | set(ENGINE_FIXTURES)
+    required |= {str(DECODER / name) for name in ("Cargo.toml", "src/lib.rs", "LICENSE.txt", "NOTICE.txt", "ASSAY-PROVENANCE.md")}
     if not required <= set(paths):
         raise RuntimeError(f"Commit required build inputs first: {sorted(required - set(paths))}")
     inputs: dict[str, bytes] = {}
@@ -67,7 +67,8 @@ def stage(root: Path, output: Path) -> dict:
     entries = []
     for name, original in inputs.items():
         package_file = Path(name).is_relative_to(PACKAGE)
-        target = Path(name).relative_to(PACKAGE) if package_file else Path("engine") / name
+        target = (Path(name).relative_to(PACKAGE) if package_file else
+                  Path(name) if Path(name).is_relative_to(DECODER) else Path("engine") / name)
         data = original
         rewrite = None
         if name == str(PACKAGE / "Cargo.toml"):
@@ -75,12 +76,16 @@ def stage(root: Path, output: Path) -> dict:
             if data.count(old) != 1:
                 raise RuntimeError("Binding engine dependency no longer matches staging rule")
             data = data.replace(old, b'assaydb = { path = "engine" }')
+            decoder_path = ('path = "../../' + DECODER.as_posix() + '"').encode()
+            if data.count(decoder_path) != 1:
+                raise RuntimeError("Binding decoder patch no longer matches staging rule")
+            data = data.replace(decoder_path, ('path = "' + DECODER.as_posix() + '"').encode())
             profile_pattern = rb"(?ms)^\[profile\.release\]\r?\n.*?(?=^\[|\Z)"
             if re.search(profile_pattern, data):
                 data = re.sub(profile_pattern, lambda _: engine_profile + b"\n", data)
             else:
                 data = data.rstrip() + b"\n\n" + engine_profile
-            rewrite = "Relocate engine dependency and preserve engine release profile at workspace root"
+            rewrite = "Relocate engine and decoder dependencies and preserve engine release profile at workspace root"
         elif name == "Cargo.toml":
             # Prevent Cargo's path-dependency packager from discovering unrelated
             # repository contents; this modifies only the isolated staging copy.

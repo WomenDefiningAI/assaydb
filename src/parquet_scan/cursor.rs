@@ -12,7 +12,6 @@ pub(crate) struct ScanBatch {
 
 pub(crate) struct ScanCursor {
     reader: Reader,
-    budget: Budget,
     cancellation: Cancellation,
     row_group: usize,
     next_batch: u64,
@@ -37,12 +36,15 @@ impl ScanCursor {
         }
         let mut serial = options.clone();
         serial.workers = 1;
-        let reader = Reader::filtered_group(
+        let reader = match Reader::filtered_group(
             file, metadata, projection, factory, transform, &serial, budget, row_group,
-        )?;
+        ) {
+            Ok(reader) => reader,
+            Err(error) if error.starts_with("resource-limit:") => Reader::Refused(Some(error)),
+            Err(error) => return Err(error),
+        };
         Ok(Self {
             reader,
-            budget: budget.clone(),
             cancellation: options.cancellation.clone(),
             row_group,
             next_batch: 0,
@@ -53,6 +55,10 @@ impl ScanCursor {
     pub(crate) fn statistics(&self) -> (usize, usize, usize, usize) {
         self.reader.statistics()
     }
+    #[cfg(test)]
+    pub(crate) fn decoder_funded(&self) -> bool {
+        self.reader.decoder_funded()
+    }
 
     fn advance(&mut self) -> Result<Option<ScanBatch>> {
         self.cancellation.check()?;
@@ -60,16 +66,7 @@ impl ScanCursor {
             return Ok(None);
         };
         self.cancellation.check()?;
-        // Transfer the exact-transform bridge instead of charging the same
-        // retained output twice. Untransformed decoding needs a new output lease.
-        let lease = match &mut self.reader {
-            Reader::Filtered(reader) => reader.delivered.take(),
-            _ => unreachable!("a cursor owns a filtered single-group reader"),
-        };
-        let lease = match lease {
-            Some(lease) => lease,
-            None => self.budget.reserve(batch.get_array_memory_size())?,
-        };
+        let lease = self.reader.take_batch_lease();
         let batch_in_group = self.next_batch;
         self.next_batch = self
             .next_batch

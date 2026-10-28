@@ -29,3 +29,7 @@ Contributor Covenant 2.1: Coraline Ada Ehmke and contributors, CC-BY-4.0.
 draft preface is an Assay adaptation. This policy is not relicensed MIT/Apache.
 Source: https://www.contributor-covenant.org/version/2/1/code_of_conduct/
 License: https://creativecommons.org/licenses/by/4.0/
+
+IANA time zone database (tzdb) release 2025b, public domain, compiled into
+chrono-tz 0.10.4 (MIT OR Apache-2.0). Upstream license texts are retained in
+THIRD-PARTY-LICENSES.

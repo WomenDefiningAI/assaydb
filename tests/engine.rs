@@ -235,12 +235,19 @@ fn distinct_set_operations_use_complete_rows_and_null_equality() {
                 .value(0),
             100
         );
-        for sql in [
-            "SELECT 1 INTERSECT ALL SELECT 1",
-            "SELECT 1 EXCEPT ALL SELECT 1",
-            "SELECT 1 UNION SELECT 1,2",
-            "SELECT 1 UNION SELECT 'a'",
+        // INTERSECT ALL / EXCEPT ALL now answer (DuckDB 1.5.6: one row 1; no rows).
+        for (sql, expected) in [
+            ("SELECT 1 INTERSECT ALL SELECT 1", vec![Some(1)]),
+            ("SELECT 1 EXCEPT ALL SELECT 1", vec![]),
         ] {
+            let p = prepare(sql, &HashMap::new(), &options).unwrap();
+            let batch = execute(&p, &options).unwrap().batch;
+            assert_eq!(batch.num_rows(), expected.len(), "{sql}");
+            if !expected.is_empty() {
+                assert_eq!(integers(&batch, 0), expected, "{sql}");
+            }
+        }
+        for sql in ["SELECT 1 UNION SELECT 1,2", "SELECT 1 UNION SELECT 'a'"] {
             assert!(prepare(sql, &HashMap::new(), &options).is_err(), "{sql}");
         }
     }
@@ -379,22 +386,33 @@ fn decimal_boundary_and_overflow() {
             &HashMap::new(),
             &o
         )
-        .is_err()
+        .and_then(|p| execute(&p, &o))
+        .err()
+        .unwrap()
+            == "decimal cast precision overflow"
     );
 }
 #[test]
 fn unsupported_syntax_is_not_ignored() {
     let f = Fixture::new();
     let o = Options::default();
-    for sql in [
-        "SELECT x FROM t HAVING x>0",
-        "SELECT x FROM t GROUP BY 1",
-        "SELECT x FROM t; SELECT 1",
-        "SELECT SUM(x) OVER() FROM t",
-        "SELECT x FROM t ORDER BY x+1",
-    ] {
+    for sql in ["SELECT x FROM t GROUP BY 1", "SELECT x FROM t ORDER BY x+1"] {
+        let prepared = prepare(sql, &f.tables(), &o).unwrap();
+        execute(&prepared, &o).unwrap();
+    }
+    for sql in ["SELECT x FROM t HAVING x>0", "SELECT x FROM t; SELECT 1"] {
         assert!(prepare(sql, &f.tables(), &o).is_err(), "{sql}");
     }
+}
+#[test]
+fn approved_aggregate_window_sum_is_not_refused() {
+    let f = Fixture::new();
+    let o = Options::default();
+    let p = prepare("SELECT SUM(x) OVER() FROM t", &f.tables(), &o).unwrap();
+    assert_eq!(
+        integers(&execute(&p, &o).unwrap().batch, 0),
+        vec![Some(5); 4]
+    );
 }
 #[test]
 fn approved_distinct_deduplicates_values_and_nulls() {
@@ -1708,9 +1726,25 @@ fn static_scan_predicates_keep_nulls_errors_dictionary_pages_and_reader_fallback
                 assert_eq!(actual.batch, expected.batch);
                 assert_eq!(actual.metrics.static_scan_filters > 0, bound <= 80);
             }
-            for sql in [
-                "SELECT SUM(n) FROM (SELECT x,n FROM t WHERE x<0 AND n*10000000000000000000000000000000000000>0) a",
-                "SELECT SUM(v) FROM (SELECT n*10000000000000000000000000000000000000 AS v FROM t) a WHERE v<0",
+            // Guarded AND (Helen, October 17, 2026; SEMANTICS-LOG "Guarded
+            // AND/OR planner rules"): x<0 is FALSE or NULL on every row, so the
+            // WHERE rejects all rows and n*10^37 is not raised; SUM is NULL at
+            // both settings, as in DuckDB 1.5.6 and PostgreSQL 17. Old
+            // expectation: an error at both settings. The unguarded projection
+            // below still raises at both settings.
+            for (sql, raises) in [
+                (
+                    "SELECT SUM(n) FROM (SELECT x,n FROM t WHERE x<0 AND n*10000000000000000000000000000000000000>0) a",
+                    false,
+                ),
+                (
+                    "SELECT SUM(v) FROM (SELECT n*10000000000000000000000000000000000000 AS v FROM t) a WHERE v<0",
+                    true,
+                ),
+                (
+                    "SELECT SUM(n) FROM (SELECT x,n FROM t WHERE x>0 AND n*10000000000000000000000000000000000000>0) a",
+                    true,
+                ),
             ] {
                 let on = Options {
                     batch_size,
@@ -1720,10 +1754,26 @@ fn static_scan_predicates_keep_nulls_errors_dictionary_pages_and_reader_fallback
                     relational_optimizations: false,
                     ..on.clone()
                 };
-                let a = execute(&prepare(sql, &f.tables(), &on).unwrap(), &on).err();
-                let b = execute(&prepare(sql, &f.tables(), &off).unwrap(), &off).err();
-                assert!(a.is_some());
-                assert_eq!(a, b, "{sql}");
+                let a = execute(&prepare(sql, &f.tables(), &on).unwrap(), &on);
+                let b = execute(&prepare(sql, &f.tables(), &off).unwrap(), &off);
+                match (a, b) {
+                    (Err(a), Err(b)) => {
+                        assert!(raises, "{sql}: {a}");
+                        assert_eq!(a, "decimal precision 38 overflow", "{sql}");
+                        assert_eq!(a, b, "{sql}");
+                    }
+                    (Ok(a), Ok(b)) => {
+                        assert!(!raises, "{sql}");
+                        assert_eq!(a.batch, b.batch, "{sql}");
+                        assert_eq!(a.batch.num_rows(), 1, "{sql}");
+                        assert!(a.batch.column(0).is_null(0), "{sql}");
+                    }
+                    (a, b) => panic!(
+                        "{sql}: optimizer settings disagree: {:?} vs {:?}",
+                        a.err(),
+                        b.err()
+                    ),
+                }
             }
         }
     }
@@ -1883,8 +1933,10 @@ fn subset_scan_reuse_preserves_schema_filter_scope_and_first_reference_order() {
     }
     // Cache admission stays bounded by the query budget. Inspection of the
     // prepared tree avoids confusing admission fallback with decoder overhead.
+    // Fund the footer metadata; the cache's 4 KiB overhead still exceeds its
+    // admission share of this budget.
     let options = Options {
-        memory_bytes: 1024,
+        memory_bytes: 4096,
         ..Options::default()
     };
     let plan = prepare(

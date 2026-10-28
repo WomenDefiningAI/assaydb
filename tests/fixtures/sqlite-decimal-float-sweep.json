@@ -388,8 +388,13 @@
       "sql": "SELECT ABS(CAST(-0.0 AS REAL))",
       "expected": {
         "class": "real",
+        "bits": "0000000000000000"
+      },
+      "sqlite_expected": {
+        "class": "real",
         "bits": "8000000000000000"
-      }
+      },
+      "decision": "2026-10-17 maintainer: ABS(-0.0) returns +0.0 like DuckDB 1.5.6 and PostgreSQL 17.11; SQLite 3.54 returns -0.0 (recorded above)."
     }
   ]
 }

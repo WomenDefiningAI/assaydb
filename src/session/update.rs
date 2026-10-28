@@ -5,8 +5,9 @@ use crate::{
     expr::{Expr, Input, Kind, Literal, boolean, normalize_input},
 };
 
-pub(super) fn expression_error(message: String) -> Error {
-    if message.starts_with("unsupported") || message.contains("unsupported") {
+pub(super) fn expression_error(message: crate::Error) -> Error {
+    let cause = message.cause();
+    let mut error = if message.starts_with("unsupported") || message.contains("unsupported") {
         unsupported(message)
     } else if message.contains("budget")
         || message.contains("resource-limit")
@@ -15,7 +16,9 @@ pub(super) fn expression_error(message: String) -> Error {
         resource(message)
     } else {
         semantic(message)
-    }
+    };
+    error.cause = cause;
+    error
 }
 
 /// UPDATE and DELETE share the same typed boolean/NULL WHERE contract.
@@ -116,6 +119,7 @@ impl Session {
             .tables
             .get(&table_name)
             .ok_or_else(|| semantic(format!("unknown table: {table_name}")))?;
+        let _statement = crate::zone::enter(self.options.time_zone, self.options.fixed_clock);
         let binder = Binder {
             schema: &table.schema,
             table: Some(&table_name),

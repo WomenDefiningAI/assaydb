@@ -176,7 +176,7 @@ impl Session {
                     return Ok(path);
                 }
                 Err(e) if e.kind() == io::ErrorKind::AlreadyExists => continue,
-                Err(e) => return Err(io_error("directory", e)),
+                Err(e) => return Err(io_error("directory", e).into()),
             }
         }
         Err("spill directory: could not allocate unique private directory".into())
@@ -203,7 +203,8 @@ impl Session {
                 return Err(format!(
                     "spill file cleanup: could not remove {}",
                     pending.path.display()
-                ));
+                )
+                .into());
             }
         }
         let mut path = self.directory.lock().unwrap();
@@ -515,7 +516,12 @@ impl SpillFile {
             .ok_or("spill replay workspace overflow")?;
         let lease = self.0.session.memory.reserve(reserved)?;
         let file = File::open(&self.0.path).map_err(|e| format!("spill read: {e}"))?;
-        if file.metadata().map_err(|e| e.to_string())?.len() != size as u64 {
+        if file
+            .metadata()
+            .map_err(|e| crate::Error::from(e.to_string()))?
+            .len()
+            != size as u64
+        {
             return Err("spill IPC: file length changed".into());
         }
         let checked = CheckedReader {
@@ -545,7 +551,7 @@ impl SpillFile {
             .iter()
             .map(|a| {
                 self.0.session.cancel.check()?;
-                take(a, &indices, None).map_err(|e| e.to_string())
+                take(a, &indices, None).map_err(|e| crate::Error::from(e.to_string()))
             })
             .collect::<Result<Vec<_>>>()?;
         let batch = RecordBatch::try_new_with_options(
@@ -553,7 +559,7 @@ impl SpillFile {
             arrays,
             &arrow::record_batch::RecordBatchOptions::new().with_row_count(Some(self.0.rows)),
         )
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::Error::from(e.to_string()))?;
         if batch.get_array_memory_size() > reserved {
             return Err("spill IPC: compacted batch exceeds reserved workspace".into());
         }

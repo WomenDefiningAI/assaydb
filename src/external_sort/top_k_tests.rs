@@ -50,11 +50,14 @@ fn heap_unique_prefix_matches_sorted_oracle_and_legacy_with_nulls_and_float_bits
                         options: None,
                     },
                 ];
-                let full = sort_indices(columns.clone(), ROWS).unwrap();
+                let full = sort_indices(columns.clone(), ROWS, &Budget::new(1 << 20)).unwrap();
                 let nonnull = columns
                     .iter()
                     .filter(|c| c.values.data_type() != &arrow::datatypes::DataType::Null)
-                    .cloned()
+                    .map(|c| SortColumn {
+                        values: crate::expr::numeric_compare::canonical_array(&c.values),
+                        options: c.options,
+                    })
                     .collect::<Vec<_>>();
                 let cmp =
                     arrow::compute::kernels::sort::LexicographicalComparator::try_new(&nonnull)
@@ -152,7 +155,7 @@ fn complete_key_ties_decline_and_use_the_unchanged_full_sort() {
                         nulls_first,
                     }),
                 }];
-                let full = sort_indices(columns.clone(), ROWS).unwrap();
+                let full = sort_indices(columns.clone(), ROWS, &Budget::new(1 << 20)).unwrap();
                 for k in [1, 7, 20] {
                     let budget = Budget::new(1 << 20);
                     let selected =
@@ -161,7 +164,9 @@ fn complete_key_ties_decline_and_use_the_unchanged_full_sort() {
                     assert!(selected.is_none(), "ties must use the parent permutation");
                     let actual = match selected {
                         Some((indices, _credit)) => indices,
-                        None => sort_indices(columns.clone(), ROWS).unwrap().slice(0, k),
+                        None => sort_indices(columns.clone(), ROWS, &Budget::new(1 << 20))
+                            .unwrap()
+                            .slice(0, k),
                     };
                     assert_eq!(actual, full.slice(0, k));
                     assert_eq!(budget.used(), 0);

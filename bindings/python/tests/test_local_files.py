@@ -39,9 +39,13 @@ class LocalFileTests(unittest.TestCase):
                 with self.assertRaises(assaydb.SQLError):
                     connection.sql(f"SELECT * FROM read_csv({literal(csv)})")
                 self.assertEqual(connection.sql("SELECT 2 AS n").to_arrow()["n"].to_pylist(), [2])
+                result = connection.sql("SELECT 1 IN (SELECT CAST(1 AS REAL)) AS matches")
+                self.assertEqual(result.to_arrow().to_pylist(), [{"matches": True}])
                 with self.assertRaises(assaydb.UnsupportedError) as failure:
-                    connection.sql("SELECT 1 IN (SELECT CAST(1 AS REAL))")
-                self.assertIsInstance(failure.exception.hint, str)
+                    connection.sql("SELECT " + "(" * 1000 + "1" + ")" * 1000)
+                self.assertIn("nesting limit exceeded", failure.exception.native_message.lower())
+                self.assertIn("Simplify deeply nested expressions", failure.exception.hint)
+                self.assertEqual(connection.sql("SELECT 3 AS n").to_arrow()["n"].to_pylist(), [3])
             self.assertEqual([p.name for p in pathlib.Path(directory).iterdir()], ["bad.csv"])
 
 

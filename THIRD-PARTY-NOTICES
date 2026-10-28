@@ -33,3 +33,7 @@ License: https://creativecommons.org/licenses/by/4.0/
 Vendored Apache Parquet 57.0.0: Apache-2.0, Apache Software Foundation.
 The two local decoder modifications and unchanged upstream license/notice
 are documented in vendor/parquet-57.0.0-decoder-v1/ASSAY-PROVENANCE.md.
+
+IANA time zone database (tzdb) release 2025b, public domain, compiled into
+chrono-tz 0.10.4 (MIT OR Apache-2.0). Upstream license texts are retained in
+THIRD-PARTY-LICENSES.
