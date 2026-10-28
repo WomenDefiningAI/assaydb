@@ -1,0 +1,21 @@
+{
+  "aggregate_modifiers/analysis.sql": "3e179876a0030b47c5bdca4bdadcb18c282250cdb5021fcfe18a754ae42a5322",
+  "aggregate_modifiers/analysis_expected.json": "36c02fc4c6dd76e0f429b14ee4b5aa119cabc9d5dee3045f4bce2e7999a8ad05",
+  "joins_sets/analysis.sql": "bb41809d7fde83c7cecd60fcfdda879846b7840d32bfa8b31c073a79ec5a0795",
+  "joins_sets/analysis_expected.json": "128beaf72eca05a7ef505babf71f544bcdd16537450c64ebf3b1d8ba52587462",
+  "ordered_set/analysis.sql": "9a2b18a022255b63b358ac0a72976c3b68c7c0eb65510af4f88d93eba3f19c5e",
+  "ordered_set/analysis_expected.json": "bfaf1f6b0f1f190bce0f077f64cbd6a6cfb4dc29dd00cd139a8836f6f26907ff",
+  "regexp/analysis.sql": "a1d6832f94c826979988c0a02366ea492784900d39015d1bf2e1f9fa89f93007",
+  "regexp/analysis_expected.json": "c42d056bb15edecdbbdc4b13ab16e6d57cf53597e9ed111c26e47a913f819319",
+  "stat_aggregates/analysis.sql": "07edd241026fc9941c45335dc1afefdd6f60dbb377ce18ce27468ff11d9d905f",
+  "stat_aggregates/analysis_expected.json": "9fc81d24f9525e4d4c289132fd33da0acaceb1252650a39016e670f32b8ed322",
+  "string_functions/analysis.sql": "65716698476416b1553c4f7868a8b42c2cfe0173ea4d869ae9beaf4b493b66b7",
+  "string_functions/analysis_expected.json": "3c6ca76085ccb08bcf523873eb9a26d3c616b9c39d7ef281a04a24e45ae1bc1e",
+  "window_extras/analysis.sql": "b3b240caff1ea9ca5f75be59d0d1bf00f092448ebb0a2a5e7e1a4bd94196485e",
+  "window_extras/analysis_expected.json": "7224564ba7ef53787717560c1356b5883407675180fdc30cdcba6d3dd3651867",
+  "date_toolkit/analysis.sql": "0bc48c69593bc87266ecb98354477aa6fb66282d2ee30794cacc51167a1d9a45",
+  "date_toolkit/analysis_expected.json": "db03564b3d89356381281a9b54f052c8a8b0e7d735b48d4a26dbf2c16e3507e1",
+  "window_frames/analysis.sql": "ca82485dda167db7b734009e9c6009f871b5c192630f4837f3002a4d489104e1",
+  "window_frames/sf1_reference_manifest.json": "667b6c1f4e356075fe72a01a589193f5479d423a14854a4af7b7748a84f71a55",
+  "window_frames/sf1_expected.json": "9ee6d2ff2b40e82b288f0a77af259938861136ddf1696ae4137d0eaf0331d97e"
+}

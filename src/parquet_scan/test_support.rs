@@ -16,6 +16,7 @@ pub(crate) struct Observer {
     pub path: PathBuf,
     pub matching_batches: AtomicUsize,
     pub lane_batches: AtomicUsize,
+    pub after: Option<BatchTransform>,
     /// Rendezvous after a matching batch; reports whether a scan worker paused.
     pub pause: Option<(SyncSender<bool>, Mutex<Receiver<()>>)>,
 }
@@ -26,6 +27,7 @@ impl Observer {
             path,
             matching_batches: AtomicUsize::new(0),
             lane_batches: AtomicUsize::new(0),
+            after: None,
             pause: None,
         }
     }
@@ -33,10 +35,10 @@ impl Observer {
     pub fn wrap(
         self: &Arc<Self>,
         transform: Option<BatchTransform>,
-        budget: Budget,
+        _budget: Budget,
     ) -> BatchTransform {
         let observer = self.clone();
-        Arc::new(move |batch| {
+        Arc::new(move |batch, lease| {
             let matching = batch
                 .column(0)
                 .as_any()
@@ -45,13 +47,18 @@ impl Observer {
                 .iter()
                 .any(|value| value == Some(3));
             let output = if let Some(transform) = &transform {
-                transform(batch)?
+                transform(batch, lease)?
             } else {
                 TransformedBatch {
-                    lease: budget.reserve(batch.get_array_memory_size())?,
+                    lease,
                     batch,
                     preserve_empty: true,
                 }
+            };
+            let output = if let Some(after) = &observer.after {
+                after(output.batch, output.lease)?
+            } else {
+                output
             };
             if output.batch.num_columns() == 0 {
                 observer.lane_batches.fetch_add(1, Ordering::SeqCst);

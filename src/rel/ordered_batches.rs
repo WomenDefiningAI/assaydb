@@ -20,6 +20,7 @@ use std::{
 pub(in crate::rel) struct Configuration {
     permits: Workers,
     _metadata: Reservation,
+    threads: Reservation,
     target_bytes: usize,
 }
 impl Configuration {
@@ -28,11 +29,19 @@ impl Configuration {
             return None;
         }
         let metadata = budget.reserve(permits.count.checked_mul(4096)?).ok()?;
+        let threads = budget
+            .reserve(
+                permits
+                    .count
+                    .checked_mul(crate::memory::THREAD_MEMORY_BYTES)?,
+            )
+            .ok()?;
         let target_bytes =
             (budget.limit().saturating_sub(budget.used()) / (2 * permits.count)).max(1);
         Some(Self {
             permits,
             _metadata: metadata,
+            threads,
             target_bytes,
         })
     }
@@ -148,7 +157,7 @@ struct Pool<'scope, R: Report> {
     credit: Arc<Credit>,
     cancel: Cancellation,
     budget: Budget,
-    first_error: Option<String>,
+    first_error: Option<crate::Error>,
     stats: Statistics<R>,
 }
 impl<R: Report> Pool<'_, R> {
@@ -258,7 +267,7 @@ impl<R: Report> Drop for Pool<'_, R> {
 }
 
 pub(in crate::rel) fn run<R: Report, Process, Produce>(
-    config: Configuration,
+    mut config: Configuration,
     budget: &Budget,
     cancel: &Cancellation,
     process: Process,
@@ -305,8 +314,13 @@ where
             let cancel = cancel.clone();
             let process = &process;
             let target = config.target_bytes;
-            let live = budget.thread_started();
+            let live = budget.thread_started_with(
+                config
+                    .threads
+                    .split_off(crate::memory::THREAD_MEMORY_BYTES)?,
+            );
             let handle = thread::Builder::new()
+                .stack_size(crate::engine_stack::WORKER_STACK_BYTES)
                 .name(format!("assaydb-batch-{lane}"))
                 .spawn_scoped(scope, move || {
                     while let Ok(Task {

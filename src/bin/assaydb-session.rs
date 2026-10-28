@@ -24,6 +24,12 @@ struct Open {
     memory_bytes: Option<usize>,
     threads: Option<usize>,
     max_catalog_bytes: Option<usize>,
+    /// Session time zone (IANA Area/City, UTC or GMT); default UTC.
+    #[serde(default)]
+    timezone: Option<String>,
+    /// Fixed statement clock as TIMESTAMPTZ text; else ASSAY_FIXED_CLOCK.
+    #[serde(default)]
+    fixed_clock: Option<String>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -37,7 +43,7 @@ fn failure(error: session::Error) -> Value {
         "internal" => "internal",
         _ => "error",
     };
-    json!({"status":status,"error_kind":error.kind,"message":error.message})
+    json!({"status":status,"error_kind":error.kind,"message":error.message,"error_cause":error.cause,"error_cause_schema":"assay-error-cause/v1"})
 }
 fn protocol(message: impl ToString) -> Value {
     json!({"status":"error","error_kind":"protocol","message":message.to_string()})
@@ -57,6 +63,22 @@ fn handle(text: &str, session: &mut Option<Session>) -> Value {
         }
         if let Some(n) = open.memory_bytes {
             options.memory_bytes = n;
+        }
+        if let Some(name) = &open.timezone {
+            match assaydb::zone::SessionZone::parse(name) {
+                Ok(zone) => options.time_zone = zone,
+                Err(e) => return protocol(e),
+            }
+        }
+        if let Some(text) = open
+            .fixed_clock
+            .clone()
+            .or_else(|| std::env::var("ASSAY_FIXED_CLOCK").ok())
+        {
+            match assaydb::zone::fixed_clock(&text) {
+                Ok(micros) => options.fixed_clock = Some(micros),
+                Err(e) => return protocol(e),
+            }
         }
         let mut limits = Limits::default();
         if let Some(n) = open.max_catalog_bytes {
@@ -87,6 +109,7 @@ fn handle(text: &str, session: &mut Option<Session>) -> Value {
                 let estimate = reply_allocation_bytes(batch);
                 if estimate.is_none_or(|n| n > MAX_REPLY_BYTES) {
                     return failure(session::Error {
+                        cause: None,
                         kind: "resource",
                         message: "query reply allocation limit exceeded".into(),
                     });
@@ -94,8 +117,9 @@ fn handle(text: &str, session: &mut Option<Session>) -> Value {
                 match wire(batch, &types) {
                     Ok(result) => json!({"status":"ok","kind":"query","result":result}),
                     Err(e) => failure(session::Error {
+                        cause: None,
                         kind: "internal",
-                        message: e,
+                        message: e.to_string(),
                     }),
                 }
             }
@@ -148,6 +172,7 @@ fn run() -> io::Result<()> {
         }
         let reply = if too_long {
             failure(session::Error {
+                cause: None,
                 kind: "resource",
                 message: "request exceeds 1 MiB".into(),
             })
@@ -163,6 +188,7 @@ fn run() -> io::Result<()> {
             serde_json::to_writer(
                 &mut buffer,
                 &failure(session::Error {
+                    cause: None,
                     kind: "resource",
                     message: "serialized reply exceeds 16 MiB".into(),
                 }),
@@ -175,7 +201,7 @@ fn run() -> io::Result<()> {
     Ok(())
 }
 fn main() {
-    if let Err(e) = run() {
+    if let Err(e) = assaydb::engine_stack::run(run).and_then(|result| result) {
         eprintln!("session protocol I/O: {e}");
         std::process::exit(1);
     }
@@ -200,7 +226,7 @@ fn reply_allocation_bytes(batch: &RecordBatch) -> Option<usize> {
 }
 
 fn wire(batch: &RecordBatch, types: &[Type]) -> Result<Value> {
-    let schema=batch.schema().fields().iter().zip(types).map(|(f,t)|json!({"name":f.name(),"type":match t{Type::Int=>"int",Type::Decimal(_)=>"decimal",Type::Float=>"float",Type::Bool=>"bool",Type::Text=>"str",Type::Binary=>"binary",Type::Date=>"date",Type::Null=>"null"}})).collect::<Vec<_>>();
+    let schema=batch.schema().fields().iter().zip(types).map(|(f,t)|json!({"name":f.name(),"type":match t{Type::Int=>"int",Type::Decimal(_)=>"decimal",Type::Float=>"float",Type::Bool=>"bool",Type::Text=>"str",Type::Binary=>"binary",Type::Date=>"date",Type::Timestamp=>"timestamp",Type::TimestampTz=>"timestamptz",Type::Null=>"null"}})).collect::<Vec<_>>();
     let mut rows = Vec::new();
     for i in 0..batch.num_rows() {
         let mut row = Vec::new();
@@ -239,6 +265,13 @@ fn wire(batch: &RecordBatch, types: &[Type]) -> Result<Value> {
                             .ok_or("date outside output range")?;
                         json!(date.to_string())
                     }
+                    Type::Timestamp => json!(assaydb::expr::timestamp::format(
+                        a.as_any()
+                            .downcast_ref::<TimestampMicrosecondArray>()
+                            .unwrap()
+                            .value(i)
+                    )?),
+                    Type::TimestampTz => json!(assaydb::zone::format_labelled(a.as_ref(), i)?),
                     Type::Null => Value::Null,
                 }
             };
@@ -247,6 +280,49 @@ fn wire(batch: &RecordBatch, types: &[Type]) -> Result<Value> {
         rows.push(row);
     }
     Ok(json!({"schema":schema,"rows":rows,"physical_schema":batch.schema().to_string()}))
+}
+
+#[cfg(test)]
+#[path = "../../tests/support/unsupported_labels_input.rs"]
+mod unsupported_labels_input;
+
+#[cfg(test)]
+mod unsupported_labels_tests {
+    use super::*;
+
+    #[test]
+    fn unsupported_parquet_types_reach_the_session_reply() {
+        let root =
+            std::env::temp_dir().join(format!("assay-session-labels-{}", std::process::id()));
+        std::fs::create_dir(&root).unwrap();
+        let mut native = Session::new(&root, Options::default(), Limits::default()).unwrap();
+        // File readers are an existing library opt-in. Exercise the real JSON
+        // reply handler with that opt-in; do not add a protocol capability.
+        native.set_local_files_enabled(true);
+        let mut session = Some(native);
+        for (index, ty) in unsupported_labels_input::input_types().iter().enumerate() {
+            let path = root.join(format!("input-{index}.parquet"));
+            unsupported_labels_input::write_input(&path, ty);
+            for projection in ["x", "COUNT(x)"] {
+                let sql = format!(
+                    "SELECT {projection} FROM read_parquet('{}')",
+                    path.to_str().unwrap().replace('\'', "''")
+                );
+                let reply = handle(&json!({"sql":sql}).to_string(), &mut session);
+                assert_eq!(reply["status"], "unsupported", "{sql}: {reply}");
+                assert_eq!(reply["error_kind"], "unsupported");
+                assert_eq!(
+                    reply["message"],
+                    unsupported_labels_input::expected_message(ty)
+                );
+            }
+        }
+        let reply = handle(r#"{"sql":"SELECT 7 AS value"}"#, &mut session);
+        assert_eq!(reply["status"], "ok");
+        assert_eq!(reply["result"]["rows"], json!([[7]]));
+        drop(session);
+        std::fs::remove_dir_all(root).unwrap();
+    }
 }
 
 #[cfg(test)]

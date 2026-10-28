@@ -1,0 +1,4520 @@
+{
+  "duckdb_version": "1.5.6",
+  "setup_sql": "CREATE TABLE dates(id BIGINT, d DATE, t TEXT, region TEXT, amount DECIMAL(10,2));\nINSERT INTO dates VALUES\n(0, DATE '1900-03-01', '1900-03-01', 'east', 1.25),\n(1, DATE '2000-02-29', '2000-02-29', 'west', 2.25),\n(2, DATE '2014-12-28', '2014-12-28', 'east', 3.25),\n(3, DATE '2014-12-29', '2014-12-29', 'west', 4.25),\n(4, DATE '2014-12-30', '2014-12-30', 'east', 5.25),\n(5, DATE '2014-12-31', '2014-12-31', 'west', 6.25),\n(6, DATE '2015-01-01', '2015-01-01', 'east', 7.25),\n(7, DATE '2015-01-02', '2015-01-02', 'west', 8.25),\n(8, DATE '2015-01-03', '2015-01-03', 'east', 9.25),\n(9, DATE '2015-01-04', '2015-01-04', 'west', 10.25),\n(10, DATE '2015-12-29', '2015-12-29', 'east', 11.25),\n(11, DATE '2015-12-30', '2015-12-30', 'west', 12.25),\n(12, DATE '2015-12-31', '2015-12-31', 'east', 13.25),\n(13, DATE '2016-01-01', '2016-01-01', 'west', 14.25),\n(14, DATE '2016-01-02', '2016-01-02', 'east', 15.25),\n(15, DATE '2016-01-03', '2016-01-03', 'west', 16.25),\n(16, DATE '2016-01-04', '2016-01-04', 'east', 17.25),\n(17, DATE '2024-02-29', '2024-02-29', 'west', 18.25),\n(18, DATE '2024-02-29', '2024-02-29', 'east', 19.25),\n(19, DATE '2024-03-31', '2024-03-31', 'west', 20.25),\n(20, DATE '2024-04-01', '2024-04-01', 'east', 21.25),\n(21, DATE '2024-12-31', '2024-12-31', 'west', 22.25),\n(22, DATE '2025-01-01', '2025-01-01', 'east', 23.25),\n(23, NULL, NULL, 'west', 24.25);\nCREATE TABLE empty_dates(d DATE, t TEXT);\n",
+  "setup_sha256": "d38d6ff473c458cef03288bdd798a3c4b2266aa08935907a78e6369c12130290",
+  "cases_sha256": "b7f80cb0db632f01663ff958bb22d709bd3a5e9a359b91f22bc16ab3d08e6721",
+  "postgresql_execution": "not run; common calendar fields follow the reviewed card contract",
+  "unexpected_reference_outcomes": [],
+  "cases": [
+    {
+      "id": "d001",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, EXTRACT(YEAR FROM d) AS extracted, date_part('year',d) AS function_value FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "extracted",
+        "function_value"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          0,
+          1900,
+          1900
+        ],
+        [
+          1,
+          2000,
+          2000
+        ],
+        [
+          2,
+          2014,
+          2014
+        ],
+        [
+          3,
+          2014,
+          2014
+        ],
+        [
+          4,
+          2014,
+          2014
+        ],
+        [
+          5,
+          2014,
+          2014
+        ],
+        [
+          6,
+          2015,
+          2015
+        ],
+        [
+          7,
+          2015,
+          2015
+        ],
+        [
+          8,
+          2015,
+          2015
+        ],
+        [
+          9,
+          2015,
+          2015
+        ],
+        [
+          10,
+          2015,
+          2015
+        ],
+        [
+          11,
+          2015,
+          2015
+        ],
+        [
+          12,
+          2015,
+          2015
+        ],
+        [
+          13,
+          2016,
+          2016
+        ],
+        [
+          14,
+          2016,
+          2016
+        ],
+        [
+          15,
+          2016,
+          2016
+        ],
+        [
+          16,
+          2016,
+          2016
+        ],
+        [
+          17,
+          2024,
+          2024
+        ],
+        [
+          18,
+          2024,
+          2024
+        ],
+        [
+          19,
+          2024,
+          2024
+        ],
+        [
+          20,
+          2024,
+          2024
+        ],
+        [
+          21,
+          2024,
+          2024
+        ],
+        [
+          22,
+          2025,
+          2025
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d002",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, EXTRACT(QUARTER FROM d) AS extracted, date_part('quarter',d) AS function_value FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "extracted",
+        "function_value"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          4,
+          4
+        ],
+        [
+          3,
+          4,
+          4
+        ],
+        [
+          4,
+          4,
+          4
+        ],
+        [
+          5,
+          4,
+          4
+        ],
+        [
+          6,
+          1,
+          1
+        ],
+        [
+          7,
+          1,
+          1
+        ],
+        [
+          8,
+          1,
+          1
+        ],
+        [
+          9,
+          1,
+          1
+        ],
+        [
+          10,
+          4,
+          4
+        ],
+        [
+          11,
+          4,
+          4
+        ],
+        [
+          12,
+          4,
+          4
+        ],
+        [
+          13,
+          1,
+          1
+        ],
+        [
+          14,
+          1,
+          1
+        ],
+        [
+          15,
+          1,
+          1
+        ],
+        [
+          16,
+          1,
+          1
+        ],
+        [
+          17,
+          1,
+          1
+        ],
+        [
+          18,
+          1,
+          1
+        ],
+        [
+          19,
+          1,
+          1
+        ],
+        [
+          20,
+          2,
+          2
+        ],
+        [
+          21,
+          4,
+          4
+        ],
+        [
+          22,
+          1,
+          1
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d003",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, EXTRACT(MONTH FROM d) AS extracted, date_part('month',d) AS function_value FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "extracted",
+        "function_value"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          0,
+          3,
+          3
+        ],
+        [
+          1,
+          2,
+          2
+        ],
+        [
+          2,
+          12,
+          12
+        ],
+        [
+          3,
+          12,
+          12
+        ],
+        [
+          4,
+          12,
+          12
+        ],
+        [
+          5,
+          12,
+          12
+        ],
+        [
+          6,
+          1,
+          1
+        ],
+        [
+          7,
+          1,
+          1
+        ],
+        [
+          8,
+          1,
+          1
+        ],
+        [
+          9,
+          1,
+          1
+        ],
+        [
+          10,
+          12,
+          12
+        ],
+        [
+          11,
+          12,
+          12
+        ],
+        [
+          12,
+          12,
+          12
+        ],
+        [
+          13,
+          1,
+          1
+        ],
+        [
+          14,
+          1,
+          1
+        ],
+        [
+          15,
+          1,
+          1
+        ],
+        [
+          16,
+          1,
+          1
+        ],
+        [
+          17,
+          2,
+          2
+        ],
+        [
+          18,
+          2,
+          2
+        ],
+        [
+          19,
+          3,
+          3
+        ],
+        [
+          20,
+          4,
+          4
+        ],
+        [
+          21,
+          12,
+          12
+        ],
+        [
+          22,
+          1,
+          1
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d004",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, EXTRACT(DAY FROM d) AS extracted, date_part('day',d) AS function_value FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "extracted",
+        "function_value"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          29,
+          29
+        ],
+        [
+          2,
+          28,
+          28
+        ],
+        [
+          3,
+          29,
+          29
+        ],
+        [
+          4,
+          30,
+          30
+        ],
+        [
+          5,
+          31,
+          31
+        ],
+        [
+          6,
+          1,
+          1
+        ],
+        [
+          7,
+          2,
+          2
+        ],
+        [
+          8,
+          3,
+          3
+        ],
+        [
+          9,
+          4,
+          4
+        ],
+        [
+          10,
+          29,
+          29
+        ],
+        [
+          11,
+          30,
+          30
+        ],
+        [
+          12,
+          31,
+          31
+        ],
+        [
+          13,
+          1,
+          1
+        ],
+        [
+          14,
+          2,
+          2
+        ],
+        [
+          15,
+          3,
+          3
+        ],
+        [
+          16,
+          4,
+          4
+        ],
+        [
+          17,
+          29,
+          29
+        ],
+        [
+          18,
+          29,
+          29
+        ],
+        [
+          19,
+          31,
+          31
+        ],
+        [
+          20,
+          1,
+          1
+        ],
+        [
+          21,
+          31,
+          31
+        ],
+        [
+          22,
+          1,
+          1
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d005",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, EXTRACT(DOW FROM d) AS extracted, date_part('dow',d) AS function_value FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "extracted",
+        "function_value"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          0,
+          4,
+          4
+        ],
+        [
+          1,
+          2,
+          2
+        ],
+        [
+          2,
+          0,
+          0
+        ],
+        [
+          3,
+          1,
+          1
+        ],
+        [
+          4,
+          2,
+          2
+        ],
+        [
+          5,
+          3,
+          3
+        ],
+        [
+          6,
+          4,
+          4
+        ],
+        [
+          7,
+          5,
+          5
+        ],
+        [
+          8,
+          6,
+          6
+        ],
+        [
+          9,
+          0,
+          0
+        ],
+        [
+          10,
+          2,
+          2
+        ],
+        [
+          11,
+          3,
+          3
+        ],
+        [
+          12,
+          4,
+          4
+        ],
+        [
+          13,
+          5,
+          5
+        ],
+        [
+          14,
+          6,
+          6
+        ],
+        [
+          15,
+          0,
+          0
+        ],
+        [
+          16,
+          1,
+          1
+        ],
+        [
+          17,
+          4,
+          4
+        ],
+        [
+          18,
+          4,
+          4
+        ],
+        [
+          19,
+          0,
+          0
+        ],
+        [
+          20,
+          1,
+          1
+        ],
+        [
+          21,
+          2,
+          2
+        ],
+        [
+          22,
+          3,
+          3
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d006",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, EXTRACT(ISODOW FROM d) AS extracted, date_part('isodow',d) AS function_value FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "extracted",
+        "function_value"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          0,
+          4,
+          4
+        ],
+        [
+          1,
+          2,
+          2
+        ],
+        [
+          2,
+          7,
+          7
+        ],
+        [
+          3,
+          1,
+          1
+        ],
+        [
+          4,
+          2,
+          2
+        ],
+        [
+          5,
+          3,
+          3
+        ],
+        [
+          6,
+          4,
+          4
+        ],
+        [
+          7,
+          5,
+          5
+        ],
+        [
+          8,
+          6,
+          6
+        ],
+        [
+          9,
+          7,
+          7
+        ],
+        [
+          10,
+          2,
+          2
+        ],
+        [
+          11,
+          3,
+          3
+        ],
+        [
+          12,
+          4,
+          4
+        ],
+        [
+          13,
+          5,
+          5
+        ],
+        [
+          14,
+          6,
+          6
+        ],
+        [
+          15,
+          7,
+          7
+        ],
+        [
+          16,
+          1,
+          1
+        ],
+        [
+          17,
+          4,
+          4
+        ],
+        [
+          18,
+          4,
+          4
+        ],
+        [
+          19,
+          7,
+          7
+        ],
+        [
+          20,
+          1,
+          1
+        ],
+        [
+          21,
+          2,
+          2
+        ],
+        [
+          22,
+          3,
+          3
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d007",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, EXTRACT(DOY FROM d) AS extracted, date_part('doy',d) AS function_value FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "extracted",
+        "function_value"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          0,
+          60,
+          60
+        ],
+        [
+          1,
+          60,
+          60
+        ],
+        [
+          2,
+          362,
+          362
+        ],
+        [
+          3,
+          363,
+          363
+        ],
+        [
+          4,
+          364,
+          364
+        ],
+        [
+          5,
+          365,
+          365
+        ],
+        [
+          6,
+          1,
+          1
+        ],
+        [
+          7,
+          2,
+          2
+        ],
+        [
+          8,
+          3,
+          3
+        ],
+        [
+          9,
+          4,
+          4
+        ],
+        [
+          10,
+          363,
+          363
+        ],
+        [
+          11,
+          364,
+          364
+        ],
+        [
+          12,
+          365,
+          365
+        ],
+        [
+          13,
+          1,
+          1
+        ],
+        [
+          14,
+          2,
+          2
+        ],
+        [
+          15,
+          3,
+          3
+        ],
+        [
+          16,
+          4,
+          4
+        ],
+        [
+          17,
+          60,
+          60
+        ],
+        [
+          18,
+          60,
+          60
+        ],
+        [
+          19,
+          91,
+          91
+        ],
+        [
+          20,
+          92,
+          92
+        ],
+        [
+          21,
+          366,
+          366
+        ],
+        [
+          22,
+          1,
+          1
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d008",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, EXTRACT(WEEK FROM d) AS extracted, date_part('week',d) AS function_value FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "extracted",
+        "function_value"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          0,
+          9,
+          9
+        ],
+        [
+          1,
+          9,
+          9
+        ],
+        [
+          2,
+          52,
+          52
+        ],
+        [
+          3,
+          1,
+          1
+        ],
+        [
+          4,
+          1,
+          1
+        ],
+        [
+          5,
+          1,
+          1
+        ],
+        [
+          6,
+          1,
+          1
+        ],
+        [
+          7,
+          1,
+          1
+        ],
+        [
+          8,
+          1,
+          1
+        ],
+        [
+          9,
+          1,
+          1
+        ],
+        [
+          10,
+          53,
+          53
+        ],
+        [
+          11,
+          53,
+          53
+        ],
+        [
+          12,
+          53,
+          53
+        ],
+        [
+          13,
+          53,
+          53
+        ],
+        [
+          14,
+          53,
+          53
+        ],
+        [
+          15,
+          53,
+          53
+        ],
+        [
+          16,
+          1,
+          1
+        ],
+        [
+          17,
+          9,
+          9
+        ],
+        [
+          18,
+          9,
+          9
+        ],
+        [
+          19,
+          13,
+          13
+        ],
+        [
+          20,
+          14,
+          14
+        ],
+        [
+          21,
+          1,
+          1
+        ],
+        [
+          22,
+          1,
+          1
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d009",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, EXTRACT(ISOYEAR FROM d) AS extracted, date_part('isoyear',d) AS function_value FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "extracted",
+        "function_value"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          0,
+          1900,
+          1900
+        ],
+        [
+          1,
+          2000,
+          2000
+        ],
+        [
+          2,
+          2014,
+          2014
+        ],
+        [
+          3,
+          2015,
+          2015
+        ],
+        [
+          4,
+          2015,
+          2015
+        ],
+        [
+          5,
+          2015,
+          2015
+        ],
+        [
+          6,
+          2015,
+          2015
+        ],
+        [
+          7,
+          2015,
+          2015
+        ],
+        [
+          8,
+          2015,
+          2015
+        ],
+        [
+          9,
+          2015,
+          2015
+        ],
+        [
+          10,
+          2015,
+          2015
+        ],
+        [
+          11,
+          2015,
+          2015
+        ],
+        [
+          12,
+          2015,
+          2015
+        ],
+        [
+          13,
+          2015,
+          2015
+        ],
+        [
+          14,
+          2015,
+          2015
+        ],
+        [
+          15,
+          2015,
+          2015
+        ],
+        [
+          16,
+          2016,
+          2016
+        ],
+        [
+          17,
+          2024,
+          2024
+        ],
+        [
+          18,
+          2024,
+          2024
+        ],
+        [
+          19,
+          2024,
+          2024
+        ],
+        [
+          20,
+          2024,
+          2024
+        ],
+        [
+          21,
+          2025,
+          2025
+        ],
+        [
+          22,
+          2025,
+          2025
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d010",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(YEAR FROM CAST(NULL AS DATE)) AS null_value, EXTRACT(YEAR FROM CAST(NULL AS DATE)) AS typed_null, date_part('year',CAST(NULL AS DATE)) AS function_null;",
+      "reference_outcome": "rows",
+      "columns": [
+        "null_value",
+        "typed_null",
+        "function_null"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d011",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(QUARTER FROM CAST(NULL AS DATE)) AS null_value, EXTRACT(QUARTER FROM CAST(NULL AS DATE)) AS typed_null, date_part('quarter',CAST(NULL AS DATE)) AS function_null;",
+      "reference_outcome": "rows",
+      "columns": [
+        "null_value",
+        "typed_null",
+        "function_null"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d012",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(MONTH FROM CAST(NULL AS DATE)) AS null_value, EXTRACT(MONTH FROM CAST(NULL AS DATE)) AS typed_null, date_part('month',CAST(NULL AS DATE)) AS function_null;",
+      "reference_outcome": "rows",
+      "columns": [
+        "null_value",
+        "typed_null",
+        "function_null"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d013",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(DAY FROM CAST(NULL AS DATE)) AS null_value, EXTRACT(DAY FROM CAST(NULL AS DATE)) AS typed_null, date_part('day',CAST(NULL AS DATE)) AS function_null;",
+      "reference_outcome": "rows",
+      "columns": [
+        "null_value",
+        "typed_null",
+        "function_null"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d014",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(DOW FROM CAST(NULL AS DATE)) AS null_value, EXTRACT(DOW FROM CAST(NULL AS DATE)) AS typed_null, date_part('dow',CAST(NULL AS DATE)) AS function_null;",
+      "reference_outcome": "rows",
+      "columns": [
+        "null_value",
+        "typed_null",
+        "function_null"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d015",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(ISODOW FROM CAST(NULL AS DATE)) AS null_value, EXTRACT(ISODOW FROM CAST(NULL AS DATE)) AS typed_null, date_part('isodow',CAST(NULL AS DATE)) AS function_null;",
+      "reference_outcome": "rows",
+      "columns": [
+        "null_value",
+        "typed_null",
+        "function_null"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d016",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(DOY FROM CAST(NULL AS DATE)) AS null_value, EXTRACT(DOY FROM CAST(NULL AS DATE)) AS typed_null, date_part('doy',CAST(NULL AS DATE)) AS function_null;",
+      "reference_outcome": "rows",
+      "columns": [
+        "null_value",
+        "typed_null",
+        "function_null"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d017",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(WEEK FROM CAST(NULL AS DATE)) AS null_value, EXTRACT(WEEK FROM CAST(NULL AS DATE)) AS typed_null, date_part('week',CAST(NULL AS DATE)) AS function_null;",
+      "reference_outcome": "rows",
+      "columns": [
+        "null_value",
+        "typed_null",
+        "function_null"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d018",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(ISOYEAR FROM CAST(NULL AS DATE)) AS null_value, EXTRACT(ISOYEAR FROM CAST(NULL AS DATE)) AS typed_null, date_part('isoyear',CAST(NULL AS DATE)) AS function_null;",
+      "reference_outcome": "rows",
+      "columns": [
+        "null_value",
+        "typed_null",
+        "function_null"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d019",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, d = '2016-01-01' AS forward, '2016-01-01' = d AS reversed FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "forward",
+        "reversed"
+      ],
+      "types": [
+        "BIGINT",
+        "BOOLEAN",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          0,
+          false,
+          false
+        ],
+        [
+          1,
+          false,
+          false
+        ],
+        [
+          2,
+          false,
+          false
+        ],
+        [
+          3,
+          false,
+          false
+        ],
+        [
+          4,
+          false,
+          false
+        ],
+        [
+          5,
+          false,
+          false
+        ],
+        [
+          6,
+          false,
+          false
+        ],
+        [
+          7,
+          false,
+          false
+        ],
+        [
+          8,
+          false,
+          false
+        ],
+        [
+          9,
+          false,
+          false
+        ],
+        [
+          10,
+          false,
+          false
+        ],
+        [
+          11,
+          false,
+          false
+        ],
+        [
+          12,
+          false,
+          false
+        ],
+        [
+          13,
+          true,
+          true
+        ],
+        [
+          14,
+          false,
+          false
+        ],
+        [
+          15,
+          false,
+          false
+        ],
+        [
+          16,
+          false,
+          false
+        ],
+        [
+          17,
+          false,
+          false
+        ],
+        [
+          18,
+          false,
+          false
+        ],
+        [
+          19,
+          false,
+          false
+        ],
+        [
+          20,
+          false,
+          false
+        ],
+        [
+          21,
+          false,
+          false
+        ],
+        [
+          22,
+          false,
+          false
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d020",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, d <> '2016-01-01' AS forward, '2016-01-01' <> d AS reversed FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "forward",
+        "reversed"
+      ],
+      "types": [
+        "BIGINT",
+        "BOOLEAN",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          0,
+          true,
+          true
+        ],
+        [
+          1,
+          true,
+          true
+        ],
+        [
+          2,
+          true,
+          true
+        ],
+        [
+          3,
+          true,
+          true
+        ],
+        [
+          4,
+          true,
+          true
+        ],
+        [
+          5,
+          true,
+          true
+        ],
+        [
+          6,
+          true,
+          true
+        ],
+        [
+          7,
+          true,
+          true
+        ],
+        [
+          8,
+          true,
+          true
+        ],
+        [
+          9,
+          true,
+          true
+        ],
+        [
+          10,
+          true,
+          true
+        ],
+        [
+          11,
+          true,
+          true
+        ],
+        [
+          12,
+          true,
+          true
+        ],
+        [
+          13,
+          false,
+          false
+        ],
+        [
+          14,
+          true,
+          true
+        ],
+        [
+          15,
+          true,
+          true
+        ],
+        [
+          16,
+          true,
+          true
+        ],
+        [
+          17,
+          true,
+          true
+        ],
+        [
+          18,
+          true,
+          true
+        ],
+        [
+          19,
+          true,
+          true
+        ],
+        [
+          20,
+          true,
+          true
+        ],
+        [
+          21,
+          true,
+          true
+        ],
+        [
+          22,
+          true,
+          true
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d021",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, d < '2016-01-01' AS forward, '2016-01-01' < d AS reversed FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "forward",
+        "reversed"
+      ],
+      "types": [
+        "BIGINT",
+        "BOOLEAN",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          0,
+          true,
+          false
+        ],
+        [
+          1,
+          true,
+          false
+        ],
+        [
+          2,
+          true,
+          false
+        ],
+        [
+          3,
+          true,
+          false
+        ],
+        [
+          4,
+          true,
+          false
+        ],
+        [
+          5,
+          true,
+          false
+        ],
+        [
+          6,
+          true,
+          false
+        ],
+        [
+          7,
+          true,
+          false
+        ],
+        [
+          8,
+          true,
+          false
+        ],
+        [
+          9,
+          true,
+          false
+        ],
+        [
+          10,
+          true,
+          false
+        ],
+        [
+          11,
+          true,
+          false
+        ],
+        [
+          12,
+          true,
+          false
+        ],
+        [
+          13,
+          false,
+          false
+        ],
+        [
+          14,
+          false,
+          true
+        ],
+        [
+          15,
+          false,
+          true
+        ],
+        [
+          16,
+          false,
+          true
+        ],
+        [
+          17,
+          false,
+          true
+        ],
+        [
+          18,
+          false,
+          true
+        ],
+        [
+          19,
+          false,
+          true
+        ],
+        [
+          20,
+          false,
+          true
+        ],
+        [
+          21,
+          false,
+          true
+        ],
+        [
+          22,
+          false,
+          true
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d022",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, d <= '2016-01-01' AS forward, '2016-01-01' <= d AS reversed FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "forward",
+        "reversed"
+      ],
+      "types": [
+        "BIGINT",
+        "BOOLEAN",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          0,
+          true,
+          false
+        ],
+        [
+          1,
+          true,
+          false
+        ],
+        [
+          2,
+          true,
+          false
+        ],
+        [
+          3,
+          true,
+          false
+        ],
+        [
+          4,
+          true,
+          false
+        ],
+        [
+          5,
+          true,
+          false
+        ],
+        [
+          6,
+          true,
+          false
+        ],
+        [
+          7,
+          true,
+          false
+        ],
+        [
+          8,
+          true,
+          false
+        ],
+        [
+          9,
+          true,
+          false
+        ],
+        [
+          10,
+          true,
+          false
+        ],
+        [
+          11,
+          true,
+          false
+        ],
+        [
+          12,
+          true,
+          false
+        ],
+        [
+          13,
+          true,
+          true
+        ],
+        [
+          14,
+          false,
+          true
+        ],
+        [
+          15,
+          false,
+          true
+        ],
+        [
+          16,
+          false,
+          true
+        ],
+        [
+          17,
+          false,
+          true
+        ],
+        [
+          18,
+          false,
+          true
+        ],
+        [
+          19,
+          false,
+          true
+        ],
+        [
+          20,
+          false,
+          true
+        ],
+        [
+          21,
+          false,
+          true
+        ],
+        [
+          22,
+          false,
+          true
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d023",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, d > '2016-01-01' AS forward, '2016-01-01' > d AS reversed FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "forward",
+        "reversed"
+      ],
+      "types": [
+        "BIGINT",
+        "BOOLEAN",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          0,
+          false,
+          true
+        ],
+        [
+          1,
+          false,
+          true
+        ],
+        [
+          2,
+          false,
+          true
+        ],
+        [
+          3,
+          false,
+          true
+        ],
+        [
+          4,
+          false,
+          true
+        ],
+        [
+          5,
+          false,
+          true
+        ],
+        [
+          6,
+          false,
+          true
+        ],
+        [
+          7,
+          false,
+          true
+        ],
+        [
+          8,
+          false,
+          true
+        ],
+        [
+          9,
+          false,
+          true
+        ],
+        [
+          10,
+          false,
+          true
+        ],
+        [
+          11,
+          false,
+          true
+        ],
+        [
+          12,
+          false,
+          true
+        ],
+        [
+          13,
+          false,
+          false
+        ],
+        [
+          14,
+          true,
+          false
+        ],
+        [
+          15,
+          true,
+          false
+        ],
+        [
+          16,
+          true,
+          false
+        ],
+        [
+          17,
+          true,
+          false
+        ],
+        [
+          18,
+          true,
+          false
+        ],
+        [
+          19,
+          true,
+          false
+        ],
+        [
+          20,
+          true,
+          false
+        ],
+        [
+          21,
+          true,
+          false
+        ],
+        [
+          22,
+          true,
+          false
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d024",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, d >= '2016-01-01' AS forward, '2016-01-01' >= d AS reversed FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "forward",
+        "reversed"
+      ],
+      "types": [
+        "BIGINT",
+        "BOOLEAN",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          0,
+          false,
+          true
+        ],
+        [
+          1,
+          false,
+          true
+        ],
+        [
+          2,
+          false,
+          true
+        ],
+        [
+          3,
+          false,
+          true
+        ],
+        [
+          4,
+          false,
+          true
+        ],
+        [
+          5,
+          false,
+          true
+        ],
+        [
+          6,
+          false,
+          true
+        ],
+        [
+          7,
+          false,
+          true
+        ],
+        [
+          8,
+          false,
+          true
+        ],
+        [
+          9,
+          false,
+          true
+        ],
+        [
+          10,
+          false,
+          true
+        ],
+        [
+          11,
+          false,
+          true
+        ],
+        [
+          12,
+          false,
+          true
+        ],
+        [
+          13,
+          true,
+          true
+        ],
+        [
+          14,
+          true,
+          false
+        ],
+        [
+          15,
+          true,
+          false
+        ],
+        [
+          16,
+          true,
+          false
+        ],
+        [
+          17,
+          true,
+          false
+        ],
+        [
+          18,
+          true,
+          false
+        ],
+        [
+          19,
+          true,
+          false
+        ],
+        [
+          20,
+          true,
+          false
+        ],
+        [
+          21,
+          true,
+          false
+        ],
+        [
+          22,
+          true,
+          false
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d025",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, d BETWEEN '2015-12-29' AND '2016-01-03' AS inside, d NOT BETWEEN '2015-12-29' AND '2016-01-03' AS outside FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "inside",
+        "outside"
+      ],
+      "types": [
+        "BIGINT",
+        "BOOLEAN",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          0,
+          false,
+          true
+        ],
+        [
+          1,
+          false,
+          true
+        ],
+        [
+          2,
+          false,
+          true
+        ],
+        [
+          3,
+          false,
+          true
+        ],
+        [
+          4,
+          false,
+          true
+        ],
+        [
+          5,
+          false,
+          true
+        ],
+        [
+          6,
+          false,
+          true
+        ],
+        [
+          7,
+          false,
+          true
+        ],
+        [
+          8,
+          false,
+          true
+        ],
+        [
+          9,
+          false,
+          true
+        ],
+        [
+          10,
+          true,
+          false
+        ],
+        [
+          11,
+          true,
+          false
+        ],
+        [
+          12,
+          true,
+          false
+        ],
+        [
+          13,
+          true,
+          false
+        ],
+        [
+          14,
+          true,
+          false
+        ],
+        [
+          15,
+          true,
+          false
+        ],
+        [
+          16,
+          false,
+          true
+        ],
+        [
+          17,
+          false,
+          true
+        ],
+        [
+          18,
+          false,
+          true
+        ],
+        [
+          19,
+          false,
+          true
+        ],
+        [
+          20,
+          false,
+          true
+        ],
+        [
+          21,
+          false,
+          true
+        ],
+        [
+          22,
+          false,
+          true
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d026",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, d IN ('2024-02-29','2024-02-29','2016-01-01',NULL) AS inside, d NOT IN ('2024-02-29','2024-02-29','2016-01-01',NULL) AS outside FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "inside",
+        "outside"
+      ],
+      "types": [
+        "BIGINT",
+        "BOOLEAN",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          0,
+          null,
+          null
+        ],
+        [
+          1,
+          null,
+          null
+        ],
+        [
+          2,
+          null,
+          null
+        ],
+        [
+          3,
+          null,
+          null
+        ],
+        [
+          4,
+          null,
+          null
+        ],
+        [
+          5,
+          null,
+          null
+        ],
+        [
+          6,
+          null,
+          null
+        ],
+        [
+          7,
+          null,
+          null
+        ],
+        [
+          8,
+          null,
+          null
+        ],
+        [
+          9,
+          null,
+          null
+        ],
+        [
+          10,
+          null,
+          null
+        ],
+        [
+          11,
+          null,
+          null
+        ],
+        [
+          12,
+          null,
+          null
+        ],
+        [
+          13,
+          true,
+          false
+        ],
+        [
+          14,
+          null,
+          null
+        ],
+        [
+          15,
+          null,
+          null
+        ],
+        [
+          16,
+          null,
+          null
+        ],
+        [
+          17,
+          true,
+          false
+        ],
+        [
+          18,
+          true,
+          false
+        ],
+        [
+          19,
+          null,
+          null
+        ],
+        [
+          20,
+          null,
+          null
+        ],
+        [
+          21,
+          null,
+          null
+        ],
+        [
+          22,
+          null,
+          null
+        ],
+        [
+          23,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d027",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, '2016-01-01' BETWEEN d AND '2025-01-01' AS inside FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "inside"
+      ],
+      "types": [
+        "BIGINT",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          0,
+          true
+        ],
+        [
+          1,
+          true
+        ],
+        [
+          2,
+          true
+        ],
+        [
+          3,
+          true
+        ],
+        [
+          4,
+          true
+        ],
+        [
+          5,
+          true
+        ],
+        [
+          6,
+          true
+        ],
+        [
+          7,
+          true
+        ],
+        [
+          8,
+          true
+        ],
+        [
+          9,
+          true
+        ],
+        [
+          10,
+          true
+        ],
+        [
+          11,
+          true
+        ],
+        [
+          12,
+          true
+        ],
+        [
+          13,
+          true
+        ],
+        [
+          14,
+          false
+        ],
+        [
+          15,
+          false
+        ],
+        [
+          16,
+          false
+        ],
+        [
+          17,
+          false
+        ],
+        [
+          18,
+          false
+        ],
+        [
+          19,
+          false
+        ],
+        [
+          20,
+          false
+        ],
+        [
+          21,
+          false
+        ],
+        [
+          22,
+          false
+        ],
+        [
+          23,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d028",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, '2016-01-01' IN ('2015-01-01',d,NULL) AS inside FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "inside"
+      ],
+      "types": [
+        "BIGINT",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          0,
+          null
+        ],
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          null
+        ],
+        [
+          3,
+          null
+        ],
+        [
+          4,
+          null
+        ],
+        [
+          5,
+          null
+        ],
+        [
+          6,
+          null
+        ],
+        [
+          7,
+          null
+        ],
+        [
+          8,
+          null
+        ],
+        [
+          9,
+          null
+        ],
+        [
+          10,
+          null
+        ],
+        [
+          11,
+          null
+        ],
+        [
+          12,
+          null
+        ],
+        [
+          13,
+          true
+        ],
+        [
+          14,
+          null
+        ],
+        [
+          15,
+          null
+        ],
+        [
+          16,
+          null
+        ],
+        [
+          17,
+          null
+        ],
+        [
+          18,
+          null
+        ],
+        [
+          19,
+          null
+        ],
+        [
+          20,
+          null
+        ],
+        [
+          21,
+          null
+        ],
+        [
+          22,
+          null
+        ],
+        [
+          23,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d029",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id, '2016-01-01' NOT IN ('2015-01-01',d,NULL) AS outside FROM dates ORDER BY id;",
+      "reference_outcome": "rows",
+      "columns": [
+        "id",
+        "outside"
+      ],
+      "types": [
+        "BIGINT",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          0,
+          null
+        ],
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          null
+        ],
+        [
+          3,
+          null
+        ],
+        [
+          4,
+          null
+        ],
+        [
+          5,
+          null
+        ],
+        [
+          6,
+          null
+        ],
+        [
+          7,
+          null
+        ],
+        [
+          8,
+          null
+        ],
+        [
+          9,
+          null
+        ],
+        [
+          10,
+          null
+        ],
+        [
+          11,
+          null
+        ],
+        [
+          12,
+          null
+        ],
+        [
+          13,
+          false
+        ],
+        [
+          14,
+          null
+        ],
+        [
+          15,
+          null
+        ],
+        [
+          16,
+          null
+        ],
+        [
+          17,
+          null
+        ],
+        [
+          18,
+          null
+        ],
+        [
+          19,
+          null
+        ],
+        [
+          20,
+          null
+        ],
+        [
+          21,
+          null
+        ],
+        [
+          22,
+          null
+        ],
+        [
+          23,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d030",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(YEAR FROM d) AS y, EXTRACT(MONTH FROM d) AS m, region, SUM(amount) AS revenue FROM dates WHERE d >= '2015-01-01' AND d < '2025-01-01' GROUP BY EXTRACT(YEAR FROM d), EXTRACT(MONTH FROM d), region ORDER BY y,m,region;",
+      "reference_outcome": "rows",
+      "columns": [
+        "y",
+        "m",
+        "region",
+        "revenue"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "VARCHAR",
+        "DECIMAL(38,2)"
+      ],
+      "rows": [
+        [
+          2015,
+          1,
+          "east",
+          "16.50"
+        ],
+        [
+          2015,
+          1,
+          "west",
+          "18.50"
+        ],
+        [
+          2015,
+          12,
+          "east",
+          "24.50"
+        ],
+        [
+          2015,
+          12,
+          "west",
+          "12.25"
+        ],
+        [
+          2016,
+          1,
+          "east",
+          "32.50"
+        ],
+        [
+          2016,
+          1,
+          "west",
+          "30.50"
+        ],
+        [
+          2024,
+          2,
+          "east",
+          "19.25"
+        ],
+        [
+          2024,
+          2,
+          "west",
+          "18.25"
+        ],
+        [
+          2024,
+          3,
+          "west",
+          "20.25"
+        ],
+        [
+          2024,
+          4,
+          "east",
+          "21.25"
+        ],
+        [
+          2024,
+          12,
+          "west",
+          "22.25"
+        ]
+      ]
+    },
+    {
+      "id": "d031",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(ISOYEAR FROM d) AS y, EXTRACT(WEEK FROM d) AS w, COUNT(*) AS orders FROM dates GROUP BY EXTRACT(ISOYEAR FROM d),EXTRACT(WEEK FROM d) ORDER BY y NULLS LAST,w NULLS LAST;",
+      "reference_outcome": "rows",
+      "columns": [
+        "y",
+        "w",
+        "orders"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          1900,
+          9,
+          1
+        ],
+        [
+          2000,
+          9,
+          1
+        ],
+        [
+          2014,
+          52,
+          1
+        ],
+        [
+          2015,
+          1,
+          7
+        ],
+        [
+          2015,
+          53,
+          6
+        ],
+        [
+          2016,
+          1,
+          1
+        ],
+        [
+          2024,
+          9,
+          2
+        ],
+        [
+          2024,
+          13,
+          1
+        ],
+        [
+          2024,
+          14,
+          1
+        ],
+        [
+          2025,
+          1,
+          2
+        ],
+        [
+          null,
+          null,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "d032",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(QUARTER FROM d) AS q, SUM(amount) AS revenue FROM dates GROUP BY EXTRACT(QUARTER FROM d) HAVING SUM(amount)>20 ORDER BY q NULLS LAST;",
+      "reference_outcome": "rows",
+      "columns": [
+        "q",
+        "revenue"
+      ],
+      "types": [
+        "BIGINT",
+        "DECIMAL(38,2)"
+      ],
+      "rows": [
+        [
+          1,
+          "182.50"
+        ],
+        [
+          2,
+          "21.25"
+        ],
+        [
+          4,
+          "78.00"
+        ],
+        [
+          null,
+          "24.25"
+        ]
+      ]
+    },
+    {
+      "id": "d033",
+      "ordered": false,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(MONTH FROM d) AS m FROM dates;",
+      "reference_outcome": "rows",
+      "columns": [
+        "m"
+      ],
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          3
+        ],
+        [
+          2
+        ],
+        [
+          12
+        ],
+        [
+          12
+        ],
+        [
+          12
+        ],
+        [
+          12
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          12
+        ],
+        [
+          12
+        ],
+        [
+          12
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ],
+        [
+          4
+        ],
+        [
+          12
+        ],
+        [
+          1
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d034",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DISTINCT EXTRACT(MONTH FROM d) AS m FROM dates ORDER BY m NULLS LAST;",
+      "reference_outcome": "rows",
+      "columns": [
+        "m"
+      ],
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ],
+        [
+          4
+        ],
+        [
+          12
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d035",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT a.id AS aid,b.id AS bid FROM dates a JOIN dates b ON a.d=b.d WHERE a.d='2024-02-29' ORDER BY aid,bid;",
+      "reference_outcome": "rows",
+      "columns": [
+        "aid",
+        "bid"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          17,
+          17
+        ],
+        [
+          17,
+          18
+        ],
+        [
+          18,
+          17
+        ],
+        [
+          18,
+          18
+        ]
+      ]
+    },
+    {
+      "id": "d036",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(MONTH FROM d) AS m FROM empty_dates;",
+      "reference_outcome": "rows",
+      "columns": [
+        "m"
+      ],
+      "types": [
+        "BIGINT"
+      ],
+      "rows": []
+    },
+    {
+      "id": "d037",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT COUNT(*) AS n, SUM(EXTRACT(DAY FROM d)) AS days FROM empty_dates;",
+      "reference_outcome": "rows",
+      "columns": [
+        "n",
+        "days"
+      ],
+      "types": [
+        "BIGINT",
+        "HUGEINT"
+      ],
+      "rows": [
+        [
+          0,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d038",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(MONTH FROM d) AS m, COUNT(*) AS n FROM empty_dates GROUP BY EXTRACT(MONTH FROM d);",
+      "reference_outcome": "rows",
+      "columns": [
+        "m",
+        "n"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": []
+    },
+    {
+      "id": "d039",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT d='2024-02-29' AS same FROM empty_dates;",
+      "reference_outcome": "rows",
+      "columns": [
+        "same"
+      ],
+      "types": [
+        "BOOLEAN"
+      ],
+      "rows": []
+    },
+    {
+      "id": "d040",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT CAST('2024-01-01' AS DATE) = '2024-01-01' AS same, '2024-01-01' = CAST('2024-01-01' AS DATE) AS reversed;",
+      "reference_outcome": "rows",
+      "columns": [
+        "same",
+        "reversed"
+      ],
+      "types": [
+        "BOOLEAN",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          true,
+          true
+        ]
+      ]
+    },
+    {
+      "id": "d041",
+      "ordered": false,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(MONTH FROM CASE WHEN id<17 THEN d ELSE CAST(NULL AS DATE) END) AS m FROM dates;",
+      "reference_outcome": "rows",
+      "columns": [
+        "m"
+      ],
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          3
+        ],
+        [
+          2
+        ],
+        [
+          12
+        ],
+        [
+          12
+        ],
+        [
+          12
+        ],
+        [
+          12
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          12
+        ],
+        [
+          12
+        ],
+        [
+          12
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          null
+        ],
+        [
+          null
+        ],
+        [
+          null
+        ],
+        [
+          null
+        ],
+        [
+          null
+        ],
+        [
+          null
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d042",
+      "ordered": false,
+      "assay_outcome": "rows",
+      "sql": "SELECT date_part('MoNtH',d) AS m, EXTRACT(DAY FROM COALESCE(d,DATE '2000-02-29')) AS day FROM dates;",
+      "reference_outcome": "rows",
+      "columns": [
+        "m",
+        "day"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          3,
+          1
+        ],
+        [
+          2,
+          29
+        ],
+        [
+          12,
+          28
+        ],
+        [
+          12,
+          29
+        ],
+        [
+          12,
+          30
+        ],
+        [
+          12,
+          31
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          12,
+          29
+        ],
+        [
+          12,
+          30
+        ],
+        [
+          12,
+          31
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          29
+        ],
+        [
+          2,
+          29
+        ],
+        [
+          3,
+          31
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          12,
+          31
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          null,
+          29
+        ]
+      ]
+    },
+    {
+      "id": "d043",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT EXTRACT(YEAR FROM DATE '0001-01-01') AS y, EXTRACT(DOW FROM DATE '0001-01-01') AS dow, EXTRACT(ISOYEAR FROM DATE '9999-12-31') AS iso;",
+      "reference_outcome": "rows",
+      "columns": [
+        "y",
+        "dow",
+        "iso"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          1,
+          1,
+          9999
+        ]
+      ]
+    },
+    {
+      "id": "d044",
+      "ordered": true,
+      "assay_outcome": "error",
+      "assay_error": "invalid DATE literal",
+      "sql": "SELECT DATE '2024-01-01'='2024-02-30' AS bad;",
+      "reference_outcome": "error",
+      "reference_error": "Conversion Error: date field value out of range: \"2024-02-30\"\n\nLINE 1: SELECT DATE '2024-01-01'='2024-02-30' AS bad;\n                                 ^",
+      "reference_error_class": "ConversionException"
+    },
+    {
+      "id": "d045",
+      "ordered": true,
+      "assay_outcome": "error",
+      "assay_error": "invalid DATE literal",
+      "sql": "SELECT DATE '2024-01-01'='2023-02-29' AS bad;",
+      "reference_outcome": "error",
+      "reference_error": "Conversion Error: date field value out of range: \"2023-02-29\"\n\nLINE 1: SELECT DATE '2024-01-01'='2023-02-29' AS bad;\n                                 ^",
+      "reference_error_class": "ConversionException"
+    },
+    {
+      "id": "d046",
+      "ordered": true,
+      "assay_outcome": "error",
+      "assay_error": "invalid DATE literal",
+      "sql": "SELECT DATE '2024-01-01'='1900-02-29' AS bad;",
+      "reference_outcome": "error",
+      "reference_error": "Conversion Error: date field value out of range: \"1900-02-29\"\n\nLINE 1: SELECT DATE '2024-01-01'='1900-02-29' AS bad;\n                                 ^",
+      "reference_error_class": "ConversionException"
+    },
+    {
+      "id": "d047",
+      "ordered": true,
+      "assay_outcome": "error",
+      "assay_error": "invalid DATE literal",
+      "sql": "SELECT DATE '2024-01-01'='2024-13-01' AS bad;",
+      "reference_outcome": "error",
+      "reference_error": "Conversion Error: date field value out of range: \"2024-13-01\"\n\nLINE 1: SELECT DATE '2024-01-01'='2024-13-01' AS bad;\n                                 ^",
+      "reference_error_class": "ConversionException"
+    },
+    {
+      "id": "d048",
+      "ordered": true,
+      "assay_outcome": "error",
+      "assay_error": "invalid DATE literal",
+      "sql": "SELECT DATE '2024-01-01'='abc' AS bad;",
+      "reference_outcome": "error",
+      "reference_error": "Conversion Error: invalid date field format: \"abc\", expected format is (YYYY-MM-DD)\n\nLINE 1: SELECT DATE '2024-01-01'='abc' AS bad;\n                                 ^",
+      "reference_error_class": "ConversionException"
+    },
+    {
+      "id": "d049",
+      "ordered": true,
+      "assay_outcome": "error",
+      "assay_error": "invalid DATE literal",
+      "difference": "The card explicitly requires exact YYYY-MM-DD with a nonzero four-digit year; reference parsers may accept a broader date grammar.",
+      "sql": "SELECT DATE '2024-01-01'='2024-1-5' AS bad;",
+      "reference_outcome": "rows",
+      "columns": [
+        "bad"
+      ],
+      "types": [
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          false
+        ]
+      ]
+    },
+    {
+      "id": "d050",
+      "ordered": true,
+      "assay_outcome": "error",
+      "assay_error": "invalid DATE literal",
+      "difference": "The card explicitly requires exact YYYY-MM-DD with a nonzero four-digit year; reference parsers may accept a broader date grammar.",
+      "sql": "SELECT DATE '2024-01-01'='2024-01-5' AS bad;",
+      "reference_outcome": "rows",
+      "columns": [
+        "bad"
+      ],
+      "types": [
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          false
+        ]
+      ]
+    },
+    {
+      "id": "d051",
+      "ordered": true,
+      "assay_outcome": "error",
+      "assay_error": "invalid DATE literal",
+      "difference": "The card explicitly requires exact YYYY-MM-DD with a nonzero four-digit year; reference parsers may accept a broader date grammar.",
+      "sql": "SELECT DATE '2024-01-01'='2024-01-01 ' AS bad;",
+      "reference_outcome": "rows",
+      "columns": [
+        "bad"
+      ],
+      "types": [
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          true
+        ]
+      ]
+    },
+    {
+      "id": "d052",
+      "ordered": true,
+      "assay_outcome": "error",
+      "assay_error": "invalid DATE literal",
+      "difference": "The card explicitly requires exact YYYY-MM-DD with a nonzero four-digit year; reference parsers may accept a broader date grammar.",
+      "sql": "SELECT DATE '2024-01-01'='0000-01-01' AS bad;",
+      "reference_outcome": "rows",
+      "columns": [
+        "bad"
+      ],
+      "types": [
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          false
+        ]
+      ]
+    },
+    {
+      "id": "d053",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported: EXTRACT/DATE_PART requires DATE input",
+      "sql": "SELECT EXTRACT(MONTH FROM 1) AS m;",
+      "reference_outcome": "error",
+      "reference_error": "Binder Error: No function matches the given name and argument types 'date_part(STRING_LITERAL, INTEGER_LITERAL)'. You might need to add explicit type casts.\n\tCandidate functions:\n\tdate_part(VARCHAR[], DATE) -> STRUCT()\n\tdate_part(VARCHAR[], INTERVAL) -> STRUCT()\n\tdate_part(VARCHAR[], TIME) -> STRUCT()\n\tdate_part(VARCHAR[], TIMESTAMP) -> STRUCT()\n\tdate_part(VARCHAR[], TIME WITH TIME ZONE) -> STRUCT()\n\tdate_part(VARCHAR[], TIME_NS) -> STRUCT()\n\tdate_part(VARCHAR, DATE) -> BIGINT\n\tdate_part(VARCHAR, INTERVAL) -> BIGINT\n\tdate_part(VARCHAR, TIME) -> BIGINT\n\tdate_part(VARCHAR, TIMESTAMP) -> BIGINT\n\tdate_part(VARCHAR, TIME WITH TIME ZONE) -> BIGINT\n\tdate_part(VARCHAR, TIME_NS) -> BIGINT\n\tdate_part(VARCHAR[], TIMESTAMP WITH TIME ZONE) -> STRUCT()\n\tdate_part(VARCHAR, TIMESTAMP WITH TIME ZONE) -> BIGINT\n\n\nLINE 1: SELECT EXTRACT(MONTH FROM 1) AS m;\n               ^",
+      "reference_error_class": "BinderException"
+    },
+    {
+      "id": "d054",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported: EXTRACT/DATE_PART requires DATE input",
+      "sql": "SELECT EXTRACT(MONTH FROM CAST('1.25' AS DECIMAL(10,2))) AS m;",
+      "reference_outcome": "error",
+      "reference_error": "Binder Error: No function matches the given name and argument types 'date_part(STRING_LITERAL, DECIMAL(10,2))'. You might need to add explicit type casts.\n\tCandidate functions:\n\tdate_part(VARCHAR[], DATE) -> STRUCT()\n\tdate_part(VARCHAR[], INTERVAL) -> STRUCT()\n\tdate_part(VARCHAR[], TIME) -> STRUCT()\n\tdate_part(VARCHAR[], TIMESTAMP) -> STRUCT()\n\tdate_part(VARCHAR[], TIME WITH TIME ZONE) -> STRUCT()\n\tdate_part(VARCHAR[], TIME_NS) -> STRUCT()\n\tdate_part(VARCHAR, DATE) -> BIGINT\n\tdate_part(VARCHAR, INTERVAL) -> BIGINT\n\tdate_part(VARCHAR, TIME) -> BIGINT\n\tdate_part(VARCHAR, TIMESTAMP) -> BIGINT\n\tdate_part(VARCHAR, TIME WITH TIME ZONE) -> BIGINT\n\tdate_part(VARCHAR, TIME_NS) -> BIGINT\n\tdate_part(VARCHAR[], TIMESTAMP WITH TIME ZONE) -> STRUCT()\n\tdate_part(VARCHAR, TIMESTAMP WITH TIME ZONE) -> BIGINT\n\n\nLINE 1: SELECT EXTRACT(MONTH FROM CAST('1.25' AS DECIMAL(10,2))) AS m;\n               ^",
+      "reference_error_class": "BinderException"
+    },
+    {
+      "id": "d055",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported: EXTRACT/DATE_PART requires DATE input",
+      "sql": "SELECT EXTRACT(MONTH FROM CAST('2024-01-01' AS TEXT)) AS m;",
+      "reference_outcome": "error",
+      "reference_error": "Binder Error: No function matches the given name and argument types 'date_part(STRING_LITERAL, VARCHAR)'. You might need to add explicit type casts.\n\tCandidate functions:\n\tdate_part(VARCHAR[], DATE) -> STRUCT()\n\tdate_part(VARCHAR[], INTERVAL) -> STRUCT()\n\tdate_part(VARCHAR[], TIME) -> STRUCT()\n\tdate_part(VARCHAR[], TIMESTAMP) -> STRUCT()\n\tdate_part(VARCHAR[], TIME WITH TIME ZONE) -> STRUCT()\n\tdate_part(VARCHAR[], TIME_NS) -> STRUCT()\n\tdate_part(VARCHAR, DATE) -> BIGINT\n\tdate_part(VARCHAR, INTERVAL) -> BIGINT\n\tdate_part(VARCHAR, TIME) -> BIGINT\n\tdate_part(VARCHAR, TIMESTAMP) -> BIGINT\n\tdate_part(VARCHAR, TIME WITH TIME ZONE) -> BIGINT\n\tdate_part(VARCHAR, TIME_NS) -> BIGINT\n\tdate_part(VARCHAR[], TIMESTAMP WITH TIME ZONE) -> STRUCT()\n\tdate_part(VARCHAR, TIMESTAMP WITH TIME ZONE) -> BIGINT\n\n\nLINE 1: SELECT EXTRACT(MONTH FROM CAST('2024-01-01' AS TEXT)) AS m;\n               ^",
+      "reference_error_class": "BinderException"
+    },
+    {
+      "id": "d056",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Intentionally outside the card: non-calendar fields/DATE_TRUNC, PostgreSQL-missing aliases, typed TEXT comparison or nonliteral DATE_PART field.",
+      "sql": "SELECT EXTRACT(EPOCH FROM d) AS x FROM dates;",
+      "reference_outcome": "rows",
+      "columns": [
+        "x"
+      ],
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          -2203891200.0
+        ],
+        [
+          951782400.0
+        ],
+        [
+          1419724800.0
+        ],
+        [
+          1419811200.0
+        ],
+        [
+          1419897600.0
+        ],
+        [
+          1419984000.0
+        ],
+        [
+          1420070400.0
+        ],
+        [
+          1420156800.0
+        ],
+        [
+          1420243200.0
+        ],
+        [
+          1420329600.0
+        ],
+        [
+          1451347200.0
+        ],
+        [
+          1451433600.0
+        ],
+        [
+          1451520000.0
+        ],
+        [
+          1451606400.0
+        ],
+        [
+          1451692800.0
+        ],
+        [
+          1451779200.0
+        ],
+        [
+          1451865600.0
+        ],
+        [
+          1709164800.0
+        ],
+        [
+          1709164800.0
+        ],
+        [
+          1711843200.0
+        ],
+        [
+          1711929600.0
+        ],
+        [
+          1735603200.0
+        ],
+        [
+          1735689600.0
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d057",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Intentionally outside the card: non-calendar fields/DATE_TRUNC, PostgreSQL-missing aliases, typed TEXT comparison or nonliteral DATE_PART field.",
+      "sql": "SELECT EXTRACT(HOUR FROM d) AS x FROM dates;",
+      "reference_outcome": "rows",
+      "columns": [
+        "x"
+      ],
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d058",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Intentionally outside the card: non-calendar fields/DATE_TRUNC, PostgreSQL-missing aliases, typed TEXT comparison or nonliteral DATE_PART field.",
+      "sql": "SELECT date_part('hour',d) AS x FROM dates;",
+      "reference_outcome": "rows",
+      "columns": [
+        "x"
+      ],
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          0
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d059",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Intentionally outside the card: non-calendar fields/DATE_TRUNC, PostgreSQL-missing aliases, typed TEXT comparison or nonliteral DATE_PART field.",
+      "sql": "SELECT DATE_TRUNC('month',d) AS x FROM dates;",
+      "reference_outcome": "rows",
+      "columns": [
+        "x"
+      ],
+      "types": [
+        "TIMESTAMP"
+      ],
+      "rows": [
+        [
+          "1900-03-01T00:00:00"
+        ],
+        [
+          "2000-02-01T00:00:00"
+        ],
+        [
+          "2014-12-01T00:00:00"
+        ],
+        [
+          "2014-12-01T00:00:00"
+        ],
+        [
+          "2014-12-01T00:00:00"
+        ],
+        [
+          "2014-12-01T00:00:00"
+        ],
+        [
+          "2015-01-01T00:00:00"
+        ],
+        [
+          "2015-01-01T00:00:00"
+        ],
+        [
+          "2015-01-01T00:00:00"
+        ],
+        [
+          "2015-01-01T00:00:00"
+        ],
+        [
+          "2015-12-01T00:00:00"
+        ],
+        [
+          "2015-12-01T00:00:00"
+        ],
+        [
+          "2015-12-01T00:00:00"
+        ],
+        [
+          "2016-01-01T00:00:00"
+        ],
+        [
+          "2016-01-01T00:00:00"
+        ],
+        [
+          "2016-01-01T00:00:00"
+        ],
+        [
+          "2016-01-01T00:00:00"
+        ],
+        [
+          "2024-02-01T00:00:00"
+        ],
+        [
+          "2024-02-01T00:00:00"
+        ],
+        [
+          "2024-03-01T00:00:00"
+        ],
+        [
+          "2024-04-01T00:00:00"
+        ],
+        [
+          "2024-12-01T00:00:00"
+        ],
+        [
+          "2025-01-01T00:00:00"
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d060",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Intentionally outside the card: non-calendar fields/DATE_TRUNC, PostgreSQL-missing aliases, typed TEXT comparison or nonliteral DATE_PART field.",
+      "sql": "SELECT year(d) AS x FROM dates;",
+      "reference_outcome": "rows",
+      "columns": [
+        "x"
+      ],
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          1900
+        ],
+        [
+          2000
+        ],
+        [
+          2014
+        ],
+        [
+          2014
+        ],
+        [
+          2014
+        ],
+        [
+          2014
+        ],
+        [
+          2015
+        ],
+        [
+          2015
+        ],
+        [
+          2015
+        ],
+        [
+          2015
+        ],
+        [
+          2015
+        ],
+        [
+          2015
+        ],
+        [
+          2015
+        ],
+        [
+          2016
+        ],
+        [
+          2016
+        ],
+        [
+          2016
+        ],
+        [
+          2016
+        ],
+        [
+          2024
+        ],
+        [
+          2024
+        ],
+        [
+          2024
+        ],
+        [
+          2024
+        ],
+        [
+          2024
+        ],
+        [
+          2025
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d061",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Intentionally outside the card: non-calendar fields/DATE_TRUNC, PostgreSQL-missing aliases, typed TEXT comparison or nonliteral DATE_PART field.",
+      "sql": "SELECT month(d) AS x FROM dates;",
+      "reference_outcome": "rows",
+      "columns": [
+        "x"
+      ],
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          3
+        ],
+        [
+          2
+        ],
+        [
+          12
+        ],
+        [
+          12
+        ],
+        [
+          12
+        ],
+        [
+          12
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          12
+        ],
+        [
+          12
+        ],
+        [
+          12
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ],
+        [
+          4
+        ],
+        [
+          12
+        ],
+        [
+          1
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d062",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Intentionally outside the card: non-calendar fields/DATE_TRUNC, PostgreSQL-missing aliases, typed TEXT comparison or nonliteral DATE_PART field.",
+      "sql": "SELECT day(d) AS x FROM dates;",
+      "reference_outcome": "rows",
+      "columns": [
+        "x"
+      ],
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          29
+        ],
+        [
+          28
+        ],
+        [
+          29
+        ],
+        [
+          30
+        ],
+        [
+          31
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ],
+        [
+          4
+        ],
+        [
+          29
+        ],
+        [
+          30
+        ],
+        [
+          31
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ],
+        [
+          4
+        ],
+        [
+          29
+        ],
+        [
+          29
+        ],
+        [
+          31
+        ],
+        [
+          1
+        ],
+        [
+          31
+        ],
+        [
+          1
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d063",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Intentionally outside the card: non-calendar fields/DATE_TRUNC, PostgreSQL-missing aliases, typed TEXT comparison or nonliteral DATE_PART field.",
+      "sql": "SELECT d=t AS x FROM dates;",
+      "reference_outcome": "rows",
+      "columns": [
+        "x"
+      ],
+      "types": [
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          true
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "d064",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Intentionally outside the card: non-calendar fields/DATE_TRUNC, PostgreSQL-missing aliases, typed TEXT comparison or nonliteral DATE_PART field.",
+      "sql": "SELECT date_part(t,d) AS x FROM dates;",
+      "reference_outcome": "error",
+      "reference_error": "Conversion Error: extract specifier \"1900-03-01\" not recognized",
+      "reference_error_class": "ConversionException"
+    },
+    {
+      "id": "d065",
+      "ordered": true,
+      "assay_outcome": "error",
+      "assay_error": "invalid DATE literal",
+      "difference": "Assay must validate literals at bind time even on empty input; reference execution may defer the conversion until a row exists.",
+      "sql": "SELECT d IN ('2024-01-01','2024-02-30') AS bad FROM empty_dates;",
+      "reference_outcome": "rows",
+      "columns": [
+        "bad"
+      ],
+      "types": [
+        "BOOLEAN"
+      ],
+      "rows": []
+    },
+    {
+      "id": "d066",
+      "ordered": true,
+      "assay_outcome": "error",
+      "assay_error": "invalid DATE literal",
+      "difference": "Assay must validate literals at bind time even on empty input; reference execution may defer the conversion until a row exists.",
+      "sql": "SELECT 'abc' BETWEEN d AND '2024-01-01' AS bad FROM empty_dates;",
+      "reference_outcome": "rows",
+      "columns": [
+        "bad"
+      ],
+      "types": [
+        "BOOLEAN"
+      ],
+      "rows": []
+    },
+    {
+      "id": "d067",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported: ISOYEAR before AD 1",
+      "difference": "BC ISO year numbering needs a DuckDB/PostgreSQL agreement decision; the existing EXTRACT YEAR path is unchanged.",
+      "sql": "SELECT EXTRACT(ISOYEAR FROM DATE '0000-01-01') AS y;",
+      "reference_outcome": "rows",
+      "columns": [
+        "y"
+      ],
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          -1
+        ]
+      ]
+    }
+  ]
+}

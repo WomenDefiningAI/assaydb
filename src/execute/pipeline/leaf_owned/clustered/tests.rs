@@ -335,7 +335,7 @@ fn live_clustered_failure_joins_jobs_and_discards_every_partial() {
                 dense: budget.source_dense_allowance(DENSE_ALLOWANCE),
                 validate_bounds: true,
                 after_batch: Some(hook),
-                _metadata_funding: budget.reserve(64 << 10).unwrap(),
+                _metadata_funding: budget.reserve(64 << 10).unwrap().into(),
                 funding: Arc::new(budget.reserve(1 << 20).unwrap()),
             });
             drop(executor);
@@ -397,7 +397,7 @@ fn late_reservation_denial_after_local_finalization_still_declines() {
         dense: budget.source_dense_allowance(DENSE_ALLOWANCE),
         validate_bounds: true,
         after_batch: Some(hook),
-        _metadata_funding: budget.reserve(64 << 10).unwrap(),
+        _metadata_funding: budget.reserve(64 << 10).unwrap().into(),
         funding: Arc::new(budget.reserve(1 << 20).unwrap()),
     });
     drop(executor);

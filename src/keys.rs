@@ -6,11 +6,14 @@ use crate::{
     expr::Value,
     memory::{Budget, Reservation},
 };
+#[cfg(test)]
+use arrow::array::{ArrayRef, Float64Array};
 use arrow::{
-    array::{Array, ArrayRef, Decimal128Array, Float64Array, LargeBinaryArray, StringArray},
+    array::{Array, Decimal128Array, LargeBinaryArray, StringArray},
     buffer::{Buffer, NullBuffer, OffsetBuffer},
     row::{RowConverter, Rows, SortField},
 };
+#[cfg(test)]
 use std::sync::Arc;
 
 pub(crate) mod partitioned;
@@ -309,17 +312,9 @@ impl Keys {
             .iter()
             .map(|v| {
                 nulls = NullBuffer::union(nulls.as_ref(), v.array.logical_nulls().as_ref());
-                // SQL grouping and joins equate signed zero. Row encoding otherwise
-                // retains the existing typed keys, including NULL and NaN payloads.
-                if let Some(a) = v.array.as_any().downcast_ref::<Float64Array>()
-                    && a.values().iter().any(|n| *n == 0.0 && n.is_sign_negative())
-                {
-                    Arc::new(Float64Array::from_iter(
-                        a.iter().map(|n| n.map(|n| if n == 0.0 { 0.0 } else { n })),
-                    )) as ArrayRef
-                } else {
-                    v.array.clone()
-                }
+                // SQL equality canonicalizes signed zeros and every NaN payload.
+                // The encoder lease funds this buffer together with encoded rows.
+                crate::expr::numeric_compare::canonical_array(&v.array)
             })
             .collect::<Vec<_>>();
         let rows = if arrays.is_empty() {
@@ -452,7 +447,8 @@ mod tests {
     use super::*;
     use crate::{execute::key, expr::normalize_input, types::Type};
     use arrow::array::{
-        BooleanArray, Date32Array, Decimal128Array, Int64Array, StringArray, new_null_array,
+        BooleanArray, Date32Array, Decimal128Array, Float64Array, Int64Array, StringArray,
+        new_null_array,
     };
     use arrow::datatypes::DataType;
     #[test]

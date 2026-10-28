@@ -1,9 +1,10 @@
 //! Compile repeated aggregate expressions into batch-local value bindings.
-//! CASE arms are scope barriers: nothing conditional is hoisted out of them.
+//! CASE arms and AND/OR operands are scope barriers: nothing conditional is
+//! hoisted out of them.
 use crate::{
     Result,
     bind::{Aggregate, Plan},
-    expr::{Expr, Input, Kind, Value},
+    expr::{Expr, Input, Kind, Op, Value},
     memory::Budget,
 };
 
@@ -25,19 +26,31 @@ enum AggregateInput {
 
 fn children(expr: &Expr) -> Vec<&Expr> {
     match &expr.kind {
-        Kind::Binary(_, a, b) | Kind::Like(a, b, _) | Kind::Position(a, b) | Kind::NullIf(a, b) => {
+        Kind::Binary(_, a, b)
+        | Kind::Like(a, b, _)
+        | Kind::Position(a, b)
+        | Kind::NullIf(a, b)
+        | Kind::Pack(a, b) => {
             vec![a, b]
         }
         Kind::Function(_, a)
         | Kind::Cast(a)
+        | Kind::DialectCast(a, _)
+        | Kind::CastVarchar(a, _)
         | Kind::CastDecimal(a, _, _)
         | Kind::Not(a)
         | Kind::Neg(a)
         | Kind::IsNull(a, _)
         | Kind::Year(a)
         | Kind::Substring(a, _, _) => vec![a],
+        Kind::Call(_, args) | Kind::Math(_, args) => args.iter().collect(),
         // Do not visit a CASE condition or arm with the enclosing row scope.
         Kind::Case(_, _) | Kind::Column(_) | Kind::Literal(_) => vec![],
+        Kind::SortPack(keys, value) => keys
+            .iter()
+            .map(|(key, _, _)| key)
+            .chain(std::iter::once(value.as_ref()))
+            .collect(),
     }
 }
 fn count(expr: &Expr, candidates: &mut Vec<(Expr, usize)>) {
@@ -47,8 +60,14 @@ fn count(expr: &Expr, candidates: &mut Vec<(Expr, usize)>) {
     ) {
         return;
     }
-    for child in children(expr) {
-        count(child, candidates);
+    // AND/OR may skip an operand on rows the other operand decides (see
+    // expr::guard), so, like CASE, they are scope barriers for hoisting: a
+    // guarded operand is never computed for every row of the batch. The
+    // whole AND/OR expression itself may still be shared.
+    if !matches!(expr.kind, Kind::Binary(Op::And | Op::Or, _, _)) {
+        for child in children(expr) {
+            count(child, candidates);
+        }
     }
     if let Some((_, n)) = candidates.iter_mut().find(|(e, _)| e == expr) {
         *n += 1;
@@ -65,19 +84,36 @@ fn rewrite(expr: &Expr, shared: &[Expr], width: usize) -> Expr {
     }
     let mut result = expr.clone();
     match &mut result.kind {
-        Kind::Binary(_, a, b) | Kind::Like(a, b, _) | Kind::Position(a, b) | Kind::NullIf(a, b) => {
+        Kind::Binary(_, a, b)
+        | Kind::Like(a, b, _)
+        | Kind::Position(a, b)
+        | Kind::NullIf(a, b)
+        | Kind::Pack(a, b) => {
             **a = rewrite(a, shared, width);
             **b = rewrite(b, shared, width);
         }
         Kind::Function(_, a)
         | Kind::Cast(a)
+        | Kind::DialectCast(a, _)
+        | Kind::CastVarchar(a, _)
         | Kind::CastDecimal(a, _, _)
         | Kind::Not(a)
         | Kind::Neg(a)
         | Kind::IsNull(a, _)
         | Kind::Year(a)
         | Kind::Substring(a, _, _) => **a = rewrite(a, shared, width),
+        Kind::Call(_, args) | Kind::Math(_, args) => {
+            for arg in args {
+                *arg = rewrite(arg, shared, width);
+            }
+        }
         Kind::Case(_, _) | Kind::Column(_) | Kind::Literal(_) => {}
+        Kind::SortPack(keys, value) => {
+            for (key, _, _) in keys {
+                *key = rewrite(key, shared, width);
+            }
+            **value = rewrite(value, shared, width);
+        }
     }
     result
 }
@@ -106,7 +142,19 @@ impl ExpressionProgram {
             .iter()
             .enumerate()
             .map(|(i, agg)| {
-                if enabled && matches!(agg.function, Aggregate::Sum | Aggregate::Avg) {
+                if enabled && agg.function.is_ordered_set() {
+                    // Ordered-set states hold the group's values only, so
+                    // MEDIAN(x) and PERCENTILE_DISC(0.9) ... (ORDER BY x) share.
+                    (0..i)
+                        .find(|j| {
+                            let other = &plan.aggregates[*j];
+                            other.function.shares_ordered_state(&agg.function)
+                                && !other.distinct
+                                && !agg.distinct
+                                && agg.input == other.input
+                        })
+                        .unwrap_or(i)
+                } else if enabled && matches!(agg.function, Aggregate::Sum | Aggregate::Avg) {
                     (0..i)
                         .find(|j| {
                             let other = &plan.aggregates[*j];

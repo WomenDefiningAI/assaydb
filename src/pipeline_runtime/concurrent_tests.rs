@@ -66,7 +66,7 @@ fn panicking_payload_destructors_publish_one_receipt_and_forbid_retry() {
         // then both in one dispatch, including a previously yielded owner.
         for (invocation_panics, capture_panics) in [(true, false), (false, true), (true, true)] {
             for terminal_step in [1, 4] {
-                let budget = Budget::new(1 << 20);
+                let budget = Budget::new(16 << 20);
                 let cancel = Cancellation::default();
                 let mut runtime =
                     Runtime::<usize>::new(&budget, workers, 1, cancel.clone()).unwrap();
@@ -160,7 +160,7 @@ fn capture_destructor_panics_publish_one_receipt_and_forbid_retry() {
     for workers in [1, 2, 4, 10] {
         for outcome in [0, 1, 2] {
             for terminal_step in [1, 4] {
-                let budget = Budget::new(1 << 20);
+                let budget = Budget::new(16 << 20);
                 let cancel = Cancellation::default();
                 let mut runtime =
                     Runtime::<usize>::new(&budget, workers, 1, cancel.clone()).unwrap();
@@ -223,7 +223,7 @@ fn capture_destructor_panics_publish_one_receipt_and_forbid_retry() {
 fn stopping_a_running_continuation_contains_its_capture_destructor() {
     for workers in [2, 4, 10] {
         for finished in [false, true] {
-            let budget = Budget::new(1 << 20);
+            let budget = Budget::new(16 << 20);
             let cancel = Cancellation::default();
             let mut runtime = Runtime::<usize>::new(&budget, workers, 1, cancel.clone()).unwrap();
             let shared = runtime.shared.clone();
@@ -277,7 +277,7 @@ fn stopping_a_running_continuation_contains_its_capture_destructor() {
 fn saturated_background_continuations_execute_each_source_step_exactly_once() {
     for workers in [2, 4, 10] {
         let slots = 2 * workers;
-        let budget = Budget::new(4 << 20);
+        let budget = Budget::new(16 << 20);
         let mut runtime =
             Runtime::<usize>::new(&budget, workers, slots, Cancellation::default()).unwrap();
         let mut seen = std::collections::HashSet::new();
@@ -311,7 +311,7 @@ fn saturated_background_continuations_execute_each_source_step_exactly_once() {
                             } else if source % 2 == 0 {
                                 Ok(Some(source))
                             } else {
-                                Err(format!("source {source}, step {last}"))
+                                Err(format!("source {source}, step {last}").into())
                             }
                         })
                         .ok()
@@ -364,7 +364,7 @@ fn saturated_background_continuations_execute_each_source_step_exactly_once() {
 #[test]
 fn shutdown_contains_queued_capture_and_ready_output_destructors() {
     for workers in [2, 4, 10] {
-        let budget = Budget::new(1 << 20);
+        let budget = Budget::new(16 << 20);
         let cancel = Cancellation::default();
         let mut runtime =
             Runtime::<PanicOnDrop>::new(&budget, workers, workers + 1, cancel.clone()).unwrap();
@@ -443,7 +443,7 @@ fn shutdown_contains_queued_capture_and_ready_output_destructors() {
 fn cancellation_with_ready_running_and_queued_continuations_releases_every_owner() {
     for workers in [2, 4, 10] {
         let slots = workers + 1;
-        let budget = Budget::new(4 << 20);
+        let budget = Budget::new(16 << 20);
         let cancel = Cancellation::default();
         let mut runtime =
             Runtime::<Reservation>::new(&budget, workers, slots, cancel.clone()).unwrap();

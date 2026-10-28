@@ -1,8 +1,12 @@
 //! Parquet row-group readers and bounded, ordered parallel scan dispatch.
 //! Predicate caches and prefetched batches belong to the current query only.
 pub(crate) mod cursor;
+mod decoder;
+pub(crate) use decoder::Estimate as DecoderEstimate;
+pub(crate) use decoder::metadata_lease as decoder_metadata_lease;
 #[cfg(test)]
 pub(crate) mod test_support;
+mod widen;
 use crate::{
     Result,
     execute::Options,
@@ -42,20 +46,30 @@ pub(crate) fn external_metadata(file: &File) -> Result<ArrowReaderMetadata> {
         return Ok(metadata);
     }
     let schema = Arc::new(crate::types::Type::external_schema(metadata.schema()));
-    ArrowReaderMetadata::try_new(
+    Ok(ArrowReaderMetadata::try_new(
         metadata.metadata().clone(),
         ArrowReaderOptions::new().with_schema(schema),
     )
-    .map_err(|e| e.to_string())
+    .map_err(|e| e.to_string())?)
 }
 
-pub(crate) type FilterError = Arc<Mutex<Option<String>>>;
+pub(crate) fn accounted_metadata(
+    file: &File,
+    budget: &Budget,
+) -> Result<(ArrowReaderMetadata, Arc<Reservation>)> {
+    let metadata = external_metadata(file)?;
+    let lease = decoder::metadata_lease(&metadata, budget)?;
+    Ok((metadata, lease))
+}
+
+pub(crate) type FilterError = Arc<Mutex<Option<crate::Error>>>;
 pub(crate) type PredicateFactory =
     Arc<dyn Fn(FilterError) -> Box<dyn parquet::arrow::arrow_reader::ArrowPredicate> + Send + Sync>;
 pub(crate) type FilterFactory = Arc<dyn Fn(FilterError) -> Option<RowFilter> + Send + Sync>;
 /// Exact post-decode processing. The returned lease bridges the handoff to
 /// either the ordered worker queue or the synchronous consumer.
-pub(crate) type BatchTransform = Arc<dyn Fn(RecordBatch) -> Result<TransformedBatch> + Send + Sync>;
+pub(crate) type BatchTransform =
+    Arc<dyn Fn(RecordBatch, Reservation) -> Result<TransformedBatch> + Send + Sync>;
 pub(crate) struct TransformedBatch {
     pub batch: RecordBatch,
     pub lease: Reservation,
@@ -79,6 +93,34 @@ pub(crate) fn exact_filter(
     preserve_empty: bool,
     stats: Arc<Mutex<FilterStats>>,
 ) -> Result<BatchTransform> {
+    if crate::selection::has_date_guard(&expression)
+        && let Some(program) = crate::selection::Program::new(&expression, schema, budget)?
+    {
+        let budget = budget.clone();
+        let cancellation = cancellation.clone();
+        return Ok(Arc::new(move |batch: RecordBatch, lease| {
+            cancellation.check()?;
+            let start = std::time::Instant::now();
+            let rows = batch.num_rows();
+            let bytes = batch.get_array_memory_size();
+            let input = crate::selection::Batch::from_output(TransformedBatch {
+                batch,
+                lease,
+                preserve_empty,
+            });
+            let mut output = program
+                .select(input, &budget, &cancellation)?
+                .materialize(&budget, &cancellation)?;
+            output.preserve_empty = preserve_empty;
+            let mut stats = stats.lock().unwrap();
+            stats.rows += rows;
+            stats.bytes += bytes;
+            stats.output_rows += output.batch.num_rows();
+            stats.batches += 1;
+            stats.seconds += start.elapsed().as_secs_f64();
+            Ok(output)
+        }));
+    }
     let mut needed = std::collections::BTreeSet::new();
     expression.columns(&mut needed);
     let columns = needed
@@ -87,11 +129,10 @@ pub(crate) fn exact_filter(
         .collect::<Result<Vec<_>>>()?;
     let budget = budget.clone();
     let cancellation = cancellation.clone();
-    Ok(Arc::new(move |batch: RecordBatch| {
+    Ok(Arc::new(move |batch: RecordBatch, _decoded| {
         cancellation.check()?;
         let start = std::time::Instant::now();
         let bytes = batch.get_array_memory_size();
-        let _decoded = budget.reserve(bytes)?;
         let mut input = crate::expr::Input {
             columns: vec![None; batch.num_columns()],
             len: batch.num_rows(),
@@ -99,7 +140,7 @@ pub(crate) fn exact_filter(
         for (i, ty) in &columns {
             input.columns[*i] = Some(crate::expr::normalize_input(batch.column(*i), ty, &budget)?);
         }
-        let mask = expression.eval(&input, &budget)?;
+        let mask = expression.eval_filter(&input, &budget)?;
         drop(input);
         let _workspace = budget.reserve(
             bytes
@@ -144,7 +185,7 @@ impl AsRef<[u8]> for OwnedRead {
 #[derive(Default)]
 struct ReadStats {
     bytes: usize,
-    error: Option<String>,
+    error: Option<crate::Error>,
 }
 struct LocalFile {
     file: File,
@@ -179,7 +220,7 @@ impl AsyncFileReader for LocalFile {
             })();
             result.map_err(|error| {
                 self.stats.lock().unwrap().error = Some(error.clone());
-                ParquetError::General(error)
+                ParquetError::General(error.to_string())
             })
         })
     }
@@ -202,6 +243,8 @@ pub(crate) struct CachedReader {
     done: bool,
 }
 pub(crate) enum Reader {
+    Refused(Option<crate::Error>),
+    Leased(Box<decoder::LeasedReader>),
     Sync(Box<ParquetRecordBatchReader>),
     Cached(Box<CachedReader>),
     Filtered(Box<FilteredReader>),
@@ -227,8 +270,28 @@ impl Reader {
             _ => transform,
         };
         if options.workers > 1 && metadata.metadata().num_row_groups() > 1 {
-            let workers =
-                budget.scan_readers(metadata.metadata().num_row_groups(), options.workers - 1);
+            let filter = factory(Arc::default());
+            let estimate = decoder::Estimate::reader(
+                &metadata,
+                &projection,
+                filter.as_ref(),
+                None,
+                options.batch_size,
+            )?;
+            let lane = estimate.workspace.saturating_add(estimate.batch);
+            // Keep room for the serial caller and metadata before spawning any
+            // optional lanes. Exact leases are still acquired before decoding.
+            let headroom = budget
+                .limit()
+                .saturating_sub(budget.used())
+                .saturating_sub(metadata.metadata().memory_size());
+            let headroom = headroom.saturating_sub(headroom / 4);
+            let optional = headroom.saturating_sub(lane)
+                / lane.saturating_add(crate::memory::THREAD_MEMORY_BYTES + 8192);
+            let workers = budget.scan_readers(
+                metadata.metadata().num_row_groups().min(optional),
+                options.workers - 1,
+            );
             if workers.count > 0 {
                 return Ok(Self::Parallel(Box::new(
                     crate::parallel_scan::ParallelReader::new(
@@ -239,8 +302,10 @@ impl Reader {
         }
         let error = Arc::default();
         let filter = factory(Arc::clone(&error));
-        let inner = Self::new(file, metadata, projection, filter, options, budget)
-            .map_err(|e| error.lock().unwrap().clone().unwrap_or(e))?;
+        let inner = match Self::new(file, metadata, projection, filter, options, budget) {
+            Err(e) if e.starts_with("resource-limit:") => Self::Refused(Some(e)),
+            result => result.map_err(|e| error.lock().unwrap().clone().unwrap_or(e))?,
+        };
         Ok(Self::Filtered(Box::new(FilteredReader {
             inner,
             error,
@@ -299,6 +364,89 @@ impl Reader {
         budget: &Budget,
         groups: Option<Vec<usize>>,
     ) -> Result<Self> {
+        // Exact Parquet widening: predicate columns widen inside the decoder's
+        // row filter; projected columns widen after the leased decode below.
+        let widening = widen::needed(&metadata, &projection);
+        let filter_widening = filter.as_ref().is_some_and(|filter| {
+            filter
+                .predicates()
+                .iter()
+                .any(|p| widen::needed(&metadata, p.projection()))
+        });
+        let error: FilterError = Arc::default();
+        let filter = if filter_widening {
+            filter.map(|filter| widen::filter(filter, budget, &error, &metadata))
+        } else {
+            filter
+        };
+        let estimate = decoder::Estimate::reader(
+            &metadata,
+            &projection,
+            filter.as_ref(),
+            groups.as_deref(),
+            options.batch_size,
+        )?;
+        // Metadata failure is immediate; like native page failures, a decoder
+        // workspace refusal is delivered on next(), before building a reader.
+        let _metadata = decoder::metadata_lease(&metadata, budget)?;
+        let lease = match decoder::DecoderLease::new(&metadata, estimate, budget) {
+            Ok(lease) => lease,
+            Err(error) if error.starts_with("resource-limit:") => {
+                return Ok(Self::Refused(Some(error)));
+            }
+            Err(error) => return Err(error),
+        };
+        // Unfiltered EOF is known from the selected row groups: do not refuse
+        // an already complete scan merely to prepay a nonexistent next batch.
+        let remaining_rows = if filter.is_none() {
+            Some(
+                metadata
+                    .metadata()
+                    .row_groups()
+                    .iter()
+                    .enumerate()
+                    .filter(|(i, _)| groups.as_ref().is_none_or(|groups| groups.contains(i)))
+                    .try_fold(0usize, |total, (_, group)| {
+                        total.checked_add(usize::try_from(group.num_rows()).ok()?)
+                    })
+                    .ok_or("resource-limit: Parquet row count overflow")?,
+            )
+        } else {
+            None
+        };
+        let inner =
+            Self::unfunded_groups(file, metadata, projection, filter, options, budget, groups)?;
+        let leased = Self::Leased(Box::new(decoder::LeasedReader::new(
+            inner,
+            lease,
+            remaining_rows,
+        )));
+        if !(widening || filter_widening) {
+            return Ok(leased);
+        }
+        // The widening transform receives the decoded batch's prepaid credit,
+        // so widened layouts stay charged through the same decoder lease.
+        let budget = budget.clone();
+        Ok(Self::Filtered(Box::new(FilteredReader {
+            inner: leased,
+            error,
+            transform: widening.then(|| {
+                Arc::new(move |batch, credit| widen::batch(batch, credit, &budget))
+                    as BatchTransform
+            }),
+            delivered: None,
+            done: false,
+        })))
+    }
+    fn unfunded_groups(
+        file: File,
+        metadata: ArrowReaderMetadata,
+        projection: ProjectionMask,
+        filter: Option<RowFilter>,
+        options: &Options,
+        budget: &Budget,
+        groups: Option<Vec<usize>>,
+    ) -> Result<Self> {
         let cache = filter
             .as_ref()
             .and(options.parquet_cache_bytes)
@@ -347,7 +495,7 @@ impl Reader {
                 );
                 Some((cap, budget.reserve(cache_bytes).ok()?))
             });
-        if let Some((cap, lease)) = cache {
+        let inner = if let Some((cap, lease)) = cache {
             let stats = Arc::new(Mutex::new(ReadStats::default()));
             let input = LocalFile {
                 file,
@@ -368,14 +516,14 @@ impl Reader {
                 builder = builder.with_row_filter(filter);
             }
             let stream = builder.build().map_err(|e| e.to_string())?;
-            Ok(Self::Cached(Box::new(CachedReader {
+            Self::Cached(Box::new(CachedReader {
                 stream,
                 current: None,
                 metrics,
                 stats,
                 _cache_lease: lease,
                 done: false,
-            })))
+            }))
         } else {
             let mut builder = ParquetRecordBatchReaderBuilder::new_with_metadata(file, metadata)
                 .with_projection(projection)
@@ -386,13 +534,14 @@ impl Reader {
             if let Some(filter) = filter {
                 builder = builder.with_row_filter(filter);
             }
-            Ok(Self::Sync(Box::new(
-                builder.build().map_err(|e| e.to_string())?,
-            )))
-        }
+            Self::Sync(Box::new(builder.build().map_err(|e| e.to_string())?))
+        };
+        Ok(inner)
     }
     pub fn statistics(&self) -> (usize, usize, usize, usize) {
         match self {
+            Self::Refused(_) => (0, 0, 0, 0),
+            Self::Leased(reader) => reader.inner.statistics(),
             Self::Filtered(reader) => reader.inner.statistics(),
             Self::Parallel(reader) => reader.statistics().reader,
             Self::Sync(_) => (0, 0, 0, 0),
@@ -404,14 +553,39 @@ impl Reader {
             ),
         }
     }
-    /// The worker has reserved its queue owner before dropping this bridge.
-    pub(super) fn transfer_batch_ownership(&mut self) {
-        if let Self::Filtered(reader) = self {
-            reader.delivered = None;
+    /// Move prepaid output credit into the next owner, without a second charge.
+    pub(crate) fn take_batch_lease(&mut self) -> Reservation {
+        match self {
+            Self::Leased(reader) => reader.delivered.take().expect("decoded batch credit"),
+            Self::Filtered(reader) => reader
+                .delivered
+                .take()
+                .unwrap_or_else(|| reader.inner.take_batch_lease()),
+            Self::Parallel(reader) => reader.take_batch_lease(),
+            _ => unreachable!("raw decoder is always wrapped in a lease"),
+        }
+    }
+    /// Only a refusal before constructing a decoder is eligible for lane retry.
+    /// A predicate/transform may have observable state even before its first
+    /// nonempty batch, so errors from next() must never be retried here.
+    pub(super) fn take_decoder_refusal(&mut self) -> Option<crate::Error> {
+        match self {
+            Self::Refused(error) => error.take(),
+            Self::Filtered(reader) => reader.inner.take_decoder_refusal(),
+            _ => None,
+        }
+    }
+    #[cfg(test)]
+    fn decoder_funded(&self) -> bool {
+        match self {
+            Self::Leased(_) => true,
+            Self::Filtered(reader) => reader.inner.decoder_funded(),
+            _ => false,
         }
     }
     pub fn parallel_statistics(&self) -> Option<crate::parallel_scan::Statistics> {
         match self {
+            Self::Leased(reader) => reader.inner.parallel_statistics(),
             Self::Parallel(reader) => Some(reader.statistics()),
             Self::Filtered(reader) => reader.inner.parallel_statistics(),
             _ => None,
@@ -422,6 +596,8 @@ impl Iterator for Reader {
     type Item = Result<RecordBatch>;
     fn next(&mut self) -> Option<Self::Item> {
         match self {
+            Self::Refused(error) => error.take().map(Err),
+            Self::Leased(reader) => reader.next(),
             Self::Parallel(reader) => reader.next(),
             Self::Filtered(reader) => {
                 reader.delivered = None;
@@ -448,7 +624,8 @@ impl Iterator for Reader {
                     let Some(transform) = &reader.transform else {
                         return Some(Ok(batch));
                     };
-                    match transform(batch) {
+                    let credit = reader.inner.take_batch_lease();
+                    match transform(batch, credit) {
                         Ok(TransformedBatch {
                             batch,
                             lease,
@@ -469,7 +646,9 @@ impl Iterator for Reader {
                     }
                 }
             }
-            Self::Sync(reader) => reader.next().map(|batch| batch.map_err(|e| e.to_string())),
+            Self::Sync(reader) => reader
+                .next()
+                .map(|batch| batch.map_err(|e| crate::Error::from(e.to_string()))),
             Self::Cached(reader) => {
                 if reader.done {
                     return None;
@@ -502,7 +681,7 @@ impl Iterator for Reader {
                             .unwrap()
                             .error
                             .clone()
-                            .unwrap_or_else(|| error.to_string())
+                            .unwrap_or_else(|| crate::Error::from(error.to_string()))
                     })
                 })
             }
@@ -723,8 +902,8 @@ mod tests {
                         let transform: BatchTransform = {
                             let seen = seen.clone();
                             let budget = budget.clone();
-                            Arc::new(move |batch| {
-                                let _decoded = budget.reserve(batch.get_array_memory_size())?;
+                            Arc::new(move |batch, lease| {
+                                let _decoded = lease;
                                 seen.fetch_add(batch.num_rows(), Ordering::Relaxed);
                                 let values = batch
                                     .column(1)
@@ -877,25 +1056,40 @@ mod tests {
         let (file, metadata) = f.open();
         let filter = predicate(&metadata, 2);
         let tiny = Budget::new(1);
-        let mut reader = Reader::new(
+        let metadata_bytes = metadata.metadata().memory_size();
+        let error = match Reader::new(
             file,
             metadata,
             ProjectionMask::all(),
             Some(filter),
             &Options::default(),
             &tiny,
-        )
-        .unwrap();
-        assert_eq!(reader.statistics().0, 0);
-        assert!(reader.next().unwrap().is_ok());
-        drop(reader);
+        ) {
+            Ok(_) => panic!("a one-byte budget cannot fund metadata or a decoder"),
+            Err(error) => error,
+        };
+        assert_eq!(
+            error,
+            format!(
+                "resource-limit: accounted memory {metadata_bytes} exceeds budget 1; requested {metadata_bytes}, live 0"
+            )
+        );
         assert_eq!(tiny.used(), 0);
         // A predicate-only column still requires compressed input even when
         // the output projects no columns (as in a count-only consumer).
         let (file, metadata) = f.open();
         let projection = ProjectionMask::none(metadata.parquet_schema().num_columns());
         let filter = predicate(&metadata, 2);
-        let small = Budget::new(4096);
+        let estimate = decoder::Estimate::reader(
+            &metadata,
+            &projection,
+            Some(&filter),
+            None,
+            Options::default().batch_size,
+        )
+        .unwrap();
+        let small =
+            Budget::new(metadata.metadata().memory_size() + estimate.workspace + estimate.batch);
         let options = Options {
             parquet_cache_bytes: Some(0),
             ..Options::default()
@@ -959,8 +1153,8 @@ mod tests {
             });
             let transform: BatchTransform = {
                 let budget = budget.clone();
-                Arc::new(move |batch| {
-                    let _input = budget.reserve(batch.get_array_memory_size())?;
+                Arc::new(move |batch, lease| {
+                    let _input = lease;
                     let values = batch
                         .column(1)
                         .as_any()
@@ -1059,7 +1253,7 @@ mod tests {
         let fixture = Fixture::new(false, WriterVersion::PARQUET_1_0, 69);
         let factory: FilterFactory = Arc::new(|_| None);
         for cancel in [false, true] {
-            let budget = Budget::new(if cancel { 1 << 20 } else { 1 });
+            let budget = Budget::new(if cancel { 4 << 20 } else { 1 });
             let options = Options {
                 batch_size: 3,
                 ..Options::default()
@@ -1107,13 +1301,11 @@ mod tests {
     #[test]
     fn pipeline_cursor_later_transform_error_preserves_held_output_owner() {
         let fixture = Fixture::new(false, WriterVersion::PARQUET_1_0, 17);
-        let budget = Budget::new(1 << 20);
+        let budget = Budget::new(4 << 20);
         let seen = Arc::new(AtomicUsize::new(0));
         let transform: BatchTransform = {
             let seen = seen.clone();
-            let budget = budget.clone();
-            Arc::new(move |batch| {
-                let lease = budget.reserve(batch.get_array_memory_size())?;
+            Arc::new(move |batch, lease| {
                 if seen.fetch_add(1, Ordering::SeqCst) > 0 {
                     return Err("injected later transform failure".into());
                 }
@@ -1141,7 +1333,11 @@ mod tests {
         )
         .unwrap();
         let held = cursor.next().unwrap().unwrap();
-        let charged = budget.used();
+        let charged = held.lease.bytes();
+        assert!(
+            budget.used() > charged,
+            "decoder and metadata remain charged until cursor drop"
+        );
         assert!(charged >= held.batch.get_array_memory_size());
         assert_eq!(
             cursor.next().unwrap().err().unwrap(),

@@ -46,13 +46,33 @@ class NativeSessionTests(unittest.TestCase):
         self.assertTrue(pa.types.is_binary(table.schema.field("b").type))
         self.assertTrue(pa.types.is_null(table.schema.field("n").type))
 
+    def test_session_time_zone_and_fixed_clock(self):
+        # TIMESTAMPTZ results carry the session zone, like DuckDB's Arrow export.
+        with assaydb.connect(timezone="America/Los_Angeles", fixed_clock="2024-03-10 03:00:00+00") as connection:
+            table = connection.execute(
+                "SELECT NOW() AS now, CURRENT_DATE AS today, "
+                "CAST(TIMESTAMPTZ '2024-03-10 03:00:00+00' AS VARCHAR) AS text").to_arrow()
+            self.assertEqual(table.schema.field("now").type, pa.timestamp("us", tz="America/Los_Angeles"))
+            self.assertEqual(table.column("now").cast(pa.int64()).to_pylist(), [1710039600000000])
+            self.assertEqual(table.column("today").to_pylist()[0].isoformat(), "2024-03-09")
+            self.assertEqual(table.column("text").to_pylist(), ["2024-03-09 19:00:00-08"])
+            connection.execute("SET TimeZone = 'UTC'")
+            self.assertEqual(connection.execute("SELECT CAST(NOW() AS VARCHAR) AS t").to_arrow().to_pylist(),
+                             [{"t": "2024-03-10 03:00:00+00"}])
+        with self.assertRaises(assaydb.UnsupportedError):
+            assaydb.connect(timezone="PST")
+
     def test_failures_are_typed_and_connection_remains_usable(self):
         with assaydb.connect() as connection:
+            result = connection.execute("SELECT 1 IN (SELECT CAST(1 AS REAL)) AS matches")
+            self.assertTrue(result.is_query)
+            self.assertEqual(result.to_arrow().to_pylist(), [{"matches": True}])
             with self.assertRaises(assaydb.UnsupportedError) as refused:
-                connection.execute("SELECT 1 IN (SELECT CAST(1 AS REAL))")
+                connection.execute("SELECT " + "(" * 1000 + "1" + ")" * 1000)
             self.assertTrue(str(refused.exception).startswith(refused.exception.native_message))
             self.assertIn("Hint:", str(refused.exception))
-            self.assertIn("2^53", refused.exception.hint)
+            self.assertIn("nesting limit exceeded", refused.exception.native_message.lower())
+            self.assertIn("Simplify deeply nested expressions", refused.exception.hint)
             with self.assertRaises(assaydb.SQLError):
                 connection.execute("SELECT nonexistent")
             self.assertEqual(connection.execute("SELECT 7 AS n").to_arrow()["n"].to_pylist(), [7])

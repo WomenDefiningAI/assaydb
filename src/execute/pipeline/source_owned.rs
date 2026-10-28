@@ -265,7 +265,7 @@ pub(crate) fn try_execute(
                     .map_err(|error| attempt.rejection(error.reason))?,
             );
         }
-        let mut error: Option<(usize, String)> = None;
+        let mut error: Option<(usize, crate::Error)> = None;
         while let Some(done) = runtime.next_completion() {
             let rank = active
                 .iter()

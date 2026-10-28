@@ -1,6 +1,6 @@
 //! IN uses ordinary equality compatibility, with a typed path when hash-key
 //! identity would change NULL/numeric/NaN semantics. No text/numeric coercion.
-//! Mixed Int/Float subqueries are explicitly refused; SQLite affinity is not emulated.
+//! Mixed Int/Float membership promotes Int to binary64; no SQLite affinity.
 use super::*;
 use crate::expr::{Kind, Op, Value};
 
@@ -18,12 +18,6 @@ pub(super) fn validate(value: &Expr, right: &Schema) -> Result<Type> {
         },
     )
     .map_err(|e| format!("unsupported: IN subquery {e}"))?;
-    if matches!(
-        (&value.ty, &ty),
-        (Type::Int, Type::Float) | (Type::Float, Type::Int)
-    ) {
-        return Err("unsupported: mixed Int/Float IN subquery comparison".into());
-    }
     Ok(ty)
 }
 pub(super) fn hash_equality(left: &Type, right: &Type) -> bool {
@@ -101,7 +95,9 @@ fn float_key(value: &Value, ty: &Type, row: usize) -> Result<Option<u64>> {
     } else {
         numeric_float(crate::expr::numeric(&value.array).value(row), ty)?
     };
-    Ok((!number.is_nan()).then_some(if number == 0.0 { 0 } else { number.to_bits() }))
+    Ok(Some(
+        crate::expr::numeric_compare::canonical(number).to_bits(),
+    ))
 }
 impl Set {
     fn new(left: Type, right: Type, budget: &Budget) -> Result<Self> {
@@ -115,26 +111,6 @@ impl Set {
             leases: Vec::new(),
             _header: budget.reserve(512)?,
         })
-    }
-    fn integer_real(&self) -> bool {
-        matches!(
-            (&self.left, &self.right),
-            (Type::Int, Type::Float) | (Type::Float, Type::Int)
-        )
-    }
-    fn mixed_key(value: &Value, ty: &Type, row: usize) -> Option<i128> {
-        if *ty == Type::Int {
-            Some(crate::expr::numeric(&value.array).value(row))
-        } else {
-            crate::expr::numeric_compare::exact_integer(
-                value
-                    .array
-                    .as_any()
-                    .downcast_ref::<Float64Array>()
-                    .unwrap()
-                    .value(row),
-            )
-        }
     }
     fn floating(&self) -> bool {
         self.left == Type::Float || self.right == Type::Float
@@ -158,13 +134,7 @@ impl Set {
             if self.left == Type::Null {
                 continue;
             }
-            if self.integer_real() {
-                if let Some(integer) = Self::mixed_key(value, &self.right, row) {
-                    let lease = budget.reserve(256)?;
-                    self.leases.push(lease);
-                    self.exact.push(integer);
-                }
-            } else if self.floating() {
+            if self.floating() {
                 if let Some(bits) = float_key(value, &self.right, row)?
                     && !self.floats.contains(&bits)
                 {
@@ -195,18 +165,7 @@ impl Set {
         if is_sql_null(value.array.as_ref(), row) {
             return Ok(None);
         }
-        let matched = if self.integer_real() {
-            let mut matched = false;
-            if let Some(integer) = Self::mixed_key(value, &self.left, row) {
-                for (i, rhs) in self.exact.iter().enumerate() {
-                    if i % 1024 == 0 {
-                        cancel.check()?;
-                    }
-                    matched |= integer == *rhs;
-                }
-            }
-            matched
-        } else if self.floating() {
+        let matched = if self.floating() {
             float_key(value, &self.left, row)?.is_some_and(|bits| self.floats.contains(&bits))
         } else if self.right == Type::Null {
             false
@@ -333,7 +292,7 @@ mod tests {
         assert_eq!(budget.used(), 0);
     }
     #[test]
-    fn integer_real_keys_keep_exact_values_and_funding() {
+    fn integer_real_keys_promote_deduplicate_and_keep_funding() {
         let input_budget = Budget::new(16384);
         let values = numbers(
             vec![
@@ -355,30 +314,36 @@ mod tests {
         let budget = Budget::new(512 + 2 * 256);
         let cancel = Cancellation::default();
         let mut state = Set::new(Type::Float, Type::Int, &budget).unwrap();
+        state.push(&values, &budget, &cancel).unwrap();
+        assert_eq!(
+            state.floats,
+            HashSet::from([9007199254740992.0_f64.to_bits()])
+        );
+        assert_eq!(budget.used(), 512 + 256);
+        // Rounding merges all three original keys. Distinct additional keys
+        // still encounter the same accountant limit before insertion.
+        let extra = numbers(vec![Some(0), Some(1)], &input_budget);
         assert!(
             state
-                .push(&values, &budget, &cancel)
+                .push(&extra, &budget, &cancel)
                 .unwrap_err()
                 .starts_with("resource-limit: accounted memory")
         );
-        assert_eq!(state.exact, vec![9007199254740993, 9007199254740992]);
+        assert_eq!(state.floats.len(), 2);
+        assert_eq!(budget.used(), budget.limit());
+        drop(extra);
         assert_eq!(state.contains(&reals, 0, &cancel).unwrap(), Some(true));
         assert_eq!(state.contains(&reals, 1, &cancel).unwrap(), Some(false));
         assert_eq!(state.contains(&reals, 2, &cancel).unwrap(), None);
-        let stopped = Cancellation::default();
-        stopped.cancel();
-        assert!(
-            state
-                .contains(&reals, 0, &stopped)
-                .unwrap_err()
-                .starts_with("cancelled:")
-        );
+        // The removed exact mixed-key probe was a linear scan with periodic
+        // cancellation checks; DOUBLE keys use the O(1) Float hash probe, which
+        // (like Float/Float membership) relies on the per-batch checks.
         drop(state);
         assert_eq!(budget.used(), 0);
         let mut state = Set::new(Type::Int, Type::Float, &budget).unwrap();
         state.push(&reals, &budget, &cancel).unwrap();
-        assert_eq!(state.exact, vec![9007199254740992]);
-        assert_eq!(state.contains(&values, 0, &cancel).unwrap(), None);
+        assert_eq!(state.floats.len(), 2);
+        assert_eq!(state.contains(&values, 0, &cancel).unwrap(), Some(true));
         assert_eq!(state.contains(&values, 1, &cancel).unwrap(), Some(true));
         drop(state);
         drop(reals);

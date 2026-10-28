@@ -197,6 +197,7 @@ pub(super) fn key_bytes(
             Type::Int => scalar!(Int64Array),
             Type::Decimal(_) => scalar!(Decimal128Array),
             Type::Date => scalar!(Date32Array),
+            Type::Timestamp | Type::TimestampTz => scalar!(TimestampMicrosecondArray),
             Type::Bool => bytes.push(u8::from(
                 a.as_any()
                     .downcast_ref::<BooleanArray>()

@@ -5,7 +5,10 @@ use crate::{
     rel::{Node, RelOp},
     types::Type,
 };
-use parquet::file::{metadata::ParquetMetaData, statistics::Statistics};
+use parquet::file::{
+    metadata::{ColumnChunkMetaData, ParquetMetaData},
+    statistics::Statistics,
+};
 use serde::Serialize;
 use std::collections::BTreeMap;
 
@@ -14,6 +17,27 @@ pub struct ColumnStats {
     pub bounds: Option<(i128, i128)>,
     pub nulls: Option<u64>,
     pub rows: u64,
+}
+
+/// Parquet stores unsigned integers in signed physical columns, ordered as
+/// unsigned. Reading their min/max as signed values gives a wrong logical range
+/// (UInt32 4294967295 reads as -1), so integer bounds ignore unsigned columns.
+pub(crate) fn signed_integer_statistics(column: &ColumnChunkMetaData) -> bool {
+    use parquet::basic::{ConvertedType, LogicalType};
+    let descr = column.column_descr();
+    !matches!(
+        descr.logical_type(),
+        Some(LogicalType::Integer {
+            is_signed: false,
+            ..
+        })
+    ) && !matches!(
+        descr.converted_type(),
+        ConvertedType::UINT_8
+            | ConvertedType::UINT_16
+            | ConvertedType::UINT_32
+            | ConvertedType::UINT_64
+    )
 }
 
 pub(crate) fn column_stats(metadata: &ParquetMetaData, column: usize) -> ColumnStats {
@@ -27,7 +51,7 @@ pub(crate) fn column_stats(metadata: &ParquetMetaData, column: usize) -> ColumnS
         if n == Some(group.num_rows() as u64) {
             continue;
         }
-        let range = match stats {
+        let range = match stats.filter(|_| signed_integer_statistics(group.column(column))) {
             Some(Statistics::Int32(s)) => s
                 .min_opt()
                 .zip(s.max_opt())

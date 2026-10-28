@@ -1,0 +1,4682 @@
+{
+  "duckdb_version": "1.5.6",
+  "reference_settings": [
+    "SET threads=1",
+    "SET integer_division=true"
+  ],
+  "reference_type_mapping": "Assay INTEGER = BIGINT; REAL = DOUBLE",
+  "setup_sql": "CREATE TABLE p (id INTEGER NOT NULL, n INTEGER, r REAL, b INTEGER);\nINSERT INTO p VALUES (1, 0, 0.5, NULL), (2, 7, NULL, 1), (3, -7, -2.25, NULL), (4, NULL, 3.0, 1), (5, NULL, NULL, NULL), (6, 9007199254740992, NULL, NULL), (7, 9007199254740993, 9007199254740992.0, NULL), (8, -9007199254740993, NULL, 1), (9, 9223372036854775807, NULL, NULL), (10, -9223372036854775808, NULL, NULL), (11, 9223372036854775806, NULL, NULL), (12, NULL, -0.0, NULL);",
+  "reference_setup_extra": "DELETE FROM p WHERE id = 12; INSERT INTO p VALUES (12, NULL, CAST('-0.0' AS DOUBLE), NULL)",
+  "setup_sha256": "6dbf0b76f7097feb42db0477f87c1e43987668667a33599396f353a1d3adf313",
+  "cases_sha256": "8a9d1821cadc160959e482515aea4e5d43a0c7c211206ebe996795ab1579c652",
+  "cases": [
+    {
+      "id": "coalesce_int_real",
+      "sql": "SELECT id, COALESCE(n, r) FROM p ORDER BY id",
+      "reference_sql": "SELECT id, COALESCE(n, r) FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "float": "7.0",
+            "bits": "401c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "float": "-7.0",
+            "bits": "c01c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "float": "3.0",
+            "bits": "4008000000000000"
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "float": "-9007199254740992.0",
+            "bits": "c340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "float": "-9.223372036854776e+18",
+            "bits": "c3e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          {
+            "float": "-0.0",
+            "bits": "8000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "coalesce_real_int",
+      "sql": "SELECT id, COALESCE(r, n) FROM p ORDER BY id",
+      "reference_sql": "SELECT id, COALESCE(r, n) FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "float": "0.5",
+            "bits": "3fe0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "float": "7.0",
+            "bits": "401c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "float": "-2.25",
+            "bits": "c002000000000000"
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "float": "3.0",
+            "bits": "4008000000000000"
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "float": "-9007199254740992.0",
+            "bits": "c340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "float": "-9.223372036854776e+18",
+            "bits": "c3e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          {
+            "float": "-0.0",
+            "bits": "8000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "coalesce_real_literal",
+      "sql": "SELECT id, COALESCE(n, CAST(10 AS REAL)) FROM p ORDER BY id",
+      "reference_sql": "SELECT id, COALESCE(n, CAST(10 AS DOUBLE)) FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "float": "7.0",
+            "bits": "401c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "float": "-7.0",
+            "bits": "c01c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "float": "10.0",
+            "bits": "4024000000000000"
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          {
+            "float": "10.0",
+            "bits": "4024000000000000"
+          }
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "float": "-9007199254740992.0",
+            "bits": "c340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "float": "-9.223372036854776e+18",
+            "bits": "c3e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          {
+            "float": "10.0",
+            "bits": "4024000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "coalesce_negative_zero",
+      "sql": "SELECT id, COALESCE(n, -CAST(0 AS REAL)) FROM p ORDER BY id",
+      "reference_sql": "SELECT id, COALESCE(n, -CAST(0 AS DOUBLE)) FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "float": "7.0",
+            "bits": "401c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "float": "-7.0",
+            "bits": "c01c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "float": "-0.0",
+            "bits": "8000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          {
+            "float": "-0.0",
+            "bits": "8000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "float": "-9007199254740992.0",
+            "bits": "c340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "float": "-9.223372036854776e+18",
+            "bits": "c3e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          {
+            "float": "-0.0",
+            "bits": "8000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "coalesce_three_args",
+      "sql": "SELECT id, COALESCE(n, r, -1) FROM p ORDER BY id",
+      "reference_sql": "SELECT id, COALESCE(n, r, -1) FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "float": "7.0",
+            "bits": "401c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "float": "-7.0",
+            "bits": "c01c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "float": "3.0",
+            "bits": "4008000000000000"
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          {
+            "float": "-1.0",
+            "bits": "bff0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "float": "-9007199254740992.0",
+            "bits": "c340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "float": "-9.223372036854776e+18",
+            "bits": "c3e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          {
+            "float": "-0.0",
+            "bits": "8000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "case_searched",
+      "sql": "SELECT id, CASE WHEN b IS NULL THEN n ELSE r END FROM p ORDER BY id",
+      "reference_sql": "SELECT id, CASE WHEN b IS NULL THEN n ELSE r END FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          null
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "float": "-7.0",
+            "bits": "c01c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "float": "3.0",
+            "bits": "4008000000000000"
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          null
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "float": "-9.223372036854776e+18",
+            "bits": "c3e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          null
+        ]
+      ]
+    },
+    {
+      "id": "case_computed_int_arm",
+      "sql": "SELECT id, CASE WHEN r IS NULL THEN n / 2 ELSE r END FROM p ORDER BY id",
+      "reference_sql": "SELECT id, CASE WHEN r IS NULL THEN n / 2 ELSE r END FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "float": "0.5",
+            "bits": "3fe0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "float": "3.0",
+            "bits": "4008000000000000"
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "float": "-2.25",
+            "bits": "c002000000000000"
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "float": "3.0",
+            "bits": "4008000000000000"
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "float": "4503599627370496.0",
+            "bits": "4330000000000000"
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "float": "-4503599627370496.0",
+            "bits": "c330000000000000"
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "float": "4.611686018427388e+18",
+            "bits": "43d0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "float": "-4.611686018427388e+18",
+            "bits": "c3d0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "float": "4.611686018427388e+18",
+            "bits": "43d0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          {
+            "float": "-0.0",
+            "bits": "8000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "case_simple",
+      "sql": "SELECT id, CASE id WHEN 1 THEN n WHEN 4 THEN r ELSE n END FROM p ORDER BY id",
+      "reference_sql": "SELECT id, CASE id WHEN 1 THEN n WHEN 4 THEN r ELSE n END FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "float": "7.0",
+            "bits": "401c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "float": "-7.0",
+            "bits": "c01c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "float": "3.0",
+            "bits": "4008000000000000"
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "float": "-9007199254740992.0",
+            "bits": "c340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "float": "-9.223372036854776e+18",
+            "bits": "c3e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          null
+        ]
+      ]
+    },
+    {
+      "id": "case_nested",
+      "sql": "SELECT id, COALESCE(CASE WHEN b = 1 THEN n END, r, n) FROM p ORDER BY id",
+      "reference_sql": "SELECT id, COALESCE(CASE WHEN b = 1 THEN n END, r, n) FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "float": "0.5",
+            "bits": "3fe0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "float": "7.0",
+            "bits": "401c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "float": "-2.25",
+            "bits": "c002000000000000"
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "float": "3.0",
+            "bits": "4008000000000000"
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "float": "-9007199254740992.0",
+            "bits": "c340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "float": "-9.223372036854776e+18",
+            "bits": "c3e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          {
+            "float": "-0.0",
+            "bits": "8000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "nullif_int_real",
+      "assay_rows": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          7
+        ],
+        [
+          3,
+          -7
+        ],
+        [
+          4,
+          null
+        ],
+        [
+          5,
+          null
+        ],
+        [
+          6,
+          9007199254740992
+        ],
+        [
+          7,
+          9007199254740993
+        ],
+        [
+          8,
+          -9007199254740993
+        ],
+        [
+          9,
+          9223372036854775807
+        ],
+        [
+          10,
+          -9223372036854775808
+        ],
+        [
+          11,
+          9223372036854775806
+        ],
+        [
+          12,
+          null
+        ]
+      ],
+      "note": "Not promoted: ordinary Int/Float NULLIF operands keep the exact comparison (SQLite); DuckDB compares in DOUBLE (row 7 NULL)",
+      "sql": "SELECT id, NULLIF(n, r) FROM p ORDER BY id",
+      "reference_sql": "SELECT id, NULLIF(n, r) FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "int": 0
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "int": 7
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "int": -7
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          null
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "int": 9007199254740992
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          null
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "int": -9007199254740993
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "int": 9223372036854775807
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "int": -9223372036854775808
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "int": 9223372036854775806
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          null
+        ]
+      ]
+    },
+    {
+      "id": "nullif_promoted",
+      "sql": "SELECT id, NULLIF(COALESCE(n, r), n) FROM p ORDER BY id",
+      "reference_sql": "SELECT id, NULLIF(COALESCE(n, r), n) FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          null
+        ],
+        [
+          {
+            "int": 2
+          },
+          null
+        ],
+        [
+          {
+            "int": 3
+          },
+          null
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "float": "3.0",
+            "bits": "4008000000000000"
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          null
+        ],
+        [
+          {
+            "int": 7
+          },
+          null
+        ],
+        [
+          {
+            "int": 8
+          },
+          null
+        ],
+        [
+          {
+            "int": 9
+          },
+          null
+        ],
+        [
+          {
+            "int": 10
+          },
+          null
+        ],
+        [
+          {
+            "int": 11
+          },
+          null
+        ],
+        [
+          {
+            "int": 12
+          },
+          {
+            "float": "-0.0",
+            "bits": "8000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "a_eq_original_coalesce",
+      "sql": "SELECT id, COALESCE(n, CAST(10 AS REAL)) = n FROM p ORDER BY id",
+      "reference_sql": "SELECT id, COALESCE(n, CAST(10 AS DOUBLE)) = n FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          null
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          null
+        ]
+      ]
+    },
+    {
+      "id": "a_eq_original_case",
+      "sql": "SELECT id, CASE WHEN b IS NULL THEN n ELSE CAST(11 AS REAL) END = n FROM p ORDER BY id",
+      "reference_sql": "SELECT id, CASE WHEN b IS NULL THEN n ELSE CAST(11 AS DOUBLE) END = n FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          null
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          null
+        ]
+      ]
+    },
+    {
+      "id": "a_ge_original",
+      "sql": "SELECT id, COALESCE(n, r) >= n FROM p ORDER BY id",
+      "reference_sql": "SELECT id, COALESCE(n, r) >= n FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          null
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          null
+        ]
+      ]
+    },
+    {
+      "id": "a_ne_original",
+      "sql": "SELECT id, COALESCE(n, r) <> n FROM p ORDER BY id",
+      "reference_sql": "SELECT id, COALESCE(n, r) <> n FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          null
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          null
+        ]
+      ]
+    },
+    {
+      "id": "a_original_on_left",
+      "sql": "SELECT id, n = COALESCE(n, r) FROM p ORDER BY id",
+      "reference_sql": "SELECT id, n = COALESCE(n, r) FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          null
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          null
+        ]
+      ]
+    },
+    {
+      "id": "a_between",
+      "sql": "SELECT id FROM p WHERE COALESCE(n, r) BETWEEN n AND n ORDER BY id",
+      "reference_sql": "SELECT id FROM p WHERE COALESCE(n, r) BETWEEN n AND n ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "int": 2
+          }
+        ],
+        [
+          {
+            "int": 3
+          }
+        ],
+        [
+          {
+            "int": 6
+          }
+        ],
+        [
+          {
+            "int": 7
+          }
+        ],
+        [
+          {
+            "int": 8
+          }
+        ],
+        [
+          {
+            "int": 9
+          }
+        ],
+        [
+          {
+            "int": 10
+          }
+        ],
+        [
+          {
+            "int": 11
+          }
+        ]
+      ]
+    },
+    {
+      "id": "a_in_list",
+      "sql": "SELECT id, COALESCE(n, r) IN (n, 7) FROM p ORDER BY id",
+      "reference_sql": "SELECT id, COALESCE(n, r) IN (n, 7) FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          null
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          null
+        ]
+      ]
+    },
+    {
+      "id": "a_simple_case_operand",
+      "sql": "SELECT id, CASE COALESCE(n, r) WHEN n THEN 1 ELSE 0 END FROM p ORDER BY id",
+      "reference_sql": "SELECT id, CASE COALESCE(n, r) WHEN n THEN 1 ELSE 0 END FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "INTEGER"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "int": 0
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          {
+            "int": 0
+          }
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          {
+            "int": 0
+          }
+        ]
+      ]
+    },
+    {
+      "id": "a_filter_large_literal",
+      "sql": "SELECT id FROM p WHERE COALESCE(n, r) = 9007199254740993 ORDER BY id",
+      "reference_sql": "SELECT id FROM p WHERE COALESCE(n, r) = 9007199254740993 ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "int": 6
+          }
+        ],
+        [
+          {
+            "int": 7
+          }
+        ]
+      ]
+    },
+    {
+      "id": "a_arithmetic_then_compare",
+      "sql": "SELECT id, COALESCE(n, r) * 1 = n FROM p ORDER BY id",
+      "reference_sql": "SELECT id, COALESCE(n, r) * 1 = n FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          null
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          null
+        ]
+      ]
+    },
+    {
+      "id": "a_derived_column",
+      "sql": "SELECT id, x = n FROM (SELECT id, n, COALESCE(n, r) AS x FROM p) q ORDER BY id",
+      "reference_sql": "SELECT id, x = n FROM (SELECT id, n, COALESCE(n, r) AS x FROM p) q ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          null
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          null
+        ]
+      ]
+    },
+    {
+      "id": "a_aggregate_compare",
+      "sql": "SELECT MAX(COALESCE(n, r)) = MAX(n), MIN(COALESCE(n, r)) = MIN(n) FROM p",
+      "reference_sql": "SELECT MAX(COALESCE(n, r)) = MAX(n), MIN(COALESCE(n, r)) = MIN(n) FROM p",
+      "status": "ok",
+      "types": [
+        "BOOLEAN",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          {
+            "bool": true
+          },
+          {
+            "bool": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "divide_float",
+      "sql": "SELECT id, COALESCE(n, r) / 2 FROM p ORDER BY id",
+      "reference_sql": "SELECT id, COALESCE(n, r) / 2 FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "float": "3.5",
+            "bits": "400c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "float": "-3.5",
+            "bits": "c00c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "float": "1.5",
+            "bits": "3ff8000000000000"
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "float": "4503599627370496.0",
+            "bits": "4330000000000000"
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "float": "4503599627370496.0",
+            "bits": "4330000000000000"
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "float": "-4503599627370496.0",
+            "bits": "c330000000000000"
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "float": "4.611686018427388e+18",
+            "bits": "43d0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "float": "-4.611686018427388e+18",
+            "bits": "c3d0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "float": "4.611686018427388e+18",
+            "bits": "43d0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          {
+            "float": "-0.0",
+            "bits": "8000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "divide_int_only_control",
+      "sql": "SELECT id, COALESCE(n, 3) / 2 FROM p ORDER BY id",
+      "reference_sql": "SELECT id, COALESCE(n, 3) / 2 FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "int": 0
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "int": 3
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "int": -3
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "int": 4503599627370496
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "int": 4503599627370496
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "int": -4503599627370496
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "int": 4611686018427387903
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "int": -4611686018427387904
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "int": 4611686018427387903
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          {
+            "int": 1
+          }
+        ]
+      ]
+    },
+    {
+      "id": "divide_by_zero",
+      "sql": "SELECT id, COALESCE(n, r) / 0 FROM p ORDER BY id",
+      "reference_sql": "SELECT id, COALESCE(n, r) / 0 FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          null
+        ],
+        [
+          {
+            "int": 2
+          },
+          null
+        ],
+        [
+          {
+            "int": 3
+          },
+          null
+        ],
+        [
+          {
+            "int": 4
+          },
+          null
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          null
+        ],
+        [
+          {
+            "int": 7
+          },
+          null
+        ],
+        [
+          {
+            "int": 8
+          },
+          null
+        ],
+        [
+          {
+            "int": 9
+          },
+          null
+        ],
+        [
+          {
+            "int": 10
+          },
+          null
+        ],
+        [
+          {
+            "int": 11
+          },
+          null
+        ],
+        [
+          {
+            "int": 12
+          },
+          null
+        ]
+      ]
+    },
+    {
+      "id": "multiply_add",
+      "sql": "SELECT id, COALESCE(n, r) * 2, COALESCE(n, r) + 1 FROM p ORDER BY id",
+      "reference_sql": "SELECT id, COALESCE(n, r) * 2, COALESCE(n, r) + 1 FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          },
+          {
+            "float": "1.0",
+            "bits": "3ff0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "float": "14.0",
+            "bits": "402c000000000000"
+          },
+          {
+            "float": "8.0",
+            "bits": "4020000000000000"
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "float": "-14.0",
+            "bits": "c02c000000000000"
+          },
+          {
+            "float": "-6.0",
+            "bits": "c018000000000000"
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "float": "6.0",
+            "bits": "4018000000000000"
+          },
+          {
+            "float": "4.0",
+            "bits": "4010000000000000"
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          null,
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "float": "1.8014398509481984e+16",
+            "bits": "4350000000000000"
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "float": "1.8014398509481984e+16",
+            "bits": "4350000000000000"
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "float": "-1.8014398509481984e+16",
+            "bits": "c350000000000000"
+          },
+          {
+            "float": "-9007199254740991.0",
+            "bits": "c33fffffffffffff"
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "float": "1.8446744073709552e+19",
+            "bits": "43f0000000000000"
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "float": "-1.8446744073709552e+19",
+            "bits": "c3f0000000000000"
+          },
+          {
+            "float": "-9.223372036854776e+18",
+            "bits": "c3e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "float": "1.8446744073709552e+19",
+            "bits": "43f0000000000000"
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          {
+            "float": "-0.0",
+            "bits": "8000000000000000"
+          },
+          {
+            "float": "1.0",
+            "bits": "3ff0000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "negate_abs",
+      "sql": "SELECT id, -COALESCE(n, r), ABS(COALESCE(n, r)) FROM p WHERE id <> 12 ORDER BY id",
+      "reference_sql": "SELECT id, -COALESCE(n, r), ABS(COALESCE(n, r)) FROM p WHERE id <> 12 ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "float": "-0.0",
+            "bits": "8000000000000000"
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "float": "-7.0",
+            "bits": "c01c000000000000"
+          },
+          {
+            "float": "7.0",
+            "bits": "401c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "float": "7.0",
+            "bits": "401c000000000000"
+          },
+          {
+            "float": "7.0",
+            "bits": "401c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "float": "-3.0",
+            "bits": "c008000000000000"
+          },
+          {
+            "float": "3.0",
+            "bits": "4008000000000000"
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          null,
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "float": "-9007199254740992.0",
+            "bits": "c340000000000000"
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "float": "-9007199254740992.0",
+            "bits": "c340000000000000"
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          },
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "float": "-9.223372036854776e+18",
+            "bits": "c3e0000000000000"
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "float": "-9.223372036854776e+18",
+            "bits": "c3e0000000000000"
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "e_cast_integer_in_range",
+      "sql": "SELECT id, CAST(COALESCE(n, r) AS INTEGER) FROM p WHERE id NOT IN (9, 11) ORDER BY id",
+      "reference_sql": "SELECT id, CAST(COALESCE(n, r) AS BIGINT) FROM p WHERE id NOT IN (9, 11) ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "int": 0
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "int": 7
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "int": -7
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "int": 3
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "int": 9007199254740992
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "int": 9007199254740992
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "int": -9007199254740992
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "int": -9223372036854775808
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          {
+            "int": 0
+          }
+        ]
+      ]
+    },
+    {
+      "id": "e_cast_integer_minus_2_63",
+      "sql": "SELECT id, CAST(COALESCE(n, r) AS INTEGER) FROM p WHERE id = 10",
+      "reference_sql": "SELECT id, CAST(COALESCE(n, r) AS BIGINT) FROM p WHERE id = 10",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "int": 10
+          },
+          {
+            "int": -9223372036854775808
+          }
+        ]
+      ]
+    },
+    {
+      "id": "e_cast_integer_2_63",
+      "assay_error": "INTEGER out of range: CAST of promoted Int/Float value",
+      "sql": "SELECT id, CAST(COALESCE(n, r) AS INTEGER) FROM p ORDER BY id",
+      "reference_sql": "SELECT id, CAST(COALESCE(n, r) AS BIGINT) FROM p ORDER BY id",
+      "status": "error",
+      "error_class": "ConversionException",
+      "error": "Conversion Error: Type DOUBLE with value 9.223372036854776e+18 can't be cast because the value is out of range for the destination type INT64"
+    },
+    {
+      "id": "e_cast_integer_divide",
+      "assay_error": "INTEGER out of range: CAST of promoted Int/Float value",
+      "sql": "SELECT id, CAST(COALESCE(n, CAST(-5 AS REAL)) AS INTEGER) / 2 FROM p WHERE id = 11",
+      "reference_sql": "SELECT id, CAST(COALESCE(n, CAST(-5 AS DOUBLE)) AS BIGINT) / 2 FROM p WHERE id = 11",
+      "status": "error",
+      "error_class": "ConversionException",
+      "error": "Conversion Error: Type DOUBLE with value 9.223372036854776e+18 can't be cast because the value is out of range for the destination type INT64"
+    },
+    {
+      "id": "e_cast_integer_divide_in_range",
+      "sql": "SELECT id, CAST(COALESCE(n, CAST(-5 AS REAL)) AS INTEGER) / 2 FROM p WHERE id IN (2, 3, 5, 6, 7, 10) ORDER BY id",
+      "reference_sql": "SELECT id, CAST(COALESCE(n, CAST(-5 AS DOUBLE)) AS BIGINT) / 2 FROM p WHERE id IN (2, 3, 5, 6, 7, 10) ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "int": 2
+          },
+          {
+            "int": 3
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "int": -3
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          {
+            "int": -2
+          }
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "int": 4503599627370496
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "int": 4503599627370496
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "int": -4611686018427387904
+          }
+        ]
+      ]
+    },
+    {
+      "id": "e_cast_case_left_join",
+      "assay_error": "INTEGER out of range: CAST of promoted Int/Float value",
+      "sql": "SELECT a.id, CAST(COALESCE(c.n, CAST(4 AS REAL)) AS INTEGER) FROM p a LEFT JOIN p c ON a.id = c.id AND c.id = 9 WHERE a.id IN (1, 9) ORDER BY a.id",
+      "reference_sql": "SELECT a.id, CAST(COALESCE(c.n, CAST(4 AS DOUBLE)) AS BIGINT) FROM p a LEFT JOIN p c ON a.id = c.id AND c.id = 9 WHERE a.id IN (1, 9) ORDER BY a.id",
+      "status": "error",
+      "error_class": "ConversionException",
+      "error": "Conversion Error: Type DOUBLE with value 9.223372036854776e+18 can't be cast because the value is out of range for the destination type INT64"
+    },
+    {
+      "id": "b_remainder_in_range",
+      "sql": "SELECT id, COALESCE(n, r) % 2 FROM p WHERE id IN (1, 2, 3, 6, 7) ORDER BY id",
+      "reference_sql": "SELECT id, COALESCE(n, r) % 2 FROM p WHERE id IN (1, 2, 3, 6, 7) ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "float": "1.0",
+            "bits": "3ff0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "float": "-1.0",
+            "bits": "bff0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "b_remainder_2_63",
+      "note": "REAL remainder is fmod (decision 2026-10-17): the former out-of-INTEGER-range refusal is gone; answer = DuckDB",
+      "sql": "SELECT id, COALESCE(n, r) % 2 FROM p WHERE id = 9",
+      "reference_sql": "SELECT id, COALESCE(n, r) % 2 FROM p WHERE id = 9",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 9
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "b_remainder_minus_2_63_exact",
+      "note": "fmod of -2^63 (formerly: SQLite truncation, exact at -2^63)",
+      "sql": "SELECT id, COALESCE(n, r) % 3 FROM p WHERE id = 10",
+      "reference_sql": "SELECT id, COALESCE(n, r) % 3 FROM p WHERE id = 10",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 10
+          },
+          {
+            "float": "-2.0",
+            "bits": "c000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "b_remainder_below_minus_2_63",
+      "note": "REAL remainder is fmod (decision 2026-10-17): the former out-of-INTEGER-range refusal is gone; answer = DuckDB",
+      "sql": "SELECT id, (COALESCE(n, r) * 2) % 3 FROM p WHERE id = 10",
+      "reference_sql": "SELECT id, (COALESCE(n, r) * 2) % 3 FROM p WHERE id = 10",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 10
+          },
+          {
+            "float": "-1.0",
+            "bits": "bff0000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "b_remainder_cte_2_63",
+      "note": "REAL remainder is fmod (decision 2026-10-17): the former out-of-INTEGER-range refusal is gone; answer = DuckDB",
+      "sql": "WITH q AS (SELECT id, COALESCE(n, CAST(-15 AS REAL)) AS x FROM p) SELECT id, x % 2 FROM q WHERE id = 11",
+      "reference_sql": "WITH q AS (SELECT id, COALESCE(n, CAST(-15 AS DOUBLE)) AS x FROM p) SELECT id, x % 2 FROM q WHERE id = 11",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 11
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "b_remainder_cte_in_range",
+      "sql": "WITH q AS (SELECT id, COALESCE(n, CAST(-15 AS REAL)) AS x FROM p) SELECT id, x % 4 FROM q WHERE id IN (2, 3, 5, 7) ORDER BY id",
+      "reference_sql": "WITH q AS (SELECT id, COALESCE(n, CAST(-15 AS DOUBLE)) AS x FROM p) SELECT id, x % 4 FROM q WHERE id IN (2, 3, 5, 7) ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 2
+          },
+          {
+            "float": "3.0",
+            "bits": "4008000000000000"
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "float": "-3.0",
+            "bits": "c008000000000000"
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          {
+            "float": "-3.0",
+            "bits": "c008000000000000"
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "sum_avg_exact",
+      "sql": "SELECT SUM(COALESCE(n, r)), AVG(COALESCE(n, r)), COUNT(COALESCE(n, r)) FROM p WHERE id <= 5 OR id = 12",
+      "reference_sql": "SELECT SUM(COALESCE(n, r)), AVG(COALESCE(n, r)), COUNT(COALESCE(n, r)) FROM p WHERE id <= 5 OR id = 12",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "float": "3.0",
+            "bits": "4008000000000000"
+          },
+          {
+            "float": "0.6",
+            "bits": "3fe3333333333333"
+          },
+          {
+            "int": 5
+          }
+        ]
+      ]
+    },
+    {
+      "id": "sum_case_arms",
+      "sql": "SELECT SUM(CASE WHEN b = 1 THEN n ELSE r END) FROM p WHERE id <= 4",
+      "reference_sql": "SELECT SUM(CASE WHEN b = 1 THEN n ELSE r END) FROM p WHERE id <= 4",
+      "status": "ok",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "float": "5.25",
+            "bits": "4015000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "min_max",
+      "sql": "SELECT MIN(COALESCE(n, r)), MAX(COALESCE(n, r)) FROM p",
+      "reference_sql": "SELECT MIN(COALESCE(n, r)), MAX(COALESCE(n, r)) FROM p",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "float": "-9.223372036854776e+18",
+            "bits": "c3e0000000000000"
+          },
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "group_by_promoted_key",
+      "sql": "SELECT COALESCE(n, r) AS k, COUNT(*) FROM p WHERE id <> 5 GROUP BY COALESCE(n, r) ORDER BY k",
+      "reference_sql": "SELECT COALESCE(n, r) AS k, COUNT(*) FROM p WHERE id <> 5 GROUP BY COALESCE(n, r) ORDER BY k",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "float": "-9.223372036854776e+18",
+            "bits": "c3e0000000000000"
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "float": "-9007199254740992.0",
+            "bits": "c340000000000000"
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "float": "-7.0",
+            "bits": "c01c000000000000"
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          },
+          {
+            "int": 2
+          }
+        ],
+        [
+          {
+            "float": "3.0",
+            "bits": "4008000000000000"
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "float": "7.0",
+            "bits": "401c000000000000"
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "float": "9007199254740992.0",
+            "bits": "4340000000000000"
+          },
+          {
+            "int": 2
+          }
+        ],
+        [
+          {
+            "float": "9.223372036854776e+18",
+            "bits": "43e0000000000000"
+          },
+          {
+            "int": 2
+          }
+        ]
+      ]
+    },
+    {
+      "id": "count_distinct_promoted",
+      "sql": "SELECT COUNT(DISTINCT COALESCE(n, r)) FROM p",
+      "reference_sql": "SELECT COUNT(DISTINCT COALESCE(n, r)) FROM p",
+      "status": "ok",
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "int": 8
+          }
+        ]
+      ]
+    },
+    {
+      "id": "order_by_promoted",
+      "sql": "SELECT id FROM p WHERE id NOT IN (5, 12) ORDER BY COALESCE(n, r), id",
+      "reference_sql": "SELECT id FROM p WHERE id NOT IN (5, 12) ORDER BY COALESCE(n, r), id",
+      "status": "ok",
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "int": 10
+          }
+        ],
+        [
+          {
+            "int": 8
+          }
+        ],
+        [
+          {
+            "int": 3
+          }
+        ],
+        [
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "int": 4
+          }
+        ],
+        [
+          {
+            "int": 2
+          }
+        ],
+        [
+          {
+            "int": 6
+          }
+        ],
+        [
+          {
+            "int": 7
+          }
+        ],
+        [
+          {
+            "int": 9
+          }
+        ],
+        [
+          {
+            "int": 11
+          }
+        ]
+      ]
+    },
+    {
+      "id": "in_subquery_int_in_real",
+      "sql": "SELECT id FROM p WHERE n IN (SELECT r FROM p WHERE r IS NOT NULL) ORDER BY id",
+      "reference_sql": "SELECT id FROM p WHERE n IN (SELECT r FROM p WHERE r IS NOT NULL) ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "int": 6
+          }
+        ],
+        [
+          {
+            "int": 7
+          }
+        ]
+      ]
+    },
+    {
+      "id": "in_subquery_real_in_int",
+      "sql": "SELECT id FROM p WHERE r IN (SELECT n FROM p WHERE n IS NOT NULL) ORDER BY id",
+      "reference_sql": "SELECT id FROM p WHERE r IN (SELECT n FROM p WHERE n IS NOT NULL) ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "int": 7
+          }
+        ],
+        [
+          {
+            "int": 12
+          }
+        ]
+      ]
+    },
+    {
+      "id": "not_in_subquery",
+      "sql": "SELECT id FROM p WHERE n NOT IN (SELECT r FROM p WHERE r IS NOT NULL) ORDER BY id",
+      "reference_sql": "SELECT id FROM p WHERE n NOT IN (SELECT r FROM p WHERE r IS NOT NULL) ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "int": 2
+          }
+        ],
+        [
+          {
+            "int": 3
+          }
+        ],
+        [
+          {
+            "int": 8
+          }
+        ],
+        [
+          {
+            "int": 9
+          }
+        ],
+        [
+          {
+            "int": 10
+          }
+        ],
+        [
+          {
+            "int": 11
+          }
+        ]
+      ]
+    },
+    {
+      "id": "in_subquery_projection",
+      "sql": "SELECT id, n IN (SELECT r FROM p WHERE r IS NOT NULL) FROM p ORDER BY id",
+      "reference_sql": "SELECT id, n IN (SELECT r FROM p WHERE r IS NOT NULL) FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          null
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          null
+        ]
+      ]
+    },
+    {
+      "id": "in_subquery_promoted",
+      "sql": "SELECT id FROM p WHERE n IN (SELECT COALESCE(n, r) FROM p WHERE id >= 6) ORDER BY id",
+      "reference_sql": "SELECT id FROM p WHERE n IN (SELECT COALESCE(n, r) FROM p WHERE id >= 6) ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "int": 6
+          }
+        ],
+        [
+          {
+            "int": 7
+          }
+        ],
+        [
+          {
+            "int": 8
+          }
+        ],
+        [
+          {
+            "int": 9
+          }
+        ],
+        [
+          {
+            "int": 10
+          }
+        ],
+        [
+          {
+            "int": 11
+          }
+        ]
+      ]
+    },
+    {
+      "id": "join_on_promoted",
+      "sql": "SELECT a.id, c.id FROM p a JOIN p c ON COALESCE(a.n, a.r) = c.n ORDER BY 1, 2",
+      "reference_sql": "SELECT a.id, c.id FROM p a JOIN p c ON COALESCE(a.n, a.r) = c.n ORDER BY 1, 2",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "int": 1
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "int": 2
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "int": 3
+          }
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "int": 6
+          }
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "int": 7
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "int": 6
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "int": 7
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "int": 8
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "int": 9
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "int": 11
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "int": 10
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "int": 9
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "int": 11
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          {
+            "int": 1
+          }
+        ]
+      ]
+    },
+    {
+      "id": "left_join_coalesce",
+      "sql": "SELECT a.id, COALESCE(c.n, CAST(0 AS REAL)) FROM p a LEFT JOIN p c ON a.id = c.id AND c.b = 1 ORDER BY a.id",
+      "reference_sql": "SELECT a.id, COALESCE(c.n, CAST(0 AS DOUBLE)) FROM p a LEFT JOIN p c ON a.id = c.id AND c.b = 1 ORDER BY a.id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "float": "7.0",
+            "bits": "401c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "float": "-9007199254740992.0",
+            "bits": "c340000000000000"
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "derived_alias_arithmetic",
+      "sql": "SELECT id, x * 2 FROM (SELECT id, COALESCE(n, r) AS x FROM p) q ORDER BY id",
+      "reference_sql": "SELECT id, x * 2 FROM (SELECT id, COALESCE(n, r) AS x FROM p) q ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "float": "14.0",
+            "bits": "402c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "float": "-14.0",
+            "bits": "c02c000000000000"
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          {
+            "float": "6.0",
+            "bits": "4018000000000000"
+          }
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "float": "1.8014398509481984e+16",
+            "bits": "4350000000000000"
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "float": "1.8014398509481984e+16",
+            "bits": "4350000000000000"
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "float": "-1.8014398509481984e+16",
+            "bits": "c350000000000000"
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "float": "1.8446744073709552e+19",
+            "bits": "43f0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "float": "-1.8446744073709552e+19",
+            "bits": "c3f0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "float": "1.8446744073709552e+19",
+            "bits": "43f0000000000000"
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          {
+            "float": "-0.0",
+            "bits": "8000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "nonfinite_overflow",
+      "assay_error": "floating arithmetic overflow",
+      "note": "Assay has no nonfinite REAL values (existing policy); DuckDB returns +inf",
+      "sql": "SELECT id, COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) FROM p WHERE id = 9",
+      "reference_sql": "SELECT id, COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) * COALESCE(n, r) FROM p WHERE id = 9",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 9
+          },
+          {
+            "float": "inf",
+            "bits": "7ff0000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "control_explicit_cast_exact",
+      "assay_rows": [
+        [
+          1,
+          true
+        ],
+        [
+          2,
+          true
+        ],
+        [
+          3,
+          true
+        ],
+        [
+          4,
+          null
+        ],
+        [
+          5,
+          null
+        ],
+        [
+          6,
+          true
+        ],
+        [
+          7,
+          false
+        ],
+        [
+          8,
+          false
+        ],
+        [
+          9,
+          false
+        ],
+        [
+          10,
+          true
+        ],
+        [
+          11,
+          false
+        ],
+        [
+          12,
+          null
+        ]
+      ],
+      "note": "Not promoted: explicit CAST and ordinary columns keep exact Int/Float comparison (SQLite); DuckDB compares in DOUBLE",
+      "sql": "SELECT id, CAST(n AS REAL) = n FROM p ORDER BY id",
+      "reference_sql": "SELECT id, CAST(n AS DOUBLE) = n FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          null
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 9
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 10
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 11
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 12
+          },
+          null
+        ]
+      ]
+    },
+    {
+      "id": "control_column_exact",
+      "assay_rows": [
+        [
+          1,
+          false
+        ],
+        [
+          2,
+          null
+        ],
+        [
+          3,
+          false
+        ],
+        [
+          4,
+          null
+        ],
+        [
+          5,
+          null
+        ],
+        [
+          6,
+          null
+        ],
+        [
+          7,
+          false
+        ],
+        [
+          8,
+          null
+        ],
+        [
+          9,
+          null
+        ],
+        [
+          10,
+          null
+        ],
+        [
+          11,
+          null
+        ],
+        [
+          12,
+          null
+        ]
+      ],
+      "note": "Not promoted: explicit CAST and ordinary columns keep exact Int/Float comparison (SQLite); DuckDB compares in DOUBLE",
+      "sql": "SELECT id, r = n FROM p ORDER BY id",
+      "reference_sql": "SELECT id, r = n FROM p ORDER BY id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          {
+            "int": 1
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 2
+          },
+          null
+        ],
+        [
+          {
+            "int": 3
+          },
+          {
+            "bool": false
+          }
+        ],
+        [
+          {
+            "int": 4
+          },
+          null
+        ],
+        [
+          {
+            "int": 5
+          },
+          null
+        ],
+        [
+          {
+            "int": 6
+          },
+          null
+        ],
+        [
+          {
+            "int": 7
+          },
+          {
+            "bool": true
+          }
+        ],
+        [
+          {
+            "int": 8
+          },
+          null
+        ],
+        [
+          {
+            "int": 9
+          },
+          null
+        ],
+        [
+          {
+            "int": 10
+          },
+          null
+        ],
+        [
+          {
+            "int": 11
+          },
+          null
+        ],
+        [
+          {
+            "int": 12
+          },
+          null
+        ]
+      ]
+    }
+  ],
+  "analysis_setup_sql": "CREATE TABLE order_lines (order_id INTEGER NOT NULL, line_no INTEGER NOT NULL, sku TEXT NOT NULL, qty INTEGER NOT NULL, unit_price_cents INTEGER NOT NULL);\nCREATE TABLE discounts (order_id INTEGER NOT NULL, line_no INTEGER NOT NULL, discount_cents INTEGER, discount_rate REAL);\nINSERT INTO order_lines VALUES (100, 1, 'A', 2, 1250), (100, 2, 'B', 1, 999), (101, 1, 'A', 5, 1250), (102, 1, 'C', 3, 400), (102, 2, 'B', 2, 999), (103, 1, 'C', 1, 400);\nINSERT INTO discounts VALUES (100, 1, 250, NULL), (101, 1, NULL, 0.1), (102, 2, 100, NULL), (103, 1, NULL, NULL);",
+  "analysis_sha256": "73ad459b6ccd76fe80ba1c0344af9fc74d778b8c5c0e515eed3b29b8319ee0d2",
+  "analysis": [
+    {
+      "id": "net_revenue_per_order",
+      "expected_rows": [
+        [
+          100,
+          3249.0
+        ],
+        [
+          101,
+          5625.0
+        ],
+        [
+          102,
+          3098.0
+        ],
+        [
+          103,
+          400.0
+        ]
+      ],
+      "note": "2500-250+999; 6250-625; 1200+1998-100; 400",
+      "sql": "SELECT l.order_id, SUM(l.qty * l.unit_price_cents - COALESCE(d.discount_cents, d.discount_rate * l.qty * l.unit_price_cents, 0)) AS net_cents FROM order_lines l LEFT JOIN discounts d ON l.order_id = d.order_id AND l.line_no = d.line_no GROUP BY l.order_id ORDER BY l.order_id",
+      "reference_sql": "SELECT l.order_id, SUM(l.qty * l.unit_price_cents - COALESCE(d.discount_cents, d.discount_rate * l.qty * l.unit_price_cents, 0)) AS net_cents FROM order_lines l LEFT JOIN discounts d ON l.order_id = d.order_id AND l.line_no = d.line_no GROUP BY l.order_id ORDER BY l.order_id",
+      "status": "ok",
+      "types": [
+        "BIGINT",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "int": 100
+          },
+          {
+            "float": "3249.0",
+            "bits": "40a9620000000000"
+          }
+        ],
+        [
+          {
+            "int": 101
+          },
+          {
+            "float": "5625.0",
+            "bits": "40b5f90000000000"
+          }
+        ],
+        [
+          {
+            "int": 102
+          },
+          {
+            "float": "3098.0",
+            "bits": "40a8340000000000"
+          }
+        ],
+        [
+          {
+            "int": 103
+          },
+          {
+            "float": "400.0",
+            "bits": "4079000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "discount_totals",
+      "expected_rows": [
+        [
+          975.0,
+          162.5,
+          6
+        ]
+      ],
+      "note": "250+0+625+0+100+0 = 975; 975/6 = 162.5",
+      "sql": "SELECT SUM(COALESCE(d.discount_cents, d.discount_rate * l.qty * l.unit_price_cents, 0)) AS total_discount, AVG(COALESCE(d.discount_cents, d.discount_rate * l.qty * l.unit_price_cents, 0)) AS avg_discount, COUNT(*) FROM order_lines l LEFT JOIN discounts d ON l.order_id = d.order_id AND l.line_no = d.line_no",
+      "reference_sql": "SELECT SUM(COALESCE(d.discount_cents, d.discount_rate * l.qty * l.unit_price_cents, 0)) AS total_discount, AVG(COALESCE(d.discount_cents, d.discount_rate * l.qty * l.unit_price_cents, 0)) AS avg_discount, COUNT(*) FROM order_lines l LEFT JOIN discounts d ON l.order_id = d.order_id AND l.line_no = d.line_no",
+      "status": "ok",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "float": "975.0",
+            "bits": "408e780000000000"
+          },
+          {
+            "float": "162.5",
+            "bits": "4064500000000000"
+          },
+          {
+            "int": 6
+          }
+        ]
+      ]
+    },
+    {
+      "id": "discount_share_percent_by_sku",
+      "expected_rows": [
+        [
+          "A",
+          10.0
+        ],
+        [
+          "B",
+          3.33667000333667
+        ],
+        [
+          "C",
+          0.0
+        ]
+      ],
+      "note": "A 875*100/8750; B 100*100/2997 = 10000.0/2997 in binary64; C 0*100/1600",
+      "sql": "SELECT l.sku, SUM(COALESCE(d.discount_cents, d.discount_rate * l.qty * l.unit_price_cents, 0)) * 100 / SUM(l.qty * l.unit_price_cents) AS discount_pct FROM order_lines l LEFT JOIN discounts d ON l.order_id = d.order_id AND l.line_no = d.line_no GROUP BY l.sku ORDER BY l.sku",
+      "reference_sql": "SELECT l.sku, SUM(COALESCE(d.discount_cents, d.discount_rate * l.qty * l.unit_price_cents, 0)) * 100 / SUM(l.qty * l.unit_price_cents) AS discount_pct FROM order_lines l LEFT JOIN discounts d ON l.order_id = d.order_id AND l.line_no = d.line_no GROUP BY l.sku ORDER BY l.sku",
+      "status": "ok",
+      "types": [
+        "VARCHAR",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "text": "A"
+          },
+          {
+            "float": "10.0",
+            "bits": "4024000000000000"
+          }
+        ],
+        [
+          {
+            "text": "B"
+          },
+          {
+            "float": "3.33667000333667",
+            "bits": "400ab1800aef006d"
+          }
+        ],
+        [
+          {
+            "text": "C"
+          },
+          {
+            "float": "0.0",
+            "bits": "0000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "fixed_discount_lines",
+      "expected_rows": [
+        [
+          2
+        ]
+      ],
+      "note": "only 100/1 and 102/2 select discount_cents, which compares equal in DOUBLE",
+      "sql": "SELECT COUNT(*) FROM order_lines l LEFT JOIN discounts d ON l.order_id = d.order_id AND l.line_no = d.line_no WHERE COALESCE(d.discount_cents, d.discount_rate * l.qty * l.unit_price_cents, 0) = d.discount_cents",
+      "reference_sql": "SELECT COUNT(*) FROM order_lines l LEFT JOIN discounts d ON l.order_id = d.order_id AND l.line_no = d.line_no WHERE COALESCE(d.discount_cents, d.discount_rate * l.qty * l.unit_price_cents, 0) = d.discount_cents",
+      "status": "ok",
+      "types": [
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "int": 2
+          }
+        ]
+      ]
+    },
+    {
+      "id": "discounted_line_rate",
+      "expected_rows": [
+        [
+          0.5
+        ]
+      ],
+      "note": "3 of 6 lines have a positive discount",
+      "sql": "SELECT AVG(CASE WHEN COALESCE(d.discount_cents, d.discount_rate * l.qty * l.unit_price_cents, 0) > 0 THEN 1 ELSE CAST(0 AS REAL) END) AS discounted_rate FROM order_lines l LEFT JOIN discounts d ON l.order_id = d.order_id AND l.line_no = d.line_no",
+      "reference_sql": "SELECT AVG(CASE WHEN COALESCE(d.discount_cents, d.discount_rate * l.qty * l.unit_price_cents, 0) > 0 THEN 1 ELSE CAST(0 AS DOUBLE) END) AS discounted_rate FROM order_lines l LEFT JOIN discounts d ON l.order_id = d.order_id AND l.line_no = d.line_no",
+      "status": "ok",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "float": "0.5",
+            "bits": "3fe0000000000000"
+          }
+        ]
+      ]
+    }
+  ]
+}

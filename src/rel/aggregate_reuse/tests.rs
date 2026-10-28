@@ -268,13 +268,12 @@ fn different_rows_expressions_float_distinct_and_fallible_shapes_decline() {
         SQL.replace("d.k=f.k", "CAST(d.k AS REAL)=f.k"),
         SQL.replace("d.k IN", "d.k NOT IN"),
     ] {
-        let prepared = prepare(&sql, &fixture.tables, &Options::default());
-        if let Err(error) = &prepared {
-            assert!(sql.contains("AS REAL"), "{sql}: {error}");
-            assert_eq!(error, "expected numeric type, got Float");
-            continue;
-        }
-        let root = *prepared.unwrap().relational.unwrap();
+        // Float SUM now binds, but still cannot use exact-SUM reuse. Exercise
+        // its ordinary ordered execution alongside the other declined shapes.
+        let root = *prepare(&sql, &fixture.tables, &Options::default())
+            .unwrap()
+            .relational
+            .unwrap();
         assert!(
             candidate(&root, &Budget::new(64 << 20), &Options::default()).is_none(),
             "{sql}"

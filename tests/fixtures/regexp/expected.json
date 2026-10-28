@@ -1,0 +1,2740 @@
+{
+ "duckdb_version": "1.5.6",
+ "postgresql_version": "17.11",
+ "cases_sha256": "dc73ecc04229058cd75c71c1565bac43b1f8a9ca7b9eb93655187c40e0340818",
+ "files": {
+  "r": "e1a7f3d90bba4015924a189380643a31c81bd4af037612880913ff08562b389c",
+  "empty": "cf3e6b280ab1c9f61032f783a001d9da72f2a25e587a9f0cc6f8fbfb35df9297",
+  "texts": "519718c1a3162e726990a893f8cb353bade922c5b86b108de05dee4ccf35f9d8"
+ },
+ "unexpected_reference_outcomes": [],
+ "cases": [
+  {
+   "id": "matches_table",
+   "ordered": true,
+   "pg_sql": "SELECT id, regexp_like(s, 'b') AS m FROM r ORDER BY id",
+   "sql": "SELECT id, regexp_matches(s, 'b') AS m FROM r ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "m"
+   ],
+   "types": [
+    "BIGINT",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     1,
+     true
+    ],
+    [
+     2,
+     true
+    ],
+    [
+     3,
+     null
+    ],
+    [
+     4,
+     false
+    ],
+    [
+     5,
+     true
+    ],
+    [
+     6,
+     false
+    ],
+    [
+     7,
+     false
+    ],
+    [
+     8,
+     false
+    ],
+    [
+     9,
+     false
+    ],
+    [
+     10,
+     true
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "1",
+      "t"
+     ],
+     [
+      "2",
+      "t"
+     ],
+     [
+      "3",
+      null
+     ],
+     [
+      "4",
+      "f"
+     ],
+     [
+      "5",
+      "t"
+     ],
+     [
+      "6",
+      "f"
+     ],
+     [
+      "7",
+      "f"
+     ],
+     [
+      "8",
+      "f"
+     ],
+     [
+      "9",
+      "f"
+     ],
+     [
+      "10",
+      "t"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "like_table",
+   "ordered": true,
+   "duckdb_sql": "SELECT id, regexp_matches(s, '^[a-z]+$') AS m FROM r WHERE id <> 6 ORDER BY id",
+   "sql": "SELECT id, regexp_like(s, '^[a-z]+$') AS m FROM r WHERE id <> 6 ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "m"
+   ],
+   "types": [
+    "BIGINT",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     1,
+     true
+    ],
+    [
+     2,
+     false
+    ],
+    [
+     3,
+     null
+    ],
+    [
+     4,
+     false
+    ],
+    [
+     5,
+     false
+    ],
+    [
+     7,
+     false
+    ],
+    [
+     8,
+     false
+    ],
+    [
+     9,
+     true
+    ],
+    [
+     10,
+     false
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "1",
+      "t"
+     ],
+     [
+      "2",
+      "f"
+     ],
+     [
+      "3",
+      null
+     ],
+     [
+      "4",
+      "f"
+     ],
+     [
+      "5",
+      "f"
+     ],
+     [
+      "7",
+      "f"
+     ],
+     [
+      "8",
+      "f"
+     ],
+     [
+      "9",
+      "t"
+     ],
+     [
+      "10",
+      "f"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "like_ci_operator",
+   "ordered": true,
+   "duckdb_sql": "SELECT id, regexp_matches(s, 'ABC', 'i') AS a, NOT regexp_matches(s, 'B', 'i') AS b FROM r WHERE id <> 6 ORDER BY id",
+   "sql": "SELECT id, s ~* 'ABC' AS a, s !~* 'B' AS b FROM r WHERE id <> 6 ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "a",
+    "b"
+   ],
+   "types": [
+    "BIGINT",
+    "BOOLEAN",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     1,
+     true,
+     false
+    ],
+    [
+     2,
+     false,
+     false
+    ],
+    [
+     3,
+     null,
+     null
+    ],
+    [
+     4,
+     false,
+     true
+    ],
+    [
+     5,
+     true,
+     false
+    ],
+    [
+     7,
+     false,
+     true
+    ],
+    [
+     8,
+     false,
+     true
+    ],
+    [
+     9,
+     false,
+     true
+    ],
+    [
+     10,
+     false,
+     false
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "1",
+      "t",
+      "f"
+     ],
+     [
+      "2",
+      "f",
+      "f"
+     ],
+     [
+      "3",
+      null,
+      null
+     ],
+     [
+      "4",
+      "f",
+      "t"
+     ],
+     [
+      "5",
+      "t",
+      "f"
+     ],
+     [
+      "7",
+      "f",
+      "t"
+     ],
+     [
+      "8",
+      "f",
+      "t"
+     ],
+     [
+      "9",
+      "f",
+      "t"
+     ],
+     [
+      "10",
+      "f",
+      "f"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "like_ci_literals",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_matches('abc', 'B', 'i') AS a, regexp_matches(NULL, 'a', 'i') AS b, regexp_matches('A', NULL, 'i') AS c",
+   "sql": "SELECT 'abc' ~* 'B' AS a, NULL ~* 'a' AS b, 'A' ~* NULL AS c;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b",
+    "c"
+   ],
+   "types": [
+    "BOOLEAN",
+    "BOOLEAN",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     true,
+     null,
+     null
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "t",
+      null,
+      null
+     ]
+    ]
+   }
+  },
+  {
+   "id": "tilde_refused",
+   "ordered": true,
+   "assay_error": "unsupported: ~ ",
+   "difference": "DuckDB's ~ is a full match (regexp_full_match, false here); PostgreSQL's ~ is a partial match (true).",
+   "sql": "SELECT 'abc' ~ 'b' AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     false
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "t"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "not_tilde_refused",
+   "ordered": true,
+   "assay_error": "unsupported: !~ ",
+   "difference": "DuckDB's !~ negates a full match (true here); PostgreSQL's negates a partial match (false).",
+   "sql": "SELECT 'abc' !~ 'b' AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     true
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "f"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "full_match",
+   "ordered": true,
+   "pg": "skip",
+   "sql": "SELECT id, regexp_full_match(s, 'a.*') AS a, regexp_full_match(s, 'b|abc') AS b FROM r ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "a",
+    "b"
+   ],
+   "types": [
+    "BIGINT",
+    "BOOLEAN",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     1,
+     true,
+     true
+    ],
+    [
+     2,
+     false,
+     false
+    ],
+    [
+     3,
+     null,
+     null
+    ],
+    [
+     4,
+     false,
+     false
+    ],
+    [
+     5,
+     false,
+     false
+    ],
+    [
+     6,
+     false,
+     false
+    ],
+    [
+     7,
+     false,
+     false
+    ],
+    [
+     8,
+     false,
+     false
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     10,
+     true,
+     false
+    ]
+   ]
+  },
+  {
+   "id": "full_match_options",
+   "ordered": true,
+   "pg": "skip",
+   "sql": "SELECT regexp_full_match('ABC', 'abc', 'i') AS a, regexp_full_match('ABC', 'abc') AS b, regexp_full_match('', '') AS c, regexp_full_match('ab', 'a|ab') AS d;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b",
+    "c",
+    "d"
+   ],
+   "types": [
+    "BOOLEAN",
+    "BOOLEAN",
+    "BOOLEAN",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     true,
+     false,
+     true,
+     true
+    ]
+   ]
+  },
+  {
+   "id": "similar_to",
+   "ordered": true,
+   "sql": "SELECT id, s SIMILAR TO '(a|x)[a-z]*' AS a, s NOT SIMILAR TO '[a-c]+' AS b FROM r WHERE id <> 6 ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "a",
+    "b"
+   ],
+   "types": [
+    "BIGINT",
+    "BOOLEAN",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     1,
+     true,
+     false
+    ],
+    [
+     2,
+     false,
+     true
+    ],
+    [
+     3,
+     null,
+     null
+    ],
+    [
+     4,
+     false,
+     true
+    ],
+    [
+     5,
+     false,
+     true
+    ],
+    [
+     7,
+     false,
+     true
+    ],
+    [
+     8,
+     false,
+     true
+    ],
+    [
+     9,
+     true,
+     false
+    ],
+    [
+     10,
+     false,
+     true
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "1",
+      "t",
+      "f"
+     ],
+     [
+      "2",
+      "f",
+      "t"
+     ],
+     [
+      "3",
+      null,
+      null
+     ],
+     [
+      "4",
+      "f",
+      "t"
+     ],
+     [
+      "5",
+      "f",
+      "t"
+     ],
+     [
+      "7",
+      "f",
+      "t"
+     ],
+     [
+      "8",
+      "f",
+      "t"
+     ],
+     [
+      "9",
+      "t",
+      "f"
+     ],
+     [
+      "10",
+      "f",
+      "t"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "similar_to_brackets",
+   "ordered": true,
+   "sql": "SELECT '3.14' SIMILAR TO '[0-9.]+' AS a, 'ab' SIMILAR TO '(ab|cd)*' AS b, 'abcd' SIMILAR TO '(ab|cd)*' AS c, 'a' SIMILAR TO 'a{2}' AS d, NULL SIMILAR TO 'a' AS e;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b",
+    "c",
+    "d",
+    "e"
+   ],
+   "types": [
+    "BOOLEAN",
+    "BOOLEAN",
+    "BOOLEAN",
+    "BOOLEAN",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     true,
+     true,
+     true,
+     false,
+     null
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "t",
+      "t",
+      "t",
+      "f",
+      null
+     ]
+    ]
+   }
+  },
+  {
+   "id": "similar_percent_refused",
+   "ordered": true,
+   "assay_error": "unsupported: SIMILAR TO pattern with %",
+   "difference": "PostgreSQL's SIMILAR TO uses SQL wildcards (% matches any text: true); DuckDB's SIMILAR TO is a regular expression where % is a literal (false).",
+   "sql": "SELECT 'abc' SIMILAR TO 'a%' AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     false
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "t"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "similar_dot_refused",
+   "ordered": true,
+   "assay_error": "unsupported: SIMILAR TO pattern with .",
+   "difference": "In PostgreSQL's SIMILAR TO . is a literal (false here); DuckDB treats it as any character (true).",
+   "sql": "SELECT 'abc' SIMILAR TO 'a.c' AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     true
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "f"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "similar_escape_refused",
+   "ordered": true,
+   "assay_error": "unsupported: SIMILAR TO ... ESCAPE",
+   "difference": "DuckDB does not implement a custom SIMILAR TO escape (error); PostgreSQL answers false.",
+   "sql": "SELECT 'abc' SIMILAR TO 'a' ESCAPE '#' AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Not implemented Error: Custom escape in SIMILAR TO",
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "f"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_first_and_global",
+   "ordered": true,
+   "sql": "SELECT id, regexp_replace(s, '[ab]', '-') AS first, regexp_replace(s, '[ab]', '-', 'g') AS every FROM r ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "first",
+    "every"
+   ],
+   "types": [
+    "BIGINT",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "-bc",
+     "--c"
+    ],
+    [
+     2,
+     "-\nb",
+     "-\n-"
+    ],
+    [
+     3,
+     null,
+     null
+    ],
+    [
+     4,
+     "",
+     ""
+    ],
+    [
+     5,
+     "A-Cabc",
+     "A-C--c"
+    ],
+    [
+     6,
+     "él-n",
+     "él-n"
+    ],
+    [
+     7,
+     "Clerk#000000951",
+     "Clerk#000000951"
+    ],
+    [
+     8,
+     "x  y   z",
+     "x  y   z"
+    ],
+    [
+     9,
+     "-aa",
+     "---"
+    ],
+    [
+     10,
+     "-b|c",
+     "--|c"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "1",
+      "-bc",
+      "--c"
+     ],
+     [
+      "2",
+      "-\nb",
+      "-\n-"
+     ],
+     [
+      "3",
+      null,
+      null
+     ],
+     [
+      "4",
+      "",
+      ""
+     ],
+     [
+      "5",
+      "A-Cabc",
+      "A-C--c"
+     ],
+     [
+      "6",
+      "él-n",
+      "él-n"
+     ],
+     [
+      "7",
+      "Clerk#000000951",
+      "Clerk#000000951"
+     ],
+     [
+      "8",
+      "x  y   z",
+      "x  y   z"
+     ],
+     [
+      "9",
+      "-aa",
+      "---"
+     ],
+     [
+      "10",
+      "-b|c",
+      "--|c"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_group_refs",
+   "ordered": true,
+   "sql": "SELECT regexp_replace('Clerk#000000951', '^Clerk#0*([0-9]+)$', 'clerk \\1') AS a, regexp_replace('john smith', '([a-z]+) ([a-z]+)', '\\2, \\1') AS b, regexp_replace('a1b22c333', '([0-9]+)', '<\\1>', 'g') AS c, regexp_replace('abc', '(b)', '\\\\') AS d;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b",
+    "c",
+    "d"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "clerk 951",
+     "smith, john",
+     "a<1>b<22>c<333>",
+     "a\\c"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "clerk 951",
+      "smith, john",
+      "a<1>b<22>c<333>",
+      "a\\c"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_nulls",
+   "ordered": true,
+   "sql": "SELECT regexp_replace(NULL, 'a', 'b') AS a, regexp_replace('a', NULL, 'b') AS b, regexp_replace('a', 'a', NULL) AS c, regexp_replace('a', 'a', 'b', NULL) AS d;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b",
+    "c",
+    "d"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     null,
+     null,
+     null,
+     null
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      null,
+      null,
+      null,
+      null
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_whitespace",
+   "ordered": true,
+   "sql": "SELECT id, regexp_replace(s, '\\s+', ' ', 'g') AS squeezed, regexp_replace(s, '\\s*', '', 'g') AS stripped FROM r WHERE id IN (1, 3, 4, 8) ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "squeezed",
+    "stripped"
+   ],
+   "types": [
+    "BIGINT",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "abc",
+     "abc"
+    ],
+    [
+     3,
+     null,
+     null
+    ],
+    [
+     4,
+     "",
+     ""
+    ],
+    [
+     8,
+     "x y z",
+     "xyz"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "1",
+      "abc",
+      "abc"
+     ],
+     [
+      "3",
+      null,
+      null
+     ],
+     [
+      "4",
+      "",
+      ""
+     ],
+     [
+      "8",
+      "x y z",
+      "xyz"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_extent_refused",
+   "ordered": true,
+   "assay_error": "unsupported: regular expression match extent",
+   "difference": "DuckDB (RE2) takes the first alternative that matches ('a': Xbcd); PostgreSQL takes the longest match ('ab': Xcd).",
+   "sql": "SELECT regexp_replace('abcd', 'a|ab', 'X') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "Xbcd"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "Xcd"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_extent_agrees",
+   "ordered": true,
+   "sql": "SELECT regexp_replace('abcd', 'ab|a', 'X') AS a, regexp_replace('xaaay', 'a+', '-') AS b, regexp_replace('abab', 'ab', '', 'g') AS c;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b",
+    "c"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "Xcd",
+     "x-y",
+     ""
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "Xcd",
+      "x-y",
+      ""
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_empty_after_refused",
+   "ordered": true,
+   "assay_error": "unsupported: global regular expression replacement of an empty match",
+   "difference": "After replacing 'b', DuckDB skips the empty match that follows (-a-c-); PostgreSQL replaces it (-a--c-).",
+   "sql": "SELECT regexp_replace('abc', 'b*', '-', 'g') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "-a-c-"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "-a--c-"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_empty_matches_agree",
+   "ordered": true,
+   "sql": "SELECT regexp_replace('abc', 'b*', '', 'g') AS a, regexp_replace('abc', 'x*', '-', 'g') AS b, regexp_replace('abc', '', '-', 'g') AS c, regexp_replace('', 'x*', '-') AS d;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b",
+    "c",
+    "d"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "ac",
+     "-a-b-c-",
+     "-a-b-c-",
+     "-"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "ac",
+      "-a-b-c-",
+      "-a-b-c-",
+      "-"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_zero_reference_refused",
+   "ordered": true,
+   "assay_error": "unsupported: regular expression replacement",
+   "difference": "\\0 is the whole match in DuckDB (a[b]c) and a literal \\0 in PostgreSQL (a[\\0]c).",
+   "sql": "SELECT regexp_replace('abc', 'b', '[\\0]') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "a[b]c"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "a[\\0]c"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_ampersand_refused",
+   "ordered": true,
+   "assay_error": "unsupported: regular expression replacement",
+   "difference": "\\& is the whole match in PostgreSQL (a[b]c); DuckDB rejects the rewrite and returns the text unchanged (abc).",
+   "sql": "SELECT regexp_replace('abc', 'b', '[\\&]') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "abc"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "a[b]c"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_missing_group_refused",
+   "ordered": true,
+   "assay_error": "unsupported: replacement refers to a group",
+   "difference": "DuckDB returns the text unchanged (abc); PostgreSQL inserts an empty string (a[]c).",
+   "sql": "SELECT regexp_replace('abc', '(b)', '[\\2]') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "abc"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "a[]c"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_alternation_reference_refused",
+   "ordered": true,
+   "assay_error": "unsupported: group reference",
+   "difference": "DuckDB's submatches follow the first matching alternative ([a|bc]); PostgreSQL's prefer the longest earlier group ([ab|c]).",
+   "sql": "SELECT regexp_replace('abc', '(a|ab)(bc|c)', '[\\1|\\2]') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "[a|bc]"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "[ab|c]"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_repeated_group_refused",
+   "ordered": true,
+   "assay_error": "unsupported: group reference",
+   "difference": "For a repeated group DuckDB reports one long iteration (<ab|ab>cab); PostgreSQL splits it into more iterations (<ab|b>cab).",
+   "sql": "SELECT regexp_replace('abcab', '([ab]+)+', '<\\1>') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "<ab>cab"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "<b>cab"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_lazy_refused",
+   "ordered": true,
+   "assay_error": "unsupported: lazy quantifier in REGEXP_REPLACE",
+   "difference": "PostgreSQL makes the whole match non-greedy when the first quantifier is lazy (x[a|]aay); DuckDB applies laziness per quantifier (x[a|aa]y).",
+   "sql": "SELECT regexp_replace('xaaay', '(a+?)(a*)', '[\\1|\\2]') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "x[a|aa]y"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "x[a|]aay"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_options",
+   "ordered": true,
+   "sql": "SELECT regexp_replace('AbA', 'a', '-', 'gi') AS a, regexp_replace('AbA', 'a', '-', 'ig') AS b, regexp_replace('AbA', 'a', '-', 'ic') AS c, regexp_replace('AbA', 'a', '-', 'ci') AS d, regexp_replace('AbA', 'a', '-', 'cg') AS e, regexp_replace('AbA', 'a', '-', '') AS f;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "-b-",
+     "-b-",
+     "AbA",
+     "-bA",
+     "AbA",
+     "AbA"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "-b-",
+      "-b-",
+      "AbA",
+      "-bA",
+      "AbA",
+      "AbA"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_dotall_option",
+   "ordered": true,
+   "sql": "SELECT id, regexp_replace(s, 'a.b', '-', 's') AS a, regexp_replace(s, 'a.b', '-', 'gs') AS b FROM r WHERE id IN (1, 2) ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "a",
+    "b"
+   ],
+   "types": [
+    "BIGINT",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "abc",
+     "abc"
+    ],
+    [
+     2,
+     "-",
+     "-"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "1",
+      "abc",
+      "abc"
+     ],
+     [
+      "2",
+      "-",
+      "-"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_newline_option_refused",
+   "ordered": true,
+   "assay_error": "unsupported: regular expression option n",
+   "difference": "PostgreSQL's n makes ^ and $ match at newlines; DuckDB's n leaves them at the text ends.",
+   "sql": "SELECT regexp_replace(s, '^b', '-', 'n') AS m FROM r WHERE id = 2;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "a\nb"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "a\n-"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "replace_option_both_reject",
+   "ordered": true,
+   "assay_error": "invalid regular expression option",
+   "sql": "SELECT regexp_replace('ab', 'a', 'x', 'z') AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Invalid Input Error: Unrecognized Regex option z",
+   "postgresql": {
+    "status": "error",
+    "message": "invalid regular expression option: \"z\""
+   }
+  },
+  {
+   "id": "matches_options",
+   "ordered": true,
+   "pg": "skip",
+   "sql": "SELECT regexp_matches('A', 'a', 'i') AS a, regexp_matches('A', 'a', 'ic') AS b, regexp_matches('A', 'a', 'ci') AS c, regexp_matches('A', 'a', '') AS d;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b",
+    "c",
+    "d"
+   ],
+   "types": [
+    "BOOLEAN",
+    "BOOLEAN",
+    "BOOLEAN",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     true,
+     false,
+     true,
+     false
+    ]
+   ]
+  },
+  {
+   "id": "matches_global_option_error",
+   "ordered": true,
+   "pg": "skip",
+   "assay_error": "invalid regular expression option",
+   "sql": "SELECT regexp_matches('a', 'a', 'g') AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Invalid Input Error: Option 'g' (global replace) is only valid for regexp_replace"
+  },
+  {
+   "id": "like_global_option_error",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_matches('a', 'a', 'g') AS m",
+   "assay_error": "invalid regular expression option",
+   "sql": "SELECT regexp_like('a', 'a', 'g') AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Invalid Input Error: Option 'g' (global replace) is only valid for regexp_replace",
+   "postgresql": {
+    "status": "error",
+    "message": "regexp_like() does not support the \"global\" option"
+   }
+  },
+  {
+   "id": "matches_null_options_error",
+   "ordered": true,
+   "pg": "skip",
+   "assay_error": "REGEXP_MATCHES options must not be NULL",
+   "sql": "SELECT regexp_matches('a', 'a', NULL) AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Invalid Input Error: Regex options field must not be NULL"
+  },
+  {
+   "id": "like_null_flags",
+   "ordered": true,
+   "duckdb_sql": "SELECT CAST(NULL AS BOOLEAN) AS m",
+   "sql": "SELECT regexp_like('a', 'a', NULL) AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     null
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      null
+     ]
+    ]
+   }
+  },
+  {
+   "id": "newline_dot_matches_follows_duckdb",
+   "ordered": true,
+   "pg": "skip",
+   "sql": "SELECT id, regexp_matches(s, 'a.b') AS m FROM r WHERE id IN (1, 2) ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "m"
+   ],
+   "types": [
+    "BIGINT",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     1,
+     false
+    ],
+    [
+     2,
+     false
+    ]
+   ]
+  },
+  {
+   "id": "newline_dot_like_refused",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_matches(s, 'a.b') AS m FROM r WHERE id = 2",
+   "assay_error": "unsupported: regular expression '.' on text containing a newline",
+   "difference": "DuckDB's . does not match a newline (false); PostgreSQL's does (true).",
+   "sql": "SELECT regexp_like(s, 'a.b') AS m FROM r WHERE id = 2;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     false
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "t"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "newline_dot_s_option",
+   "ordered": true,
+   "duckdb_sql": "SELECT id, regexp_matches(s, 'a.b', 's') AS m FROM r WHERE id IN (1, 2) ORDER BY id",
+   "sql": "SELECT id, regexp_like(s, 'a.b', 's') AS m FROM r WHERE id IN (1, 2) ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "m"
+   ],
+   "types": [
+    "BIGINT",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     1,
+     false
+    ],
+    [
+     2,
+     true
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "1",
+      "f"
+     ],
+     [
+      "2",
+      "t"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "class_non_ascii_refused",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_matches('é', '\\w') AS m",
+   "assay_error": "unsupported: regular expression character class on non-ASCII text",
+   "difference": "DuckDB's \\w is ASCII (false for é); PostgreSQL's follows the database locale (true in en_US.UTF-8).",
+   "sql": "SELECT regexp_like('é', '\\w') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     false
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "t"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "class_non_ascii_matches_follows_duckdb",
+   "ordered": true,
+   "pg": "skip",
+   "sql": "SELECT regexp_matches('é', '\\w') AS a, regexp_matches('é1', '\\d') AS b, regexp_full_match('é', '[[:alpha:]]') AS c, regexp_extract('é_1', '\\w+') AS d;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b",
+    "c",
+    "d"
+   ],
+   "types": [
+    "BOOLEAN",
+    "BOOLEAN",
+    "BOOLEAN",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     false,
+     true,
+     false,
+     "_1"
+    ]
+   ]
+  },
+  {
+   "id": "vertical_tab_refused",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_matches(u, 'a\\sb') AS m FROM r WHERE id = 10",
+   "assay_error": "unsupported: regular expression \\s on a vertical tab",
+   "difference": "DuckDB's \\s excludes vertical tab (false); PostgreSQL's includes it (true).",
+   "sql": "SELECT regexp_like(u, 'a\\sb') AS m FROM r WHERE id = 10;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     false
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "t"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "case_fold_refused",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_matches('K', 'k', 'i') AS m",
+   "assay_error": "unsupported: case-insensitive regular expression on non-ASCII text",
+   "difference": "DuckDB folds the Kelvin sign to k (true); PostgreSQL does not (false).",
+   "sql": "SELECT 'K' ~* 'k' AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     true
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "f"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "case_fold_refused_duckdb_function",
+   "ordered": true,
+   "pg": "skip",
+   "assay_error": "unsupported: case-insensitive regular expression on non-ASCII text",
+   "difference": "Case folding outside ASCII depends on each engine's Unicode tables; Assay refuses it in every function. DuckDB folds the long s to s (true).",
+   "sql": "SELECT regexp_matches('ſ', 'S', 'i') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     true
+    ]
+   ]
+  },
+  {
+   "id": "case_fold_pattern_refused",
+   "ordered": true,
+   "pg": "skip",
+   "assay_error": "unsupported: case-insensitive regular expression with non-ASCII",
+   "difference": "A non-ASCII letter in a case-insensitive pattern depends on Unicode case tables. DuckDB answers true.",
+   "sql": "SELECT regexp_matches('É', 'é', 'i') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     true
+    ]
+   ]
+  },
+  {
+   "id": "word_boundary_refused",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_matches('a b', 'a\\b') AS m",
+   "assay_error": "unsupported: regular expression escape \\b",
+   "difference": "\\b is a word boundary in DuckDB (true) and a backspace in PostgreSQL (false).",
+   "sql": "SELECT regexp_like('a b', 'a\\b') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     true
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "f"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "lookahead_refused",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_matches('ab', 'a(?=b)') AS m",
+   "assay_error": "unsupported: regular expression group (?",
+   "difference": "DuckDB (RE2) rejects lookahead; PostgreSQL answers true.",
+   "sql": "SELECT regexp_like('ab', 'a(?=b)') AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Invalid Input Error: invalid perl operator: (?=",
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "t"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "backreference_refused",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_matches('aa', '(a)\\1') AS m",
+   "assay_error": "unsupported: regular expression escape \\1",
+   "difference": "DuckDB (RE2) rejects backreferences; PostgreSQL answers true.",
+   "sql": "SELECT regexp_like('aa', '(a)\\1') AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Invalid Input Error: invalid escape sequence: \\1",
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "t"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "repetition_above_255_refused",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_matches('a', 'a{256}') AS m",
+   "assay_error": "unsupported: regular expression repetition count above 255",
+   "difference": "DuckDB allows counts up to 1000 (false here); PostgreSQL rejects counts above 255.",
+   "sql": "SELECT regexp_like('a', 'a{256}') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     false
+    ]
+   ],
+   "postgresql": {
+    "status": "error",
+    "message": "invalid regular expression: invalid repetition count(s)"
+   }
+  },
+  {
+   "id": "unicode_property_refused",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_matches('a', '\\pL') AS m",
+   "assay_error": "unsupported: regular expression escape \\p",
+   "difference": "DuckDB supports Unicode properties (true); PostgreSQL rejects \\p.",
+   "sql": "SELECT regexp_like('a', '\\pL') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     true
+    ]
+   ],
+   "postgresql": {
+    "status": "error",
+    "message": "invalid regular expression: invalid escape \\ sequence"
+   }
+  },
+  {
+   "id": "inline_flags_refused",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_matches('A', '(?i)a') AS m",
+   "assay_error": "unsupported: regular expression group (?",
+   "difference": "Both engines accept a leading (?i) here, but their embedded-option syntax differs elsewhere; Assay takes options only from the options argument. Both answer true.",
+   "sql": "SELECT regexp_like('A', '(?i)a') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     true
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "t"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "director_refused",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_matches('a', '***=a') AS m",
+   "assay_error": "unsupported: regular expression director ***",
+   "difference": "PostgreSQL treats ***= as a literal-pattern director (true); DuckDB rejects the pattern.",
+   "sql": "SELECT regexp_like('a', '***=a') AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Invalid Input Error: no argument for repetition operator: *",
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "t"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "unbalanced_pattern_error",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_matches('a', '(a') AS m",
+   "assay_error": "invalid regular expression",
+   "sql": "SELECT regexp_like('a', '(a') AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Invalid Input Error: missing ): (a",
+   "postgresql": {
+    "status": "error",
+    "message": "invalid regular expression: parentheses () not balanced"
+   }
+  },
+  {
+   "id": "double_quantifier_error",
+   "ordered": true,
+   "pg": "skip",
+   "assay_error": "invalid regular expression",
+   "sql": "SELECT regexp_matches('a', 'a**') AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Invalid Input Error: bad repetition operator: **"
+  },
+  {
+   "id": "reversed_range_error",
+   "ordered": true,
+   "pg": "skip",
+   "assay_error": "invalid regular expression",
+   "sql": "SELECT regexp_matches('a', '[z-a]') AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Invalid Input Error: invalid character class range: z-a"
+  },
+  {
+   "id": "trailing_backslash_error",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_replace('a', 'a\\', 'b') AS m",
+   "assay_error": "invalid regular expression",
+   "sql": "SELECT regexp_replace('a', 'a\\', 'b') AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Invalid Input Error: trailing \\",
+   "postgresql": {
+    "status": "error",
+    "message": "invalid regular expression: invalid escape \\ sequence"
+   }
+  },
+  {
+   "id": "unknown_escape_error",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_matches('a', '\\k') AS m",
+   "assay_error": "invalid regular expression",
+   "sql": "SELECT regexp_like('a', '\\k') AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Invalid Input Error: invalid escape sequence: \\k",
+   "postgresql": {
+    "status": "error",
+    "message": "invalid regular expression: invalid escape \\ sequence"
+   }
+  },
+  {
+   "id": "column_patterns",
+   "ordered": true,
+   "pg": "skip",
+   "sql": "SELECT id, regexp_matches(s, p) AS m FROM r WHERE id IN (1, 2, 4, 6, 7, 8, 9, 10) ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "m"
+   ],
+   "types": [
+    "BIGINT",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     1,
+     true
+    ],
+    [
+     2,
+     false
+    ],
+    [
+     4,
+     true
+    ],
+    [
+     6,
+     true
+    ],
+    [
+     7,
+     true
+    ],
+    [
+     8,
+     true
+    ],
+    [
+     9,
+     null
+    ],
+    [
+     10,
+     true
+    ]
+   ]
+  },
+  {
+   "id": "column_patterns_like",
+   "ordered": true,
+   "duckdb_sql": "SELECT id, regexp_matches(s, p) AS m FROM r WHERE id IN (1, 4, 7, 8, 9, 10) ORDER BY id",
+   "sql": "SELECT id, regexp_like(s, p) AS m FROM r WHERE id IN (1, 4, 7, 8, 9, 10) ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "m"
+   ],
+   "types": [
+    "BIGINT",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     1,
+     true
+    ],
+    [
+     4,
+     true
+    ],
+    [
+     7,
+     true
+    ],
+    [
+     8,
+     true
+    ],
+    [
+     9,
+     null
+    ],
+    [
+     10,
+     true
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "1",
+      "t"
+     ],
+     [
+      "4",
+      "t"
+     ],
+     [
+      "7",
+      "t"
+     ],
+     [
+      "8",
+      "t"
+     ],
+     [
+      "9",
+      null
+     ],
+     [
+      "10",
+      "t"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "column_pattern_newline_refused",
+   "ordered": true,
+   "duckdb_sql": "SELECT id, regexp_matches(s, p) AS m FROM r WHERE id IN (1, 2) ORDER BY id",
+   "assay_error": "unsupported: regular expression '.' on text containing a newline",
+   "difference": "Row 2 matches 'a.b' against a newline: DuckDB false, PostgreSQL true.",
+   "sql": "SELECT id, regexp_like(s, p) AS m FROM r WHERE id IN (1, 2) ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "m"
+   ],
+   "types": [
+    "BIGINT",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     1,
+     true
+    ],
+    [
+     2,
+     false
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "1",
+      "t"
+     ],
+     [
+      "2",
+      "t"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "column_pattern_invalid_error",
+   "ordered": true,
+   "pg": "skip",
+   "assay_error": "invalid regular expression",
+   "sql": "SELECT id, regexp_matches(s, p) AS m FROM r WHERE id IN (1, 5) ORDER BY id;",
+   "reference_outcome": "error",
+   "reference_error": "Invalid Input Error: missing ): (?:"
+  },
+  {
+   "id": "column_replacement",
+   "ordered": true,
+   "sql": "SELECT id, regexp_replace(s, '(b)', rep) AS m FROM r WHERE id IN (1, 10) ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "m"
+   ],
+   "types": [
+    "BIGINT",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "a<b>c"
+    ],
+    [
+     10,
+     "a<>|c"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "1",
+      "a<b>c"
+     ],
+     [
+      "10",
+      "a<>|c"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "column_replacement_missing_group_refused",
+   "ordered": true,
+   "assay_error": "unsupported: replacement refers to a group",
+   "difference": "Row 1's replacement \\1 refers to a group 'b' lacks: DuckDB keeps abc, PostgreSQL gives a<>c.",
+   "sql": "SELECT id, regexp_replace(s, 'b', rep) AS m FROM r WHERE id IN (1, 10) ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "m"
+   ],
+   "types": [
+    "BIGINT",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "abc"
+    ],
+    [
+     10,
+     "a<>|c"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "1",
+      "a<>c"
+     ],
+     [
+      "10",
+      "a<>|c"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "extract_groups",
+   "ordered": true,
+   "pg": "skip",
+   "sql": "SELECT id, regexp_extract(s, '([a-z])([a-z])') AS whole, regexp_extract(s, '([a-z])([a-z])', 2) AS second, regexp_extract(s, '([a-z])([a-z])', 3) AS missing, regexp_extract(s, 'B', 0, 'i') AS ci FROM r WHERE id <> 6 ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "whole",
+    "second",
+    "missing",
+    "ci"
+   ],
+   "types": [
+    "BIGINT",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "ab",
+     "b",
+     "",
+     "b"
+    ],
+    [
+     2,
+     "",
+     "",
+     "",
+     "b"
+    ],
+    [
+     3,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     4,
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     5,
+     "ab",
+     "b",
+     "",
+     "b"
+    ],
+    [
+     7,
+     "le",
+     "e",
+     "",
+     ""
+    ],
+    [
+     8,
+     "",
+     "",
+     "",
+     ""
+    ],
+    [
+     9,
+     "aa",
+     "a",
+     "",
+     ""
+    ],
+    [
+     10,
+     "ab",
+     "b",
+     "",
+     "b"
+    ]
+   ]
+  },
+  {
+   "id": "extract_clerk_number",
+   "ordered": true,
+   "pg": "skip",
+   "sql": "SELECT regexp_extract('Clerk#000000951', '#0*([0-9]+)', 1) AS n, regexp_extract('none', '[0-9]+') AS empty, regexp_extract(NULL, 'a') AS null_text, regexp_extract('é', '.') AS first_code_point;",
+   "reference_outcome": "rows",
+   "columns": [
+    "n",
+    "empty",
+    "null_text",
+    "first_code_point"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "951",
+     "",
+     null,
+     "e"
+    ]
+   ]
+  },
+  {
+   "id": "extract_alternation_follows_duckdb",
+   "ordered": true,
+   "pg": "skip",
+   "sql": "SELECT regexp_extract('abcd', 'a|ab') AS a, regexp_extract('xaaay', '(a+?)(a*)', 2) AS b, regexp_extract('abcab', '([ab]+)+', 1) AS c;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b",
+    "c"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "a",
+     "aa",
+     "ab"
+    ]
+   ]
+  },
+  {
+   "id": "extract_group_range_error",
+   "ordered": true,
+   "pg": "skip",
+   "assay_error": "REGEXP_EXTRACT group must be",
+   "sql": "SELECT regexp_extract('a', 'a', 10) AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Invalid Input Error: Group index must be between 0 and 9!"
+  },
+  {
+   "id": "extract_group_column_error",
+   "ordered": true,
+   "pg": "skip",
+   "assay_error": "REGEXP_EXTRACT group must be",
+   "sql": "SELECT regexp_extract(s, '(a)', g) AS m FROM r;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: No function matches the given name and argument types 'regexp_extract(VARCHAR, STRING_LITERAL, BIGINT)'. You might need to add explicit type casts."
+  },
+  {
+   "id": "options_column_error",
+   "ordered": true,
+   "pg": "skip",
+   "assay_error": "REGEXP_MATCHES options must be a string literal",
+   "sql": "SELECT regexp_matches(s, 'a', u) AS m FROM r;",
+   "reference_outcome": "error",
+   "reference_error": "Invalid Input Error: Regex options field must be a constant"
+  },
+  {
+   "id": "regexp_extract_all_refused",
+   "ordered": true,
+   "pg": "skip",
+   "assay_error": "unsupported: REGEXP_EXTRACT_ALL",
+   "difference": "Returns a LIST in DuckDB; Assay has no LIST type.",
+   "sql": "SELECT regexp_extract_all('a1b2', '[0-9]') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "VARCHAR[]"
+   ],
+   "rows": [
+    [
+     [
+      "1",
+      "2"
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "regexp_split_refused",
+   "ordered": true,
+   "duckdb_sql": "SELECT regexp_split_to_array('a,b', ',') AS m",
+   "assay_error": "unsupported: REGEXP_SPLIT_TO_ARRAY",
+   "difference": "Returns a LIST/array in both engines; Assay has no LIST type.",
+   "sql": "SELECT regexp_split_to_array('a,b', ',') AS m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "VARCHAR[]"
+   ],
+   "rows": [
+    [
+     [
+      "a",
+      "b"
+     ]
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "{a,b}"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "regexp_count_refused",
+   "ordered": true,
+   "assay_error": "unsupported: REGEXP_COUNT",
+   "difference": "PostgreSQL 15+ only (2); DuckDB has no REGEXP_COUNT and no equivalent without LIST.",
+   "sql": "SELECT regexp_count('abcabc', 'b') AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Catalog Error: Scalar Function with name regexp_count does not exist!",
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "2"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "regexp_substr_refused",
+   "ordered": true,
+   "assay_error": "unsupported: REGEXP_SUBSTR",
+   "difference": "PostgreSQL 15+ only, NULL when nothing matches; DuckDB's nearest function REGEXP_EXTRACT returns ''.",
+   "sql": "SELECT regexp_substr('abc123', '[0-9]+') AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Catalog Error: Scalar Function with name regexp_substr does not exist!",
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "123"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "regexp_match_refused",
+   "ordered": true,
+   "assay_error": "unsupported: REGEXP_MATCH",
+   "difference": "PostgreSQL returns a text array; DuckDB has no REGEXP_MATCH; Assay has no array type.",
+   "sql": "SELECT regexp_match('abc', 'b') AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Catalog Error: Scalar Function with name regexp_match does not exist!",
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "{b}"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "group_counts",
+   "ordered": true,
+   "pg_sql": "SELECT g, count(*) AS n, sum(CASE WHEN regexp_like(u, '[0-9]') THEN 1 ELSE 0 END) AS digits FROM r WHERE id <> 10 GROUP BY g ORDER BY g",
+   "sql": "SELECT g, count(*) AS n, sum(CASE WHEN regexp_matches(u, '[0-9]') THEN 1 ELSE 0 END) AS digits FROM r WHERE id <> 10 GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "n",
+    "digits"
+   ],
+   "types": [
+    "BIGINT",
+    "BIGINT",
+    "HUGEINT"
+   ],
+   "rows": [
+    [
+     1,
+     4,
+     1
+    ],
+    [
+     2,
+     3,
+     1
+    ],
+    [
+     3,
+     2,
+     1
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "1",
+      "4",
+      "1"
+     ],
+     [
+      "2",
+      "3",
+      "1"
+     ],
+     [
+      "3",
+      "2",
+      "1"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "group_by_extracted_word",
+   "ordered": true,
+   "pg": "skip",
+   "sql": "SELECT regexp_extract(u, '^([a-z]+)', 1) AS w, count(*) AS n FROM r GROUP BY w ORDER BY w;",
+   "reference_outcome": "rows",
+   "columns": [
+    "w",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "",
+     2
+    ],
+    [
+     "a",
+     2
+    ],
+    [
+     "aaa",
+     1
+    ],
+    [
+     "ab",
+     1
+    ],
+    [
+     "foo",
+     1
+    ],
+    [
+     "special",
+     1
+    ],
+    [
+     "x",
+     1
+    ],
+    [
+     null,
+     1
+    ]
+   ]
+  },
+  {
+   "id": "where_filter",
+   "ordered": true,
+   "duckdb_sql": "SELECT id FROM r WHERE regexp_matches(u, '^[a-z]+ [a-z]+$') ORDER BY id",
+   "sql": "SELECT id FROM r WHERE regexp_like(u, '^[a-z]+ [a-z]+$') ORDER BY id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     6
+    ],
+    [
+     7
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "6"
+     ],
+     [
+      "7"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "empty_input",
+   "ordered": true,
+   "pg": "skip",
+   "sql": "SELECT regexp_matches(s, 'a') AS m, regexp_replace(s, 'a', 'b') AS r2 FROM empty;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m",
+    "r2"
+   ],
+   "types": [
+    "BOOLEAN",
+    "VARCHAR"
+   ],
+   "rows": []
+  },
+  {
+   "id": "empty_input_count",
+   "ordered": true,
+   "duckdb_sql": "SELECT count(*) AS n FROM empty WHERE regexp_matches(s, 'a')",
+   "sql": "SELECT count(*) AS n FROM empty WHERE regexp_like(s, 'a');",
+   "reference_outcome": "rows",
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     0
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "0"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "single_row_literal",
+   "ordered": true,
+   "sql": "SELECT regexp_replace('Clerk#000000951', '^Clerk#0*', '') AS n;",
+   "reference_outcome": "rows",
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "951"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "951"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "unicode_code_points",
+   "ordered": true,
+   "sql": "SELECT regexp_replace('😀x', '.', '-', 'g') AS a, regexp_replace('é', '́', '!') AS b, regexp_replace('éa', '[^a]', '?', 'g') AS c;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b",
+    "c"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "--",
+     "e!",
+     "?a"
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "--",
+      "e!",
+      "?a"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "distinct_and_order",
+   "ordered": true,
+   "pg_sql": "SELECT DISTINCT regexp_like(u, 'a') AS m FROM r WHERE u IS NOT NULL AND id <> 10 ORDER BY m",
+   "sql": "SELECT DISTINCT regexp_matches(u, 'a') AS m FROM r WHERE u IS NOT NULL AND id <> 10 ORDER BY m;",
+   "reference_outcome": "rows",
+   "columns": [
+    "m"
+   ],
+   "types": [
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     false
+    ],
+    [
+     true
+    ]
+   ],
+   "postgresql": {
+    "status": "rows",
+    "rows": [
+     [
+      "f"
+     ],
+     [
+      "t"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "text_argument_required",
+   "ordered": true,
+   "assay_error": "unsupported: REGEXP_LIKE requires TEXT arguments",
+   "duckdb_sql": "SELECT regexp_matches(1, 'a') AS m",
+   "difference": "Both references reject an INTEGER text argument (no matching function); Assay gives its typed TEXT-argument refusal, as for its other string functions.",
+   "sql": "SELECT regexp_like(1, 'a') AS m;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: No function matches the given name and argument types 'regexp_matches(INTEGER_LITERAL, STRING_LITERAL)'. You might need to add explicit type casts.",
+   "postgresql": {
+    "status": "error",
+    "message": "function regexp_like(integer, unknown) does not exist"
+   }
+  }
+ ]
+}

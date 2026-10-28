@@ -24,7 +24,9 @@ fn ints(b: &RecordBatch) -> Vec<Option<i64>> {
         .iter()
         .collect()
 }
-fn contract(run: &mut impl FnMut(&str) -> Result<RecordBatch, String>) {
+fn contract(run: &mut impl FnMut(&str) -> Result<RecordBatch, assaydb::Error>) {
+    // Restore the retained pre-dialect public numeric contract assertions
+    // (03d483cb), per the owner's October 21 compatibility decision.
     for (sql, expected) in [
         ("SELECT CAST('  +123e+5junk' AS INTEGER)", 123),
         ("SELECT CAST('-123.99' AS INTEGER)", -123),
@@ -112,7 +114,8 @@ fn contract(run: &mut impl FnMut(&str) -> Result<RecordBatch, String>) {
             "SELECT CAST(-9223372036854775808 AS TEXT)",
             "-9223372036854775808",
         ),
-        ("SELECT CAST(FALSE AS TEXT)", "0"),
+        ("SELECT CAST(FALSE AS TEXT)", "false"),
+        ("SELECT CAST(1.25 AS TEXT)", "1.25"),
         ("SELECT CAST('  é ' AS TEXT)", "  é "),
         ("SELECT CAST(X'6100c3a9' AS TEXT)", "a\0é"),
     ] {
@@ -134,12 +137,19 @@ fn contract(run: &mut impl FnMut(&str) -> Result<RecordBatch, String>) {
         assert_eq!(b.column(0).data_type(), &ty);
         assert!(b.column(0).is_null(0));
     }
-    for sql in [
-        "SELECT CAST(1.25 AS TEXT)",
-        "SELECT CAST(CAST('1.25' AS REAL) AS TEXT)",
-        "SELECT CAST(X'ff' AS TEXT)",
-        "SELECT CAST('1e999' AS REAL)",
-    ] {
+    // REAL-to-TEXT was refused until Oct 16; DuckDB 1.5.6 answers 1.25 for
+    // CAST(CAST('1.25' AS DOUBLE) AS VARCHAR) (and for REAL), now matched.
+    assert_eq!(
+        run("SELECT CAST(CAST('1.25' AS REAL) AS TEXT)")
+            .unwrap()
+            .column(0)
+            .as_any()
+            .downcast_ref::<StringArray>()
+            .unwrap()
+            .value(0),
+        "1.25"
+    );
+    for sql in ["SELECT CAST(X'ff' AS TEXT)", "SELECT CAST('1e999' AS REAL)"] {
         assert!(run(sql).unwrap_err().contains("unsupported:"), "{sql}");
     }
     assert!(
@@ -186,12 +196,19 @@ fn scalar_casts_query_and_session_preserve_types_masks_and_errors() {
                     .map(|e| e.batch.clone())
             });
             let mut s = Session::new(&std::env::temp_dir(), options, Limits::default()).unwrap();
-            contract(
-                &mut |sql| match s.execute_sql(sql).map_err(|error| error.to_string())? {
-                    Output::Query { execution, .. } => Ok(execution.batch.clone()),
-                    _ => Err("expected query".into()),
-                },
-            );
+            contract(&mut |sql| match s.execute_sql(sql).map_err(|error| {
+                // Shared data errors are ordinary execution errors, never
+                // refusals; compare the message with the direct path.
+                if error.message.starts_with("invalid input syntax")
+                    || error.message.ends_with("out of range")
+                {
+                    assert_eq!(error.kind, "engine", "{sql}: {error}");
+                }
+                error.message
+            })? {
+                Output::Query { execution, .. } => Ok(execution.batch.clone()),
+                _ => Err("expected query".into()),
+            });
         }
     }
 }

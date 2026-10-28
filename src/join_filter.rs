@@ -50,7 +50,8 @@ impl<'a> JoinFilter<'a> {
             columns,
             len: li.len(),
         };
-        Ok((self.expr.eval(&input, budget)?, bytes))
+        // Every consumer keeps only TRUE pairs (ON semantics).
+        Ok((self.expr.eval_filter(&input, budget)?, bytes))
     }
 }
 

@@ -1,0 +1,3061 @@
+{
+  "duckdb_version": "1.5.6",
+  "pyarrow_version": "25.0.1",
+  "files": {
+    "float32": {
+      "sha256": "a2c86c806418def402fe0c25889dc230e7907398727a1ba7f823a470fa0359b6",
+      "bytes": 1514,
+      "arrow_schema": "id: int64\nv: float",
+      "read_schema": "id: int64\nv: float",
+      "row_groups": 3
+    },
+    "int8": {
+      "sha256": "3eabef76ecdbb3014a166bdf8cd63f00c219d5c003482f9d6d906222fc91b996",
+      "bytes": 1523,
+      "arrow_schema": "id: int64\nv: int8",
+      "read_schema": "id: int64\nv: int8",
+      "row_groups": 3
+    },
+    "int16": {
+      "sha256": "9025042a13e134a0b4c700cc5dfbf6768a7580ac64b22c6d2096a4aa1e6c7621",
+      "bytes": 1523,
+      "arrow_schema": "id: int64\nv: int16",
+      "read_schema": "id: int64\nv: int16",
+      "row_groups": 3
+    },
+    "int32": {
+      "sha256": "f7ea5d9b9200c82ed35a4b72687885c91be191d04271004d7907355129937258",
+      "bytes": 1514,
+      "arrow_schema": "id: int64\nv: int32",
+      "read_schema": "id: int64\nv: int32",
+      "row_groups": 3
+    },
+    "uint8": {
+      "sha256": "5a546a74296b4da7194e053b894339238589b230f92c66d2346a10a3842ab665",
+      "bytes": 1444,
+      "arrow_schema": "id: int64\nv: uint8",
+      "read_schema": "id: int64\nv: uint8",
+      "row_groups": 3
+    },
+    "uint16": {
+      "sha256": "67dbaff34bad07717f5ef1a1094679932b1cb102465eacbf9bc28f390c145c13",
+      "bytes": 1444,
+      "arrow_schema": "id: int64\nv: uint16",
+      "read_schema": "id: int64\nv: uint16",
+      "row_groups": 3
+    },
+    "uint32": {
+      "sha256": "a5ff936ae659b15c8b246cf2d27abc16abdbfd72a2b6f26762222d2a391b087d",
+      "bytes": 1444,
+      "arrow_schema": "id: int64\nv: uint32",
+      "read_schema": "id: int64\nv: uint32",
+      "row_groups": 3
+    },
+    "uint64": {
+      "sha256": "62e97fa822c472f791e8f729263b3bfe5ba93ec89d5f93462a6723282efa966c",
+      "bytes": 1514,
+      "arrow_schema": "id: int64\nv: uint64",
+      "read_schema": "id: int64\nv: uint64",
+      "row_groups": 3
+    },
+    "large_utf8": {
+      "sha256": "908e490fe9acfc12a955bb159c9a48b9cdf2e5085dce432bc8008464ef5faea6",
+      "bytes": 1565,
+      "arrow_schema": "id: int64\nv: large_string",
+      "read_schema": "id: int64\nv: large_string",
+      "row_groups": 3
+    },
+    "utf8_view": {
+      "sha256": "c11b6e85fa72e0e691b5ca5f12c41f13271d55071ea73adbf6b0df56f559cc47",
+      "bytes": 1565,
+      "arrow_schema": "id: int64\nv: string_view",
+      "read_schema": "id: int64\nv: string_view",
+      "row_groups": 3
+    },
+    "dict_utf8": {
+      "sha256": "f183768cb1abe6d4fb61e37b9538cc6260d7f0f3a90b363f482c3ecd0fabfc7d",
+      "bytes": 1554,
+      "arrow_schema": "id: int64\nv: dictionary<values=string, indices=int16, ordered=0>",
+      "read_schema": "id: int64\nv: dictionary<values=string, indices=int16, ordered=0>",
+      "row_groups": 3
+    },
+    "dict_large_utf8": {
+      "sha256": "f4b67ce45c6d84a1e45ec18d4ca30269230f0ff9725a4b48b86ecbb414f740a6",
+      "bytes": 1554,
+      "arrow_schema": "id: int64\nv: dictionary<values=large_string, indices=int32, ordered=0>",
+      "read_schema": "id: int64\nv: dictionary<values=string, indices=int32, ordered=0>",
+      "row_groups": 3
+    },
+    "date64": {
+      "sha256": "4b888aecfb026928781c56f809d3862b1240364bb3baca8d2de52e7acb0ff66e",
+      "bytes": 1520,
+      "arrow_schema": "id: int64\nv: date64[ms]",
+      "read_schema": "id: int64\nv: date32[day]",
+      "row_groups": 3
+    },
+    "float_special": {
+      "sha256": "28fd2a05a9271630f16cddd04a43a953aea2fa70ed87512fbe29929094ad6254",
+      "bytes": 1519,
+      "arrow_schema": "id: int64\nv: float",
+      "read_schema": "id: int64\nv: float",
+      "row_groups": 3
+    },
+    "uint64_overflow": {
+      "sha256": "a0d5f374657377825a5ede502bfa2b75df66b5fca92c0bf9546a53c93ff55110",
+      "bytes": 1114,
+      "arrow_schema": "id: int64\nv: uint64",
+      "read_schema": "id: int64\nv: uint64",
+      "row_groups": 2
+    },
+    "timestamp_us": {
+      "sha256": "96dc8d2c2e91a9a40cf8320ab177efa7191abb0b56d60ea32ef7d0cf8b18dbae",
+      "bytes": 487,
+      "arrow_schema": "v: timestamp[us]",
+      "read_schema": "v: timestamp[us]",
+      "row_groups": 1
+    },
+    "date64_exact_ms": {
+      "sha256": "cade8d5e366415c8c0e55ad5b63fcf799af75d789dbdaacd7f0a4080e00ceadd",
+      "bytes": 686,
+      "arrow_schema": "v: int64",
+      "read_schema": "v: int64",
+      "row_groups": 2
+    },
+    "date64_non_midnight": {
+      "sha256": "1e1c970de17ce70149deb5a096b5e2618fa893ab7fee0cd12e4302ac252f5e99",
+      "bytes": 686,
+      "arrow_schema": "v: int64",
+      "read_schema": "v: int64",
+      "row_groups": 2
+    },
+    "date64_out_of_range": {
+      "sha256": "8aeeeb22f38a19c131c79e97f70d24b0f36250289dd5677e3c0420b58d96e765",
+      "bytes": 468,
+      "arrow_schema": "v: int64",
+      "read_schema": "v: int64",
+      "row_groups": 1
+    },
+    "sales": {
+      "sha256": "af98444ee2f45693e2d5d1f9f292a7791570daa5fb49db7c67609cbcf076f563",
+      "bytes": 7806,
+      "arrow_schema": "sale_id: int64\nregion: dictionary<values=string, indices=int16, ordered=0>\ncategory: dictionary<values=string, indices=int32, ordered=0>\nprice: float\nquantity: int16\nstore_id: uint32\nnotes: large_string",
+      "read_schema": "sale_id: int64\nregion: dictionary<values=string, indices=int16, ordered=0>\ncategory: dictionary<values=string, indices=int32, ordered=0>\nprice: float\nquantity: int16\nstore_id: uint32\nnotes: large_string",
+      "row_groups": 6
+    },
+    "stores": {
+      "sha256": "12832a8608ec3bb1c19287bc7e6467debc4f02d75ec35648d77c1776c0a3a1d9",
+      "bytes": 977,
+      "arrow_schema": "store_id: uint16\nstore_name: string",
+      "read_schema": "store_id: uint16\nstore_name: string",
+      "row_groups": 2
+    },
+    "uint32_high": {
+      "sha256": "4101b36a2146b159dedf189a924ac21f461ec74fe58b69271b616449be920b7f",
+      "bytes": 1853,
+      "arrow_schema": "k: uint32\namount: int64",
+      "read_schema": "k: uint32\namount: int64",
+      "row_groups": 4
+    },
+    "uint32_lookup": {
+      "sha256": "3e57d49fc88a9d7fea824de6f7c2afe72b338c9dd2ae565389b5be1c5c05d668",
+      "bytes": 930,
+      "arrow_schema": "k: uint32\nlabel: string",
+      "read_schema": "k: uint32\nlabel: string",
+      "row_groups": 2
+    }
+  },
+  "cases": [
+    {
+      "id": "float32_values",
+      "sql": "SELECT id, v FROM float32 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "FLOAT"
+      ],
+      "rows": [
+        [
+          0,
+          {
+            "f64_bits": 4609434218613702656
+          }
+        ],
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          {
+            "f64_bits": 9223372036854775808
+          }
+        ],
+        [
+          3,
+          {
+            "f64_bits": 4612248968380809216
+          }
+        ],
+        [
+          4,
+          {
+            "f64_bits": 4609434218613702656
+          }
+        ],
+        [
+          5,
+          {
+            "f64_bits": 13844065254536904704
+          }
+        ],
+        [
+          6,
+          {
+            "f64_bits": 4593671619917905920
+          }
+        ],
+        [
+          7,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "float32_aggregate",
+      "sql": "SELECT SUM(CAST(v AS DOUBLE)), AVG(CAST(v AS DOUBLE)), MIN(v), MAX(v), COUNT(v), COUNT(*) FROM float32",
+      "ordered": true,
+      "columns": [
+        "sum(CAST(v AS \"DOUBLE\"))",
+        "avg(CAST(v AS \"DOUBLE\"))",
+        "min(v)",
+        "max(v)",
+        "count(v)",
+        "count_star()"
+      ],
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "FLOAT",
+        "FLOAT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "f64_bits": 13836465430165716992
+          },
+          {
+            "f64_bits": 13824924956120580096
+          },
+          {
+            "f64_bits": 13844065254536904704
+          },
+          {
+            "f64_bits": 4612248968380809216
+          },
+          6,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "float32_groups",
+      "sql": "SELECT v, COUNT(*) FROM float32 GROUP BY v",
+      "ordered": false,
+      "columns": [
+        "v",
+        "count_star()"
+      ],
+      "types": [
+        "FLOAT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "f64_bits": 4609434218613702656
+          },
+          2
+        ],
+        [
+          null,
+          2
+        ],
+        [
+          {
+            "f64_bits": 9223372036854775808
+          },
+          1
+        ],
+        [
+          {
+            "f64_bits": 4612248968380809216
+          },
+          1
+        ],
+        [
+          {
+            "f64_bits": 13844065254536904704
+          },
+          1
+        ],
+        [
+          {
+            "f64_bits": 4593671619917905920
+          },
+          1
+        ]
+      ]
+    },
+    {
+      "id": "float32_filter",
+      "sql": "SELECT id, v FROM float32 WHERE v >= 0 AND v < 3 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "FLOAT"
+      ],
+      "rows": [
+        [
+          0,
+          {
+            "f64_bits": 4609434218613702656
+          }
+        ],
+        [
+          2,
+          {
+            "f64_bits": 9223372036854775808
+          }
+        ],
+        [
+          3,
+          {
+            "f64_bits": 4612248968380809216
+          }
+        ],
+        [
+          4,
+          {
+            "f64_bits": 4609434218613702656
+          }
+        ],
+        [
+          6,
+          {
+            "f64_bits": 4593671619917905920
+          }
+        ]
+      ]
+    },
+    {
+      "id": "int8_values",
+      "sql": "SELECT id, v FROM int8 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "TINYINT"
+      ],
+      "rows": [
+        [
+          0,
+          -128
+        ],
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          127
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          -1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "int8_aggregate",
+      "sql": "SELECT SUM(v), AVG(v), MIN(v), MAX(v), COUNT(v), COUNT(*) FROM int8",
+      "ordered": true,
+      "columns": [
+        "sum(v)",
+        "avg(v)",
+        "min(v)",
+        "max(v)",
+        "count(v)",
+        "count_star()"
+      ],
+      "types": [
+        "HUGEINT",
+        "DOUBLE",
+        "TINYINT",
+        "TINYINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          0,
+          {
+            "f64_bits": 0
+          },
+          -128,
+          127,
+          6,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "int8_groups",
+      "sql": "SELECT v, COUNT(*) FROM int8 GROUP BY v",
+      "ordered": false,
+      "columns": [
+        "v",
+        "count_star()"
+      ],
+      "types": [
+        "TINYINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          2
+        ],
+        [
+          -128,
+          1
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          127,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "int8_filter",
+      "sql": "SELECT id, v FROM int8 WHERE v >= 0 AND v < 3 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "TINYINT"
+      ],
+      "rows": [
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          6,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "int16_values",
+      "sql": "SELECT id, v FROM int16 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "SMALLINT"
+      ],
+      "rows": [
+        [
+          0,
+          -32768
+        ],
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          32767
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          -1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "int16_aggregate",
+      "sql": "SELECT SUM(v), AVG(v), MIN(v), MAX(v), COUNT(v), COUNT(*) FROM int16",
+      "ordered": true,
+      "columns": [
+        "sum(v)",
+        "avg(v)",
+        "min(v)",
+        "max(v)",
+        "count(v)",
+        "count_star()"
+      ],
+      "types": [
+        "HUGEINT",
+        "DOUBLE",
+        "SMALLINT",
+        "SMALLINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          0,
+          {
+            "f64_bits": 0
+          },
+          -32768,
+          32767,
+          6,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "int16_groups",
+      "sql": "SELECT v, COUNT(*) FROM int16 GROUP BY v",
+      "ordered": false,
+      "columns": [
+        "v",
+        "count_star()"
+      ],
+      "types": [
+        "SMALLINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          -32768,
+          1
+        ],
+        [
+          null,
+          2
+        ],
+        [
+          32767,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          -1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "int16_filter",
+      "sql": "SELECT id, v FROM int16 WHERE v >= 0 AND v < 3 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "SMALLINT"
+      ],
+      "rows": [
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          6,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "int32_values",
+      "sql": "SELECT id, v FROM int32 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "INTEGER"
+      ],
+      "rows": [
+        [
+          0,
+          -2147483648
+        ],
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          2147483647
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          -1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "int32_aggregate",
+      "sql": "SELECT SUM(v), AVG(v), MIN(v), MAX(v), COUNT(v), COUNT(*) FROM int32",
+      "ordered": true,
+      "columns": [
+        "sum(v)",
+        "avg(v)",
+        "min(v)",
+        "max(v)",
+        "count(v)",
+        "count_star()"
+      ],
+      "types": [
+        "HUGEINT",
+        "DOUBLE",
+        "INTEGER",
+        "INTEGER",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          0,
+          {
+            "f64_bits": 0
+          },
+          -2147483648,
+          2147483647,
+          6,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "int32_groups",
+      "sql": "SELECT v, COUNT(*) FROM int32 GROUP BY v",
+      "ordered": false,
+      "columns": [
+        "v",
+        "count_star()"
+      ],
+      "types": [
+        "INTEGER",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          -2147483648,
+          1
+        ],
+        [
+          null,
+          2
+        ],
+        [
+          2147483647,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          -1,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "int32_filter",
+      "sql": "SELECT id, v FROM int32 WHERE v >= 0 AND v < 3 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "INTEGER"
+      ],
+      "rows": [
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          6,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "uint8_values",
+      "sql": "SELECT id, v FROM uint8 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "UTINYINT"
+      ],
+      "rows": [
+        [
+          0,
+          255
+        ],
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "uint8_aggregate",
+      "sql": "SELECT SUM(v), AVG(v), MIN(v), MAX(v), COUNT(v), COUNT(*) FROM uint8",
+      "ordered": true,
+      "columns": [
+        "sum(v)",
+        "avg(v)",
+        "min(v)",
+        "max(v)",
+        "count(v)",
+        "count_star()"
+      ],
+      "types": [
+        "HUGEINT",
+        "DOUBLE",
+        "UTINYINT",
+        "UTINYINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          260,
+          {
+            "f64_bits": 4631295441804896939
+          },
+          0,
+          255,
+          6,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "uint8_groups",
+      "sql": "SELECT v, COUNT(*) FROM uint8 GROUP BY v",
+      "ordered": false,
+      "columns": [
+        "v",
+        "count_star()"
+      ],
+      "types": [
+        "UTINYINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          255,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "uint8_filter",
+      "sql": "SELECT id, v FROM uint8 WHERE v >= 0 AND v < 3 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "UTINYINT"
+      ],
+      "rows": [
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "uint16_values",
+      "sql": "SELECT id, v FROM uint16 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "USMALLINT"
+      ],
+      "rows": [
+        [
+          0,
+          65535
+        ],
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "uint16_aggregate",
+      "sql": "SELECT SUM(v), AVG(v), MIN(v), MAX(v), COUNT(v), COUNT(*) FROM uint16",
+      "ordered": true,
+      "columns": [
+        "sum(v)",
+        "avg(v)",
+        "min(v)",
+        "max(v)",
+        "count(v)",
+        "count_star()"
+      ],
+      "types": [
+        "HUGEINT",
+        "DOUBLE",
+        "USMALLINT",
+        "USMALLINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          65540,
+          {
+            "f64_bits": 4667230780335499947
+          },
+          0,
+          65535,
+          6,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "uint16_groups",
+      "sql": "SELECT v, COUNT(*) FROM uint16 GROUP BY v",
+      "ordered": false,
+      "columns": [
+        "v",
+        "count_star()"
+      ],
+      "types": [
+        "USMALLINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          65535,
+          1
+        ],
+        [
+          null,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "uint16_filter",
+      "sql": "SELECT id, v FROM uint16 WHERE v >= 0 AND v < 3 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "USMALLINT"
+      ],
+      "rows": [
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "uint32_values",
+      "sql": "SELECT id, v FROM uint32 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "UINTEGER"
+      ],
+      "rows": [
+        [
+          0,
+          4294967295
+        ],
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "uint32_aggregate",
+      "sql": "SELECT SUM(v), AVG(v), MIN(v), MAX(v), COUNT(v), COUNT(*) FROM uint32",
+      "ordered": true,
+      "columns": [
+        "sum(v)",
+        "avg(v)",
+        "min(v)",
+        "max(v)",
+        "count(v)",
+        "count_star()"
+      ],
+      "types": [
+        "HUGEINT",
+        "DOUBLE",
+        "UINTEGER",
+        "UINTEGER",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          4294967300,
+          {
+            "f64_bits": 4739288007875144363
+          },
+          0,
+          4294967295,
+          6,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "uint32_groups",
+      "sql": "SELECT v, COUNT(*) FROM uint32 GROUP BY v",
+      "ordered": false,
+      "columns": [
+        "v",
+        "count_star()"
+      ],
+      "types": [
+        "UINTEGER",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          4294967295,
+          1
+        ],
+        [
+          null,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "uint32_filter",
+      "sql": "SELECT id, v FROM uint32 WHERE v >= 0 AND v < 3 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "UINTEGER"
+      ],
+      "rows": [
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "uint64_values",
+      "sql": "SELECT id, v FROM uint64 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "UBIGINT"
+      ],
+      "rows": [
+        [
+          0,
+          9223372036854775807
+        ],
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "uint64_aggregate",
+      "sql": "SELECT SUM(v), AVG(v), MIN(v), MAX(v), COUNT(v), COUNT(*) FROM uint64",
+      "ordered": true,
+      "columns": [
+        "sum(v)",
+        "avg(v)",
+        "min(v)",
+        "max(v)",
+        "count(v)",
+        "count_star()"
+      ],
+      "types": [
+        "HUGEINT",
+        "DOUBLE",
+        "UBIGINT",
+        "UBIGINT",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          9223372036854775812,
+          {
+            "f64_bits": 4878899596318037333
+          },
+          0,
+          9223372036854775807,
+          6,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "uint64_groups",
+      "sql": "SELECT v, COUNT(*) FROM uint64 GROUP BY v",
+      "ordered": false,
+      "columns": [
+        "v",
+        "count_star()"
+      ],
+      "types": [
+        "UBIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          9223372036854775807,
+          1
+        ],
+        [
+          null,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "uint64_filter",
+      "sql": "SELECT id, v FROM uint64 WHERE v >= 0 AND v < 3 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "UBIGINT"
+      ],
+      "rows": [
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "large_utf8_values",
+      "sql": "SELECT id, v FROM large_utf8 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          0,
+          "East"
+        ],
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          "猫"
+        ],
+        [
+          3,
+          ""
+        ],
+        [
+          4,
+          "East"
+        ],
+        [
+          5,
+          "a long note beyond inline view storage"
+        ],
+        [
+          6,
+          "West"
+        ],
+        [
+          7,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "large_utf8_aggregate",
+      "sql": "SELECT MIN(v), MAX(v), COUNT(v), COUNT(*) FROM large_utf8",
+      "ordered": true,
+      "columns": [
+        "min(v)",
+        "max(v)",
+        "count(v)",
+        "count_star()"
+      ],
+      "types": [
+        "VARCHAR",
+        "VARCHAR",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "",
+          "猫",
+          6,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "large_utf8_groups",
+      "sql": "SELECT v, COUNT(*) FROM large_utf8 GROUP BY v",
+      "ordered": false,
+      "columns": [
+        "v",
+        "count_star()"
+      ],
+      "types": [
+        "VARCHAR",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "East",
+          2
+        ],
+        [
+          null,
+          2
+        ],
+        [
+          "猫",
+          1
+        ],
+        [
+          "",
+          1
+        ],
+        [
+          "a long note beyond inline view storage",
+          1
+        ],
+        [
+          "West",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "large_utf8_filter",
+      "sql": "SELECT id, v FROM large_utf8 WHERE v = 'East' ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          0,
+          "East"
+        ],
+        [
+          4,
+          "East"
+        ]
+      ]
+    },
+    {
+      "id": "utf8_view_values",
+      "sql": "SELECT id, v FROM utf8_view ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          0,
+          "East"
+        ],
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          "猫"
+        ],
+        [
+          3,
+          ""
+        ],
+        [
+          4,
+          "East"
+        ],
+        [
+          5,
+          "a long note beyond inline view storage"
+        ],
+        [
+          6,
+          "West"
+        ],
+        [
+          7,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "utf8_view_aggregate",
+      "sql": "SELECT MIN(v), MAX(v), COUNT(v), COUNT(*) FROM utf8_view",
+      "ordered": true,
+      "columns": [
+        "min(v)",
+        "max(v)",
+        "count(v)",
+        "count_star()"
+      ],
+      "types": [
+        "VARCHAR",
+        "VARCHAR",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "",
+          "猫",
+          6,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "utf8_view_groups",
+      "sql": "SELECT v, COUNT(*) FROM utf8_view GROUP BY v",
+      "ordered": false,
+      "columns": [
+        "v",
+        "count_star()"
+      ],
+      "types": [
+        "VARCHAR",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "East",
+          2
+        ],
+        [
+          null,
+          2
+        ],
+        [
+          "猫",
+          1
+        ],
+        [
+          "",
+          1
+        ],
+        [
+          "a long note beyond inline view storage",
+          1
+        ],
+        [
+          "West",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "utf8_view_filter",
+      "sql": "SELECT id, v FROM utf8_view WHERE v = 'East' ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          0,
+          "East"
+        ],
+        [
+          4,
+          "East"
+        ]
+      ]
+    },
+    {
+      "id": "dict_utf8_values",
+      "sql": "SELECT id, v FROM dict_utf8 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          0,
+          "East"
+        ],
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          "猫"
+        ],
+        [
+          3,
+          ""
+        ],
+        [
+          4,
+          "East"
+        ],
+        [
+          5,
+          "West"
+        ],
+        [
+          6,
+          "West"
+        ],
+        [
+          7,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "dict_utf8_aggregate",
+      "sql": "SELECT MIN(v), MAX(v), COUNT(v), COUNT(*) FROM dict_utf8",
+      "ordered": true,
+      "columns": [
+        "min(v)",
+        "max(v)",
+        "count(v)",
+        "count_star()"
+      ],
+      "types": [
+        "VARCHAR",
+        "VARCHAR",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "",
+          "猫",
+          6,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "dict_utf8_groups",
+      "sql": "SELECT v, COUNT(*) FROM dict_utf8 GROUP BY v",
+      "ordered": false,
+      "columns": [
+        "v",
+        "count_star()"
+      ],
+      "types": [
+        "VARCHAR",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "East",
+          2
+        ],
+        [
+          null,
+          2
+        ],
+        [
+          "猫",
+          1
+        ],
+        [
+          "",
+          1
+        ],
+        [
+          "West",
+          2
+        ]
+      ]
+    },
+    {
+      "id": "dict_utf8_filter",
+      "sql": "SELECT id, v FROM dict_utf8 WHERE v = 'East' ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          0,
+          "East"
+        ],
+        [
+          4,
+          "East"
+        ]
+      ]
+    },
+    {
+      "id": "dict_large_utf8_values",
+      "sql": "SELECT id, v FROM dict_large_utf8 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          0,
+          "East"
+        ],
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          "猫"
+        ],
+        [
+          3,
+          ""
+        ],
+        [
+          4,
+          "East"
+        ],
+        [
+          5,
+          "West"
+        ],
+        [
+          6,
+          "West"
+        ],
+        [
+          7,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "dict_large_utf8_aggregate",
+      "sql": "SELECT MIN(v), MAX(v), COUNT(v), COUNT(*) FROM dict_large_utf8",
+      "ordered": true,
+      "columns": [
+        "min(v)",
+        "max(v)",
+        "count(v)",
+        "count_star()"
+      ],
+      "types": [
+        "VARCHAR",
+        "VARCHAR",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "",
+          "猫",
+          6,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "dict_large_utf8_groups",
+      "sql": "SELECT v, COUNT(*) FROM dict_large_utf8 GROUP BY v",
+      "ordered": false,
+      "columns": [
+        "v",
+        "count_star()"
+      ],
+      "types": [
+        "VARCHAR",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "East",
+          2
+        ],
+        [
+          null,
+          2
+        ],
+        [
+          "猫",
+          1
+        ],
+        [
+          "",
+          1
+        ],
+        [
+          "West",
+          2
+        ]
+      ]
+    },
+    {
+      "id": "dict_large_utf8_filter",
+      "sql": "SELECT id, v FROM dict_large_utf8 WHERE v = 'East' ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          0,
+          "East"
+        ],
+        [
+          4,
+          "East"
+        ]
+      ]
+    },
+    {
+      "id": "date64_values",
+      "sql": "SELECT id, v FROM date64 ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "DATE"
+      ],
+      "rows": [
+        [
+          0,
+          "1969-12-31"
+        ],
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          "1970-01-01"
+        ],
+        [
+          3,
+          "1970-01-02"
+        ],
+        [
+          4,
+          "1970-01-03"
+        ],
+        [
+          5,
+          "1969-12-30"
+        ],
+        [
+          6,
+          "1970-01-01"
+        ],
+        [
+          7,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "date64_aggregate",
+      "sql": "SELECT MIN(v), MAX(v), COUNT(v), COUNT(*) FROM date64",
+      "ordered": true,
+      "columns": [
+        "min(v)",
+        "max(v)",
+        "count(v)",
+        "count_star()"
+      ],
+      "types": [
+        "DATE",
+        "DATE",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "1969-12-30",
+          "1970-01-03",
+          6,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "date64_groups",
+      "sql": "SELECT v, COUNT(*) FROM date64 GROUP BY v",
+      "ordered": false,
+      "columns": [
+        "v",
+        "count_star()"
+      ],
+      "types": [
+        "DATE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          2
+        ],
+        [
+          "1969-12-30",
+          1
+        ],
+        [
+          "1969-12-31",
+          1
+        ],
+        [
+          "1970-01-01",
+          2
+        ],
+        [
+          "1970-01-02",
+          1
+        ],
+        [
+          "1970-01-03",
+          1
+        ]
+      ]
+    },
+    {
+      "id": "date64_filter",
+      "sql": "SELECT id, v FROM date64 WHERE v = DATE '1970-01-01' ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "DATE"
+      ],
+      "rows": [
+        [
+          2,
+          "1970-01-01"
+        ],
+        [
+          6,
+          "1970-01-01"
+        ]
+      ]
+    },
+    {
+      "id": "float_special_bits",
+      "sql": "SELECT id, v FROM float_special ORDER BY id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "FLOAT"
+      ],
+      "rows": [
+        [
+          0,
+          {
+            "f64_bits": 9221120237041090560
+          }
+        ],
+        [
+          1,
+          {
+            "f64_bits": 9218868437227405312
+          }
+        ],
+        [
+          2,
+          {
+            "f64_bits": 18442240474082181120
+          }
+        ],
+        [
+          3,
+          {
+            "f64_bits": 9223372036854775808
+          }
+        ],
+        [
+          4,
+          {
+            "f64_bits": 0
+          }
+        ],
+        [
+          5,
+          {
+            "f64_bits": 3936146074321813504
+          }
+        ],
+        [
+          6,
+          {
+            "f64_bits": 5183643170566569984
+          }
+        ],
+        [
+          7,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "date64_exact_ms",
+      "sql": "SELECT v FROM date64_exact_ms ORDER BY v",
+      "ordered": true,
+      "columns": [
+        "v"
+      ],
+      "types": [
+        "DATE"
+      ],
+      "rows": [
+        [
+          "1969-12-31"
+        ],
+        [
+          "1970-01-01"
+        ],
+        [
+          "1970-01-02"
+        ],
+        [
+          null
+        ]
+      ],
+      "reference_sql": "SELECT CAST(epoch_ms(v) AS DATE) AS v FROM date64_exact_ms ORDER BY v"
+    },
+    {
+      "id": "sales_rows",
+      "sql": "SELECT * FROM sales ORDER BY sale_id",
+      "ordered": true,
+      "columns": [
+        "sale_id",
+        "region",
+        "category",
+        "price",
+        "quantity",
+        "store_id",
+        "notes"
+      ],
+      "types": [
+        "BIGINT",
+        "VARCHAR",
+        "VARCHAR",
+        "FLOAT",
+        "SMALLINT",
+        "UINTEGER",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          0,
+          "East",
+          "Books",
+          {
+            "f64_bits": 4609434218613702656
+          },
+          2,
+          1,
+          "sale"
+        ],
+        [
+          1,
+          "West",
+          "Food",
+          {
+            "f64_bits": 4612248968380809216
+          },
+          4,
+          2,
+          ""
+        ],
+        [
+          2,
+          "East",
+          "Books",
+          null,
+          1,
+          1,
+          null
+        ],
+        [
+          3,
+          null,
+          "Food",
+          {
+            "f64_bits": 4616752568008179712
+          },
+          2,
+          2,
+          "delivery"
+        ],
+        [
+          4,
+          "North",
+          null,
+          {
+            "f64_bits": 4613937818241073152
+          },
+          3,
+          3,
+          "猫"
+        ],
+        [
+          5,
+          "West",
+          "Books",
+          {
+            "f64_bits": 4612248968380809216
+          },
+          null,
+          2,
+          "sale"
+        ],
+        [
+          6,
+          "East",
+          "Food",
+          {
+            "f64_bits": 4609434218613702656
+          },
+          4,
+          null,
+          ""
+        ],
+        [
+          7,
+          "North",
+          "Books",
+          {
+            "f64_bits": 4616752568008179712
+          },
+          2,
+          3,
+          "restock"
+        ],
+        [
+          8,
+          "West",
+          "Food",
+          {
+            "f64_bits": 4612248968380809216
+          },
+          2,
+          2,
+          "delivery"
+        ],
+        [
+          9,
+          "East",
+          "Books",
+          {
+            "f64_bits": 4609434218613702656
+          },
+          4,
+          1,
+          ""
+        ],
+        [
+          10,
+          "North",
+          "Food",
+          {
+            "f64_bits": 4613937818241073152
+          },
+          2,
+          3,
+          "sale"
+        ],
+        [
+          11,
+          "West",
+          "Books",
+          {
+            "f64_bits": 4612248968380809216
+          },
+          2,
+          2,
+          "delivery"
+        ],
+        [
+          12,
+          "East",
+          "Food",
+          {
+            "f64_bits": 4609434218613702656
+          },
+          4,
+          1,
+          "a longer customer delivery note"
+        ],
+        [
+          13,
+          "North",
+          "Books",
+          {
+            "f64_bits": 4616752568008179712
+          },
+          2,
+          3,
+          ""
+        ],
+        [
+          14,
+          "West",
+          "Food",
+          {
+            "f64_bits": 4612248968380809216
+          },
+          4,
+          2,
+          "sale"
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "revenue_by_region",
+      "sql": "SELECT region, SUM(CAST(price AS DOUBLE) * quantity) AS revenue, COUNT(*) AS sales_count FROM sales GROUP BY region ORDER BY region",
+      "ordered": true,
+      "columns": [
+        "region",
+        "revenue",
+        "sales_count"
+      ],
+      "types": [
+        "VARCHAR",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "East",
+          {
+            "f64_bits": 4626604192193052672
+          },
+          5
+        ],
+        [
+          "North",
+          {
+            "f64_bits": 4629841154425225216
+          },
+          4
+        ],
+        [
+          "West",
+          {
+            "f64_bits": 4628293042053316608
+          },
+          5
+        ],
+        [
+          null,
+          {
+            "f64_bits": 4621256167635550208
+          },
+          2
+        ]
+      ]
+    },
+    {
+      "id": "top_categories",
+      "sql": "SELECT category, SUM(CAST(price AS DOUBLE) * quantity) AS revenue FROM sales GROUP BY category ORDER BY revenue DESC, category LIMIT 3",
+      "ordered": true,
+      "columns": [
+        "category",
+        "revenue"
+      ],
+      "types": [
+        "VARCHAR",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          "Food",
+          {
+            "f64_bits": 4632163322983088128
+          }
+        ],
+        [
+          "Books",
+          {
+            "f64_bits": 4629559679448514560
+          }
+        ],
+        [
+          null,
+          {
+            "f64_bits": 4621256167635550208
+          }
+        ]
+      ]
+    },
+    {
+      "id": "average_price_per_store",
+      "sql": "SELECT store_id, AVG(CAST(price AS DOUBLE)) AS average_price, MIN(price), MAX(price), COUNT(price) FROM sales GROUP BY store_id ORDER BY store_id",
+      "ordered": true,
+      "columns": [
+        "store_id",
+        "average_price",
+        "min(price)",
+        "max(price)",
+        "count(price)"
+      ],
+      "types": [
+        "UINTEGER",
+        "DOUBLE",
+        "FLOAT",
+        "FLOAT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "f64_bits": 4609434218613702656
+          },
+          {
+            "f64_bits": 4609434218613702656
+          },
+          {
+            "f64_bits": 4609434218613702656
+          },
+          3
+        ],
+        [
+          2,
+          {
+            "f64_bits": 4613093393310941184
+          },
+          {
+            "f64_bits": 4612248968380809216
+          },
+          {
+            "f64_bits": 4616752568008179712
+          },
+          6
+        ],
+        [
+          3,
+          {
+            "f64_bits": 4615626668101337088
+          },
+          {
+            "f64_bits": 4613937818241073152
+          },
+          {
+            "f64_bits": 4616752568008179712
+          },
+          4
+        ],
+        [
+          null,
+          {
+            "f64_bits": 4609434218613702656
+          },
+          {
+            "f64_bits": 4609434218613702656
+          },
+          {
+            "f64_bits": 4609434218613702656
+          },
+          1
+        ]
+      ]
+    },
+    {
+      "id": "store_revenue",
+      "sql": "SELECT s.store_id, t.store_name, SUM(CAST(s.price AS DOUBLE) * s.quantity) AS revenue FROM sales s JOIN stores t ON s.store_id = t.store_id GROUP BY s.store_id, t.store_name ORDER BY s.store_id",
+      "ordered": true,
+      "columns": [
+        "store_id",
+        "store_name",
+        "revenue"
+      ],
+      "types": [
+        "UINTEGER",
+        "VARCHAR",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          "Downtown",
+          {
+            "f64_bits": 4624633867356078080
+          }
+        ],
+        [
+          2,
+          "Airport",
+          {
+            "f64_bits": 4630263366890291200
+          }
+        ],
+        [
+          3,
+          "Campus",
+          {
+            "f64_bits": 4629841154425225216
+          }
+        ]
+      ]
+    },
+    {
+      "id": "sales_filter",
+      "sql": "SELECT sale_id, price, notes FROM sales WHERE region = 'East' AND price >= 1.5 AND quantity < 5 ORDER BY sale_id",
+      "ordered": true,
+      "columns": [
+        "sale_id",
+        "price",
+        "notes"
+      ],
+      "types": [
+        "BIGINT",
+        "FLOAT",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          0,
+          {
+            "f64_bits": 4609434218613702656
+          },
+          "sale"
+        ],
+        [
+          6,
+          {
+            "f64_bits": 4609434218613702656
+          },
+          ""
+        ],
+        [
+          9,
+          {
+            "f64_bits": 4609434218613702656
+          },
+          ""
+        ],
+        [
+          12,
+          {
+            "f64_bits": 4609434218613702656
+          },
+          "a longer customer delivery note"
+        ]
+      ]
+    },
+    {
+      "id": "sales_multiset",
+      "sql": "SELECT region, category, price, quantity, store_id, notes FROM sales",
+      "ordered": false,
+      "columns": [
+        "region",
+        "category",
+        "price",
+        "quantity",
+        "store_id",
+        "notes"
+      ],
+      "types": [
+        "VARCHAR",
+        "VARCHAR",
+        "FLOAT",
+        "SMALLINT",
+        "UINTEGER",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "East",
+          "Books",
+          {
+            "f64_bits": 4609434218613702656
+          },
+          2,
+          1,
+          "sale"
+        ],
+        [
+          "West",
+          "Food",
+          {
+            "f64_bits": 4612248968380809216
+          },
+          4,
+          2,
+          ""
+        ],
+        [
+          "East",
+          "Books",
+          null,
+          1,
+          1,
+          null
+        ],
+        [
+          null,
+          "Food",
+          {
+            "f64_bits": 4616752568008179712
+          },
+          2,
+          2,
+          "delivery"
+        ],
+        [
+          "North",
+          null,
+          {
+            "f64_bits": 4613937818241073152
+          },
+          3,
+          3,
+          "猫"
+        ],
+        [
+          "West",
+          "Books",
+          {
+            "f64_bits": 4612248968380809216
+          },
+          null,
+          2,
+          "sale"
+        ],
+        [
+          "East",
+          "Food",
+          {
+            "f64_bits": 4609434218613702656
+          },
+          4,
+          null,
+          ""
+        ],
+        [
+          "North",
+          "Books",
+          {
+            "f64_bits": 4616752568008179712
+          },
+          2,
+          3,
+          "restock"
+        ],
+        [
+          "West",
+          "Food",
+          {
+            "f64_bits": 4612248968380809216
+          },
+          2,
+          2,
+          "delivery"
+        ],
+        [
+          "East",
+          "Books",
+          {
+            "f64_bits": 4609434218613702656
+          },
+          4,
+          1,
+          ""
+        ],
+        [
+          "North",
+          "Food",
+          {
+            "f64_bits": 4613937818241073152
+          },
+          2,
+          3,
+          "sale"
+        ],
+        [
+          "West",
+          "Books",
+          {
+            "f64_bits": 4612248968380809216
+          },
+          2,
+          2,
+          "delivery"
+        ],
+        [
+          "East",
+          "Food",
+          {
+            "f64_bits": 4609434218613702656
+          },
+          4,
+          1,
+          "a longer customer delivery note"
+        ],
+        [
+          "North",
+          "Books",
+          {
+            "f64_bits": 4616752568008179712
+          },
+          2,
+          3,
+          ""
+        ],
+        [
+          "West",
+          "Food",
+          {
+            "f64_bits": 4612248968380809216
+          },
+          4,
+          2,
+          "sale"
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "widened_join",
+      "sql": "SELECT a.id, b.id, a.v FROM uint32 a JOIN int16 b ON a.v = b.v ORDER BY a.id, b.id",
+      "ordered": true,
+      "columns": [
+        "id",
+        "id",
+        "v"
+      ],
+      "types": [
+        "BIGINT",
+        "BIGINT",
+        "UINTEGER"
+      ],
+      "rows": [
+        [
+          2,
+          3,
+          0
+        ],
+        [
+          3,
+          4,
+          1
+        ],
+        [
+          3,
+          6,
+          1
+        ],
+        [
+          5,
+          4,
+          1
+        ],
+        [
+          5,
+          6,
+          1
+        ],
+        [
+          6,
+          4,
+          1
+        ],
+        [
+          6,
+          6,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "uint32_high_groups",
+      "sql": "SELECT k, COUNT(*), SUM(amount) FROM uint32_high GROUP BY k ORDER BY k",
+      "ordered": true,
+      "columns": [
+        "k",
+        "count_star()",
+        "sum(amount)"
+      ],
+      "types": [
+        "UINTEGER",
+        "BIGINT",
+        "HUGEINT"
+      ],
+      "rows": [
+        [
+          2147483648,
+          2,
+          3
+        ],
+        [
+          2147483649,
+          1,
+          3
+        ],
+        [
+          2147483650,
+          3,
+          15
+        ],
+        [
+          2147483651,
+          1,
+          7
+        ],
+        [
+          2147483653,
+          2,
+          17
+        ],
+        [
+          2147483656,
+          1,
+          10
+        ],
+        [
+          2147483657,
+          2,
+          23
+        ]
+      ]
+    },
+    {
+      "id": "uint32_high_filter",
+      "sql": "SELECT k, amount FROM uint32_high WHERE k >= 2147483653 ORDER BY amount",
+      "ordered": true,
+      "columns": [
+        "k",
+        "amount"
+      ],
+      "types": [
+        "UINTEGER",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          2147483653,
+          8
+        ],
+        [
+          2147483653,
+          9
+        ],
+        [
+          2147483656,
+          10
+        ],
+        [
+          2147483657,
+          11
+        ],
+        [
+          2147483657,
+          12
+        ]
+      ]
+    },
+    {
+      "id": "uint32_high_join",
+      "sql": "SELECT a.k, COUNT(*) FROM uint32_high a JOIN uint32_high b ON a.k = b.k GROUP BY a.k ORDER BY a.k",
+      "ordered": true,
+      "columns": [
+        "k",
+        "count_star()"
+      ],
+      "types": [
+        "UINTEGER",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          2147483648,
+          4
+        ],
+        [
+          2147483649,
+          1
+        ],
+        [
+          2147483650,
+          9
+        ],
+        [
+          2147483651,
+          1
+        ],
+        [
+          2147483653,
+          4
+        ],
+        [
+          2147483656,
+          1
+        ],
+        [
+          2147483657,
+          4
+        ]
+      ]
+    },
+    {
+      "id": "uint32_lookup_left_count",
+      "sql": "SELECT l.k, COUNT(h.amount) FROM uint32_lookup l LEFT JOIN uint32_high h ON l.k = h.k GROUP BY l.k ORDER BY l.k",
+      "ordered": true,
+      "columns": [
+        "k",
+        "count(h.amount)"
+      ],
+      "types": [
+        "UINTEGER",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          2147483648,
+          2
+        ],
+        [
+          2147483649,
+          1
+        ],
+        [
+          2147483652,
+          0
+        ],
+        [
+          2147483657,
+          2
+        ],
+        [
+          null,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "uint32_high_left_count",
+      "sql": "SELECT h.k, COUNT(l.label) FROM uint32_high h LEFT JOIN uint32_lookup l ON h.k = l.k GROUP BY h.k ORDER BY h.k",
+      "ordered": true,
+      "columns": [
+        "k",
+        "count(l.\"label\")"
+      ],
+      "types": [
+        "UINTEGER",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          2147483648,
+          2
+        ],
+        [
+          2147483649,
+          1
+        ],
+        [
+          2147483650,
+          0
+        ],
+        [
+          2147483651,
+          0
+        ],
+        [
+          2147483653,
+          0
+        ],
+        [
+          2147483656,
+          0
+        ],
+        [
+          2147483657,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "uint32_high_count_by_key",
+      "sql": "SELECT k, COUNT(*) FROM uint32_high GROUP BY k",
+      "ordered": false,
+      "columns": [
+        "k",
+        "count_star()"
+      ],
+      "types": [
+        "UINTEGER",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          2147483648,
+          2
+        ],
+        [
+          2147483649,
+          1
+        ],
+        [
+          2147483650,
+          3
+        ],
+        [
+          2147483651,
+          1
+        ],
+        [
+          2147483653,
+          2
+        ],
+        [
+          2147483656,
+          1
+        ],
+        [
+          2147483657,
+          2
+        ]
+      ]
+    }
+  ]
+}

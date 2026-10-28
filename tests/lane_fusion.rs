@@ -85,6 +85,38 @@ fn lane_chains_equal_unfused_raw_order_across_workers_and_batches() {
     let fixture = Fixture::new();
     let queries = [
         ("SELECT p.id,b.id FROM p JOIN b ON p.k=b.k", true),
+        (
+            "SELECT p.id,b.id FROM (SELECT id,k FROM p WHERE k>=2 AND k<6) p JOIN b ON p.k=b.k",
+            true,
+        ),
+        (
+            "SELECT p.id,b.id FROM (SELECT id,k FROM p WHERE SUBSTRING(s,1,1) IN ('é','a','é') AND k IN (2,3,5)) p JOIN b ON p.k=b.k",
+            true,
+        ),
+        (
+            "SELECT p.id,b.id FROM (SELECT id,k FROM p WHERE s LIKE 'é%' AND NOT (k=3 OR k=5)) p JOIN b ON p.k=b.k",
+            true,
+        ),
+        (
+            "SELECT p.id FROM (SELECT id,k FROM p WHERE k>=2 AND k<6) p SEMI JOIN b ON p.k=b.k",
+            true,
+        ),
+        (
+            "SELECT p.id FROM (SELECT id,k FROM p WHERE k>=2 AND k<6) p ANTI JOIN c ON p.k=c.k",
+            true,
+        ),
+        (
+            "SELECT p.k,COUNT(*),SUM(p.id) FROM (SELECT id,k FROM p WHERE k>=2 AND k<6) p JOIN b ON p.k=b.k GROUP BY p.k",
+            true,
+        ),
+        (
+            "SELECT p.id,b.id FROM (SELECT id,k FROM p WHERE k<0 AND k>1) p JOIN b ON p.k=b.k",
+            true,
+        ),
+        (
+            "SELECT p.id,b.id FROM (SELECT id,k FROM p WHERE s LIKE '%0') p JOIN b ON p.k=b.k",
+            true,
+        ),
         ("SELECT p.id,b.id FROM p JOIN b ON p.s=b.s", true),
         ("SELECT p.id,b.id FROM p JOIN b ON p.f=b.f", true),
         (
@@ -233,6 +265,46 @@ fn lane_chains_equal_unfused_raw_order_across_workers_and_batches() {
             assert_eq!(result.batch, expected.batch);
             assert!(result.metrics.lane_fused_joins > 0);
             assert!(result.metrics.static_scan_filters > 0);
+        }
+    }
+    // The same retained plan declines lane fusion in forced-spill mode. Sorting
+    // pins the public output while exercising both filtered join and aggregation.
+    for sql in [
+        "SELECT p.id,b.id FROM (SELECT id,k FROM p WHERE k>=2 AND k<6) p JOIN b ON p.k=b.k ORDER BY 1",
+        "SELECT p.k,COUNT(*) FROM (SELECT id,k FROM p WHERE SUBSTRING(s,1,1) IN ('é','x')) p JOIN b ON p.k=b.k GROUP BY p.k ORDER BY 1",
+    ] {
+        let base = Options {
+            relational_optimizations: false,
+            batch_size: 7,
+            ..Options::default()
+        };
+        let prepared = prepare(sql, &fixture.tables, &base).unwrap();
+        let expected = execute(&prepared, &base).unwrap();
+        for workers in [1, 2, 4, 10] {
+            for batch_size in [1, 7, 8192] {
+                for spill in [false, true] {
+                    let options = Options {
+                        workers,
+                        batch_size,
+                        relational_optimizations: true,
+                        memory_bytes: 8 << 20,
+                        spill: spill.then(|| assaydb::spill::SpillOptions {
+                            directory: fixture.root.clone(),
+                            ..Default::default()
+                        }),
+                        ..base.clone()
+                    };
+                    let actual = execute(&prepared, &options).unwrap();
+                    assert_eq!(
+                        actual.batch, expected.batch,
+                        "{sql}, {workers}, {batch_size}, spill={spill}"
+                    );
+                    if spill {
+                        assert_eq!(actual.metrics.lane_fused_joins, 0);
+                    }
+                    assert!(actual.metrics.peak_reserved_bytes <= options.memory_bytes);
+                }
+            }
         }
     }
 }

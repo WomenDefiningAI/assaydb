@@ -5,7 +5,8 @@ impl<I: Index> Kernel<'_, I> {
     /// With unique build keys and no residual, one lookup emits at most one row in probe order.
     pub(super) fn unique(
         &self,
-        probe: RecordBatch,
+        probe: &RecordBatch,
+        selection: Option<&[u32]>,
         check: &dyn Fn() -> Result<()>,
     ) -> Result<(RecordBatch, Reservation, Statistics)> {
         debug_assert!(self.residual.is_none());
@@ -18,19 +19,21 @@ impl<I: Index> Kernel<'_, I> {
         // Numeric columns use the identical equality bytes without temporary
         // widened arrays. Other types retain the ordinary funded key encoder.
         let encoded =
-            super::lane_keys::ProbeKeys::new(&probe, self.keys, self.budget, self.compact_text)?;
-        let mut left = Vec::with_capacity(probe.num_rows());
+            super::lane_keys::ProbeKeys::new(probe, self.keys, self.budget, self.compact_text)?;
+        let input_rows = selection.map_or(probe.num_rows(), <[u32]>::len);
+        let mut left = Vec::with_capacity(input_rows);
         let mut right = if self.kind == JoinKind::Inner {
-            Vec::with_capacity(probe.num_rows())
+            Vec::with_capacity(input_rows)
         } else {
             Vec::new()
         };
         let mut counts = ProbeCounts::default();
         let mut key = [0; 34];
-        for row in 0..probe.num_rows() {
-            if row % 1024 == 0 {
+        for position in 0..input_rows {
+            if position % 1024 == 0 {
                 check()?;
             }
+            let row = selection.map_or(position, |rows| rows[position] as usize);
             let head = encoded
                 .key(row, &mut key)
                 .and_then(|key| self.map.head(key, &mut counts));
@@ -48,7 +51,7 @@ impl<I: Index> Kernel<'_, I> {
         let rows = left.len();
         let li = UInt32Array::from(left);
         let ri = UInt32Array::from(right);
-        let sources = [(&probe, &li), (self.build, &ri)];
+        let sources = [(probe, &li), (self.build, &ri)];
         let sources = &sources[..if self.kind == JoinKind::Inner { 2 } else { 1 }];
         let mut bytes = 256usize;
         // Reserve all gathers once, before Arrow allocation, using exactly the

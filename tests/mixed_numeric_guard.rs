@@ -1,3 +1,5 @@
+#[path = "support/promoted_reference.rs"]
+mod promoted_reference;
 use arrow::record_batch::RecordBatch;
 use assaydb::{
     execute::Options,
@@ -29,14 +31,14 @@ fn session(workers: usize, optimized: bool) -> Session {
     s
 }
 #[test]
-fn conditional_integer_float_consumers_are_explicitly_unsupported() {
+fn conditional_integer_float_consumers_now_promote_like_duckdb() {
+    let group = promoted_reference::group("guard_t");
     for workers in [1, 10] {
         for optimized in [false, true] {
             let mut s = session(workers, optimized);
             for sql in [
-                // Broadened approval: every reachable mixed conditional is refused.
-                // Syntactically column-free but outside the bounded constant
-                // proof: uncertain choice must not silently promote the Int.
+                // Formerly refused for every consumer (broadened guard). Each
+                // form now promotes the reachable Int arm to DOUBLE.
                 "SELECT CASE WHEN CAST('1' AS REAL)=CAST('1' AS REAL) THEN 9007199254740993 ELSE CAST(5 AS REAL) END",
                 "SELECT COALESCE(NULLIF(CAST('5' AS INTEGER),5),CAST(2 AS REAL))",
                 "SELECT COALESCE(v,CAST(5 AS REAL)) FROM t",
@@ -66,9 +68,7 @@ fn conditional_integer_float_consumers_are_explicitly_unsupported() {
                 "SELECT (COALESCE(v,CAST(5 AS REAL))+1)*3/2 FROM t",
                 "SELECT CAST(COALESCE(v,CAST(5 AS REAL))/2 AS REAL) FROM t",
                 "SELECT MAX(COALESCE(v,CAST(5 AS REAL)))/2 FROM t",
-                "SELECT COALESCE(AVG(v),3)/2 FROM t",
                 "SELECT COALESCE(MIN(3),CAST(5 AS REAL))/2 FROM t",
-                "SELECT x/2 FROM (SELECT COALESCE(AVG(v),3) AS x FROM t) q",
                 "SELECT MIN(CASE WHEN v IS NULL THEN CAST(5 AS REAL) ELSE v END)/2 FROM t",
                 "SELECT x/2 FROM (SELECT COALESCE(v,CAST(5 AS REAL)) AS x FROM t) q",
                 "WITH q AS (SELECT COALESCE(v,CAST(5 AS REAL)) AS x FROM t) SELECT x/2 FROM q",
@@ -81,11 +81,29 @@ fn conditional_integer_float_consumers_are_explicitly_unsupported() {
                 "WITH q AS (SELECT ABS(-1) AS x,v FROM t) SELECT CASE WHEN x=1 THEN COALESCE(v,CAST(5 AS REAL))/2 ELSE 0 END FROM q",
                 "WITH q AS (SELECT CAST(9223372036854775808 AS INTEGER) AS x,v FROM t) SELECT CASE WHEN x=9223372036854775807 THEN COALESCE(v,CAST(5 AS REAL))/2 ELSE 0 END FROM q",
             ] {
-                let error = query(&mut s, sql).unwrap_err();
-                assert!(
-                    error.contains("unsupported: row-dependent mixed Int/Float conditional"),
-                    "{sql}: {error}"
-                );
+                // Old: refused as row-dependent mixed Int/Float conditional.
+                // New (Helen, Oct 15): DOUBLE promotion; independent DuckDB answer.
+                promoted_reference::check(&mut s, &group, sql, &format!("{workers}/{optimized}"));
+            }
+        }
+    }
+}
+#[test]
+fn exact_literal_alternative_to_integer_avg_is_now_float() {
+    for workers in [1, 10] {
+        for optimized in [false, true] {
+            let mut s = session(workers, optimized);
+            for sql in [
+                "SELECT COALESCE(AVG(v),3)/2 FROM t",
+                "SELECT x/2 FROM (SELECT COALESCE(AVG(v),3) AS x FROM t) q",
+            ] {
+                let batch = query(&mut s, sql).unwrap();
+                let values = batch
+                    .column(0)
+                    .as_any()
+                    .downcast_ref::<arrow::array::Float64Array>()
+                    .unwrap();
+                assert_eq!(values.iter().collect::<Vec<_>>(), vec![Some(1.5)], "{sql}");
             }
         }
     }
@@ -144,25 +162,20 @@ fn homogeneous_casts_nullif_and_proven_dead_branches_stay_accepted() {
     }
 }
 #[test]
-fn guarded_mutations_leave_the_original_snapshot_intact() {
-    let mut s = session(1, true);
-    for sql in [
-        "UPDATE t SET f=COALESCE(v,CAST(5 AS REAL))/2",
-        "UPDATE t SET f=COALESCE(v,CAST(5 AS REAL))",
-        "DELETE FROM t WHERE COALESCE(v,CAST(5 AS REAL))/2>0",
-    ] {
-        let error = s.execute_sql(sql).map(|_| ()).unwrap_err().to_string();
-        assert!(
-            error.contains("unsupported: row-dependent mixed Int/Float conditional"),
-            "{error}"
-        );
-        assert_eq!(query(&mut s, "SELECT id FROM t").unwrap().num_rows(), 2);
+fn promoted_mutations_match_duckdb() {
+    // Old: each mutation was refused and left the snapshot intact. New: the
+    // promoted expression is applied; the resulting table matches DuckDB.
+    let group = promoted_reference::group("guard_mutations");
+    for entry in group["entries"].as_array().unwrap() {
+        let mut s = session(1, true);
+        let sql = entry["sql"].as_str().unwrap();
+        promoted_reference::check(&mut s, &group, sql, entry["pre"][0].as_str().unwrap());
+        s.execute_sql("UPDATE t SET f=CAST(v AS REAL)").unwrap();
     }
-    s.execute_sql("UPDATE t SET f=CAST(v AS REAL)").unwrap();
 }
 
 #[test]
-fn all_214_original_conditional_hunt_disagreements_are_explicitly_refused() {
+fn all_214_original_conditional_hunt_disagreements_now_match_duckdb() {
     let fixture: serde_json::Value =
         serde_json::from_str(include_str!("fixtures/mixed-conditional-hunt.json")).unwrap();
     assert_eq!(fixture["selected_count"], 214);
@@ -184,10 +197,14 @@ fn all_214_original_conditional_hunt_disagreements_are_explicitly_refused() {
                 for setup in dataset["setup"].as_array().unwrap() {
                     s.execute_sql(setup.as_str().unwrap()).unwrap();
                 }
+                // Old: every record refused. New: DuckDB 1.5.6 answer (these
+                // records are SQLite disagreements: DuckDB-only typing), or the
+                // scoped INTEGER-cast guard error where DuckDB also errors.
+                let group = promoted_reference::group(&format!("hunt214/{}", dataset["dataset"]));
                 for record in dataset["queries"].as_array().unwrap() {
                     let sql = record["sql"].as_str().unwrap();
-                    let error = query(&mut s, sql).unwrap_err();
-                    assert!(error.contains("unsupported: row-dependent mixed Int/Float conditional requires tagged numeric representation"), "dataset{} index{} {sql}: {error}", dataset["dataset"], record["index"]);
+                    let context = format!("dataset{} index{}", dataset["dataset"], record["index"]);
+                    promoted_reference::check(&mut s, &group, sql, &context);
                     checked += 1;
                 }
             }

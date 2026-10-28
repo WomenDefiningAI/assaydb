@@ -10,26 +10,33 @@ description = "Experimental analytical SQL engine with Arrow results and a JSON 
 readme = "docs/CRATE-README.md"
 keywords = ["sql", "analytics", "arrow"]
 categories = ["database-implementations", "command-line-utilities"]
-include = ["/src/**", "/tests/*.rs", "/tests/fixtures/**", "/tests/support/**", "/tests/left_join_count/**", "/docs/CRATE-README.md", "/Cargo.toml", "/Cargo.lock", "/rust-toolchain.toml", "/LICENSE-MIT", "/LICENSE-APACHE", "/THIRD-PARTY-NOTICES", "/THIRD-PARTY-LICENSES"]
+include = ["/src/**", "/tests/*.rs", "/tests/fixtures/**", "/tests/support/**", "/scripts/external_sf1.py", "/tests/left_join_count/**", "/docs/CRATE-README.md", "/Cargo.toml", "/Cargo.lock", "/rust-toolchain.toml", "/LICENSE-MIT", "/LICENSE-APACHE", "/THIRD-PARTY-NOTICES", "/THIRD-PARTY-LICENSES"]
 default-run = "assaydb"
 
 [features]
 default = []
 verified-hooks = []
+# Measurement builds only: count live Rust heap bytes (tools/testing/decoder_memory.py).
+count-alloc = []
 
 [dependencies]
 arrow = { version = "=57.0.0", default-features = false, features = ["ipc"] }
 parquet = { version = "=57.0.0", default-features = false, features = ["arrow", "zstd", "snap", "async"] }
-sqlparser = { version = "=0.58.0", default-features = false, features = ["std"] }
+sqlparser = { version = "=0.58.0", default-features = false, features = ["std", "visitor"] }
 serde = { version = "=1.0.228", features = ["derive"] }
 serde_json = "=1.0.145"
 chrono = { version = "=0.4.42", default-features = false, features = ["std"] }
+# IANA time zone rules compiled in (tzdb pinned by this exact version), for
+# TIMESTAMPTZ and the session time zone (maintainer approval, Oct 17, 2026).
+chrono-tz = { version = "=0.10.4", default-features = false, features = ["std"] }
 libc = "=0.2.190"
 ahash = "=0.8.12"
 hashbrown = { version = "=0.16.1", default-features = false, features = ["raw-entry"] }
 memchr = "=2.8.3"
 bytes = "=1.12.1"
 futures = { version = "=0.3.32", default-features = false, features = ["std", "executor"] }
+# Already locked through arrow-string -> regex; the same features regex enables.
+regex-automata = { version = "=0.4.18", default-features = false, features = ["std", "syntax", "meta", "nfa-pikevm", "nfa-backtrack", "hybrid", "dfa-onepass", "perf-inline", "perf-literal", "unicode"] }
 
 [profile.release]
 debug = 0
@@ -39,7 +46,7 @@ strip = "debuginfo"
 lto = "thin"
 codegen-units = 1
 
-# Parquet 57.0.0 with reviewed local decoder changes: direct
+# Decoder-v1 experiment (Oct 14, Helen approved): pristine parquet 57.0.0 plus a direct
 # FLBA->Decimal128 decode and sized reusable zstd. See vendor/parquet-57.0.0-decoder-v1/ASSAY-PROVENANCE.md.
 [patch.crates-io]
 parquet = { path = "vendor/parquet-57.0.0-decoder-v1" }

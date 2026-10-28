@@ -242,12 +242,28 @@ fn distinct_projection_grouping_order_limit_and_typed_equality() {
             }
         }
     }
-    for sql in [
-        "SELECT DISTINCT ON(k) k FROM t",
-        "SELECT DISTINCT missing FROM t",
-    ] {
-        assert!(fixture.run(sql, &Options::default()).is_err(), "{sql}");
-    }
+    // DISTINCT ON now has its own key-selection path. Keep a concrete NULL/
+    // duplicate result check here alongside the original DISTINCT coverage.
+    let on = fixture
+        .run(
+            "SELECT DISTINCT ON(k) k FROM t ORDER BY k NULLS FIRST",
+            &Options::default(),
+        )
+        .unwrap();
+    assert_eq!(
+        on.column(0)
+            .as_any()
+            .downcast_ref::<Int64Array>()
+            .unwrap()
+            .iter()
+            .collect::<Vec<_>>(),
+        vec![None, Some(1), Some(2), Some(3)]
+    );
+    assert!(
+        fixture
+            .run("SELECT DISTINCT missing FROM t", &Options::default())
+            .is_err()
+    );
     // Approved public untyped NULL output also participates in DISTINCT.
     let nulls = fixture
         .run("SELECT DISTINCT NULL FROM t", &Options::default())

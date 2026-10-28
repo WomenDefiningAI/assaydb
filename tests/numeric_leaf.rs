@@ -74,7 +74,7 @@ impl Fixture {
             ..Options::default()
         }
     }
-    fn run(&self, sql: &str, workers: usize) -> Result<Execution, String> {
+    fn run(&self, sql: &str, workers: usize) -> Result<Execution, assaydb::Error> {
         let options = self.options(workers);
         // Keep auto mode's relational route, without its independent direct
         // pipeline shortcut masking whether this leaf was actually exercised.

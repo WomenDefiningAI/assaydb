@@ -14,6 +14,10 @@ crate-type = ["cdylib"]
 # Bindings have their own dependency resolution, never the frozen engine lock.
 [workspace]
 
+# Keep the extension on the same decoder implementation as the CLI.
+[patch.crates-io]
+parquet = { path = "../../vendor/parquet-57.0.0-decoder-v1" }
+
 [dependencies]
 assaydb = { path = "../.." }
 arrow = { version = "=57.0.0", default-features = false, features = ["ipc"] }

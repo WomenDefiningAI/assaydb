@@ -13,7 +13,7 @@ use std::{
 
 #[derive(Debug)]
 pub(crate) enum ResourceReason {
-    AccountedMemory(String),
+    AccountedMemory(crate::Error),
     SliceTooSmall,
     OversizedBatch,
     ClosureCredit,
@@ -33,12 +33,12 @@ impl ResourceReason {
 #[derive(Debug)]
 pub(crate) enum Failure {
     Resource(ResourceReason),
-    Sql(String),
-    Terminal(String),
+    Sql(crate::Error),
+    Terminal(crate::Error),
 }
 impl Failure {
-    pub(crate) fn sql(message: String) -> Self {
-        // Current SQL evaluation uses string errors. Unknown errors deliberately
+    pub(crate) fn sql(message: crate::Error) -> Self {
+        // SQL evaluation preserves structured causes. Unknown errors deliberately
         // remain terminal rather than making invariant/decode failures replayable.
         if crate::execute::error_replay::semantic_error(&message) {
             Self::Sql(message)
@@ -53,8 +53,8 @@ impl Failure {
         }
     }
 }
-impl From<String> for Failure {
-    fn from(message: String) -> Self {
+impl From<crate::Error> for Failure {
+    fn from(message: crate::Error) -> Self {
         if message.starts_with("resource-limit: accounted memory ") {
             Self::Resource(ResourceReason::AccountedMemory(message))
         } else {
@@ -62,17 +62,22 @@ impl From<String> for Failure {
         }
     }
 }
+impl From<String> for Failure {
+    fn from(message: String) -> Self {
+        Self::from(crate::Error::from(message))
+    }
+}
 impl From<&str> for Failure {
     fn from(message: &str) -> Self {
-        Self::from(message.to_owned())
+        Self::from(crate::Error::from(message))
     }
 }
 pub(crate) type AttemptResult<T> = std::result::Result<T, Failure>;
 #[derive(Default)]
 struct Errors {
-    resource: Option<String>,
-    sql: Option<(usize, String)>,
-    terminal: Option<String>,
+    resource: Option<crate::Error>,
+    sql: Option<(usize, crate::Error)>,
+    terminal: Option<crate::Error>,
 }
 #[derive(Default)]
 pub(crate) struct Attempt {
@@ -80,15 +85,18 @@ pub(crate) struct Attempt {
     errors: Mutex<Errors>,
 }
 impl Attempt {
-    pub(crate) fn diagnostics(&self) -> (Option<String>, Option<String>) {
+    pub(crate) fn diagnostics(&self) -> (Option<crate::Error>, Option<crate::Error>) {
         let errors = self.errors.lock().unwrap();
         (
             errors.resource.clone().or_else(|| errors.terminal.clone()),
             errors.sql.as_ref().map(|(_, error)| error.clone()),
         )
     }
-    pub(crate) fn record(&self, rank: usize, failure: Failure) -> String {
-        let message = failure.message().to_owned();
+    pub(crate) fn record(&self, rank: usize, failure: Failure) -> crate::Error {
+        let message = match &failure {
+            Failure::Sql(e) | Failure::Terminal(e) => e.clone(),
+            Failure::Resource(_) => crate::Error::from(failure.message()),
+        };
         let mut errors = self.errors.lock().unwrap();
         match failure {
             Failure::Resource(_) => {
@@ -105,7 +113,7 @@ impl Attempt {
         }
         message
     }
-    pub(crate) fn rejection(&self, reason: &'static str) -> String {
+    pub(crate) fn rejection(&self, reason: &'static str) -> crate::Error {
         let failure = if reason == "pipeline closure memory limit" {
             Failure::Resource(ResourceReason::ClosureCredit)
         } else {
@@ -115,7 +123,7 @@ impl Attempt {
     }
     /// A driver may return the same already-recorded producer/receipt error.
     /// Only genuinely new driver errors require classification at this boundary.
-    pub(crate) fn returned(&self, message: String) {
+    pub(crate) fn returned(&self, message: crate::Error) {
         let errors = self.errors.lock().unwrap();
         let recorded = errors.resource.as_ref() == Some(&message)
             || errors.sql.as_ref().is_some_and(|(_, e)| *e == message)
@@ -127,8 +135,8 @@ impl Attempt {
     }
     pub(crate) fn decision(
         &self,
-        original: String,
-    ) -> std::result::Result<(String, Option<String>), String> {
+        original: crate::Error,
+    ) -> std::result::Result<(crate::Error, Option<crate::Error>), crate::Error> {
         let errors = self.errors.lock().unwrap();
         if let Some(terminal) = &errors.terminal {
             return Err(terminal.clone());
@@ -360,6 +368,23 @@ mod tests {
                 matches!(Failure::from(error), Failure::Terminal(_)),
                 "{error}"
             );
+        }
+    }
+
+    #[test]
+    fn failure_storage_preserves_cause_without_promoting_text() {
+        for (error, wanted) in [
+            (
+                crate::Error::decimal_precision_overflow(),
+                Some(crate::ErrorCause::DecimalPrecisionOverflow),
+            ),
+            (crate::Error::from("decimal cast precision overflow"), None),
+        ] {
+            let attempt = Attempt::default();
+            let returned = attempt.record(0, Failure::sql(error));
+            assert_eq!(returned.cause(), wanted);
+            attempt.returned(returned.clone());
+            assert_eq!(attempt.decision(returned).unwrap_err().cause(), wanted);
         }
     }
 

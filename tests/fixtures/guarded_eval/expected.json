@@ -1,0 +1,7091 @@
+{
+ "duckdb_version": "1.5.6",
+ "postgresql_version": "17.11 (Homebrew)",
+ "cases_sha256": "ea5bc3593279a8e5962c5fd0eca6c4525e3f8e68c07d80e155e203b0b1691127",
+ "tables": {
+  "g": {
+   "bytes": 9425,
+   "sha256": "2c3b2a9df362dce4e3d36bc271db8f48b1d07904caf0709e8c7b144476d37f50"
+  },
+  "h": {
+   "bytes": 2189,
+   "sha256": "2f6e3b4fff73163120c3c5f2c62b086f4ebdcf8a2fb96ca3b442ea20ca96ae5d"
+  },
+  "g_empty": {
+   "bytes": 1253,
+   "sha256": "64420e32af23cf1628afd2058733b3d2e6907e3e550e6054aca0e21424594447"
+  }
+ },
+ "postgresql_execution": "psql against PostgreSQL TEMP tables with the same rows (text COLLATE \"C\")",
+ "summary": {
+  "DuckDB raises -> Assay error": 2,
+  "DuckDB raises -> Assay rows": 6,
+  "PostgreSQL raises -> Assay error": 12,
+  "PostgreSQL raises -> Assay rows": 5,
+  "both answer -> Assay rows": 68,
+  "both raise -> Assay error": 13,
+  "both raise -> Assay rows": 7
+ },
+ "problems": [],
+ "cases": [
+  {
+   "id": "where_decimal_zero_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE x <> 0 AND 10 / x > 1;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      6
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     6
+    ]
+   ]
+  },
+  {
+   "id": "where_decimal_zero_guard_reversed",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "oracle": "SELECT count(*) AS n FROM g WHERE x <> 0 AND 10 / x > 1",
+   "sql": "SELECT count(*) AS n FROM g WHERE 10 / x > 1 AND x <> 0;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      6
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     6
+    ]
+   ]
+  },
+  {
+   "id": "where_decimal_zero_or_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE x = 0 OR 10 / x > 1;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      9
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     9
+    ]
+   ]
+  },
+  {
+   "id": "where_decimal_zero_or_guard_reversed",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "rows",
+   "oracle": "SELECT count(*) AS n FROM g WHERE x = 0 OR 10 / x > 1",
+   "difference": "PostgreSQL evaluates the OR left to right and raises on 10/0; DuckDB returns NULL for 10/0. Assay: the TRUE operand decides the row in either order",
+   "sql": "SELECT count(*) AS n FROM g WHERE 10 / x > 1 OR x = 0;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      9
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  division by zero"
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     9
+    ]
+   ]
+  },
+  {
+   "id": "where_not_or_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE NOT (x = 0 OR 10 / x <= 1);",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      6
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     6
+    ]
+   ]
+  },
+  {
+   "id": "where_between_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE x BETWEEN 1 AND 100 AND 10 / x > 1;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      5
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     5
+    ]
+   ]
+  },
+  {
+   "id": "where_in_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE x IN (1, 2.5, 8, 10) AND 10 / x > 1;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      3
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     3
+    ]
+   ]
+  },
+  {
+   "id": "where_not_in_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE x NOT IN (0) AND 10 / x > 1;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      6
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     6
+    ]
+   ]
+  },
+  {
+   "id": "where_three_conjuncts_float_by_decimal",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id FROM g WHERE x IS NOT NULL AND x <> 0 AND f / x > 0 ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      6
+     ],
+     [
+      8
+     ],
+     [
+      9
+     ],
+     [
+      12
+     ],
+     [
+      13
+     ],
+     [
+      14
+     ],
+     [
+      15
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     6
+    ],
+    [
+     8
+    ],
+    [
+     9
+    ],
+    [
+     12
+    ],
+    [
+     13
+    ],
+    [
+     14
+    ],
+    [
+     15
+    ]
+   ]
+  },
+  {
+   "id": "where_nested_or_of_guards",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id FROM g WHERE (x <> 0 AND 10 / x > 1) OR (x = 0 AND d > 5) ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      5
+     ],
+     [
+      6
+     ],
+     [
+      9
+     ],
+     [
+      11
+     ],
+     [
+      12
+     ],
+     [
+      14
+     ],
+     [
+      15
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     5
+    ],
+    [
+     6
+    ],
+    [
+     9
+    ],
+    [
+     11
+    ],
+    [
+     12
+    ],
+    [
+     14
+    ],
+    [
+     15
+    ]
+   ]
+  },
+  {
+   "id": "where_deep_nesting",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id FROM g WHERE x <> 0 AND (d IS NULL OR (10 / x > 1 AND f BETWEEN -1000 AND 1000 AND f * 10 > 0)) ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      6
+     ],
+     [
+      9
+     ],
+     [
+      14
+     ],
+     [
+      15
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     6
+    ],
+    [
+     9
+    ],
+    [
+     14
+    ],
+    [
+     15
+    ]
+   ]
+  },
+  {
+   "id": "where_integer_division_control",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE d <> 0 AND 60 / d > 9;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      7
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     7
+    ]
+   ]
+  },
+  {
+   "id": "where_unguarded_decimal_division",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "error",
+   "error": "division by zero",
+   "difference": "DuckDB returns NULL for a zero divisor, PostgreSQL raises division by zero; Assay keeps its DECIMAL division-by-zero error (no guard decides the row)",
+   "sql": "SELECT count(*) AS n FROM g WHERE 10 / x > 1;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      9
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  division by zero"
+   }
+  },
+  {
+   "id": "where_guard_misses_a_row",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "error",
+   "error": "division by zero",
+   "difference": "DuckDB returns NULL for a zero divisor, PostgreSQL raises division by zero; row id=11 passes the guard d <> 0 with x = 0, so Assay raises",
+   "sql": "SELECT count(*) AS n FROM g WHERE d <> 0 AND 10 / x > 1;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      7
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  division by zero"
+   }
+  },
+  {
+   "id": "where_null_conjunct_decides_filter",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE flag = 'num' AND CAST(s AS INTEGER) > 5;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      6
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     6
+    ]
+   ]
+  },
+  {
+   "id": "where_cast_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE s IN ('12', '7', '3', '2', '40', '6', '-8', '15', '5', '9') AND CAST(s AS INTEGER) > 5;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      6
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     6
+    ]
+   ]
+  },
+  {
+   "id": "where_cast_guard_reversed",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "oracle": "SELECT count(*) AS n FROM g WHERE s IN ('12', '7', '3', '2', '40', '6', '-8', '15', '5', '9') AND CAST(s AS INTEGER) > 5",
+   "sql": "SELECT count(*) AS n FROM g WHERE CAST(s AS INTEGER) > 5 AND s IN ('12', '7', '3', '2', '40', '6', '-8', '15', '5', '9');",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      6
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     6
+    ]
+   ]
+  },
+  {
+   "id": "where_cast_guard_two_conjuncts",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id FROM g WHERE flag IS NOT NULL AND flag = 'num' AND CAST(s AS INTEGER) > 5 ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      3
+     ],
+     [
+      9
+     ],
+     [
+      11
+     ],
+     [
+      14
+     ],
+     [
+      16
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     3
+    ],
+    [
+     9
+    ],
+    [
+     11
+    ],
+    [
+     14
+    ],
+    [
+     16
+    ]
+   ]
+  },
+  {
+   "id": "where_cast_or_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id FROM g WHERE id IN (2, 5, 8, 12) OR CAST(s AS INTEGER) > 5 ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      2
+     ],
+     [
+      3
+     ],
+     [
+      5
+     ],
+     [
+      8
+     ],
+     [
+      9
+     ],
+     [
+      11
+     ],
+     [
+      12
+     ],
+     [
+      14
+     ],
+     [
+      16
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     2
+    ],
+    [
+     3
+    ],
+    [
+     5
+    ],
+    [
+     8
+    ],
+    [
+     9
+    ],
+    [
+     11
+    ],
+    [
+     12
+    ],
+    [
+     14
+    ],
+    [
+     16
+    ]
+   ]
+  },
+  {
+   "id": "where_cast_or_guard_reversed",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "rows",
+   "oracle": "SELECT id FROM g WHERE id IN (2, 5, 8, 12) OR CAST(s AS INTEGER) > 5 ORDER BY id",
+   "difference": "Both references evaluate this OR left to right and raise on CAST('abc'); Assay's rule is order-independent: id IN (...) is TRUE on every failing row, so the row is decided. Expected rows come from the guard-first spelling (oracle)",
+   "lenient": "more lenient than DuckDB/PostgreSQL; never returns a value computed from a failed step",
+   "sql": "SELECT id FROM g WHERE CAST(s AS INTEGER) > 5 OR id IN (2, 5, 8, 12) ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"abc\""
+   },
+   "oracle_duckdb": "rows",
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     2
+    ],
+    [
+     3
+    ],
+    [
+     5
+    ],
+    [
+     8
+    ],
+    [
+     9
+    ],
+    [
+     11
+    ],
+    [
+     12
+    ],
+    [
+     14
+    ],
+    [
+     16
+    ]
+   ]
+  },
+  {
+   "id": "where_unguarded_cast",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "error",
+   "error": "invalid input syntax for type integer: \"abc\"",
+   "difference": "Both raise; Assay raises the first failing row's error",
+   "sql": "SELECT count(*) AS n FROM g WHERE CAST(s AS INTEGER) > 5;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"abc\""
+   }
+  },
+  {
+   "id": "where_cast_guard_misses_rows",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "error",
+   "error": "invalid input syntax for type integer: \"x9\"",
+   "difference": "Both raise on 'x9' (id 5), which the guard id <> 2 does not exclude",
+   "sql": "SELECT count(*) AS n FROM g WHERE id <> 2 AND CAST(s AS INTEGER) > 5;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'x9' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"x9\""
+   }
+  },
+  {
+   "id": "where_float_overflow_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE f BETWEEN -1000 AND 1000 AND f * 10 > 1;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      9
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     9
+    ]
+   ]
+  },
+  {
+   "id": "where_float_overflow_guard_reversed",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "oracle": "SELECT count(*) AS n FROM g WHERE f BETWEEN -1000 AND 1000 AND f * 10 > 1",
+   "sql": "SELECT count(*) AS n FROM g WHERE f * 10 > 1 AND f BETWEEN -1000 AND 1000;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      9
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     9
+    ]
+   ]
+  },
+  {
+   "id": "where_unguarded_float_overflow",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "error",
+   "error": "floating arithmetic overflow",
+   "difference": "DuckDB returns an infinity, PostgreSQL raises; Assay keeps its Float overflow error",
+   "sql": "SELECT count(*) AS n FROM g WHERE f * 10 > 1;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      11
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  value out of range: overflow"
+   }
+  },
+  {
+   "id": "where_float_to_integer_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id FROM g WHERE f BETWEEN -1000 AND 1000 AND CAST(f AS INTEGER) > 1 ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      8
+     ],
+     [
+      9
+     ],
+     [
+      10
+     ],
+     [
+      11
+     ],
+     [
+      14
+     ],
+     [
+      15
+     ],
+     [
+      16
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     8
+    ],
+    [
+     9
+    ],
+    [
+     10
+    ],
+    [
+     11
+    ],
+    [
+     14
+    ],
+    [
+     15
+    ],
+    [
+     16
+    ]
+   ]
+  },
+  {
+   "id": "where_float_to_integer_guard_reversed",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "oracle": "SELECT id FROM g WHERE f BETWEEN -1000 AND 1000 AND CAST(f AS INTEGER) > 1 ORDER BY id",
+   "sql": "SELECT id FROM g WHERE CAST(f AS INTEGER) > 1 AND f BETWEEN -1000 AND 1000 ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      8
+     ],
+     [
+      9
+     ],
+     [
+      10
+     ],
+     [
+      11
+     ],
+     [
+      14
+     ],
+     [
+      15
+     ],
+     [
+      16
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     8
+    ],
+    [
+     9
+    ],
+    [
+     10
+    ],
+    [
+     11
+    ],
+    [
+     14
+    ],
+    [
+     15
+    ],
+    [
+     16
+    ]
+   ]
+  },
+  {
+   "id": "where_unguarded_float_to_integer",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "error",
+   "error": "integer out of range",
+   "difference": "Both raise; Assay raises its 64-bit INTEGER range error",
+   "sql": "SELECT count(*) AS n FROM g WHERE CAST(f AS INTEGER) > 1;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Type DOUBLE with value 1e+308 can't be cast because the value is out of range for the destination type INT32 when casting from source column f"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  integer out of range"
+   }
+  },
+  {
+   "id": "where_decimal_precision_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id FROM g WHERE abs(x) < 9 AND CAST(x AS DECIMAL(3,2)) > 1 ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      5
+     ],
+     [
+      9
+     ],
+     [
+      12
+     ],
+     [
+      15
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     5
+    ],
+    [
+     9
+    ],
+    [
+     12
+    ],
+    [
+     15
+    ]
+   ]
+  },
+  {
+   "id": "where_unguarded_decimal_precision",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "error",
+   "error": "decimal cast precision overflow",
+   "difference": "DuckDB 1.5.6 does not raise here (it evaluates the comparison without the cast on these rows), PostgreSQL raises numeric field overflow; Assay keeps its cast error",
+   "sql": "SELECT id FROM g WHERE CAST(x AS DECIMAL(3,2)) > 1 ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      5
+     ],
+     [
+      8
+     ],
+     [
+      9
+     ],
+     [
+      12
+     ],
+     [
+      15
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  numeric field overflow"
+   }
+  },
+  {
+   "id": "where_date_cast_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id FROM g WHERE ds LIKE '20__-0%' AND CAST(ds AS DATE) >= DATE '2024-01-01' ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      6
+     ],
+     [
+      7
+     ],
+     [
+      9
+     ],
+     [
+      13
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     6
+    ],
+    [
+     7
+    ],
+    [
+     9
+    ],
+    [
+     13
+    ]
+   ]
+  },
+  {
+   "id": "where_unguarded_date_cast",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "error",
+   "error": "unsupported: CAST Text AS Date (PostgreSQL/DuckDB agreement unestablished)",
+   "difference": "Both raise on 'TBD'; Assay refuses text it cannot prove both references parse alike (unchanged)",
+   "sql": "SELECT id FROM g WHERE id <> 2 AND CAST(ds AS DATE) >= DATE '2024-01-01' ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: invalid date field format: \"TBD\", expected format is (YYYY-MM-DD) when casting from source column ds"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type date: \"TBD\""
+   }
+  },
+  {
+   "id": "where_both_operands_fail_each_row_decided",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "rows",
+   "oracle": "SELECT id FROM g WHERE id NOT IN (2, 5, 11, 12) AND CASE WHEN x <> 0 THEN 10 / x > 1 END AND CASE WHEN s NOT IN ('zz') THEN CAST(s AS INTEGER) > 5 END ORDER BY id",
+   "difference": "PostgreSQL raises on 10/0 for id 7 (its qual order reaches the division first); DuckDB answers. Every failing row is decided by another conjunct, so Assay answers",
+   "sql": "SELECT id FROM g WHERE id NOT IN (2, 5, 11, 12) AND 10 / x > 1 AND CAST(s AS INTEGER) > 5 ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      9
+     ],
+     [
+      14
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  division by zero"
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     9
+    ],
+    [
+     14
+    ]
+   ]
+  },
+  {
+   "id": "where_both_operands_fail_left_error",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "error",
+   "error": "invalid input syntax for type integer: \"abc\"",
+   "difference": "Both raise (DuckDB names the cast, PostgreSQL the division by zero); on row id 2 both Assay operands fail and the left operand's error is raised",
+   "sql": "SELECT id FROM g WHERE CAST(s AS INTEGER) > 5 AND 10 / x > 1 ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  division by zero"
+   }
+  },
+  {
+   "id": "where_both_operands_fail_left_error_reversed",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "error",
+   "error": "division by zero",
+   "difference": "Both raise (DuckDB names the cast, PostgreSQL the division by zero); on row id 2 both Assay operands fail and the left operand's error is raised",
+   "sql": "SELECT id FROM g WHERE 10 / x > 1 AND CAST(s AS INTEGER) > 5 ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  division by zero"
+   }
+  },
+  {
+   "id": "select_and_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id, x <> 0 AND 10 / x > 1 AS r FROM g ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id",
+     "r"
+    ],
+    "types": [
+     "BIGINT",
+     "BOOLEAN"
+    ],
+    "rows": [
+     [
+      1,
+      false
+     ],
+     [
+      2,
+      false
+     ],
+     [
+      3,
+      false
+     ],
+     [
+      4,
+      null
+     ],
+     [
+      5,
+      true
+     ],
+     [
+      6,
+      true
+     ],
+     [
+      7,
+      false
+     ],
+     [
+      8,
+      false
+     ],
+     [
+      9,
+      true
+     ],
+     [
+      10,
+      null
+     ],
+     [
+      11,
+      false
+     ],
+     [
+      12,
+      true
+     ],
+     [
+      13,
+      false
+     ],
+     [
+      14,
+      true
+     ],
+     [
+      15,
+      true
+     ],
+     [
+      16,
+      false
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id",
+    "r"
+   ],
+   "types": [
+    "BIGINT",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     1,
+     false
+    ],
+    [
+     2,
+     false
+    ],
+    [
+     3,
+     false
+    ],
+    [
+     4,
+     null
+    ],
+    [
+     5,
+     true
+    ],
+    [
+     6,
+     true
+    ],
+    [
+     7,
+     false
+    ],
+    [
+     8,
+     false
+    ],
+    [
+     9,
+     true
+    ],
+    [
+     10,
+     null
+    ],
+    [
+     11,
+     false
+    ],
+    [
+     12,
+     true
+    ],
+    [
+     13,
+     false
+    ],
+    [
+     14,
+     true
+    ],
+    [
+     15,
+     true
+    ],
+    [
+     16,
+     false
+    ]
+   ]
+  },
+  {
+   "id": "select_and_guard_reversed",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "rows",
+   "difference": "PostgreSQL evaluates the projected AND left to right and raises on 10/0; DuckDB returns NULL for 10/0. Assay: the FALSE operand decides in either order",
+   "sql": "SELECT id, 10 / x > 1 AND x <> 0 AS r FROM g ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id",
+     "r"
+    ],
+    "types": [
+     "BIGINT",
+     "BOOLEAN"
+    ],
+    "rows": [
+     [
+      1,
+      false
+     ],
+     [
+      2,
+      false
+     ],
+     [
+      3,
+      false
+     ],
+     [
+      4,
+      null
+     ],
+     [
+      5,
+      true
+     ],
+     [
+      6,
+      true
+     ],
+     [
+      7,
+      false
+     ],
+     [
+      8,
+      false
+     ],
+     [
+      9,
+      true
+     ],
+     [
+      10,
+      null
+     ],
+     [
+      11,
+      false
+     ],
+     [
+      12,
+      true
+     ],
+     [
+      13,
+      false
+     ],
+     [
+      14,
+      true
+     ],
+     [
+      15,
+      true
+     ],
+     [
+      16,
+      false
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  division by zero"
+   },
+   "columns": [
+    "id",
+    "r"
+   ],
+   "types": [
+    "BIGINT",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     1,
+     false
+    ],
+    [
+     2,
+     false
+    ],
+    [
+     3,
+     false
+    ],
+    [
+     4,
+     null
+    ],
+    [
+     5,
+     true
+    ],
+    [
+     6,
+     true
+    ],
+    [
+     7,
+     false
+    ],
+    [
+     8,
+     false
+    ],
+    [
+     9,
+     true
+    ],
+    [
+     10,
+     null
+    ],
+    [
+     11,
+     false
+    ],
+    [
+     12,
+     true
+    ],
+    [
+     13,
+     false
+    ],
+    [
+     14,
+     true
+    ],
+    [
+     15,
+     true
+    ],
+    [
+     16,
+     false
+    ]
+   ]
+  },
+  {
+   "id": "select_or_cast_guard",
+   "ordered": true,
+   "references": "DuckDB raises",
+   "expect": "rows",
+   "oracle": "SELECT id, CASE WHEN id IN (2, 5, 8, 12) THEN TRUE ELSE CAST(s AS INTEGER) > 5 END AS r FROM g ORDER BY id",
+   "difference": "DuckDB evaluates both operands of a projected OR and raises; PostgreSQL short-circuits. Assay answers like PostgreSQL",
+   "sql": "SELECT id, id IN (2, 5, 8, 12) OR CAST(s AS INTEGER) > 5 AS r FROM g ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "oracle_duckdb": "rows",
+   "columns": [
+    "id",
+    "r"
+   ],
+   "types": [
+    "BIGINT",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     1,
+     true
+    ],
+    [
+     2,
+     true
+    ],
+    [
+     3,
+     true
+    ],
+    [
+     4,
+     null
+    ],
+    [
+     5,
+     true
+    ],
+    [
+     6,
+     false
+    ],
+    [
+     7,
+     false
+    ],
+    [
+     8,
+     true
+    ],
+    [
+     9,
+     true
+    ],
+    [
+     10,
+     null
+    ],
+    [
+     11,
+     true
+    ],
+    [
+     12,
+     true
+    ],
+    [
+     13,
+     false
+    ],
+    [
+     14,
+     true
+    ],
+    [
+     15,
+     false
+    ],
+    [
+     16,
+     true
+    ]
+   ]
+  },
+  {
+   "id": "select_not_and_cast_guard",
+   "ordered": true,
+   "references": "DuckDB raises",
+   "expect": "rows",
+   "oracle": "SELECT id, NOT CASE WHEN id IN (2, 5, 8, 12) THEN FALSE ELSE CAST(s AS INTEGER) > 5 END AS r FROM g ORDER BY id",
+   "difference": "DuckDB evaluates both operands of a projected AND and raises; PostgreSQL short-circuits. Assay answers like PostgreSQL",
+   "sql": "SELECT id, NOT (id NOT IN (2, 5, 8, 12) AND CAST(s AS INTEGER) > 5) AS r FROM g ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "oracle_duckdb": "rows",
+   "columns": [
+    "id",
+    "r"
+   ],
+   "types": [
+    "BIGINT",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     1,
+     false
+    ],
+    [
+     2,
+     true
+    ],
+    [
+     3,
+     false
+    ],
+    [
+     4,
+     null
+    ],
+    [
+     5,
+     true
+    ],
+    [
+     6,
+     true
+    ],
+    [
+     7,
+     true
+    ],
+    [
+     8,
+     true
+    ],
+    [
+     9,
+     false
+    ],
+    [
+     10,
+     null
+    ],
+    [
+     11,
+     false
+    ],
+    [
+     12,
+     true
+    ],
+    [
+     13,
+     true
+    ],
+    [
+     14,
+     false
+    ],
+    [
+     15,
+     true
+    ],
+    [
+     16,
+     false
+    ]
+   ]
+  },
+  {
+   "id": "select_null_guard_needs_value",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "error",
+   "error": "division by zero",
+   "difference": "A NULL operand does not decide a projected AND (the value is FALSE or NULL depending on the failing operand); PostgreSQL raises, DuckDB returns NULL for 10/0. Assay raises",
+   "sql": "SELECT id, (d > 100 OR NULL) AND 10 / x > 1 AS r FROM g ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id",
+     "r"
+    ],
+    "types": [
+     "BIGINT",
+     "BOOLEAN"
+    ],
+    "rows": [
+     [
+      1,
+      false
+     ],
+     [
+      2,
+      null
+     ],
+     [
+      3,
+      false
+     ],
+     [
+      4,
+      null
+     ],
+     [
+      5,
+      null
+     ],
+     [
+      6,
+      null
+     ],
+     [
+      7,
+      null
+     ],
+     [
+      8,
+      false
+     ],
+     [
+      9,
+      null
+     ],
+     [
+      10,
+      null
+     ],
+     [
+      11,
+      null
+     ],
+     [
+      12,
+      null
+     ],
+     [
+      13,
+      false
+     ],
+     [
+      14,
+      null
+     ],
+     [
+      15,
+      null
+     ],
+     [
+      16,
+      false
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  division by zero"
+   }
+  },
+  {
+   "id": "select_case_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id, CASE WHEN x <> 0 THEN 10 / x END AS r FROM g ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id",
+     "r"
+    ],
+    "types": [
+     "BIGINT",
+     "DOUBLE"
+    ],
+    "rows": [
+     [
+      1,
+      {
+       "float": "1.0"
+      }
+     ],
+     [
+      2,
+      null
+     ],
+     [
+      3,
+      {
+       "float": "-2.857142857142857"
+      }
+     ],
+     [
+      4,
+      null
+     ],
+     [
+      5,
+      {
+       "float": "1.25"
+      }
+     ],
+     [
+      6,
+      {
+       "float": "10.0"
+      }
+     ],
+     [
+      7,
+      null
+     ],
+     [
+      8,
+      {
+       "float": "0.5"
+      }
+     ],
+     [
+      9,
+      {
+       "float": "4.0"
+      }
+     ],
+     [
+      10,
+      null
+     ],
+     [
+      11,
+      null
+     ],
+     [
+      12,
+      {
+       "float": "2.5"
+      }
+     ],
+     [
+      13,
+      {
+       "float": "-1.0"
+      }
+     ],
+     [
+      14,
+      {
+       "float": "20.0"
+      }
+     ],
+     [
+      15,
+      {
+       "float": "2.0"
+      }
+     ],
+     [
+      16,
+      {
+       "float": "-2.0"
+      }
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id",
+    "r"
+   ],
+   "types": [
+    "BIGINT",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     1,
+     {
+      "float": "1.0"
+     }
+    ],
+    [
+     2,
+     null
+    ],
+    [
+     3,
+     {
+      "float": "-2.857142857142857"
+     }
+    ],
+    [
+     4,
+     null
+    ],
+    [
+     5,
+     {
+      "float": "1.25"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "10.0"
+     }
+    ],
+    [
+     7,
+     null
+    ],
+    [
+     8,
+     {
+      "float": "0.5"
+     }
+    ],
+    [
+     9,
+     {
+      "float": "4.0"
+     }
+    ],
+    [
+     10,
+     null
+    ],
+    [
+     11,
+     null
+    ],
+    [
+     12,
+     {
+      "float": "2.5"
+     }
+    ],
+    [
+     13,
+     {
+      "float": "-1.0"
+     }
+    ],
+    [
+     14,
+     {
+      "float": "20.0"
+     }
+    ],
+    [
+     15,
+     {
+      "float": "2.0"
+     }
+    ],
+    [
+     16,
+     {
+      "float": "-2.0"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "select_case_and_condition",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "oracle": "SELECT id, CASE WHEN flag IS NOT NULL AND flag = 'num' THEN CASE WHEN CAST(s AS INTEGER) > 5 THEN 'big' ELSE 'other' END ELSE 'other' END AS r FROM g ORDER BY id",
+   "sql": "SELECT id, CASE WHEN flag IS NOT NULL AND flag = 'num' AND CAST(s AS INTEGER) > 5 THEN 'big' ELSE 'other' END AS r FROM g ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id",
+     "r"
+    ],
+    "types": [
+     "BIGINT",
+     "VARCHAR"
+    ],
+    "rows": [
+     [
+      1,
+      "big"
+     ],
+     [
+      2,
+      "other"
+     ],
+     [
+      3,
+      "big"
+     ],
+     [
+      4,
+      "other"
+     ],
+     [
+      5,
+      "other"
+     ],
+     [
+      6,
+      "other"
+     ],
+     [
+      7,
+      "other"
+     ],
+     [
+      8,
+      "other"
+     ],
+     [
+      9,
+      "big"
+     ],
+     [
+      10,
+      "other"
+     ],
+     [
+      11,
+      "big"
+     ],
+     [
+      12,
+      "other"
+     ],
+     [
+      13,
+      "other"
+     ],
+     [
+      14,
+      "big"
+     ],
+     [
+      15,
+      "other"
+     ],
+     [
+      16,
+      "big"
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id",
+    "r"
+   ],
+   "types": [
+    "BIGINT",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "big"
+    ],
+    [
+     2,
+     "other"
+    ],
+    [
+     3,
+     "big"
+    ],
+    [
+     4,
+     "other"
+    ],
+    [
+     5,
+     "other"
+    ],
+    [
+     6,
+     "other"
+    ],
+    [
+     7,
+     "other"
+    ],
+    [
+     8,
+     "other"
+    ],
+    [
+     9,
+     "big"
+    ],
+    [
+     10,
+     "other"
+    ],
+    [
+     11,
+     "big"
+    ],
+    [
+     12,
+     "other"
+    ],
+    [
+     13,
+     "other"
+    ],
+    [
+     14,
+     "big"
+    ],
+    [
+     15,
+     "other"
+    ],
+    [
+     16,
+     "big"
+    ]
+   ]
+  },
+  {
+   "id": "select_coalesce_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id, COALESCE(CASE WHEN flag = 'num' THEN CAST(s AS INTEGER) END, -1) AS r FROM g ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id",
+     "r"
+    ],
+    "types": [
+     "BIGINT",
+     "INTEGER"
+    ],
+    "rows": [
+     [
+      1,
+      12
+     ],
+     [
+      2,
+      -1
+     ],
+     [
+      3,
+      7
+     ],
+     [
+      4,
+      -1
+     ],
+     [
+      5,
+      -1
+     ],
+     [
+      6,
+      3
+     ],
+     [
+      7,
+      2
+     ],
+     [
+      8,
+      -1
+     ],
+     [
+      9,
+      40
+     ],
+     [
+      10,
+      -1
+     ],
+     [
+      11,
+      6
+     ],
+     [
+      12,
+      -1
+     ],
+     [
+      13,
+      -8
+     ],
+     [
+      14,
+      15
+     ],
+     [
+      15,
+      5
+     ],
+     [
+      16,
+      9
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id",
+    "r"
+   ],
+   "types": [
+    "BIGINT",
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     1,
+     12
+    ],
+    [
+     2,
+     -1
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     -1
+    ],
+    [
+     5,
+     -1
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     8,
+     -1
+    ],
+    [
+     9,
+     40
+    ],
+    [
+     10,
+     -1
+    ],
+    [
+     11,
+     6
+    ],
+    [
+     12,
+     -1
+    ],
+    [
+     13,
+     -8
+    ],
+    [
+     14,
+     15
+    ],
+    [
+     15,
+     5
+    ],
+    [
+     16,
+     9
+    ]
+   ]
+  },
+  {
+   "id": "select_coalesce_lazy_second_argument",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id, COALESCE(d, CAST(s AS INTEGER)) AS r FROM g WHERE id <> 4 ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id",
+     "r"
+    ],
+    "types": [
+     "BIGINT",
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1,
+      2
+     ],
+     [
+      2,
+      0
+     ],
+     [
+      3,
+      -1
+     ],
+     [
+      5,
+      4
+     ],
+     [
+      6,
+      1
+     ],
+     [
+      7,
+      0
+     ],
+     [
+      8,
+      3
+     ],
+     [
+      9,
+      5
+     ],
+     [
+      10,
+      0
+     ],
+     [
+      11,
+      6
+     ],
+     [
+      12,
+      7
+     ],
+     [
+      13,
+      -2
+     ],
+     [
+      14,
+      8
+     ],
+     [
+      15,
+      9
+     ],
+     [
+      16,
+      1
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id",
+    "r"
+   ],
+   "types": [
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1,
+     2
+    ],
+    [
+     2,
+     0
+    ],
+    [
+     3,
+     -1
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     6,
+     1
+    ],
+    [
+     7,
+     0
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     11,
+     6
+    ],
+    [
+     12,
+     7
+    ],
+    [
+     13,
+     -2
+    ],
+    [
+     14,
+     8
+    ],
+    [
+     15,
+     9
+    ],
+    [
+     16,
+     1
+    ]
+   ]
+  },
+  {
+   "id": "select_nullif_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id, CASE WHEN NULLIF(x, 0) IS NOT NULL THEN 10 / x END AS r FROM g ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id",
+     "r"
+    ],
+    "types": [
+     "BIGINT",
+     "DOUBLE"
+    ],
+    "rows": [
+     [
+      1,
+      {
+       "float": "1.0"
+      }
+     ],
+     [
+      2,
+      null
+     ],
+     [
+      3,
+      {
+       "float": "-2.857142857142857"
+      }
+     ],
+     [
+      4,
+      null
+     ],
+     [
+      5,
+      {
+       "float": "1.25"
+      }
+     ],
+     [
+      6,
+      {
+       "float": "10.0"
+      }
+     ],
+     [
+      7,
+      null
+     ],
+     [
+      8,
+      {
+       "float": "0.5"
+      }
+     ],
+     [
+      9,
+      {
+       "float": "4.0"
+      }
+     ],
+     [
+      10,
+      null
+     ],
+     [
+      11,
+      null
+     ],
+     [
+      12,
+      {
+       "float": "2.5"
+      }
+     ],
+     [
+      13,
+      {
+       "float": "-1.0"
+      }
+     ],
+     [
+      14,
+      {
+       "float": "20.0"
+      }
+     ],
+     [
+      15,
+      {
+       "float": "2.0"
+      }
+     ],
+     [
+      16,
+      {
+       "float": "-2.0"
+      }
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id",
+    "r"
+   ],
+   "types": [
+    "BIGINT",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     1,
+     {
+      "float": "1.0"
+     }
+    ],
+    [
+     2,
+     null
+    ],
+    [
+     3,
+     {
+      "float": "-2.857142857142857"
+     }
+    ],
+    [
+     4,
+     null
+    ],
+    [
+     5,
+     {
+      "float": "1.25"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "10.0"
+     }
+    ],
+    [
+     7,
+     null
+    ],
+    [
+     8,
+     {
+      "float": "0.5"
+     }
+    ],
+    [
+     9,
+     {
+      "float": "4.0"
+     }
+    ],
+    [
+     10,
+     null
+    ],
+    [
+     11,
+     null
+    ],
+    [
+     12,
+     {
+      "float": "2.5"
+     }
+    ],
+    [
+     13,
+     {
+      "float": "-1.0"
+     }
+    ],
+    [
+     14,
+     {
+      "float": "20.0"
+     }
+    ],
+    [
+     15,
+     {
+      "float": "2.0"
+     }
+    ],
+    [
+     16,
+     {
+      "float": "-2.0"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "select_nullif_divisor",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id, 10 / NULLIF(x, 0) AS r FROM g ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id",
+     "r"
+    ],
+    "types": [
+     "BIGINT",
+     "DOUBLE"
+    ],
+    "rows": [
+     [
+      1,
+      {
+       "float": "1.0"
+      }
+     ],
+     [
+      2,
+      null
+     ],
+     [
+      3,
+      {
+       "float": "-2.857142857142857"
+      }
+     ],
+     [
+      4,
+      null
+     ],
+     [
+      5,
+      {
+       "float": "1.25"
+      }
+     ],
+     [
+      6,
+      {
+       "float": "10.0"
+      }
+     ],
+     [
+      7,
+      null
+     ],
+     [
+      8,
+      {
+       "float": "0.5"
+      }
+     ],
+     [
+      9,
+      {
+       "float": "4.0"
+      }
+     ],
+     [
+      10,
+      null
+     ],
+     [
+      11,
+      null
+     ],
+     [
+      12,
+      {
+       "float": "2.5"
+      }
+     ],
+     [
+      13,
+      {
+       "float": "-1.0"
+      }
+     ],
+     [
+      14,
+      {
+       "float": "20.0"
+      }
+     ],
+     [
+      15,
+      {
+       "float": "2.0"
+      }
+     ],
+     [
+      16,
+      {
+       "float": "-2.0"
+      }
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id",
+    "r"
+   ],
+   "types": [
+    "BIGINT",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     1,
+     {
+      "float": "1.0"
+     }
+    ],
+    [
+     2,
+     null
+    ],
+    [
+     3,
+     {
+      "float": "-2.857142857142857"
+     }
+    ],
+    [
+     4,
+     null
+    ],
+    [
+     5,
+     {
+      "float": "1.25"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "10.0"
+     }
+    ],
+    [
+     7,
+     null
+    ],
+    [
+     8,
+     {
+      "float": "0.5"
+     }
+    ],
+    [
+     9,
+     {
+      "float": "4.0"
+     }
+    ],
+    [
+     10,
+     null
+    ],
+    [
+     11,
+     null
+    ],
+    [
+     12,
+     {
+      "float": "2.5"
+     }
+    ],
+    [
+     13,
+     {
+      "float": "-1.0"
+     }
+    ],
+    [
+     14,
+     {
+      "float": "20.0"
+     }
+    ],
+    [
+     15,
+     {
+      "float": "2.0"
+     }
+    ],
+    [
+     16,
+     {
+      "float": "-2.0"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "select_unguarded",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "error",
+   "error": "division by zero",
+   "difference": "DuckDB returns NULL for a zero divisor, PostgreSQL raises division by zero; Assay keeps its error",
+   "sql": "SELECT id, 10 / x AS r FROM g ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id",
+     "r"
+    ],
+    "types": [
+     "BIGINT",
+     "DOUBLE"
+    ],
+    "rows": [
+     [
+      1,
+      {
+       "float": "1.0"
+      }
+     ],
+     [
+      2,
+      {
+       "float": "+inf"
+      }
+     ],
+     [
+      3,
+      {
+       "float": "-2.857142857142857"
+      }
+     ],
+     [
+      4,
+      null
+     ],
+     [
+      5,
+      {
+       "float": "1.25"
+      }
+     ],
+     [
+      6,
+      {
+       "float": "10.0"
+      }
+     ],
+     [
+      7,
+      {
+       "float": "+inf"
+      }
+     ],
+     [
+      8,
+      {
+       "float": "0.5"
+      }
+     ],
+     [
+      9,
+      {
+       "float": "4.0"
+      }
+     ],
+     [
+      10,
+      null
+     ],
+     [
+      11,
+      {
+       "float": "+inf"
+      }
+     ],
+     [
+      12,
+      {
+       "float": "2.5"
+      }
+     ],
+     [
+      13,
+      {
+       "float": "-1.0"
+      }
+     ],
+     [
+      14,
+      {
+       "float": "20.0"
+      }
+     ],
+     [
+      15,
+      {
+       "float": "2.0"
+      }
+     ],
+     [
+      16,
+      {
+       "float": "-2.0"
+      }
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  division by zero"
+   }
+  },
+  {
+   "id": "join_on_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT g.id AS id FROM g JOIN h ON g.id = h.id AND h.y <> 0 AND g.x / h.y > 1 ORDER BY g.id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      8
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     8
+    ]
+   ]
+  },
+  {
+   "id": "join_on_guard_reversed",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "oracle": "SELECT g.id AS id FROM g JOIN h ON g.id = h.id AND h.y <> 0 AND g.x / h.y > 1 ORDER BY g.id",
+   "sql": "SELECT g.id AS id FROM g JOIN h ON g.id = h.id AND g.x / h.y > 1 AND h.y <> 0 ORDER BY g.id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      8
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     8
+    ]
+   ]
+  },
+  {
+   "id": "left_join_on_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT g.id AS id, h.label AS label FROM g LEFT JOIN h ON g.id = h.id AND h.label = 'ok' AND CAST(g.s AS INTEGER) > 5 ORDER BY g.id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id",
+     "label"
+    ],
+    "types": [
+     "BIGINT",
+     "VARCHAR"
+    ],
+    "rows": [
+     [
+      1,
+      "ok"
+     ],
+     [
+      2,
+      null
+     ],
+     [
+      3,
+      "ok"
+     ],
+     [
+      4,
+      null
+     ],
+     [
+      5,
+      null
+     ],
+     [
+      6,
+      null
+     ],
+     [
+      7,
+      null
+     ],
+     [
+      8,
+      null
+     ],
+     [
+      9,
+      "ok"
+     ],
+     [
+      10,
+      null
+     ],
+     [
+      11,
+      null
+     ],
+     [
+      12,
+      null
+     ],
+     [
+      13,
+      null
+     ],
+     [
+      14,
+      null
+     ],
+     [
+      15,
+      null
+     ],
+     [
+      16,
+      null
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id",
+    "label"
+   ],
+   "types": [
+    "BIGINT",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "ok"
+    ],
+    [
+     2,
+     null
+    ],
+    [
+     3,
+     "ok"
+    ],
+    [
+     4,
+     null
+    ],
+    [
+     5,
+     null
+    ],
+    [
+     6,
+     null
+    ],
+    [
+     7,
+     null
+    ],
+    [
+     8,
+     null
+    ],
+    [
+     9,
+     "ok"
+    ],
+    [
+     10,
+     null
+    ],
+    [
+     11,
+     null
+    ],
+    [
+     12,
+     null
+    ],
+    [
+     13,
+     null
+    ],
+    [
+     14,
+     null
+    ],
+    [
+     15,
+     null
+    ],
+    [
+     16,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "join_where_cross_table_guard",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "rows",
+   "oracle": "SELECT g.id AS id FROM g JOIN h ON g.id = h.id WHERE CASE WHEN h.label = 'ok' THEN CAST(g.s AS INTEGER) > 5 END ORDER BY g.id",
+   "difference": "Both references push the single-table conjunct CAST(g.s ...) > 5 below the join and raise on rows the guard h.label = 'ok' (or the join itself) discards. Assay decides per joined row: every failing row has h.label <> 'ok' or no match. Expected rows from the CASE spelling (oracle)",
+   "lenient": "more lenient than DuckDB/PostgreSQL; never returns a value computed from a failed step",
+   "sql": "SELECT g.id AS id FROM g JOIN h ON g.id = h.id WHERE h.label = 'ok' AND CAST(g.s AS INTEGER) > 5 ORDER BY g.id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"abc\""
+   },
+   "oracle_duckdb": "rows",
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     3
+    ],
+    [
+     9
+    ]
+   ]
+  },
+  {
+   "id": "join_unguarded",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "error",
+   "error": "division by zero",
+   "difference": "DuckDB returns NULL for a zero divisor, PostgreSQL raises division by zero; Assay keeps its error",
+   "sql": "SELECT g.id AS id FROM g JOIN h ON g.id = h.id WHERE g.x / h.y > 1 ORDER BY g.id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      2
+     ],
+     [
+      7
+     ],
+     [
+      8
+     ],
+     [
+      12
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  division by zero"
+   }
+  },
+  {
+   "id": "having_aggregate_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT k, count(*) AS n FROM g GROUP BY k HAVING sum(x) <> 0 AND 10 / sum(x) > 0 ORDER BY k;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "k",
+     "n"
+    ],
+    "types": [
+     "VARCHAR",
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      "b",
+      3
+     ],
+     [
+      "c",
+      3
+     ],
+     [
+      "d",
+      2
+     ],
+     [
+      "e",
+      3
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "k",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "b",
+     3
+    ],
+    [
+     "c",
+     3
+    ],
+    [
+     "d",
+     2
+    ],
+    [
+     "e",
+     3
+    ]
+   ]
+  },
+  {
+   "id": "having_aggregate_guard_reversed",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "oracle": "SELECT k, count(*) AS n FROM g GROUP BY k HAVING sum(x) <> 0 AND 10 / sum(x) > 0 ORDER BY k",
+   "sql": "SELECT k, count(*) AS n FROM g GROUP BY k HAVING 10 / sum(x) > 0 AND sum(x) <> 0 ORDER BY k;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "k",
+     "n"
+    ],
+    "types": [
+     "VARCHAR",
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      "b",
+      3
+     ],
+     [
+      "c",
+      3
+     ],
+     [
+      "d",
+      2
+     ],
+     [
+      "e",
+      3
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "k",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "b",
+     3
+    ],
+    [
+     "c",
+     3
+    ],
+    [
+     "d",
+     2
+    ],
+    [
+     "e",
+     3
+    ]
+   ]
+  },
+  {
+   "id": "having_key_cast_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT s, count(*) AS n FROM g GROUP BY s HAVING s IN ('12', '7', '40', '6', '15', '9') AND CAST(s AS INTEGER) > 5 ORDER BY s;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "s",
+     "n"
+    ],
+    "types": [
+     "VARCHAR",
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      "12",
+      1
+     ],
+     [
+      "15",
+      1
+     ],
+     [
+      "40",
+      1
+     ],
+     [
+      "6",
+      1
+     ],
+     [
+      "7",
+      1
+     ],
+     [
+      "9",
+      1
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "s",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "12",
+     1
+    ],
+    [
+     "15",
+     1
+    ],
+    [
+     "40",
+     1
+    ],
+    [
+     "6",
+     1
+    ],
+    [
+     "7",
+     1
+    ],
+    [
+     "9",
+     1
+    ]
+   ]
+  },
+  {
+   "id": "having_unguarded",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "error",
+   "error": "division by zero",
+   "difference": "DuckDB returns NULL for a zero divisor, PostgreSQL raises division by zero; Assay keeps its error",
+   "sql": "SELECT k, count(*) AS n FROM g GROUP BY k HAVING 10 / sum(x) > 0 ORDER BY k;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "k",
+     "n"
+    ],
+    "types": [
+     "VARCHAR",
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      "a",
+      4
+     ],
+     [
+      "b",
+      3
+     ],
+     [
+      "c",
+      3
+     ],
+     [
+      "d",
+      2
+     ],
+     [
+      "e",
+      3
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  division by zero"
+   }
+  },
+  {
+   "id": "grouped_where_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT k, d, count(*) AS n FROM g WHERE x <> 0 AND 10 / x > 1 GROUP BY k, d ORDER BY k, d;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "k",
+     "d",
+     "n"
+    ],
+    "types": [
+     "VARCHAR",
+     "BIGINT",
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      "c",
+      1,
+      1
+     ],
+     [
+      "c",
+      4,
+      1
+     ],
+     [
+      "c",
+      5,
+      1
+     ],
+     [
+      "d",
+      7,
+      1
+     ],
+     [
+      "e",
+      8,
+      1
+     ],
+     [
+      "e",
+      9,
+      1
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "k",
+    "d",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "c",
+     1,
+     1
+    ],
+    [
+     "c",
+     4,
+     1
+    ],
+    [
+     "c",
+     5,
+     1
+    ],
+    [
+     "d",
+     7,
+     1
+    ],
+    [
+     "e",
+     8,
+     1
+    ],
+    [
+     "e",
+     9,
+     1
+    ]
+   ]
+  },
+  {
+   "id": "grouped_filter_predicate_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT k, count(*) FILTER (WHERE x <> 0 AND 10 / x > 1) AS n FROM g GROUP BY k ORDER BY k;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "k",
+     "n"
+    ],
+    "types": [
+     "VARCHAR",
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      "a",
+      0
+     ],
+     [
+      "b",
+      0
+     ],
+     [
+      "c",
+      3
+     ],
+     [
+      "d",
+      1
+     ],
+     [
+      "e",
+      2
+     ],
+     [
+      null,
+      0
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "k",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "a",
+     0
+    ],
+    [
+     "b",
+     0
+    ],
+    [
+     "c",
+     3
+    ],
+    [
+     "d",
+     1
+    ],
+    [
+     "e",
+     2
+    ],
+    [
+     null,
+     0
+    ]
+   ]
+  },
+  {
+   "id": "grouped_filter_predicate_cast_guard",
+   "ordered": true,
+   "references": "DuckDB raises",
+   "expect": "rows",
+   "oracle": "SELECT k, count(CASE WHEN flag IS NOT NULL AND flag = 'num' THEN CASE WHEN CAST(s AS INTEGER) > 5 THEN 1 END END) AS n FROM g GROUP BY k ORDER BY k",
+   "difference": "DuckDB evaluates the FILTER predicate's operands eagerly and raises; PostgreSQL short-circuits. Assay answers like PostgreSQL",
+   "sql": "SELECT k, count(*) FILTER (WHERE flag IS NOT NULL AND flag = 'num' AND CAST(s AS INTEGER) > 5) AS n FROM g GROUP BY k ORDER BY k;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "oracle_duckdb": "rows",
+   "columns": [
+    "k",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "a",
+     1
+    ],
+    [
+     "b",
+     1
+    ],
+    [
+     "c",
+     1
+    ],
+    [
+     "d",
+     1
+    ],
+    [
+     "e",
+     2
+    ],
+    [
+     null,
+     0
+    ]
+   ]
+  },
+  {
+   "id": "grouped_case_and_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT k, sum(CASE WHEN x <> 0 AND 10 / x > 1 THEN 1 ELSE 0 END) AS n FROM g GROUP BY k ORDER BY k;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "k",
+     "n"
+    ],
+    "types": [
+     "VARCHAR",
+     "HUGEINT"
+    ],
+    "rows": [
+     [
+      "a",
+      0
+     ],
+     [
+      "b",
+      0
+     ],
+     [
+      "c",
+      3
+     ],
+     [
+      "d",
+      1
+     ],
+     [
+      "e",
+      2
+     ],
+     [
+      null,
+      0
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "k",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "HUGEINT"
+   ],
+   "rows": [
+    [
+     "a",
+     0
+    ],
+    [
+     "b",
+     0
+    ],
+    [
+     "c",
+     3
+    ],
+    [
+     "d",
+     1
+    ],
+    [
+     "e",
+     2
+    ],
+    [
+     null,
+     0
+    ]
+   ]
+  },
+  {
+   "id": "grouped_keys_share_guarded_operand",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT x <> 0 AND 10 / x > 1 AS a, x = 0 OR 10 / x < 5 AS b, count(*) AS n FROM g GROUP BY 1, 2 ORDER BY 1, 2;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "a",
+     "b",
+     "n"
+    ],
+    "types": [
+     "BOOLEAN",
+     "BOOLEAN",
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      false,
+      true,
+      8
+     ],
+     [
+      true,
+      false,
+      2
+     ],
+     [
+      true,
+      true,
+      4
+     ],
+     [
+      null,
+      null,
+      2
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "a",
+    "b",
+    "n"
+   ],
+   "types": [
+    "BOOLEAN",
+    "BOOLEAN",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     false,
+     true,
+     8
+    ],
+    [
+     true,
+     false,
+     2
+    ],
+    [
+     true,
+     true,
+     4
+    ],
+    [
+     null,
+     null,
+     2
+    ]
+   ]
+  },
+  {
+   "id": "grouped_aggregates_share_guarded_operand",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT k, count(x <> 0 AND 10 / x > 1 OR NULL) AS a, count(x = 0 OR 10 / x < 5 OR NULL) AS b FROM g GROUP BY k ORDER BY k;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "k",
+     "a",
+     "b"
+    ],
+    "types": [
+     "VARCHAR",
+     "BIGINT",
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      "a",
+      0,
+      4
+     ],
+     [
+      "b",
+      0,
+      2
+     ],
+     [
+      "c",
+      3,
+      2
+     ],
+     [
+      "d",
+      1,
+      2
+     ],
+     [
+      "e",
+      2,
+      2
+     ],
+     [
+      null,
+      0,
+      0
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "k",
+    "a",
+    "b"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "a",
+     0,
+     4
+    ],
+    [
+     "b",
+     0,
+     2
+    ],
+    [
+     "c",
+     3,
+     2
+    ],
+    [
+     "d",
+     1,
+     2
+    ],
+    [
+     "e",
+     2,
+     2
+    ],
+    [
+     null,
+     0,
+     0
+    ]
+   ]
+  },
+  {
+   "id": "filter_argument_decimal_division",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT k, sum(10 / x) FILTER (WHERE x <> 0) AS r FROM g GROUP BY k ORDER BY k;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "k",
+     "r"
+    ],
+    "types": [
+     "VARCHAR",
+     "DOUBLE"
+    ],
+    "rows": [
+     [
+      "a",
+      {
+       "float": "0.0"
+      }
+     ],
+     [
+      "b",
+      {
+       "float": "-2.357142857142857"
+      }
+     ],
+     [
+      "c",
+      {
+       "float": "15.25"
+      }
+     ],
+     [
+      "d",
+      {
+       "float": "2.5"
+      }
+     ],
+     [
+      "e",
+      {
+       "float": "20.0"
+      }
+     ],
+     [
+      null,
+      null
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "k",
+    "r"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "a",
+     {
+      "float": "0.0"
+     }
+    ],
+    [
+     "b",
+     {
+      "float": "-2.357142857142857"
+     }
+    ],
+    [
+     "c",
+     {
+      "float": "15.25"
+     }
+    ],
+    [
+     "d",
+     {
+      "float": "2.5"
+     }
+    ],
+    [
+     "e",
+     {
+      "float": "20.0"
+     }
+    ],
+    [
+     null,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "filter_argument_float_overflow",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT sum(f * 10) FILTER (WHERE f BETWEEN -1000 AND 1000) AS r, count(*) AS n FROM g;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "r",
+     "n"
+    ],
+    "types": [
+     "DOUBLE",
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      {
+       "float": "315.0"
+      },
+      16
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "r",
+    "n"
+   ],
+   "types": [
+    "DOUBLE",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     {
+      "float": "315.0"
+     },
+     16
+    ]
+   ]
+  },
+  {
+   "id": "filter_argument_float_by_decimal",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT k, avg(f / x) FILTER (WHERE x <> 0 AND f BETWEEN -1000 AND 1000) AS r FROM g GROUP BY k ORDER BY k;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "k",
+     "r"
+    ],
+    "types": [
+     "VARCHAR",
+     "DOUBLE"
+    ],
+    "rows": [
+     [
+      "a",
+      {
+       "float": "0.2"
+      }
+     ],
+     [
+      "b",
+      {
+       "float": "0.2"
+      }
+     ],
+     [
+      "c",
+      {
+       "float": "0.325"
+      }
+     ],
+     [
+      "d",
+      null
+     ],
+     [
+      "e",
+      {
+       "float": "3.9333333333333336"
+      }
+     ],
+     [
+      null,
+      null
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "k",
+    "r"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "a",
+     {
+      "float": "0.2"
+     }
+    ],
+    [
+     "b",
+     {
+      "float": "0.2"
+     }
+    ],
+    [
+     "c",
+     {
+      "float": "0.325"
+     }
+    ],
+    [
+     "d",
+     null
+    ],
+    [
+     "e",
+     {
+      "float": "3.9333333333333336"
+     }
+    ],
+    [
+     null,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "filter_argument_cast_refused",
+   "ordered": true,
+   "references": "DuckDB raises",
+   "expect": "error",
+   "error": "unsupported: aggregate FILTER over an argument that may fail (DuckDB evaluates it on filtered-out rows; PostgreSQL does not)",
+   "difference": "DuckDB evaluates FILTER arguments on filtered-out rows and raises a conversion error; PostgreSQL does not. Assay keeps its refusal for arguments that can raise an error DuckDB also raises",
+   "sql": "SELECT sum(CAST(s AS INTEGER)) FILTER (WHERE flag = 'num') AS r FROM g;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "rows"
+   }
+  },
+  {
+   "id": "filter_argument_kept_row_fails",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "error",
+   "error": "division by zero",
+   "difference": "The kept row x = 0 needs 10/0: PostgreSQL raises, DuckDB returns NULL. Assay keeps its error",
+   "sql": "SELECT sum(10 / x) FILTER (WHERE x >= 0) AS r FROM g;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "r"
+    ],
+    "types": [
+     "DOUBLE"
+    ],
+    "rows": [
+     [
+      {
+       "float": "+inf"
+      }
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  division by zero"
+   }
+  },
+  {
+   "id": "window_case_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id, sum(CASE WHEN x <> 0 THEN 10 / x END) OVER (PARTITION BY k ORDER BY id) AS r FROM g WHERE k IS NOT NULL ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id",
+     "r"
+    ],
+    "types": [
+     "BIGINT",
+     "DOUBLE"
+    ],
+    "rows": [
+     [
+      1,
+      {
+       "float": "1.0"
+      }
+     ],
+     [
+      2,
+      {
+       "float": "1.0"
+      }
+     ],
+     [
+      3,
+      {
+       "float": "-2.857142857142857"
+      }
+     ],
+     [
+      4,
+      {
+       "float": "-2.857142857142857"
+      }
+     ],
+     [
+      5,
+      {
+       "float": "1.25"
+      }
+     ],
+     [
+      6,
+      {
+       "float": "11.25"
+      }
+     ],
+     [
+      7,
+      {
+       "float": "1.0"
+      }
+     ],
+     [
+      8,
+      {
+       "float": "-2.357142857142857"
+      }
+     ],
+     [
+      9,
+      {
+       "float": "15.25"
+      }
+     ],
+     [
+      11,
+      null
+     ],
+     [
+      12,
+      {
+       "float": "2.5"
+      }
+     ],
+     [
+      13,
+      {
+       "float": "0.0"
+      }
+     ],
+     [
+      14,
+      {
+       "float": "20.0"
+      }
+     ],
+     [
+      15,
+      {
+       "float": "22.0"
+      }
+     ],
+     [
+      16,
+      {
+       "float": "20.0"
+      }
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id",
+    "r"
+   ],
+   "types": [
+    "BIGINT",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     1,
+     {
+      "float": "1.0"
+     }
+    ],
+    [
+     2,
+     {
+      "float": "1.0"
+     }
+    ],
+    [
+     3,
+     {
+      "float": "-2.857142857142857"
+     }
+    ],
+    [
+     4,
+     {
+      "float": "-2.857142857142857"
+     }
+    ],
+    [
+     5,
+     {
+      "float": "1.25"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "11.25"
+     }
+    ],
+    [
+     7,
+     {
+      "float": "1.0"
+     }
+    ],
+    [
+     8,
+     {
+      "float": "-2.357142857142857"
+     }
+    ],
+    [
+     9,
+     {
+      "float": "15.25"
+     }
+    ],
+    [
+     11,
+     null
+    ],
+    [
+     12,
+     {
+      "float": "2.5"
+     }
+    ],
+    [
+     13,
+     {
+      "float": "0.0"
+     }
+    ],
+    [
+     14,
+     {
+      "float": "20.0"
+     }
+    ],
+    [
+     15,
+     {
+      "float": "22.0"
+     }
+    ],
+    [
+     16,
+     {
+      "float": "20.0"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "window_over_guarded_where",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id, count(*) OVER (PARTITION BY k) AS n FROM g WHERE flag IS NOT NULL AND flag = 'num' AND CAST(s AS INTEGER) > 5 ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id",
+     "n"
+    ],
+    "types": [
+     "BIGINT",
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1,
+      1
+     ],
+     [
+      3,
+      1
+     ],
+     [
+      9,
+      1
+     ],
+     [
+      11,
+      1
+     ],
+     [
+      14,
+      2
+     ],
+     [
+      16,
+      2
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id",
+    "n"
+   ],
+   "types": [
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1,
+     1
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     9,
+     1
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     14,
+     2
+    ],
+    [
+     16,
+     2
+    ]
+   ]
+  },
+  {
+   "id": "window_with_guarded_projection",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id, x <> 0 AND 10 / x > 1 AS r, row_number() OVER (ORDER BY id DESC) AS rn FROM g ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id",
+     "r",
+     "rn"
+    ],
+    "types": [
+     "BIGINT",
+     "BOOLEAN",
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1,
+      false,
+      16
+     ],
+     [
+      2,
+      false,
+      15
+     ],
+     [
+      3,
+      false,
+      14
+     ],
+     [
+      4,
+      null,
+      13
+     ],
+     [
+      5,
+      true,
+      12
+     ],
+     [
+      6,
+      true,
+      11
+     ],
+     [
+      7,
+      false,
+      10
+     ],
+     [
+      8,
+      false,
+      9
+     ],
+     [
+      9,
+      true,
+      8
+     ],
+     [
+      10,
+      null,
+      7
+     ],
+     [
+      11,
+      false,
+      6
+     ],
+     [
+      12,
+      true,
+      5
+     ],
+     [
+      13,
+      false,
+      4
+     ],
+     [
+      14,
+      true,
+      3
+     ],
+     [
+      15,
+      true,
+      2
+     ],
+     [
+      16,
+      false,
+      1
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id",
+    "r",
+    "rn"
+   ],
+   "types": [
+    "BIGINT",
+    "BOOLEAN",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1,
+     false,
+     16
+    ],
+    [
+     2,
+     false,
+     15
+    ],
+    [
+     3,
+     false,
+     14
+    ],
+    [
+     4,
+     null,
+     13
+    ],
+    [
+     5,
+     true,
+     12
+    ],
+    [
+     6,
+     true,
+     11
+    ],
+    [
+     7,
+     false,
+     10
+    ],
+    [
+     8,
+     false,
+     9
+    ],
+    [
+     9,
+     true,
+     8
+    ],
+    [
+     10,
+     null,
+     7
+    ],
+    [
+     11,
+     false,
+     6
+    ],
+    [
+     12,
+     true,
+     5
+    ],
+    [
+     13,
+     false,
+     4
+    ],
+    [
+     14,
+     true,
+     3
+    ],
+    [
+     15,
+     true,
+     2
+    ],
+    [
+     16,
+     false,
+     1
+    ]
+   ]
+  },
+  {
+   "id": "derived_table_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM (SELECT * FROM g WHERE x <> 0) q WHERE 10 / x > 1;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      6
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     6
+    ]
+   ]
+  },
+  {
+   "id": "in_subquery_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id FROM g WHERE x <> 0 AND id IN (SELECT id FROM h WHERE h.y <> 0 AND 10 / h.y > 1) ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      3
+     ],
+     [
+      6
+     ],
+     [
+      8
+     ],
+     [
+      9
+     ],
+     [
+      13
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     3
+    ],
+    [
+     6
+    ],
+    [
+     8
+    ],
+    [
+     9
+    ],
+    [
+     13
+    ]
+   ]
+  },
+  {
+   "id": "empty_input_unguarded",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g_empty WHERE 10 / x > 1;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      0
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     0
+    ]
+   ]
+  },
+  {
+   "id": "single_row_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id FROM g WHERE id = 7 AND x <> 0 AND 10 / x > 1 ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": []
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": []
+  },
+  {
+   "id": "single_row_unguarded",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "error",
+   "error": "division by zero",
+   "difference": "DuckDB returns NULL for a zero divisor, PostgreSQL raises division by zero; Assay keeps its error",
+   "sql": "SELECT id FROM g WHERE id = 7 AND 10 / x > 1 ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      7
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  division by zero"
+   }
+  },
+  {
+   "id": "where_null_conjunct_decides_reversed",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE CAST(s AS INTEGER) > 5 AND flag = 'num';",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      6
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     6
+    ]
+   ]
+  },
+  {
+   "id": "where_null_conjunct_under_or_needs_value",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "error",
+   "error": "invalid input syntax for type integer: \"n/a\"",
+   "difference": "DuckDB's filter selection also drops the NULL rows of an AND nested under OR; PostgreSQL needs that AND's exact value under OR and raises. Assay applies the row-filter rule only to the top-level AND chain, like PostgreSQL, and raises",
+   "sql": "SELECT count(*) AS n FROM g WHERE (flag = 'num' AND CAST(s AS INTEGER) > 5) OR id = 99;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      6
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"n/a\""
+   }
+  },
+  {
+   "id": "join_on_null_conjunct_decides",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g JOIN h ON g.id = h.id AND g.flag = 'num' AND CAST(g.s AS INTEGER) > 0;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      5
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     5
+    ]
+   ]
+  },
+  {
+   "id": "having_null_conjunct_decides",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT s, count(*) AS n FROM g GROUP BY s HAVING (CASE WHEN s IN ('abc', 'x9', 'zz', 'n/a') THEN NULL ELSE TRUE END) AND CAST(s AS INTEGER) > 5 ORDER BY s;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "s",
+     "n"
+    ],
+    "types": [
+     "VARCHAR",
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      "12",
+      1
+     ],
+     [
+      "15",
+      1
+     ],
+     [
+      "40",
+      1
+     ],
+     [
+      "6",
+      1
+     ],
+     [
+      "7",
+      1
+     ],
+     [
+      "9",
+      1
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "s",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "12",
+     1
+    ],
+    [
+     "15",
+     1
+    ],
+    [
+     "40",
+     1
+    ],
+    [
+     "6",
+     1
+    ],
+    [
+     "7",
+     1
+    ],
+    [
+     "9",
+     1
+    ]
+   ]
+  },
+  {
+   "id": "select_null_conjunct_needs_value",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "error",
+   "error": "invalid input syntax for type integer: \"n/a\"",
+   "difference": "A projected AND needs the exact value: NULL AND (failing operand) is FALSE or NULL. Both references raise; so does Assay",
+   "sql": "SELECT id, flag = 'num' AND CAST(s AS INTEGER) > 5 AS r FROM g WHERE id IN (1, 12) ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'n/a' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"n/a\""
+   }
+  },
+  {
+   "id": "filter_predicate_null_conjunct_needs_value",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "error",
+   "error": "invalid input syntax for type integer: \"n/a\"",
+   "difference": "A FILTER predicate is not a top-level row filter in either reference: both raise; so does Assay",
+   "sql": "SELECT count(*) FILTER (WHERE flag = 'num' AND CAST(s AS INTEGER) > 5) AS n FROM g;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"n/a\""
+   }
+  },
+  {
+   "id": "planner_in_subquery_guards_where_division",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "rows",
+   "difference": "PostgreSQL evaluates 10 / x before its IN semi-join; DuckDB returns NULL for 10/0. In Assay the IN conjunct decides the row",
+   "sql": "SELECT id FROM g WHERE 10 / x > 0 AND id IN (SELECT id FROM h WHERE label = 'ok') ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      6
+     ],
+     [
+      9
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  division by zero"
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     6
+    ],
+    [
+     9
+    ]
+   ]
+  },
+  {
+   "id": "planner_in_subquery_guards_where_cast",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "rows",
+   "difference": "PostgreSQL filters the cast before its IN semi-join; DuckDB answers. In Assay the IN conjunct decides the row",
+   "sql": "SELECT id FROM g WHERE CAST(s AS INTEGER) > 5 AND id IN (SELECT id FROM h WHERE label = 'ok') ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      3
+     ],
+     [
+      9
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"abc\""
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     3
+    ],
+    [
+     9
+    ]
+   ]
+  },
+  {
+   "id": "planner_not_in_subquery_guards_where_cast",
+   "ordered": true,
+   "references": "DuckDB raises",
+   "expect": "rows",
+   "oracle": "SELECT id FROM g WHERE id NOT IN (SELECT id FROM h WHERE label <> 'ok') AND id <> 5 AND CASE WHEN id NOT IN (SELECT id FROM h WHERE label <> 'ok') AND id <> 5 THEN CAST(s AS INTEGER) > 5 END ORDER BY id",
+   "difference": "DuckDB evaluates the cast before its NOT IN anti-join and raises; PostgreSQL answers. Every failing row is rejected by NOT IN or id <> 5, so Assay answers like PostgreSQL. Expected rows from the CASE spelling (oracle)",
+   "sql": "SELECT id FROM g WHERE CAST(s AS INTEGER) > 5 AND id NOT IN (SELECT id FROM h WHERE label <> 'ok') AND id <> 5 ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "oracle_duckdb": "rows",
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     3
+    ],
+    [
+     9
+    ],
+    [
+     11
+    ],
+    [
+     14
+    ],
+    [
+     16
+    ]
+   ]
+  },
+  {
+   "id": "planner_in_subquery_value_guarded",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id FROM g WHERE flag = 'num' AND CAST(s AS INTEGER) IN (SELECT id FROM h) ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      3
+     ],
+     [
+      6
+     ],
+     [
+      7
+     ],
+     [
+      11
+     ],
+     [
+      16
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     3
+    ],
+    [
+     6
+    ],
+    [
+     7
+    ],
+    [
+     11
+    ],
+    [
+     16
+    ]
+   ]
+  },
+  {
+   "id": "planner_not_in_subquery_value_guarded",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id FROM g WHERE flag = 'num' AND CAST(s AS INTEGER) NOT IN (SELECT id FROM h WHERE id < 10) ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      9
+     ],
+     [
+      13
+     ],
+     [
+      14
+     ],
+     [
+      15
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     9
+    ],
+    [
+     13
+    ],
+    [
+     14
+    ],
+    [
+     15
+    ]
+   ]
+  },
+  {
+   "id": "planner_in_subquery_value_unguarded",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "error",
+   "error": "invalid input syntax for type integer: \"abc\"",
+   "difference": "Both raise on 'abc'; so does Assay",
+   "sql": "SELECT id FROM g WHERE CAST(s AS INTEGER) IN (SELECT id FROM h) ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"abc\""
+   }
+  },
+  {
+   "id": "planner_join_key_guarded_on",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT g.id AS id, h.label AS label FROM g JOIN h ON CAST(g.s AS INTEGER) = h.id AND g.flag = 'num' ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id",
+     "label"
+    ],
+    "types": [
+     "BIGINT",
+     "VARCHAR"
+    ],
+    "rows": [
+     [
+      1,
+      "none"
+     ],
+     [
+      3,
+      "zero"
+     ],
+     [
+      6,
+      "ok"
+     ],
+     [
+      7,
+      "zero"
+     ],
+     [
+      11,
+      "ok"
+     ],
+     [
+      16,
+      "ok"
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id",
+    "label"
+   ],
+   "types": [
+    "BIGINT",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "none"
+    ],
+    [
+     3,
+     "zero"
+    ],
+    [
+     6,
+     "ok"
+    ],
+    [
+     7,
+     "zero"
+    ],
+    [
+     11,
+     "ok"
+    ],
+    [
+     16,
+     "ok"
+    ]
+   ]
+  },
+  {
+   "id": "planner_join_key_guarded_on_right",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT g.id AS id FROM h JOIN g ON h.id = CAST(g.s AS INTEGER) AND g.flag IS NOT NULL AND g.flag = 'num' ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      3
+     ],
+     [
+      6
+     ],
+     [
+      7
+     ],
+     [
+      11
+     ],
+     [
+      16
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     3
+    ],
+    [
+     6
+    ],
+    [
+     7
+    ],
+    [
+     11
+    ],
+    [
+     16
+    ]
+   ]
+  },
+  {
+   "id": "planner_join_key_guarded_comma",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT g.id AS id FROM g, h WHERE CAST(g.s AS INTEGER) = h.id AND g.flag = 'num' ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      3
+     ],
+     [
+      6
+     ],
+     [
+      7
+     ],
+     [
+      11
+     ],
+     [
+      16
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     3
+    ],
+    [
+     6
+    ],
+    [
+     7
+    ],
+    [
+     11
+    ],
+    [
+     16
+    ]
+   ]
+  },
+  {
+   "id": "planner_join_key_guarded_left_join",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "rows",
+   "oracle": "SELECT g.id AS id, h.label AS label FROM g LEFT JOIN h ON CASE WHEN g.flag = 'num' THEN CAST(g.s AS INTEGER) END = h.id AND g.flag = 'num' ORDER BY id",
+   "difference": "Both references compute the LEFT JOIN key CAST(g.s ...) for every g row; the ON conjunct g.flag = 'num' rejects every failing row, so Assay computes the key only where it holds. Expected rows from the CASE spelling (oracle)",
+   "lenient": "more lenient than DuckDB/PostgreSQL; never returns a value computed from a failed step",
+   "sql": "SELECT g.id AS id, h.label AS label FROM g LEFT JOIN h ON CAST(g.s AS INTEGER) = h.id AND g.flag = 'num' ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"abc\""
+   },
+   "oracle_duckdb": "rows",
+   "columns": [
+    "id",
+    "label"
+   ],
+   "types": [
+    "BIGINT",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "none"
+    ],
+    [
+     2,
+     null
+    ],
+    [
+     3,
+     "zero"
+    ],
+    [
+     4,
+     null
+    ],
+    [
+     5,
+     null
+    ],
+    [
+     6,
+     "ok"
+    ],
+    [
+     7,
+     "zero"
+    ],
+    [
+     8,
+     null
+    ],
+    [
+     9,
+     null
+    ],
+    [
+     10,
+     null
+    ],
+    [
+     11,
+     "ok"
+    ],
+    [
+     12,
+     null
+    ],
+    [
+     13,
+     null
+    ],
+    [
+     14,
+     null
+    ],
+    [
+     15,
+     null
+    ],
+    [
+     16,
+     "ok"
+    ]
+   ]
+  },
+  {
+   "id": "planner_join_key_unguarded",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "error",
+   "error": "invalid input syntax for type integer: \"abc\"",
+   "difference": "Both raise on 'abc'; so does Assay",
+   "sql": "SELECT g.id AS id FROM g JOIN h ON CAST(g.s AS INTEGER) = h.id ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"abc\""
+   }
+  },
+  {
+   "id": "planner_exists_key_guarded",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id FROM g WHERE EXISTS (SELECT 1 FROM h WHERE h.id = CAST(g.s AS INTEGER) AND g.flag = 'num') ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      3
+     ],
+     [
+      6
+     ],
+     [
+      7
+     ],
+     [
+      11
+     ],
+     [
+      16
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     3
+    ],
+    [
+     6
+    ],
+    [
+     7
+    ],
+    [
+     11
+    ],
+    [
+     16
+    ]
+   ]
+  },
+  {
+   "id": "planner_not_exists_key_guarded",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id FROM g WHERE flag = 'num' AND NOT EXISTS (SELECT 1 FROM h WHERE h.id = CAST(g.s AS INTEGER) AND g.flag = 'num') ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      9
+     ],
+     [
+      13
+     ],
+     [
+      14
+     ],
+     [
+      15
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     9
+    ],
+    [
+     13
+    ],
+    [
+     14
+    ],
+    [
+     15
+    ]
+   ]
+  },
+  {
+   "id": "planner_exists_key_unguarded",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "error",
+   "error": "invalid input syntax for type integer: \"abc\"",
+   "difference": "Both raise on 'abc'; so does Assay",
+   "sql": "SELECT id FROM g WHERE EXISTS (SELECT 1 FROM h WHERE h.id = CAST(g.s AS INTEGER)) ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"abc\""
+   }
+  },
+  {
+   "id": "planner_on_residual_guarded_by_where",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "rows",
+   "oracle": "SELECT g.id AS id FROM g JOIN h ON g.id = h.id AND CASE WHEN h.label = 'ok' THEN CAST(g.s AS INTEGER) > 0 END WHERE h.label = 'ok' ORDER BY id",
+   "difference": "Both references evaluate the failing conjunct before (or below) the conjunct that rejects the row (the cast is pushed into the g scan). Inner-join ON conjuncts and WHERE form one conjunction; h.label = 'ok' rejects every failing row. Expected rows from the CASE spelling (oracle)",
+   "lenient": "more lenient than DuckDB/PostgreSQL; never returns a value computed from a failed step",
+   "sql": "SELECT g.id AS id FROM g JOIN h ON g.id = h.id AND CAST(g.s AS INTEGER) > 0 WHERE h.label = 'ok' ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"abc\""
+   },
+   "oracle_duckdb": "rows",
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     3
+    ],
+    [
+     6
+    ],
+    [
+     9
+    ]
+   ]
+  },
+  {
+   "id": "planner_on_residual_guarded_by_other_on",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "rows",
+   "oracle": "SELECT g.id AS id FROM g JOIN h ON g.id = h.id JOIN h AS h2 ON h2.id = h.id AND h2.label = 'ok' WHERE CASE WHEN h2.label = 'ok' THEN CAST(g.s AS INTEGER) > 0 END ORDER BY id",
+   "difference": "Both references evaluate the failing conjunct before (or below) the conjunct that rejects the row (the cast is pushed into the g scan). The other ON's h2.label = 'ok' rejects every failing row. Expected rows from the CASE spelling (oracle)",
+   "lenient": "more lenient than DuckDB/PostgreSQL; never returns a value computed from a failed step",
+   "sql": "SELECT g.id AS id FROM g JOIN h ON g.id = h.id AND CAST(g.s AS INTEGER) > 0 JOIN h AS h2 ON h2.id = h.id AND h2.label = 'ok' ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"abc\""
+   },
+   "oracle_duckdb": "rows",
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     3
+    ],
+    [
+     6
+    ],
+    [
+     9
+    ]
+   ]
+  },
+  {
+   "id": "planner_three_way_guard_on_last_table",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "rows",
+   "oracle": "SELECT g.id AS id FROM g, h, h AS h2 WHERE g.id = h.id AND h.id = h2.id AND h2.label = 'ok' AND CASE WHEN h2.label = 'ok' THEN CAST(g.s AS INTEGER) > 5 END ORDER BY id",
+   "difference": "Both references evaluate the failing conjunct before (or below) the conjunct that rejects the row (the cast is pushed into the g scan). h2.label = 'ok' rejects every failing row. Expected rows from the CASE spelling (oracle)",
+   "lenient": "more lenient than DuckDB/PostgreSQL; never returns a value computed from a failed step",
+   "sql": "SELECT g.id AS id FROM g, h, h AS h2 WHERE g.id = h.id AND h.id = h2.id AND h2.label = 'ok' AND CAST(g.s AS INTEGER) > 5 ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"abc\""
+   },
+   "oracle_duckdb": "rows",
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     3
+    ],
+    [
+     9
+    ]
+   ]
+  },
+  {
+   "id": "planner_three_way_unguarded",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "error",
+   "error": "invalid input syntax for type integer: \"abc\"",
+   "difference": "Both raise on 'abc'; so does Assay",
+   "sql": "SELECT g.id AS id FROM g, h, h AS h2 WHERE g.id = h.id AND h.id = h2.id AND CAST(g.s AS INTEGER) > 5 ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"abc\""
+   }
+  },
+  {
+   "id": "planner_or_with_subquery_guard",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "rows",
+   "oracle": "SELECT id FROM g WHERE CASE WHEN id IN (SELECT id FROM h WHERE label = 'ok') THEN CAST(s AS INTEGER) > 5 ELSE FALSE END OR id = 99 ORDER BY id",
+   "difference": "Both references raise on the cast before the IN subquery inside the OR; in Assay the FALSE IN conjunct decides the AND. Expected rows from the CASE spelling (oracle)",
+   "lenient": "more lenient than DuckDB/PostgreSQL; never returns a value computed from a failed step",
+   "sql": "SELECT id FROM g WHERE (CAST(s AS INTEGER) > 5 AND id IN (SELECT id FROM h WHERE label = 'ok')) OR id = 99 ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Conversion Error: Could not convert string 'abc' to INT32 when casting from source column s"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  invalid input syntax for type integer: \"abc\""
+   },
+   "oracle_duckdb": "rows",
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     3
+    ],
+    [
+     9
+    ]
+   ]
+  },
+  {
+   "id": "c3_ln_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE f > 0 AND LN(f) > 0;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      10
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     10
+    ]
+   ]
+  },
+  {
+   "id": "c3_ln_guard_reversed",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE LN(f) > 0 AND f > 0;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      10
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     10
+    ]
+   ]
+  },
+  {
+   "id": "c3_sqrt_or_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id FROM g WHERE f < 0 OR SQRT(f) > 1 ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      3
+     ],
+     [
+      5
+     ],
+     [
+      7
+     ],
+     [
+      8
+     ],
+     [
+      9
+     ],
+     [
+      10
+     ],
+     [
+      11
+     ],
+     [
+      12
+     ],
+     [
+      13
+     ],
+     [
+      14
+     ],
+     [
+      15
+     ],
+     [
+      16
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     3
+    ],
+    [
+     5
+    ],
+    [
+     7
+    ],
+    [
+     8
+    ],
+    [
+     9
+    ],
+    [
+     10
+    ],
+    [
+     11
+    ],
+    [
+     12
+    ],
+    [
+     13
+    ],
+    [
+     14
+    ],
+    [
+     15
+    ],
+    [
+     16
+    ]
+   ]
+  },
+  {
+   "id": "c3_log_guard_select",
+   "ordered": true,
+   "references": "DuckDB raises",
+   "expect": "rows",
+   "oracle": "SELECT id, CASE WHEN f > 0 THEN LOG(f) > 1 WHEN f <= 0 THEN FALSE END AS big FROM g ORDER BY id",
+   "difference": "DuckDB evaluates LOG on every row of a projected AND and raises on LOG(0); PostgreSQL answers. Assay: the FALSE operand decides the row (expected rows from the CASE spelling, oracle)",
+   "sql": "SELECT id, f > 0 AND LOG(f) > 1 AS big FROM g ORDER BY id;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Out of Range Error: cannot take logarithm of zero"
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "oracle_duckdb": "rows",
+   "columns": [
+    "id",
+    "big"
+   ],
+   "types": [
+    "BIGINT",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     1,
+     false
+    ],
+    [
+     2,
+     false
+    ],
+    [
+     3,
+     true
+    ],
+    [
+     4,
+     null
+    ],
+    [
+     5,
+     false
+    ],
+    [
+     6,
+     false
+    ],
+    [
+     7,
+     false
+    ],
+    [
+     8,
+     false
+    ],
+    [
+     9,
+     false
+    ],
+    [
+     10,
+     false
+    ],
+    [
+     11,
+     false
+    ],
+    [
+     12,
+     true
+    ],
+    [
+     13,
+     false
+    ],
+    [
+     14,
+     false
+    ],
+    [
+     15,
+     false
+    ],
+    [
+     16,
+     false
+    ]
+   ]
+  },
+  {
+   "id": "c3_power_overflow_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT id FROM g WHERE f > 0 AND f < 10000000000 AND POWER(f, 3) > 1 ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      8
+     ],
+     [
+      9
+     ],
+     [
+      10
+     ],
+     [
+      11
+     ],
+     [
+      14
+     ],
+     [
+      15
+     ],
+     [
+      16
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     8
+    ],
+    [
+     9
+    ],
+    [
+     10
+    ],
+    [
+     11
+    ],
+    [
+     14
+    ],
+    [
+     15
+    ],
+    [
+     16
+    ]
+   ]
+  },
+  {
+   "id": "c3_power_overflow_unguarded",
+   "ordered": true,
+   "references": "PostgreSQL raises",
+   "expect": "error",
+   "error": "floating arithmetic overflow",
+   "difference": "f < 10000000000 keeps f = -1e308, whose cube overflows: PostgreSQL raises (value out of range: overflow) and so does Assay; DuckDB returns -infinity",
+   "sql": "SELECT id FROM g WHERE f < 10000000000 AND POWER(f, 3) > 1 ORDER BY id;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "id"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      1
+     ],
+     [
+      8
+     ],
+     [
+      9
+     ],
+     [
+      10
+     ],
+     [
+      11
+     ],
+     [
+      14
+     ],
+     [
+      15
+     ],
+     [
+      16
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  value out of range: overflow"
+   }
+  },
+  {
+   "id": "c3_decimal_mod_zero_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE x <> 0 AND 10 % x > 1;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      4
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     4
+    ]
+   ]
+  },
+  {
+   "id": "c3_decimal_mod_zero_guard_reversed",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE 10 % x > 1 AND x <> 0;",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      4
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     4
+    ]
+   ]
+  },
+  {
+   "id": "c3_ln_unguarded",
+   "ordered": true,
+   "references": "both raise",
+   "expect": "error",
+   "error": "cannot take logarithm of zero",
+   "difference": "Both raise on LN(0) (row 2 is the first failing row); so does Assay",
+   "sql": "SELECT count(*) AS n FROM g WHERE LN(f) > 0;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Out of Range Error: cannot take logarithm of zero"
+   },
+   "postgresql": {
+    "outcome": "error",
+    "error": "ERROR:  cannot take logarithm of zero"
+   }
+  },
+  {
+   "id": "c3_timestamp_cast_guard",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE flag = 'num' AND CAST(ds AS TIMESTAMP) >= TIMESTAMP '2024-01-01 00:00:00';",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      5
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     5
+    ]
+   ]
+  },
+  {
+   "id": "c3_timestamp_cast_guard_reversed",
+   "ordered": true,
+   "references": "both answer",
+   "expect": "rows",
+   "sql": "SELECT count(*) AS n FROM g WHERE CAST(ds AS TIMESTAMP) >= TIMESTAMP '2024-01-01 00:00:00' AND flag = 'num';",
+   "duckdb": {
+    "outcome": "rows",
+    "columns": [
+     "n"
+    ],
+    "types": [
+     "BIGINT"
+    ],
+    "rows": [
+     [
+      5
+     ]
+    ]
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     5
+    ]
+   ]
+  },
+  {
+   "id": "c3_filter_ln_argument_refused",
+   "ordered": true,
+   "references": "DuckDB raises",
+   "expect": "error",
+   "error": "unsupported: aggregate FILTER over an argument that may fail (DuckDB evaluates it on filtered-out rows; PostgreSQL does not)",
+   "difference": "DuckDB evaluates the FILTER argument on every row and raises on LN(0); PostgreSQL answers. A math domain error is one DuckDB raises, so FILTER admission refuses the argument",
+   "sql": "SELECT SUM(LN(f)) FILTER (WHERE f > 0) AS s FROM g;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Out of Range Error: cannot take logarithm of zero"
+   },
+   "postgresql": {
+    "outcome": "rows"
+   }
+  },
+  {
+   "id": "c3_filter_predicate_guard",
+   "ordered": true,
+   "references": "DuckDB raises",
+   "expect": "rows",
+   "oracle": "SELECT COUNT(*) FILTER (WHERE CASE WHEN f > 0 THEN LN(f) > 0 END) AS n FROM g",
+   "difference": "DuckDB evaluates LN on every row of the FILTER predicate and raises on LN(0); PostgreSQL answers. Assay: the FALSE operand decides the row (expected rows from the CASE spelling, oracle)",
+   "sql": "SELECT COUNT(*) FILTER (WHERE f > 0 AND LN(f) > 0) AS n FROM g;",
+   "duckdb": {
+    "outcome": "error",
+    "error": "Out of Range Error: cannot take logarithm of zero"
+   },
+   "postgresql": {
+    "outcome": "rows",
+    "agrees": true
+   },
+   "oracle_duckdb": "rows",
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     10
+    ]
+   ]
+  }
+ ]
+}

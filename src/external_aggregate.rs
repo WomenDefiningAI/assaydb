@@ -12,7 +12,7 @@ use crate::{
     types::Type,
 };
 use arrow::{
-    array::{ArrayRef, BooleanArray, Float64Array, Int64Array, new_null_array},
+    array::{BooleanArray, Int64Array, new_null_array},
     compute::filter,
     datatypes::{DataType, Field, Schema},
     record_batch::RecordBatch,
@@ -22,10 +22,20 @@ use std::{sync::Arc, time::Instant};
 struct Projection {
     prepared: Prepared,
     expressions: ExpressionProgram,
+    // Per evaluated aggregate input: a DISTINCT Float input whose spilled
+    // values use canonical DISTINCT identity (-0.0 as 0.0, one NaN encoding),
+    // so the sort-based deduplication below agrees with the in-memory sets.
+    canonical_floats: Vec<bool>,
 }
 impl Projection {
     fn new(original: &Prepared, options: &Options) -> Self {
         let mut plan = original.plan.clone();
+        let canonical_floats = plan
+            .aggregates
+            .iter()
+            .filter(|a| a.input.is_some())
+            .map(|a| a.distinct && a.input.as_ref().is_some_and(|e| e.ty == Type::Float))
+            .collect();
         let expressions = ExpressionProgram::new(
             &plan,
             original.schema.fields().len(),
@@ -61,6 +71,7 @@ impl Projection {
                 relational: None,
             },
             expressions,
+            canonical_floats,
         }
     }
     fn batch(
@@ -92,7 +103,7 @@ impl Projection {
             )?);
         }
         if let Some(predicate) = &original.plan.filter {
-            let mask = predicate.eval(&input, budget)?;
+            let mask = predicate.eval_filter(&input, budget)?;
             let mask = boolean(&mask.array);
             let len = mask.iter().filter(|v| *v == Some(true)).count();
             let columns = input
@@ -115,23 +126,35 @@ impl Projection {
             input = Input { columns, len };
         }
         let (groups, values) = self.expressions.evaluate(&mut input, budget)?;
+        let canonical_values = values
+            .iter()
+            .flatten()
+            .zip(&self.canonical_floats)
+            .filter(|(_, canonical)| **canonical)
+            .map(|(value, _)| value);
+        let key_bytes =
+            groups
+                .iter()
+                .chain(canonical_values)
+                .try_fold(0usize, |bytes, value| {
+                    bytes
+                        .checked_add(crate::expr::numeric_compare::canonical_bytes(&value.array)?)
+                        .ok_or_else(|| "float group key size overflow".to_string())
+                })?;
+        let _key_credit = (key_bytes != 0)
+            .then(|| budget.reserve(key_bytes))
+            .transpose()?;
         let arrays = groups
             .iter()
             .chain(values.iter().flatten())
             .enumerate()
             .map(|(index, v)| {
-                if index < groups.len()
-                    && let Some(array) = v.array.as_any().downcast_ref::<Float64Array>()
-                    && array
-                        .values()
-                        .iter()
-                        .any(|n| *n == 0.0 && n.is_sign_negative())
-                {
-                    Arc::new(Float64Array::from_iter(
-                        array
-                            .iter()
-                            .map(|n| n.map(|n| if n == 0.0 { 0.0 } else { n })),
-                    )) as ArrayRef
+                // One canonical Float identity (signed zeros equal, one NaN):
+                // group keys and spilled DISTINCT Float aggregate inputs, so
+                // sort-based deduplication agrees with in-memory DISTINCT sets.
+                // The key credit funds every copy, including repeated expressions.
+                if index < groups.len() || self.canonical_floats[index - groups.len()] {
+                    crate::expr::numeric_compare::canonical_array(&v.array)
                 } else {
                     v.array.clone()
                 }
@@ -199,7 +222,8 @@ impl Processor<'_> {
                 if depth >= 31 || self.prepared.plan.groups.is_empty() {
                     return Err(format!(
                         "resource-limit: aggregate partition cannot be split further: {error}"
-                    ));
+                    )
+                    .into());
                 }
                 let mut writer = PartitionWriter::new(
                     self.store,

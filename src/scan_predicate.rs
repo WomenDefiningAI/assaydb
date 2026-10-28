@@ -28,7 +28,7 @@ pub(crate) fn total(expr: &Expr) -> bool {
 // Prove constant arithmetic without rewriting/evaluating the predicate early.
 // Check every intermediate, including scaled operands, just as Expr::eval does.
 // In particular, later cancellation cannot justify an overflowing intermediate.
-fn numeric_constant(expr: &Expr) -> Option<i128> {
+pub(crate) fn numeric_constant(expr: &Expr) -> Option<i128> {
     use crate::types::{checked, factor, rescale};
     let scale = expr.ty.scale().ok()?;
     factor(scale).ok()?;

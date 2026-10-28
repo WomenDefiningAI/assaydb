@@ -1,4 +1,4 @@
-//! Temporary, additive guard for row-dependent conditional storage classes.
+//! Conditional reachability facts and validation of normalized result types.
 //! Validate after binding; normalization shares conservative reachability facts.
 mod normalize;
 use crate::{
@@ -9,14 +9,12 @@ use crate::{
     types::Type,
 };
 use arrow::datatypes::Schema;
-pub(crate) use normalize::normalize_expression;
+pub(crate) use normalize::{normalize_expression, normalize_literal_arms};
 
 const INT: u8 = 1;
 const FLOAT: u8 = 2;
 const NULL: u8 = 1;
 const VALUE: u8 = 2;
-const ERROR: &str =
-    "unsupported: row-dependent mixed Int/Float conditional requires tagged numeric representation";
 
 #[derive(Clone, Copy)]
 pub(crate) struct Fact {
@@ -26,6 +24,11 @@ pub(crate) struct Fact {
     conditional: bool,
     boolean: Option<bool>,
     integer: Option<i128>,
+    /// Float derived from an Int value promoted to binary64 by a mixed
+    /// Int/Float conditional (October 15 decision). Consumers that would
+    /// otherwise reinterpret the rounded value exactly use DOUBLE semantics
+    /// or refuse; ordinary Float columns and casts never carry this bit.
+    promoted: bool,
 }
 impl Fact {
     fn typed(ty: &Type, nullable: bool, varying: bool) -> Self {
@@ -44,10 +47,8 @@ impl Fact {
             conditional: false,
             boolean: None,
             integer: None,
+            promoted: false,
         }
-    }
-    fn mixed(self) -> bool {
-        self.conditional && self.varying && self.classes == (INT | FLOAT)
     }
     fn union(self, other: Self) -> Self {
         Self {
@@ -55,6 +56,7 @@ impl Fact {
             nulls: self.nulls | other.nulls,
             varying: self.varying || other.varying,
             conditional: self.conditional || other.conditional,
+            promoted: self.promoted || other.promoted,
             integer: if self.integer == other.integer {
                 self.integer
             } else {
@@ -92,7 +94,7 @@ fn get(values: &[Fact], index: usize) -> Result<Fact> {
 // Same bounded, column-free proof used for conditional reachability. Failure
 // remains unknown, never a planning-time runtime error. Needed for the approved
 // zero-divisor NULL semantics without inventing a reachable COALESCE arm.
-fn constant_zero(e: &Expr, op: Op) -> Option<bool> {
+fn constant_zero(e: &Expr) -> Option<bool> {
     let proven = crate::bind::branch_types::constant(e)?;
     if let Kind::Literal(Literal::Num(n)) = &proven.kind {
         return Some(*n == 0);
@@ -119,8 +121,6 @@ fn constant_zero(e: &Expr, op: Op) -> Option<bool> {
         let value = array.value(0);
         if !value.is_finite() {
             None
-        } else if op == Op::Mod {
-            Some(value as i64 == 0)
         } else {
             Some(value == 0.0)
         }
@@ -148,12 +148,16 @@ fn expression_mode(e: &Expr, input: &[Fact], guard: bool) -> Result<Fact> {
             }
         }
         Kind::Column(column) => return get(input, *column),
-        Kind::Cast(a) | Kind::CastDecimal(a, _, _) => {
+        Kind::Cast(a)
+        | Kind::DialectCast(a, _)
+        | Kind::CastVarchar(a, _)
+        | Kind::CastDecimal(a, _, _) => {
             let a = expression_mode(a, input, guard)?;
             // A conversion fixes the consuming storage class. Its child was
             // still visited, so a cast cannot hide an earlier unsafe division.
             result.nulls = a.nulls;
             result.varying = a.varying;
+            result.promoted = a.promoted && e.ty == Type::Float;
             // Cast saturation/rounding is not part of this literal/count proof.
             result.integer = None;
             if a.nulls == NULL {
@@ -170,9 +174,7 @@ fn expression_mode(e: &Expr, input: &[Fact], guard: bool) -> Result<Fact> {
                 if condition.nulls == NULL || condition.boolean == Some(false) {
                     continue;
                 }
-                // Column-free is not the same as proved. An unresolved
-                // Boolean choice can still select either storage class; until
-                // tagged values exist, uncertainty must never permit promotion.
+                // An unresolved Boolean choice may select either arm.
                 varying_choice |= condition.varying
                     || condition.boolean != Some(true)
                     || condition.nulls != VALUE;
@@ -192,11 +194,20 @@ fn expression_mode(e: &Expr, input: &[Fact], guard: bool) -> Result<Fact> {
             let mut value = alternatives.unwrap_or(Fact::typed(&Type::Null, true, false));
             value.varying |= varying_choice;
             value.conditional |= varying_choice && value.classes == (INT | FLOAT);
-            // Temporary all-consumer refusal: an outer CAST, comparison, ABS,
-            // aggregate or bare projection must not conceal precision loss at
-            // the conditional selection itself. Dead arms were skipped above.
-            if guard && value.mixed() {
-                return Err(ERROR.into());
+            // CASE converts its selected value to the bound result type.
+            // Helen's October 15 decision permits binary64 rounding of Int
+            // arms, including values above 2^53, before any outer consumer.
+            if e.ty == Type::Float {
+                // A reachable Int arm beside a Float-valued arm that was not
+                // marked by normalization (e.g. beyond its bounded proof) is
+                // still converted by CASE: promoted. Typed-NULL Float arms
+                // alone keep their previous, unpromoted provenance.
+                value.promoted |= value.classes == (INT | FLOAT);
+                value.classes = if value.nulls == NULL { 0 } else { FLOAT };
+                value.conditional = false;
+                value.integer = None;
+            } else {
+                value.promoted = false;
             }
             if guard && reachable_type != Type::Null && reachable_type != e.ty {
                 // A bounded normalization decline must never become silent
@@ -238,17 +249,19 @@ fn expression_mode(e: &Expr, input: &[Fact], guard: bool) -> Result<Fact> {
                 && !matches!(a.ty, Type::Decimal(_))
                 && !matches!(b.ty, Type::Decimal(_))
             {
-                Some(constant_zero(b, *op))
+                Some(constant_zero(b))
             } else {
                 None
             };
             let decimal_float_result = e.ty == Type::Float
                 && (matches!(a.ty, Type::Decimal(_)) || matches!(b.ty, Type::Decimal(_)));
+            // A constant zero divisor folds the quotient/remainder to NULL,
+            // except that a Float dividend may be NaN and NaN / 0 and NaN % 0
+            // are NaN (decision 2026-10-17). Int dividends keep the fold, so
+            // their typing is unchanged.
+            let nan_dividend = matches!(op, Op::Div | Op::Mod) && a.ty == Type::Float;
             let a = expression_mode(a, input, guard)?;
             let b = expression_mode(b, input, guard)?;
-            if guard && matches!(op, Op::Div | Op::Mod) && (a.mixed() || b.mixed()) {
-                return Err(ERROR.into());
-            }
             result.varying = a.varying || b.varying;
             if let (VALUE, VALUE, Some(a), Some(b)) = (a.nulls, b.nulls, a.integer, b.integer) {
                 result.boolean = match op {
@@ -277,6 +290,7 @@ fn expression_mode(e: &Expr, input: &[Fact], guard: bool) -> Result<Fact> {
             };
             if let Some(zero) = denominator_zero {
                 match zero {
+                    Some(true) if nan_dividend => result.nulls |= NULL,
                     Some(true) => result.nulls = NULL,
                     Some(false) => {}
                     None => result.nulls |= NULL,
@@ -305,6 +319,7 @@ fn expression_mode(e: &Expr, input: &[Fact], guard: bool) -> Result<Fact> {
                 }
                 result.classes = if result.nulls == NULL { 0 } else { classes };
                 result.conditional = (a.conditional || b.conditional) && classes == (INT | FLOAT);
+                result.promoted = (a.promoted || b.promoted) && e.ty == Type::Float;
             }
         }
         Kind::Neg(a) => {
@@ -314,9 +329,16 @@ fn expression_mode(e: &Expr, input: &[Fact], guard: bool) -> Result<Fact> {
         }
         Kind::Function(name, a) => {
             let a = expression_mode(a, input, guard)?;
-            if guard && name == "factorial" && a.mixed() {
-                return Err(ERROR.into());
+            if name == PROMOTE {
+                result.nulls = a.nulls;
+                result.varying = a.varying;
+                result.promoted = true;
+                if a.nulls == NULL {
+                    result.classes = 0;
+                }
+                return Ok(result);
             }
+            result.promoted = a.promoted && e.ty == Type::Float;
             if name == "abs" {
                 let mut a = a;
                 a.integer = None;
@@ -324,6 +346,10 @@ fn expression_mode(e: &Expr, input: &[Fact], guard: bool) -> Result<Fact> {
             }
             result.varying = a.varying;
             result.nulls = a.nulls;
+            if name == "$round_null" {
+                result.nulls = NULL;
+                result.classes = 0;
+            }
         }
         Kind::IsNull(a, negated) => {
             let a = expression_mode(a, input, guard)?;
@@ -348,6 +374,70 @@ fn expression_mode(e: &Expr, input: &[Fact], guard: bool) -> Result<Fact> {
         }
         Kind::Year(a) | Kind::Substring(a, _, _) => {
             result.varying = expression_mode(a, input, guard)?.varying;
+        }
+        Kind::Call(_, args) => {
+            // Text functions bind counts as INTEGER, so a mixed Int/Float
+            // conditional (typed DOUBLE after promotion) is refused there and
+            // is never narrowed; DOUBLE text operands format the promoted
+            // value exactly as DuckDB does. Only row variation propagates.
+            for arg in args {
+                result.varying |= expression_mode(arg, input, guard)?.varying;
+            }
+        }
+        Kind::SortPack(keys, value) => {
+            // Every key and the value are visited for the guard. The packed
+            // bytes are NULL exactly when the value is NULL.
+            for (key, _, _) in keys {
+                result.varying |= expression_mode(key, input, guard)?.varying;
+            }
+            let value = expression_mode(value, input, guard)?;
+            result.varying |= value.varying;
+            result.nulls = if value.nulls == NULL {
+                NULL
+            } else {
+                value.nulls
+            };
+            result.classes = 0;
+        }
+        Kind::Pack(a, b) => {
+            // Both arguments are visited for the guard. The packed value is
+            // NULL whenever either argument is NULL.
+            let a = expression_mode(a, input, guard)?;
+            let b = expression_mode(b, input, guard)?;
+            result.varying = a.varying || b.varying;
+            result.nulls = if a.nulls == NULL || b.nulls == NULL {
+                NULL
+            } else {
+                a.nulls | b.nulls
+            };
+            result.classes = 0;
+        }
+        Kind::Math(function, args) => {
+            // Strict functions are NULL when any argument is proved NULL;
+            // GREATEST/LEAST only when every argument is. Float results keep
+            // promoted provenance from any promoted argument, as arithmetic.
+            let mut all_null = !args.is_empty();
+            let mut any_null = false;
+            let mut promoted = false;
+            for arg in args {
+                let arg = expression_mode(arg, input, guard)?;
+                result.varying |= arg.varying;
+                all_null &= arg.nulls == NULL;
+                any_null |= arg.nulls == NULL;
+                promoted |= arg.promoted;
+            }
+            let null = match function {
+                crate::expr::math::Function::Greatest | crate::expr::math::Function::Least => {
+                    all_null
+                }
+                crate::expr::math::Function::Trunc(None) => true,
+                _ => any_null,
+            };
+            if null {
+                result.nulls = NULL;
+                result.classes = 0;
+            }
+            result.promoted = promoted && e.ty == Type::Float;
         }
     }
     Ok(result)
@@ -392,14 +482,62 @@ fn plan_mode(p: &Plan, input: &[Fact], input_empty: bool, guard: bool) -> Result
                     value
                 }
                 Aggregate::Count => Fact::typed(&a.ty, false, true),
-                Aggregate::Sum | Aggregate::Avg if no_values => {
+                Aggregate::Quantile(_) | Aggregate::Mode { .. } if no_values => {
                     Fact::typed(&Type::Null, true, false)
                 }
-                Aggregate::Sum | Aggregate::Avg => Fact::typed(
-                    &a.ty,
-                    p.groups.is_empty() || value.is_none_or(|v| v.nulls & NULL != 0),
-                    true,
-                ),
+                Aggregate::Quantile(ref q) if q.continuous && a.ty == Type::Float => {
+                    // An interpolated DOUBLE, not one of the input values.
+                    let mut result = Fact::typed(&a.ty, true, true);
+                    result.promoted = value.is_some_and(|v| v.promoted);
+                    result
+                }
+                Aggregate::Quantile(ref q) if q.continuous => Fact::typed(&a.ty, true, true),
+                Aggregate::Quantile(_) | Aggregate::Mode { .. } => {
+                    // The result is one of the group's values, as for MIN/MAX.
+                    let mut value =
+                        value.ok_or("internal: missing ordered-set provenance input")?;
+                    value.nulls |= NULL;
+                    value.varying = true;
+                    value
+                }
+                Aggregate::StringAgg(_) if no_values => Fact::typed(&Type::Null, true, false),
+                Aggregate::StringAgg(_) => Fact::typed(&a.ty, true, true),
+                Aggregate::Sum
+                | Aggregate::Avg
+                | Aggregate::Moment { .. }
+                | Aggregate::ArgExtreme { .. }
+                    if no_values =>
+                {
+                    Fact::typed(&Type::Null, true, false)
+                }
+                Aggregate::Moment { .. } => {
+                    let mut result = Fact::typed(&a.ty, true, true);
+                    result.promoted = value.is_some_and(|v| v.promoted);
+                    result
+                }
+                Aggregate::ArgExtreme { .. } => {
+                    // The result is one row's first argument, as MIN/MAX return
+                    // one row's value.
+                    let mut value = match &a.input {
+                        Some(Expr {
+                            kind: Kind::Pack(arg, _),
+                            ..
+                        }) => expression_mode(arg, input, guard)?,
+                        _ => Fact::typed(&a.ty, true, true),
+                    };
+                    value.nulls |= NULL;
+                    value.varying = true;
+                    value
+                }
+                Aggregate::Sum | Aggregate::Avg => {
+                    let mut result = Fact::typed(
+                        &a.ty,
+                        p.groups.is_empty() || value.is_none_or(|v| v.nulls & NULL != 0),
+                        true,
+                    );
+                    result.promoted = a.ty == Type::Float && value.is_some_and(|v| v.promoted);
+                    result
+                }
             })
         })
         .collect::<Result<Vec<_>>>()?;
@@ -427,7 +565,7 @@ fn empty_stream(root: &Node, remaining: usize) -> bool {
     };
     match &root.op {
         RelOp::Empty => true,
-        RelOp::Limit { count, input } => *count == 0 || child(input),
+        RelOp::Limit { count, input, .. } => *count == 0 || child(input),
         RelOp::WindowOrder { input, .. }
         | RelOp::Window { input, .. }
         | RelOp::Project { input, .. }
@@ -443,6 +581,18 @@ fn empty_stream(root: &Node, remaining: usize) -> bool {
 }
 fn node_mode(root: &Node, guard: bool) -> Result<Vec<Fact>> {
     match &root.op {
+        RelOp::Generate { specification } => {
+            for argument in &specification.arguments {
+                expression_mode(argument, &[], guard)?;
+            }
+            fields(&root.schema)
+        }
+        RelOp::RecursiveScan { .. } => fields(&root.schema),
+        RelOp::RecursiveCte { anchor, step, .. } => {
+            node_mode(anchor, guard)?;
+            node_mode(step, guard)?;
+            fields(&root.schema)
+        }
         RelOp::Scan { .. } | RelOp::Empty => fields(&root.schema),
         RelOp::Window {
             input,
@@ -456,7 +606,39 @@ fn node_mode(root: &Node, guard: bool) -> Result<Vec<Fact>> {
             {
                 expression_mode(key, &facts, guard)?;
             }
-            facts.push(Fact::typed(&Type::Int, false, true));
+            if let Some(offset) = &specification.offset {
+                expression_mode(&offset.input, &facts, guard)?;
+                expression_mode(&offset.default, &facts, guard)?;
+                facts.push(Fact::typed(&offset.input.ty, true, true));
+                return Ok(facts);
+            }
+            if let Some(aggregate) = &specification.aggregate {
+                let value = aggregate
+                    .input
+                    .as_ref()
+                    .map(|e| expression_mode(e, &facts, guard))
+                    .transpose()?;
+                let mut result = match aggregate.function {
+                    Aggregate::Min | Aggregate::Max => value.unwrap(),
+                    _ => {
+                        let mut result = Fact::typed(
+                            &aggregate.ty,
+                            !matches!(aggregate.function, Aggregate::Count),
+                            true,
+                        );
+                        result.promoted =
+                            aggregate.ty == Type::Float && value.is_some_and(|v| v.promoted);
+                        result
+                    }
+                };
+                if !matches!(aggregate.function, Aggregate::Count) {
+                    result.nulls |= NULL;
+                }
+                result.varying = true;
+                facts.push(result);
+            } else {
+                facts.push(Fact::typed(&Type::Int, false, true));
+            }
             Ok(facts)
         }
         RelOp::One => Ok(Vec::new()),
@@ -593,6 +775,64 @@ pub(crate) fn validate_expressions<'a>(
         expression_mode(e, &input, true)?;
     }
     Ok(())
+}
+
+/// Internal marker for a reachable Int conditional arm converted to binary64.
+/// Evaluation is the ordinary Int-to-REAL conversion; only provenance differs.
+pub(crate) const PROMOTE: &str = "$promote_float";
+
+/// Consumer guard: CAST of a promoted value to INTEGER outside [-2^63, 2^63)
+/// is an out-of-range error in DuckDB 1.5.6 and PostgreSQL, not saturation.
+pub(crate) const PROMOTED_INTEGER: &str = "$promoted_integer";
+/// Identity marker on a promoted Float NULLIF operand whose other operand is
+/// Int: NULLIF keeps the Int result type, so the Int side cannot be cast.
+pub(crate) const PROMOTED_COMPARE: &str = "$promoted_compare";
+const TWO_63: f64 = 9_223_372_036_854_775_808.0;
+
+fn floats(array: &arrow::array::ArrayRef) -> Result<&arrow::array::Float64Array> {
+    array
+        .as_any()
+        .downcast_ref::<arrow::array::Float64Array>()
+        .ok_or_else(|| "internal: promoted guard input was not REAL".into())
+}
+pub(crate) fn check_promoted_integer(array: &arrow::array::ArrayRef) -> Result<()> {
+    for x in floats(array)?.iter().flatten() {
+        if !(-TWO_63..TWO_63).contains(&x) {
+            return Err(format!(
+                "INTEGER out of range: CAST of promoted Int/Float value {x:e} to INTEGER"
+            )
+            .into());
+        }
+    }
+    Ok(())
+}
+/// Wrap a promoted Float operand in a consumer guard (identity on success).
+pub(crate) fn guard(e: Expr, name: &str) -> Expr {
+    Expr {
+        ty: Type::Float,
+        kind: Kind::Function(name.into(), Box::new(e)),
+    }
+}
+
+/// Whether a bound Float expression carries promoted-Int provenance. Facts
+/// absent (base tables) means no column is promoted; failure means not proven.
+pub(crate) fn promoted(e: &Expr, schema: &Schema, facts: Option<&[Fact]>) -> bool {
+    if e.ty != Type::Float {
+        return false;
+    }
+    let fallback;
+    let input = if let Some(facts) = facts {
+        facts
+    } else {
+        match fields(schema) {
+            Ok(values) => {
+                fallback = values;
+                &fallback
+            }
+            Err(_) => return false,
+        }
+    };
+    expression_mode(e, input, false).is_ok_and(|fact| fact.promoted)
 }
 
 /// Planner-owned provenance; never inferred from external Arrow metadata.

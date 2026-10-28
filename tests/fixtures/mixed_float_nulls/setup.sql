@@ -1,0 +1,2 @@
+CREATE TABLE null_arms (flag BOOLEAN, n INTEGER);
+INSERT INTO null_arms VALUES (TRUE, 1), (FALSE, 2), (NULL, 3), (TRUE, NULL);

@@ -115,6 +115,10 @@ impl<'a> Side<'a> {
     }
 }
 fn evaluate(batch: &RecordBatch, expressions: &[Expr], budget: &Budget) -> Result<Vec<Value>> {
+    let input = evaluation_input(batch, expressions, budget)?;
+    expressions.iter().map(|e| e.eval(&input, budget)).collect()
+}
+fn evaluation_input(batch: &RecordBatch, expressions: &[Expr], budget: &Budget) -> Result<Input> {
     let mut needed = std::collections::BTreeSet::new();
     for e in expressions {
         e.columns(&mut needed);
@@ -130,15 +134,15 @@ fn evaluate(batch: &RecordBatch, expressions: &[Expr], budget: &Budget) -> Resul
             budget,
         )?);
     }
-    expressions.iter().map(|e| e.eval(&input, budget)).collect()
+    Ok(input)
 }
 fn make_batch(schema: SchemaRef, arrays: Vec<ArrayRef>, rows: usize) -> Result<RecordBatch> {
-    RecordBatch::try_new_with_options(
+    Ok(RecordBatch::try_new_with_options(
         schema,
         arrays,
         &RecordBatchOptions::new().with_row_count(Some(rows)),
     )
-    .map_err(|e| e.to_string())
+    .map_err(|e| e.to_string())?)
 }
 fn encode(batch: &RecordBatch, keys: usize, budget: &Budget, optimized: bool) -> Result<Keys> {
     let values = batch.columns()[..keys]
@@ -280,9 +284,9 @@ impl Join<'_> {
                     )?;
                     let mut matched = vec![false; probe.batch.num_rows()];
                     self.probe(&probe.batch, &build, &mut matched)
-                        .map_err(|e| format!("{e}; external join probe"))?;
+                        .map_err(|e| e.context("; external join probe"))?;
                     self.finish_probe(&probe.batch, &matched)
-                        .map_err(|e| format!("{e}; external join unmatched/mark output"))?;
+                        .map_err(|e| e.context("; external join unmatched/mark output"))?;
                 }
                 Ok(())
             }
@@ -452,9 +456,9 @@ impl Join<'_> {
                 }
                 let batch = make_batch(Arc::new(schema), arrays, li.len())?;
                 let bytes = batch.get_array_memory_size();
-                let mask = evaluate(&batch, std::slice::from_ref(residual), &self.budget)?
-                    .pop()
-                    .ok_or("missing join predicate result")?;
+                // Only TRUE pairs match (ON semantics).
+                let input = evaluation_input(&batch, std::slice::from_ref(residual), &self.budget)?;
+                let mask = residual.eval_filter(&input, &self.budget)?;
                 (mask, bytes)
             };
             self.metrics.residual_candidate_rows += li.len();

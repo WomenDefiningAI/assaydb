@@ -1,0 +1,356 @@
+{
+  "duckdb_version": "1.5.6",
+  "setup": [
+    "CREATE TABLE orders (o_orderkey INTEGER, o_custkey INTEGER, o_comment VARCHAR)",
+    "INSERT INTO orders VALUES (1, 62, 'c1'), (2, 123, 'c2'), (3, 184, 'c3'), (4, 245, 'c4'), (5, 306, 'c5'), (6, 367, 'c6'), (7, 428, 'c7'), (8, 489, 'c8'), (9, 550, 'c0'), (10, 611, 'c1'), (11, 672, 'c2'), (12, 733, 'c3'), (13, 794, 'c4'), (14, 855, 'c5'), (15, 916, 'c6'), (16, 977, 'c7')",
+    "INSERT INTO orders VALUES (17, 1038, 'c8'), (18, 1099, 'c0'), (19, 1160, 'c1'), (20, 1221, 'c2'), (21, 1282, 'c3'), (22, 1343, 'c4'), (23, 1404, 'c5'), (24, 1465, 'c6'), (25, 1526, 'c7'), (26, 1587, 'c8'), (27, 1648, 'c0'), (28, 1709, 'c1'), (29, 1770, 'c2'), (30, 1831, 'c3'), (31, 1892, 'c4'), (32, 1953, 'c5')",
+    "INSERT INTO orders VALUES (33, 2014, 'c6'), (34, 2075, 'c7'), (35, 2136, 'c8'), (36, 2197, 'c0'), (37, 2258, 'c1'), (38, 2319, 'c2'), (39, 2380, 'c3'), (40, 2441, 'c4'), (41, 2502, 'c5'), (42, 2563, 'c6'), (43, 2624, 'c7'), (44, 2685, 'c8'), (45, 2746, 'c0'), (46, 2807, 'c1'), (47, 2868, 'c2'), (48, 2929, 'c3')",
+    "INSERT INTO orders VALUES (49, 2990, 'c4'), (50, 3051, 'c5'), (51, 3112, 'c6'), (52, 3173, 'c7'), (53, 3234, 'c8'), (54, 3295, 'c0'), (55, 3356, 'c1'), (56, 3417, 'c2'), (57, 3478, 'c3'), (58, 3539, 'c4'), (59, 3600, 'c5'), (60, 3661, 'c6'), (61, 3722, 'c7'), (62, 3783, 'c8'), (63, 3844, 'c0'), (64, 3905, 'c1')"
+  ],
+  "cases": [
+    {
+      "id": "or_eq-300",
+      "shape": "or_eq",
+      "n": 300,
+      "sql_bytes": 5622,
+      "sql_fnv1a": "b374e473d4275535",
+      "height_limit": false,
+      "rows": [
+        [
+          4
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ]
+    },
+    {
+      "id": "or_eq-3330",
+      "shape": "or_eq",
+      "n": 3330,
+      "sql_bytes": 65523,
+      "sql_fnv1a": "af45c7f73c60ad68",
+      "longest_within_64_kib": true,
+      "height_limit": false,
+      "rows": [
+        [
+          54
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ]
+    },
+    {
+      "id": "and_ne-300",
+      "shape": "and_ne",
+      "n": 300,
+      "sql_bytes": 6221,
+      "sql_fnv1a": "c1872369e12b146f",
+      "height_limit": false,
+      "rows": [
+        [
+          60
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ]
+    },
+    {
+      "id": "and_ne-3027",
+      "shape": "and_ne",
+      "n": 3027,
+      "sql_bytes": 65516,
+      "sql_fnv1a": "e3cdc31229606acf",
+      "longest_within_64_kib": true,
+      "height_limit": false,
+      "rows": [
+        [
+          15
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ]
+    },
+    {
+      "id": "plus-300",
+      "shape": "plus",
+      "n": 300,
+      "sql_bytes": 3661,
+      "sql_fnv1a": "37b6818cc5bf4a57",
+      "height_limit": false,
+      "rows": [
+        [
+          1,
+          18600
+        ],
+        [
+          2,
+          36900
+        ],
+        [
+          3,
+          55200
+        ],
+        [
+          4,
+          73500
+        ],
+        [
+          5,
+          91800
+        ]
+      ],
+      "types": [
+        "INTEGER",
+        "INTEGER"
+      ]
+    },
+    {
+      "id": "plus-4093",
+      "shape": "plus",
+      "n": 4093,
+      "sql_bytes": 49177,
+      "sql_fnv1a": "144609c7de52bce0",
+      "height_limit": true,
+      "rows": [
+        [
+          1,
+          253766
+        ],
+        [
+          2,
+          503439
+        ],
+        [
+          3,
+          753112
+        ],
+        [
+          4,
+          1002785
+        ],
+        [
+          5,
+          1252458
+        ]
+      ],
+      "types": [
+        "INTEGER",
+        "INTEGER"
+      ]
+    },
+    {
+      "id": "plus-5456",
+      "shape": "plus",
+      "n": 5456,
+      "sql_bytes": 65533,
+      "sql_fnv1a": "fd68fff508cb43cf",
+      "longest_within_64_kib": true,
+      "refused": "height limit exceeded"
+    },
+    {
+      "id": "comparison-300",
+      "shape": "comparison",
+      "n": 300,
+      "sql_bytes": 2152,
+      "sql_fnv1a": "e986f1d7ad86fd54",
+      "height_limit": false,
+      "rows": [
+        [
+          32
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ]
+    },
+    {
+      "id": "comparison-4090",
+      "shape": "comparison",
+      "n": 4090,
+      "sql_bytes": 28682,
+      "sql_fnv1a": "9287c748d20ab3ce",
+      "height_limit": true,
+      "rows": [
+        [
+          32
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ]
+    },
+    {
+      "id": "chain_in_parentheses-3000",
+      "shape": "chain_in_parentheses",
+      "n": 3000,
+      "sql_bytes": 59403,
+      "sql_fnv1a": "e7b9d35496b37ae1",
+      "height_limit": false,
+      "rows": [
+        [
+          49
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ]
+    },
+    {
+      "id": "calls_chain-1000",
+      "shape": "calls_chain",
+      "n": 1000,
+      "sql_bytes": 20061,
+      "sql_fnv1a": "05466c1aad8bcdaf",
+      "height_limit": false,
+      "rows": [
+        [
+          1,
+          62000
+        ],
+        [
+          2,
+          123000
+        ],
+        [
+          3,
+          184000
+        ],
+        [
+          4,
+          245000
+        ],
+        [
+          5,
+          306000
+        ]
+      ],
+      "types": [
+        "INTEGER",
+        "INTEGER"
+      ]
+    },
+    {
+      "id": "case_chain-2000",
+      "shape": "case_chain",
+      "n": 2000,
+      "sql_bytes": 43423,
+      "sql_fnv1a": "1255e33335abdda8",
+      "height_limit": false,
+      "rows": [
+        [
+          32
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ]
+    },
+    {
+      "id": "subquery_chain-300",
+      "shape": "subquery_chain",
+      "n": 300,
+      "sql_bytes": 5636,
+      "sql_fnv1a": "19cef3a34e9268fd",
+      "height_limit": false,
+      "rows": [
+        [
+          4
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ]
+    },
+    {
+      "id": "union_chain-481",
+      "shape": "union_chain",
+      "n": 481,
+      "sql_bytes": 29303,
+      "sql_fnv1a": "fbcf06ed8cec77c4",
+      "height_limit": false,
+      "rows": [
+        [
+          481,
+          924875
+        ]
+      ],
+      "types": [
+        "BIGINT",
+        "HUGEINT"
+      ]
+    },
+    {
+      "id": "union_chain-509",
+      "shape": "union_chain",
+      "n": 509,
+      "sql_bytes": 31011,
+      "sql_fnv1a": "e45eec8adb74f767",
+      "height_limit": false,
+      "rows": [
+        [
+          509,
+          1007741
+        ]
+      ],
+      "types": [
+        "BIGINT",
+        "HUGEINT"
+      ]
+    },
+    {
+      "id": "in_numbers-10942",
+      "shape": "in_numbers",
+      "n": 10942,
+      "sql_bytes": 65535,
+      "sql_fnv1a": "d37c74a9b469f902",
+      "longest_within_64_kib": true,
+      "height_limit": false,
+      "rows": [
+        [
+          64
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ]
+    },
+    {
+      "id": "not_in_numbers-10941",
+      "shape": "not_in_numbers",
+      "n": 10941,
+      "sql_bytes": 65532,
+      "sql_fnv1a": "60207add873158b9",
+      "longest_within_64_kib": true,
+      "height_limit": false,
+      "rows": [
+        [
+          0
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ]
+    },
+    {
+      "id": "in_strings-10510",
+      "shape": "in_strings",
+      "n": 10510,
+      "sql_bytes": 65531,
+      "sql_fnv1a": "1b62b875f4a15ec1",
+      "longest_within_64_kib": true,
+      "height_limit": false,
+      "rows": [
+        [
+          64
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ]
+    }
+  ]
+}

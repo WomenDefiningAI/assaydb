@@ -33,6 +33,7 @@ fn context<'a>(options: &'a Options, budget: &Budget) -> Context<'a> {
         lane_transforms: HashMap::new(),
         replay_transforms: HashMap::new(),
         materialized: HashMap::new(),
+        recursive_bindings: None,
         spill: None,
         budget: budget.clone(),
         metrics: Metrics::default(),

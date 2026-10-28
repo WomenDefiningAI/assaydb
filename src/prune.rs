@@ -95,7 +95,11 @@ fn walk<const MARKS: bool>(node: Node, mut needed: Needed) -> Result<(Node, Vec<
                 },
             }
         }
-        RelOp::Limit { input, count } => {
+        RelOp::Limit {
+            input,
+            count,
+            offset,
+        } => {
             let (input, _) = walk::<MARKS>(*input, needed)?;
             Node {
                 schema: narrowed,
@@ -103,6 +107,7 @@ fn walk<const MARKS: bool>(node: Node, mut needed: Needed) -> Result<(Node, Vec<
                 op: RelOp::Limit {
                     input: Box::new(input),
                     count,
+                    offset,
                 },
             }
         }
@@ -309,10 +314,12 @@ fn walk<const MARKS: bool>(node: Node, mut needed: Needed) -> Result<(Node, Vec<
                     id,
                     input,
                     shared_scan,
+                    forced,
                 } => RelOp::Materialize {
                     id,
                     input: barrier::<MARKS>(input)?,
                     shared_scan,
+                    forced,
                 },
                 RelOp::Scalar { input } => RelOp::Scalar {
                     input: barrier::<MARKS>(input)?,
@@ -365,7 +372,11 @@ fn walk<const MARKS: bool>(node: Node, mut needed: Needed) -> Result<(Node, Vec<
                     predicate,
                     marker,
                 },
-                RelOp::One | RelOp::Empty => op,
+                RelOp::Generate { .. } => op, // scalar arguments have no input columns
+                RelOp::One
+                | RelOp::Empty
+                | RelOp::RecursiveCte { .. }
+                | RelOp::RecursiveScan { .. } => op,
                 _ => unreachable!(),
             };
             project(

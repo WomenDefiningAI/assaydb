@@ -40,6 +40,9 @@ fn domains(
             return None;
         }
         rows = rows.checked_add(group.num_rows())?;
+        if !crate::cardinality::signed_integer_statistics(group.column(leaf)) {
+            return None;
+        }
         let stats = group.column(leaf).statistics()?;
         if stats.null_count_opt()? != 0 {
             return None;
@@ -116,7 +119,6 @@ fn lane(source: Arc<Source>, rank: usize, bounds: (i128, i128)) -> Result<Lane> 
         rows: 0,
         declined: false,
         metrics: Metrics::default(),
-        decoder_funding: None,
     })
 }
 
@@ -388,6 +390,8 @@ pub(crate) fn try_execute(
         return Ok(None);
     }
     let metadata = crate::parquet_scan::external_metadata(&file)?;
+    metadata_funding.release_excess(0);
+    let metadata_funding = crate::parquet_scan::decoder_metadata_lease(&metadata, &budget)?;
     let Kind::Column(key) = prepared.plan.groups[0].kind else {
         unreachable!()
     };
@@ -422,16 +426,8 @@ pub(crate) fn try_execute(
         + prepared.plan.output.len() * 512;
     let headers = metadata
         .metadata()
-        .memory_size()
-        .checked_mul(2)
-        .and_then(|n| {
-            n.checked_add(
-                metadata
-                    .metadata()
-                    .num_row_groups()
-                    .checked_mul(group_headers)?,
-            )
-        })
+        .num_row_groups()
+        .checked_mul(group_headers)
         .and_then(|n| n.checked_add(options.workers * 32768))
         .and_then(|n| {
             n.checked_add(

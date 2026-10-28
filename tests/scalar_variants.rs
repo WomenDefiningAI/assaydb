@@ -17,7 +17,7 @@ fn ints(batch: &RecordBatch) -> Vec<Option<i64>> {
         .iter()
         .collect()
 }
-fn contract(run: &mut impl FnMut(&str) -> Result<RecordBatch, String>) {
+fn contract(run: &mut impl FnMut(&str) -> Result<RecordBatch, assaydb::Error>) {
     for (sql, expected) in [
         ("SELECT NULLIF(20,-9)", Some(20)),
         ("SELECT 36+-25*-20*NULLIF(20,-+9)", Some(10036)),

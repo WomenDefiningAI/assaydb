@@ -1,0 +1,21 @@
+{
+  "duckdb_version": "1.5.6",
+  "controls": [
+    {
+      "sql": "SELECT SUM(1) OVER(ORDER BY DATE '2024-01-01' RANGE BETWEEN INTERVAL '1000000000' DAY PRECEDING AND INTERVAL '1000000000' DAY FOLLOWING)",
+      "error": "Conversion Error: Date and time not in timestamp range"
+    },
+    {
+      "sql": "SELECT SUM(1) OVER(ORDER BY DATE '2024-01-01' RANGE BETWEEN INTERVAL '2147483647' DAY PRECEDING AND INTERVAL '2147483647' DAY FOLLOWING)",
+      "error": "Conversion Error: Date and time not in timestamp range"
+    },
+    {
+      "sql": "SELECT SUM(1) OVER(ORDER BY CAST(-9223372036854775808 AS BIGINT) RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING)",
+      "error": "Out of Range Error: Overflow in subtraction of INT64 (-9223372036854775808 - 1)!"
+    },
+    {
+      "sql": "SELECT SUM(1) OVER(ORDER BY CAST(9223372036854775807 AS BIGINT) RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING)",
+      "error": "Out of Range Error: Overflow in addition of INT64 (9223372036854775807 + 1)!"
+    }
+  ]
+}

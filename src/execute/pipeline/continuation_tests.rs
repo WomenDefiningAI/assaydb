@@ -349,26 +349,22 @@ fn full_8192_batches_engage_parallel_admission_and_preserve_serial_sql() {
             restored(&budget, workers);
         }
     }
-    // FLOAT aggregate inputs remain explicitly unsupported at binding; they
-    // must never be admitted and reassociated by the continuation path.
+    // FLOAT aggregate inputs bind and use one ordered accumulator per group;
+    // they must never be admitted and reassociated by the continuation path.
     for function in ["SUM", "AVG"] {
+        let sql = format!("SELECT k,{function}(CAST(v AS REAL)) FROM t GROUP BY k");
+        let prepared = fixture.prepared(&sql, &serial);
+        let expected = crate::execute::execute(&prepared, &serial).unwrap().batch;
         for workers in [1, 2, 4, 10] {
             let options = Options {
                 workers,
                 test_pipeline_default: true,
                 ..serial.clone()
             };
-            let sql = format!("SELECT k,{function}(CAST(v AS REAL)) FROM t GROUP BY k");
-            assert_eq!(
-                prepare(
-                    &sql,
-                    &HashMap::from([("t".into(), fixture.0.clone())]),
-                    &options
-                )
-                .err()
-                .unwrap(),
-                "expected numeric type, got Float"
-            );
+            assert!(!eligible(&prepared, &options));
+            let actual = crate::execute::execute(&prepared, &options).unwrap();
+            assert_eq!(actual.batch, expected, "workers={workers}: {sql}");
+            assert_eq!(actual.metrics.pipeline_producers, 0);
         }
     }
     for sql in [

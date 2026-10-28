@@ -1,0 +1,2083 @@
+{
+  "duckdb_version": "1.5.6",
+  "cases_sha256": "aab388c05cc309cd2b565a875b60c7b1288afedeaa0f95253a055a82116fa0b2",
+  "reference_type_mapping": "Assay REAL = reference DOUBLE PRECISION (binary64)",
+  "float_encoding": "IEEE-754 binary64 bits, big-endian hexadecimal; no JSON decimal reparsing",
+  "cases": [
+    {
+      "id": "coalesce",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,0) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,0) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "0000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "negative_literal",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,-7) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,-7) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "c01c000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "c01c000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "positive_sign",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,+7) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,+7) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "401c000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "401c000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "double_negative",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,-(-7)) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,-(-7)) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "401c000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "401c000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "upper_boundary",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,9007199254740992) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,9007199254740992) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "4340000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "4340000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lower_boundary",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,-9007199254740992) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,-9007199254740992) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "c340000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "c340000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "last_odd_integer",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,9007199254740991) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,9007199254740991) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "433fffffffffffff"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "433fffffffffffff"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "negative_odd_integer",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,-9007199254740991) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,-9007199254740991) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "c33fffffffffffff"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "c33fffffffffffff"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "case_else",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,CASE WHEN returned THEN f ELSE 0 END AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,CASE WHEN returned THEN f ELSE 0 END AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          6,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "case_then",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,CASE WHEN returned THEN -2 ELSE f END AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,CASE WHEN returned THEN -2 ELSE f END AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "c000000000000000"
+          }
+        ],
+        [
+          2,
+          null
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "c000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "c000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "simple_case",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,CASE id WHEN 1 THEN 0 WHEN 2 THEN -2 ELSE f END AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,CASE id WHEN 1 THEN 0 WHEN 2 THEN -2 ELSE f END AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "c000000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "nested",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(CASE WHEN returned THEN f ELSE 0 END,-1) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(CASE WHEN returned THEN f ELSE 0 END,-1) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "bff0000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "nested_else",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,CASE WHEN returned THEN COALESCE(f,0) ELSE -1 END AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,CASE WHEN returned THEN COALESCE(f,0) ELSE -1 END AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "bff0000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "bff0000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "bff0000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "0000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "arithmetic",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,0)*qty+1 AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,0)*qty+1 AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4018000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "3ff0000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c02a000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "3ff0000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4030000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "3ff0000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "division",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,3)/2 AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,3)/2 AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "3ff4000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "3ff8000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "bffc000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "3ff4000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "3ff8000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "comparison",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,0)>=0 AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,0)>=0 AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          1,
+          true
+        ],
+        [
+          2,
+          true
+        ],
+        [
+          3,
+          false
+        ],
+        [
+          4,
+          true
+        ],
+        [
+          5,
+          true
+        ],
+        [
+          6,
+          true
+        ]
+      ]
+    },
+    {
+      "id": "cast_real",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,CAST(COALESCE(f,0) AS REAL) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,CAST(COALESCE(f,0) AS DOUBLE PRECISION) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "0000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "absolute",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,ABS(COALESCE(f,-2)) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,ABS(COALESCE(f,-2)) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "4000000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "400c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "4000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "negation",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,-COALESCE(f,0) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,-COALESCE(f,0) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "c004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "8000000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "400c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "8000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "c004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "8000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "nullif",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,NULLIF(COALESCE(f,0),0) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,NULLIF(COALESCE(f,0),0) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          null
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          null
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "nullif_first_float",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,NULLIF(f,-7) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,NULLIF(f,-7) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          null
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "in_list",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,0) IN (0,-7,NULL) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,0) IN (0,-7,NULL) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          true
+        ],
+        [
+          3,
+          null
+        ],
+        [
+          4,
+          true
+        ],
+        [
+          5,
+          null
+        ],
+        [
+          6,
+          true
+        ]
+      ]
+    },
+    {
+      "id": "not_in",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,0) NOT IN (0,-7,NULL) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,0) NOT IN (0,-7,NULL) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          false
+        ],
+        [
+          3,
+          null
+        ],
+        [
+          4,
+          false
+        ],
+        [
+          5,
+          null
+        ],
+        [
+          6,
+          false
+        ]
+      ]
+    },
+    {
+      "id": "in_left_literal",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,0 IN (f,-7,NULL) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,0 IN (f,-7,NULL) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "BOOLEAN"
+      ],
+      "rows": [
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          null
+        ],
+        [
+          3,
+          null
+        ],
+        [
+          4,
+          true
+        ],
+        [
+          5,
+          null
+        ],
+        [
+          6,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "null_else",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,CASE WHEN returned THEN f ELSE NULL END AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,CASE WHEN returned THEN f ELSE NULL END AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          null
+        ],
+        [
+          3,
+          null
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          null
+        ],
+        [
+          6,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "untyped_null",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,NULL,0) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,NULL,0) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "0000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "null_case",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,CASE WHEN returned THEN NULL ELSE COALESCE(f,0) END AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,CASE WHEN returned THEN NULL ELSE COALESCE(f,0) END AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          null
+        ],
+        [
+          2,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          null
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "integral_cast",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,CAST(COALESCE(f,0)*2 AS INTEGER) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,CAST(COALESCE(f,0)*2 AS INTEGER) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "INTEGER"
+      ],
+      "rows": [
+        [
+          1,
+          5
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          -7
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          6,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "integral_remainder",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,(COALESCE(f,0)*2)%2 AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,(COALESCE(f,0)*2)%2 AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "3ff0000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "bff0000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "3ff0000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "0000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "min_max_count",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT MIN(COALESCE(f,0)) AS lo,MAX(COALESCE(f,0)) AS hi,COUNT(COALESCE(f,0)) AS n,COUNT(DISTINCT COALESCE(f,0)) AS d FROM t;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT MIN(COALESCE(f,0)) AS lo,MAX(COALESCE(f,0)) AS hi,COUNT(COALESCE(f,0)) AS n,COUNT(DISTINCT COALESCE(f,0)) AS d FROM t;",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "float64": "c00c000000000000"
+          },
+          {
+            "float64": "4004000000000000"
+          },
+          6,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "case_min_max_count",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT MIN(CASE WHEN returned THEN f ELSE 0 END) AS lo,MAX(CASE WHEN returned THEN f ELSE 0 END) AS hi,COUNT(CASE WHEN returned THEN f ELSE 0 END) AS n FROM t;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT MIN(CASE WHEN returned THEN f ELSE 0 END) AS lo,MAX(CASE WHEN returned THEN f ELSE 0 END) AS hi,COUNT(CASE WHEN returned THEN f ELSE 0 END) AS n FROM t;",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "float64": "0000000000000000"
+          },
+          {
+            "float64": "4004000000000000"
+          },
+          5
+        ]
+      ]
+    },
+    {
+      "id": "empty_aggregates",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT MIN(COALESCE(f,0)) AS lo,MAX(COALESCE(f,0)) AS hi,COUNT(COALESCE(f,0)) AS n FROM t WHERE FALSE;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT MIN(COALESCE(f,0)) AS lo,MAX(COALESCE(f,0)) AS hi,COUNT(COALESCE(f,0)) AS n FROM t WHERE FALSE;",
+      "types": [
+        "DOUBLE",
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          null,
+          null,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "empty_rows",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT COALESCE(f,0) AS x FROM t WHERE FALSE;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT COALESCE(f,0) AS x FROM t WHERE FALSE;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": []
+    },
+    {
+      "id": "groups",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT COALESCE(f,0) AS k,COUNT(*) AS n FROM t GROUP BY COALESCE(f,0) ORDER BY k;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT COALESCE(f,0) AS k,COUNT(*) AS n FROM t GROUP BY COALESCE(f,0) ORDER BY k;",
+      "types": [
+        "DOUBLE",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          {
+            "float64": "c00c000000000000"
+          },
+          1
+        ],
+        [
+          {
+            "float64": "0000000000000000"
+          },
+          3
+        ],
+        [
+          {
+            "float64": "4004000000000000"
+          },
+          2
+        ]
+      ]
+    },
+    {
+      "id": "distinct",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT DISTINCT COALESCE(f,0) AS k FROM t ORDER BY k;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT DISTINCT COALESCE(f,0) AS k FROM t ORDER BY k;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "float64": "4004000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "filter",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id FROM t WHERE COALESCE(f,0)>0 ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id FROM t WHERE COALESCE(f,0)>0 ORDER BY id;",
+      "types": [
+        "INTEGER"
+      ],
+      "rows": [
+        [
+          1
+        ],
+        [
+          5
+        ]
+      ]
+    },
+    {
+      "id": "bag_duplicates",
+      "ordered": false,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT COALESCE(f,0) AS x FROM t;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT COALESCE(f,0) AS x FROM t;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          {
+            "float64": "0000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "derived",
+      "ordered": false,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT x/2 AS x FROM (SELECT COALESCE(f,0) AS x FROM t) q;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT x/2 AS x FROM (SELECT COALESCE(f,0) AS x FROM t) q;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "float64": "3ff4000000000000"
+          }
+        ],
+        [
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "float64": "bffc000000000000"
+          }
+        ],
+        [
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          {
+            "float64": "3ff4000000000000"
+          }
+        ],
+        [
+          {
+            "float64": "0000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "integer_control",
+      "ordered": true,
+      "status": "ok",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(qty,0) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(qty,0) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "INTEGER"
+      ],
+      "rows": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          5,
+          6
+        ],
+        [
+          6,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "decimal_control",
+      "ordered": true,
+      "status": "ok",
+      "sql": "SELECT COALESCE(CAST(NULL AS DECIMAL(10,2)),CAST('2.25' AS DECIMAL(10,2))) AS x;",
+      "reference_sql": "SELECT COALESCE(CAST(NULL AS DECIMAL(10,2)),CAST('2.25' AS DECIMAL(10,2))) AS x;",
+      "types": [
+        "DECIMAL(10,2)"
+      ],
+      "rows": [
+        [
+          "2.25"
+        ]
+      ]
+    },
+    {
+      "id": "date_control",
+      "ordered": true,
+      "status": "ok",
+      "sql": "SELECT COALESCE(CAST(NULL AS DATE),DATE '2026-10-15') AS x;",
+      "reference_sql": "SELECT COALESCE(CAST(NULL AS DATE),DATE '2026-10-15') AS x;",
+      "types": [
+        "DATE"
+      ],
+      "rows": [
+        [
+          "2026-10-15"
+        ]
+      ]
+    },
+    {
+      "id": "text_control",
+      "ordered": true,
+      "status": "ok",
+      "sql": "SELECT COALESCE(CAST(NULL AS TEXT),'abc') AS x;",
+      "reference_sql": "SELECT COALESCE(CAST(NULL AS TEXT),'abc') AS x;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "abc"
+        ]
+      ]
+    },
+    {
+      "id": "too_large",
+      "ordered": true,
+      "status": "unsupported",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,9007199254740993) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,9007199254740993) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "4340000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "4340000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "too_negative",
+      "ordered": true,
+      "status": "unsupported",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,-9007199254740993) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,-9007199254740993) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "c340000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "c340000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "int_column",
+      "ordered": true,
+      "status": "unsupported",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,CASE WHEN returned THEN qty ELSE f END AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,CASE WHEN returned THEN qty ELSE f END AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4000000000000000"
+          }
+        ],
+        [
+          2,
+          null
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "4014000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "401c000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "int_arithmetic",
+      "ordered": true,
+      "status": "unsupported",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,0+0) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,0+0) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "0000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "int_cast",
+      "ordered": true,
+      "status": "unsupported",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,CAST(0 AS INTEGER)) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,CAST(0 AS INTEGER)) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "0000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "int_function",
+      "ordered": true,
+      "status": "unsupported",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,ABS(-2)) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,ABS(-2)) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "4000000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "4000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "future_sum",
+      "ordered": true,
+      "status": "cv6",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT SUM(COALESCE(f,0)) AS x FROM t;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT SUM(COALESCE(f,0)) AS x FROM t;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "float64": "3ff8000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "future_case_sum",
+      "ordered": true,
+      "status": "cv6",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT SUM(CASE WHEN returned THEN f ELSE 0 END) AS x FROM t;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT SUM(CASE WHEN returned THEN f ELSE 0 END) AS x FROM t;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "float64": "4004000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "identity_cast",
+      "ordered": true,
+      "status": "unsupported",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,CAST(0 AS BIGINT)) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,CAST(0 AS BIGINT)) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "0000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "folded_case_arm",
+      "ordered": true,
+      "status": "unsupported",
+      "sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS REAL) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS REAL), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS REAL), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS REAL), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS REAL), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS REAL), 7, TRUE\n)\nSELECT id,COALESCE(f,CASE WHEN FALSE THEN 1 ELSE 0 END) AS x FROM t ORDER BY id;",
+      "reference_sql": "WITH t AS (\n SELECT 1 AS id, CAST('2.5' AS DOUBLE PRECISION) AS f, 2 AS qty, TRUE AS returned\n UNION ALL SELECT 2, CAST(NULL AS DOUBLE PRECISION), 3, FALSE\n UNION ALL SELECT 3, CAST('-3.5' AS DOUBLE PRECISION), 4, NULL\n UNION ALL SELECT 4, CAST('0' AS DOUBLE PRECISION), 5, TRUE\n UNION ALL SELECT 5, CAST('2.5' AS DOUBLE PRECISION), 6, FALSE\n UNION ALL SELECT 6, CAST(NULL AS DOUBLE PRECISION), 7, TRUE\n)\nSELECT id,COALESCE(f,CASE WHEN FALSE THEN 1 ELSE 0 END) AS x FROM t ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          2,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          3,
+          {
+            "float64": "c00c000000000000"
+          }
+        ],
+        [
+          4,
+          {
+            "float64": "0000000000000000"
+          }
+        ],
+        [
+          5,
+          {
+            "float64": "4004000000000000"
+          }
+        ],
+        [
+          6,
+          {
+            "float64": "0000000000000000"
+          }
+        ]
+      ]
+    }
+  ]
+}

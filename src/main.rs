@@ -50,6 +50,12 @@ struct Request {
     parquet_cache_bytes: Option<usize>,
     #[serde(default)]
     spill: Option<assaydb::spill::SpillOptions>,
+    /// Session time zone (IANA Area/City, UTC or GMT); default UTC.
+    #[serde(default)]
+    timezone: Option<String>,
+    /// Fixed statement clock as TIMESTAMPTZ text, for reproducible runs.
+    #[serde(default)]
+    fixed_clock: Option<String>,
 }
 fn mode() -> String {
     "correctness".into()
@@ -81,13 +87,18 @@ fn new_file(path: &Path) -> Result<File> {
         .write(true)
         .create_new(true)
         .open(path)
-        .map_err(|e| e.to_string())
+        .map_err(|e| assaydb::Error::from(e.to_string()))
 }
 fn write_json(path: &Path, value: &Value) -> Result<()> {
-    serde_json::to_writer_pretty(new_file(path)?, value).map_err(|e| e.to_string())
+    // Buffered: a plan at the height limit pretty-prints to hundreds of MB of
+    // indentation in small writes.
+    let mut file = std::io::BufWriter::new(new_file(path)?);
+    serde_json::to_writer_pretty(&mut file, value)
+        .map_err(|e| assaydb::Error::from(e.to_string()))?;
+    std::io::Write::flush(&mut file).map_err(|e| assaydb::Error::from(e.to_string()))
 }
 fn wire(batch: &RecordBatch, types: &[Type]) -> Result<Value> {
-    let schema=batch.schema().fields().iter().zip(types).map(|(f,t)|json!({"name":f.name(),"type":match t{Type::Int=>"int",Type::Decimal(_)=>"decimal",Type::Float=>"float",Type::Bool=>"bool",Type::Text=>"str",Type::Binary=>"binary",Type::Date=>"date",Type::Null=>"null"}})).collect::<Vec<_>>();
+    let schema=batch.schema().fields().iter().zip(types).map(|(f,t)|json!({"name":f.name(),"type":match t{Type::Int=>"int",Type::Decimal(_)=>"decimal",Type::Float=>"float",Type::Bool=>"bool",Type::Text=>"str",Type::Binary=>"binary",Type::Date=>"date",Type::Timestamp=>"timestamp",Type::TimestampTz=>"timestamptz",Type::Null=>"null"}})).collect::<Vec<_>>();
     let mut rows = Vec::new();
     for i in 0..batch.num_rows() {
         let mut row = Vec::new();
@@ -126,6 +137,13 @@ fn wire(batch: &RecordBatch, types: &[Type]) -> Result<Value> {
                             .ok_or("date outside output range")?;
                         json!(date.to_string())
                     }
+                    Type::Timestamp => json!(assaydb::expr::timestamp::format(
+                        a.as_any()
+                            .downcast_ref::<TimestampMicrosecondArray>()
+                            .unwrap()
+                            .value(i)
+                    )?),
+                    Type::TimestampTz => json!(assaydb::zone::format_labelled(a.as_ref(), i)?),
                     Type::Null => Value::Null,
                 }
             };
@@ -140,11 +158,12 @@ fn run() -> Result<()> {
     io::stdin()
         .take(1024 * 1024 + 1)
         .read_to_string(&mut text)
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| assaydb::Error::from(e.to_string()))?;
     if text.len() > 1024 * 1024 {
         return Err("request >1 MiB".into());
     }
-    let r: Request = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+    let r: Request =
+        serde_json::from_str(&text).map_err(|e| assaydb::Error::from(e.to_string()))?;
     if !matches!(r.mode.as_str(), "correctness" | "timing" | "explain") {
         return Err("unsupported mode".into());
     }
@@ -167,6 +186,20 @@ fn run() -> Result<()> {
             r.parquet_cache_bytes.or(defaults.parquet_cache_bytes)
         },
         error_replay: defaults.error_replay,
+        time_zone: match &r.timezone {
+            Some(name) => assaydb::zone::SessionZone::parse(name)?,
+            None => defaults.time_zone,
+        },
+        // A fixed statement clock for reproducible NOW()/CURRENT_*: the
+        // request field, else ASSAY_FIXED_CLOCK (TIMESTAMPTZ text).
+        fixed_clock: match r
+            .fixed_clock
+            .clone()
+            .or_else(|| std::env::var("ASSAY_FIXED_CLOCK").ok())
+        {
+            Some(text) => Some(assaydb::zone::fixed_clock(&text)?),
+            None => None,
+        },
     };
     event(
         json!({"event":"ready","engine_info":{"engine":"assaydb","stage":assaydb::IMPLEMENTATION_STAGE,"workers":options.workers,"worker_scope":"total execution thread limit including coordinator","spill_enabled":options.spill.is_some(),"spill_mode":options.spill.as_ref().map(|s|s.mode),"batch_size":options.batch_size,"parquet_cache_bytes":options.parquet_cache_bytes,"memory_budget_bytes":options.memory_bytes,"hard_process_memory_cap":false,"memory_scope":"accounted Arrow batches, estimated expression/state/output reservations; decoder, parser, allocator overhead, thread stacks and sort internals not hard capped"}}),
@@ -201,7 +234,8 @@ fn run() -> Result<()> {
             )?;
             break;
         }
-        let execution = execute(plan, &options)?;
+        let mut execution = execute(plan, &options)?;
+        execution.batch = assaydb::zone::relabel(&execution.batch, &options.time_zone)?;
         options.cancellation.check()?;
         let seconds = start.elapsed().as_secs_f64();
         let usage_after = usage();
@@ -219,9 +253,13 @@ fn run() -> Result<()> {
             }
             if let Some(path) = &r.arrow_output {
                 let mut writer = FileWriter::try_new(new_file(path)?, &execution.batch.schema())
-                    .map_err(|e| e.to_string())?;
-                writer.write(&execution.batch).map_err(|e| e.to_string())?;
-                writer.finish().map_err(|e| e.to_string())?;
+                    .map_err(|e| assaydb::Error::from(e.to_string()))?;
+                writer
+                    .write(&execution.batch)
+                    .map_err(|e| assaydb::Error::from(e.to_string()))?;
+                writer
+                    .finish()
+                    .map_err(|e| assaydb::Error::from(e.to_string()))?;
             }
         }
     }
@@ -229,7 +267,10 @@ fn run() -> Result<()> {
     Ok(())
 }
 fn main() {
-    if let Err(message) = run() {
+    if let Err(message) = assaydb::engine_stack::run(run)
+        .map_err(|e| assaydb::Error::from(format!("resource-limit: engine stack thread: {e}")))
+        .and_then(|result| result)
+    {
         let status = if message.starts_with("cancelled:") {
             "cancelled"
         } else if message.starts_with("resource-limit:") {
@@ -239,7 +280,21 @@ fn main() {
         } else {
             "error"
         };
-        event(json!({"event":"failure","status":status,"message":message}));
+        event(
+            json!({"event":"failure","status":status,"message":message,"error_cause":message.cause(),"error_cause_schema":"assay-error-cause/v1"}),
+        );
+        #[cfg(feature = "count-alloc")]
+        allocator_event();
         std::process::exit(1);
     }
+    #[cfg(feature = "count-alloc")]
+    allocator_event();
+}
+// Measurement build only; kept last so the shipped binary's source lines and
+// panic locations are unchanged.
+#[cfg(feature = "count-alloc")]
+mod counting_allocator;
+#[cfg(feature = "count-alloc")]
+fn allocator_event() {
+    event(json!({"event":"allocator","live_high_water_bytes":counting_allocator::high_water()}));
 }

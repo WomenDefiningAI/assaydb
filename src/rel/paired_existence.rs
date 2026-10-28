@@ -172,7 +172,11 @@ fn condition(
 
 // Fund the payload, per-column metadata and both vectors' replacement capacity
 // before retaining a callback batch. The buffers drop before their reservations.
-fn retain(output: &mut BufferedOutput, batch: RecordBatch, budget: &Budget) -> Result<()> {
+pub(super) fn retain(
+    output: &mut BufferedOutput,
+    batch: RecordBatch,
+    budget: &Budget,
+) -> Result<()> {
     let bytes = batch
         .num_columns()
         .checked_mul(128)
@@ -180,11 +184,14 @@ fn retain(output: &mut BufferedOutput, batch: RecordBatch, budget: &Budget) -> R
         .and_then(|n| n.checked_add(batch.get_array_memory_size()))
         .ok_or("paired existence retention size overflow")?;
     let credit = budget.reserve(bytes)?;
-    output.batches.try_reserve(1).map_err(|e| e.to_string())?;
+    output
+        .batches
+        .try_reserve(1)
+        .map_err(|e| crate::Error::from(e.to_string()))?;
     output
         .reservations
         .try_reserve(1)
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::Error::from(e.to_string()))?;
     output.batches.push(batch);
     output.reservations.push(credit);
     Ok(())
@@ -205,11 +212,14 @@ pub(super) fn retain_funded(
             .and_then(|n| n.checked_add(1024))
             .ok_or("paired existence retention size overflow")?;
         let credit = budget.reserve(bytes)?;
-        output.batches.try_reserve(1).map_err(|e| e.to_string())?;
+        output
+            .batches
+            .try_reserve(1)
+            .map_err(|e| crate::Error::from(e.to_string()))?;
         output
             .reservations
             .try_reserve(1)
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| crate::Error::from(e.to_string()))?;
         Ok::<_, String>(credit)
     };
     match prepare() {
@@ -225,7 +235,7 @@ pub(super) fn retain_funded(
             // The buffers must die before their gather leases on refusal too.
             drop(batch);
             drop(credits);
-            Err(error)
+            Err(error.into())
         }
     }
 }
@@ -504,10 +514,13 @@ pub(super) fn try_execute(
         let arrays = build
             .columns()
             .iter()
-            .map(|array| take(array, &indices, None).map_err(|e| e.to_string()))
+            .map(|array| take(array, &indices, None).map_err(|e| crate::Error::from(e.to_string())))
             .collect::<Result<Vec<_>>>()?;
         output_rows += keep.len();
-        emit(RecordBatch::try_new(node.schema.clone(), arrays).map_err(|e| e.to_string())?)?;
+        emit(
+            RecordBatch::try_new(node.schema.clone(), arrays)
+                .map_err(|e| crate::Error::from(e.to_string()))?,
+        )?;
         keep.clear();
         Ok(())
     };

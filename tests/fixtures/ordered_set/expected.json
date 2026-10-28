@@ -1,0 +1,3156 @@
+{
+ "duckdb_version": "1.5.6",
+ "cases_sha256": "b467fc3e5dd15e6c49b09baf64627bb7c571dfb8c3617918d31fd0c86c4e61f8",
+ "tables": {
+  "vals": {
+   "bytes": 11827,
+   "sha256": "4c42b68f4a0d936400df80a8301f91811ebe2012a1033c3e7e8cfa4d011857b4"
+  },
+  "empty": {
+   "bytes": 1628,
+   "sha256": "b10b6dd44fd21f72a775d2a823e852fb29a1dea58bd188e6decc767d654de6ac"
+  },
+  "regions": {
+   "bytes": 658,
+   "sha256": "f6e0cdb6a35d90ea2a11d7685178d07b6d6324606d0a39408cfd1e84b7d1509e"
+  },
+  "edge": {
+   "bytes": 799,
+   "sha256": "131be324296c46ef3d7e000136daf85ca4379de7bd5ce2a389007eed0c725a71"
+  },
+  "seq": {
+   "bytes": 609,
+   "sha256": "7d28e5c25cb439401957e8c2b2d407ac7f148d86e1ed91551a0fcf78130b7fe7"
+  },
+  "big": {
+   "bytes": 204253,
+   "sha256": "c4e8c9ef00a6b9642612b0281442661d43e54c54de6536c5b14b28d36299ec28"
+  }
+ },
+ "postgresql_execution": "psql against PostgreSQL 17 TEMP tables with the same rows (text COLLATE \"C\"); pg is a loose numeric agreement note only",
+ "unexpected_reference_outcomes": [],
+ "cases": [
+  {
+   "id": "median_ungrouped_types",
+   "pg_sql": "SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY i), percentile_cont(0.5) WITHIN GROUP (ORDER BY d), percentile_cont(0.5) WITHIN GROUP (ORDER BY v), percentile_cont(0.5) WITHIN GROUP (ORDER BY w), percentile_cont(0.5) WITHIN GROUP (ORDER BY f), percentile_disc(0.5) WITHIN GROUP (ORDER BY s), percentile_disc(0.5) WITHIN GROUP (ORDER BY b) FROM vals",
+   "assay_sql": "SELECT MEDIAN(i), exact_cont(list(CAST(d AS VARCHAR)), '0.5', false), exact_cont(list(CAST(v AS VARCHAR)), '0.5', false), exact_cont(list(CAST(w AS VARCHAR)), '0.5', false), MEDIAN(f), MEDIAN(s), MEDIAN(b) FROM vals",
+   "difference": "interpolated DECIMAL returns DOUBLE like PostgreSQL (maintainer decision October 17); DuckDB returns DECIMAL with direction-dependent rounding",
+   "sql": "SELECT MEDIAN(i), MEDIAN(d), MEDIAN(v), MEDIAN(w), MEDIAN(f), MEDIAN(s), MEDIAN(b) FROM vals;",
+   "reference_outcome": "rows",
+   "columns": [
+    "median(i)",
+    "median(d)",
+    "median(v)",
+    "median(w)",
+    "median(f)",
+    "median(s)",
+    "median(b)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DECIMAL(12,2)",
+    "DECIMAL(20,2)",
+    "DECIMAL(38,2)",
+    "DOUBLE",
+    "VARCHAR",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     {
+      "float": "3.0"
+     },
+     "2.25",
+     "2.25",
+     "2.25",
+     {
+      "float": "2.5"
+     },
+     "fig",
+     true
+    ]
+   ],
+   "assay_types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "VARCHAR",
+    "BOOLEAN"
+   ],
+   "assay_rows": [
+    [
+     {
+      "float": "3.0"
+     },
+     {
+      "float": "2.25"
+     },
+     {
+      "float": "2.25"
+     },
+     {
+      "float": "2.25"
+     },
+     {
+      "float": "2.5"
+     },
+     "fig",
+     true
+    ]
+   ],
+   "pg": "agrees",
+   "pg_vs_assay": "agrees"
+  },
+  {
+   "id": "median_grouped",
+   "pg_sql": "SELECT g, percentile_cont(0.5) WITHIN GROUP (ORDER BY i), percentile_cont(0.5) WITHIN GROUP (ORDER BY d), percentile_cont(0.5) WITHIN GROUP (ORDER BY v), percentile_cont(0.5) WITHIN GROUP (ORDER BY f), percentile_disc(0.5) WITHIN GROUP (ORDER BY s) FROM vals GROUP BY g ORDER BY g",
+   "assay_sql": "SELECT g, MEDIAN(i), exact_cont(list(CAST(d AS VARCHAR)), '0.5', false), exact_cont(list(CAST(v AS VARCHAR)), '0.5', false), MEDIAN(f), MEDIAN(s) FROM vals GROUP BY g ORDER BY g",
+   "difference": "interpolated DECIMAL returns DOUBLE like PostgreSQL (maintainer decision October 17); DuckDB returns DECIMAL with direction-dependent rounding",
+   "sql": "SELECT g, MEDIAN(i), MEDIAN(d), MEDIAN(v), MEDIAN(f), MEDIAN(s) FROM vals GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "median(i)",
+    "median(d)",
+    "median(v)",
+    "median(f)",
+    "median(s)"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DECIMAL(12,2)",
+    "DECIMAL(20,2)",
+    "DOUBLE",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "A",
+     {
+      "float": "3.0"
+     },
+     "5.50",
+     "5.50",
+     {
+      "float": "1.5"
+     },
+     "fig"
+    ],
+    [
+     "B",
+     {
+      "float": "1.5"
+     },
+     "-1.65",
+     "-1.64",
+     {
+      "float": "-0.6875"
+     },
+     "date"
+    ],
+    [
+     "C",
+     {
+      "float": "1.5"
+     },
+     "0.01",
+     "0.01",
+     {
+      "float": "4.75"
+     },
+     "a"
+    ],
+    [
+     "D",
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     "E",
+     {
+      "float": "5.0"
+     },
+     "3.50",
+     "3.50",
+     {
+      "float": "NaN"
+     },
+     "inf"
+    ],
+    [
+     null,
+     {
+      "float": "11.5"
+     },
+     "56.16",
+     "56172839450.61",
+     {
+      "float": "15.0"
+     },
+     "yak"
+    ]
+   ],
+   "assay_types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "VARCHAR"
+   ],
+   "assay_rows": [
+    [
+     "A",
+     {
+      "float": "3.0"
+     },
+     {
+      "float": "5.5"
+     },
+     {
+      "float": "5.5"
+     },
+     {
+      "float": "1.5"
+     },
+     "fig"
+    ],
+    [
+     "B",
+     {
+      "float": "1.5"
+     },
+     {
+      "float": "-1.645"
+     },
+     {
+      "float": "-1.645"
+     },
+     {
+      "float": "-0.6875"
+     },
+     "date"
+    ],
+    [
+     "C",
+     {
+      "float": "1.5"
+     },
+     {
+      "float": "0.015"
+     },
+     {
+      "float": "0.015"
+     },
+     {
+      "float": "4.75"
+     },
+     "a"
+    ],
+    [
+     "D",
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     "E",
+     {
+      "float": "5.0"
+     },
+     {
+      "float": "3.5"
+     },
+     {
+      "float": "3.5"
+     },
+     {
+      "float": "NaN"
+     },
+     "inf"
+    ],
+    [
+     null,
+     {
+      "float": "11.5"
+     },
+     {
+      "float": "56.165"
+     },
+     {
+      "float": "56172839450.61"
+     },
+     {
+      "float": "15.0"
+     },
+     "yak"
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "A",
+     "3",
+     "5.5",
+     "5.5",
+     "1.5",
+     "fig"
+    ],
+    [
+     "B",
+     "1.5",
+     "-1.645",
+     "-1.645",
+     "-0.6875",
+     "date"
+    ],
+    [
+     "C",
+     "1.5",
+     "0.015",
+     "0.015",
+     "4.75",
+     "a"
+    ],
+    [
+     "D",
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     "E",
+     "5",
+     "3.5",
+     "3.5",
+     "NaN",
+     "inf"
+    ],
+    [
+     null,
+     "11.5",
+     "56.16499999999999",
+     "56172839450.61",
+     "15",
+     "yak"
+    ]
+   ],
+   "pg_vs_assay": "agrees"
+  },
+  {
+   "id": "percentile_cont_grouped_asc",
+   "assay_sql": "SELECT g, PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY i), exact_cont(list(CAST(d AS VARCHAR)), '0.3', false), exact_cont(list(CAST(d AS VARCHAR)), '0.75', false), exact_cont(list(CAST(v AS VARCHAR)), '0.9', false) FROM vals GROUP BY g ORDER BY g",
+   "difference": "interpolated DECIMAL returns DOUBLE like PostgreSQL (maintainer decision October 17); DuckDB returns DECIMAL with direction-dependent rounding",
+   "sql": "SELECT g, PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY i) AS i25, PERCENTILE_CONT(0.3) WITHIN GROUP (ORDER BY d) AS d30, PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY d) AS d75, PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY v) AS v90 FROM vals GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "i25",
+    "d30",
+    "d75",
+    "v90"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DECIMAL(12,2)",
+    "DECIMAL(12,2)",
+    "DECIMAL(20,2)"
+   ],
+   "rows": [
+    [
+     "A",
+     {
+      "float": "3.0"
+     },
+     "3.49",
+     "7.75",
+     "7.96"
+    ],
+    [
+     "B",
+     {
+      "float": "-5.25"
+     },
+     "-2.33",
+     "-0.53",
+     "0.39"
+    ],
+    [
+     "C",
+     {
+      "float": "1.0"
+     },
+     "0.00",
+     "0.02",
+     "0.02"
+    ],
+    [
+     "D",
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     "E",
+     {
+      "float": "3.25"
+     },
+     "2.39",
+     "5.75",
+     "8.00"
+    ],
+    [
+     null,
+     {
+      "float": "11.25"
+     },
+     "38.63",
+     "78.07",
+     "91234567890.11"
+    ]
+   ],
+   "assay_types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "assay_rows": [
+    [
+     "A",
+     {
+      "float": "3.0"
+     },
+     {
+      "float": "3.5"
+     },
+     {
+      "float": "7.75"
+     },
+     {
+      "float": "7.96"
+     }
+    ],
+    [
+     "B",
+     {
+      "float": "-5.25"
+     },
+     {
+      "float": "-2.325"
+     },
+     {
+      "float": "-0.5275"
+     },
+     {
+      "float": "0.39500000000000035"
+     }
+    ],
+    [
+     "C",
+     {
+      "float": "1.0"
+     },
+     {
+      "float": "0.007999999999999998"
+     },
+     {
+      "float": "0.02"
+     },
+     {
+      "float": "0.02"
+     }
+    ],
+    [
+     "D",
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     "E",
+     {
+      "float": "3.25"
+     },
+     {
+      "float": "2.4"
+     },
+     {
+      "float": "5.75"
+     },
+     {
+      "float": "8.0"
+     }
+    ],
+    [
+     null,
+     {
+      "float": "11.25"
+     },
+     {
+      "float": "38.635"
+     },
+     {
+      "float": "78.0775"
+     },
+     {
+      "float": "91234567890.114"
+     }
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "A",
+     "3",
+     "3.5",
+     "7.75",
+     "7.96"
+    ],
+    [
+     "B",
+     "-5.25",
+     "-2.325",
+     "-0.5275000000000001",
+     "0.39499999999999996"
+    ],
+    [
+     "C",
+     "1",
+     "0.007999999999999998",
+     "0.02",
+     "0.02"
+    ],
+    [
+     "D",
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     "E",
+     "3.25",
+     "2.4",
+     "5.75",
+     "8"
+    ],
+    [
+     null,
+     "11.25",
+     "38.635",
+     "78.07749999999999",
+     "91234567890.11401"
+    ]
+   ],
+   "pg_vs_assay": "agrees"
+  },
+  {
+   "id": "percentile_cont_grouped_desc",
+   "assay_sql": "SELECT g, PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY i DESC), exact_cont(list(CAST(d AS VARCHAR)), '0.5', true), exact_cont(list(CAST(d AS VARCHAR)), '0.75', true), PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY i DESC) FROM vals GROUP BY g ORDER BY g",
+   "difference": "interpolated DECIMAL returns DOUBLE like PostgreSQL (maintainer decision October 17); DuckDB returns DECIMAL with direction-dependent rounding",
+   "sql": "SELECT g, PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY i DESC) AS i25, PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY d DESC) AS d50, PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY d DESC NULLS FIRST) AS d75, PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY i DESC NULLS LAST) AS i90 FROM vals GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "i25",
+    "d50",
+    "d75",
+    "i90"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DECIMAL(12,2)",
+    "DECIMAL(12,2)",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "A",
+     {
+      "float": "5.0"
+     },
+     "5.50",
+     "3.00",
+     {
+      "float": "2.4"
+     }
+    ],
+    [
+     "B",
+     {
+      "float": "7.0"
+     },
+     "-1.64",
+     "-2.43",
+     {
+      "float": "-7.500000000000001"
+     }
+    ],
+    [
+     "C",
+     {
+      "float": "2.0"
+     },
+     "0.02",
+     "0.01",
+     {
+      "float": "1.0"
+     }
+    ],
+    [
+     "D",
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     "E",
+     {
+      "float": "6.75"
+     },
+     "3.50",
+     "2.25",
+     {
+      "float": "1.8999999999999995"
+     }
+    ],
+    [
+     null,
+     {
+      "float": "11.75"
+     },
+     "56.17",
+     "34.26",
+     {
+      "float": "11.1"
+     }
+    ]
+   ],
+   "assay_types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "assay_rows": [
+    [
+     "A",
+     {
+      "float": "5.0"
+     },
+     {
+      "float": "5.5"
+     },
+     {
+      "float": "3.0"
+     },
+     {
+      "float": "2.4"
+     }
+    ],
+    [
+     "B",
+     {
+      "float": "7.0"
+     },
+     {
+      "float": "-1.645"
+     },
+     {
+      "float": "-2.4375"
+     },
+     {
+      "float": "-7.500000000000001"
+     }
+    ],
+    [
+     "C",
+     {
+      "float": "2.0"
+     },
+     {
+      "float": "0.015"
+     },
+     {
+      "float": "0.005"
+     },
+     {
+      "float": "1.0"
+     }
+    ],
+    [
+     "D",
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     "E",
+     {
+      "float": "6.75"
+     },
+     {
+      "float": "3.5"
+     },
+     {
+      "float": "2.25"
+     },
+     {
+      "float": "1.8999999999999995"
+     }
+    ],
+    [
+     null,
+     {
+      "float": "11.75"
+     },
+     {
+      "float": "56.165"
+     },
+     {
+      "float": "34.2525"
+     },
+     {
+      "float": "11.1"
+     }
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "A",
+     "5",
+     "5.5",
+     "3",
+     "2.4"
+    ],
+    [
+     "B",
+     "7",
+     "-1.645",
+     "-2.4375",
+     "-7.5"
+    ],
+    [
+     "C",
+     "2",
+     "0.015",
+     "0.005",
+     "1"
+    ],
+    [
+     "D",
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     "E",
+     "6.75",
+     "3.5",
+     "2.25",
+     "1.9"
+    ],
+    [
+     null,
+     "11.75",
+     "56.165",
+     "34.2525",
+     "11.1"
+    ]
+   ],
+   "pg_vs_assay": "agrees"
+  },
+  {
+   "id": "percentile_cont_real_finite_groups",
+   "sql": "SELECT g, PERCENTILE_CONT(0.1) WITHIN GROUP (ORDER BY f) AS f10, PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY f DESC) AS f50, PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY f) AS f90 FROM vals WHERE g IN ('A', 'B', 'C') OR g IS NULL GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "f10",
+    "f50",
+    "f90"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "A",
+     {
+      "float": "0.2"
+     },
+     {
+      "float": "1.5"
+     },
+     {
+      "float": "2.75"
+     }
+    ],
+    [
+     "B",
+     {
+      "float": "-2.2"
+     },
+     {
+      "float": "-0.6875"
+     },
+     {
+      "float": "3.362500000000001"
+     }
+    ],
+    [
+     "C",
+     {
+      "float": "2.5"
+     },
+     {
+      "float": "4.75"
+     },
+     {
+      "float": "7.0"
+     }
+    ],
+    [
+     null,
+     {
+      "float": "11.0"
+     },
+     {
+      "float": "15.0"
+     },
+     {
+      "float": "19.0"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "real_nonfinite_order",
+   "pg_sql": "SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY f), percentile_disc(0.5) WITHIN GROUP (ORDER BY f), percentile_disc(0.75) WITHIN GROUP (ORDER BY f), percentile_disc(0.25) WITHIN GROUP (ORDER BY f), percentile_cont(0.25) WITHIN GROUP (ORDER BY f) FROM vals WHERE g = 'E'",
+   "sql": "SELECT MEDIAN(f), PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY f), PERCENTILE_DISC(0.75) WITHIN GROUP (ORDER BY f), QUANTILE_DISC(f, 0.25), QUANTILE_CONT(f, 0.25) FROM vals WHERE g = 'E';",
+   "reference_outcome": "rows",
+   "columns": [
+    "median(f)",
+    "quantile_disc(0.5 ORDER BY f)",
+    "quantile_disc(0.75 ORDER BY f)",
+    "quantile_disc(f, 0.25)",
+    "quantile_cont(f, 0.25)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "+inf"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "-inf"
+     },
+     {
+      "float": "NaN"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "percentile_disc_types",
+   "sql": "SELECT g, PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY i) AS i50, PERCENTILE_DISC(0.3) WITHIN GROUP (ORDER BY d DESC) AS d30, PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY s) AS s50, PERCENTILE_DISC(0.25) WITHIN GROUP (ORDER BY dt DESC) AS dt25, PERCENTILE_DISC(0.9) WITHIN GROUP (ORDER BY b) AS b90, PERCENTILE_DISC(0.4) WITHIN GROUP (ORDER BY f) AS f40 FROM vals GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "i50",
+    "d30",
+    "s50",
+    "dt25",
+    "b90",
+    "f40"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "DECIMAL(12,2)",
+    "VARCHAR",
+    "DATE",
+    "BOOLEAN",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "A",
+     3,
+     "7.75",
+     "fig",
+     "2024-02-01",
+     true,
+     {
+      "float": "0.5"
+     }
+    ],
+    [
+     "B",
+     -4,
+     "-1.04",
+     "date",
+     "2024-06-30",
+     true,
+     {
+      "float": "-1.5"
+     }
+    ],
+    [
+     "C",
+     1,
+     "0.02",
+     "a",
+     "2024-01-02",
+     true,
+     {
+      "float": "2.5"
+     }
+    ],
+    [
+     "D",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     "E",
+     4,
+     "4.50",
+     "inf",
+     "2024-04-07",
+     true,
+     {
+      "float": "+inf"
+     }
+    ],
+    [
+     null,
+     11,
+     "99.99",
+     "yak",
+     "2025-06-06",
+     true,
+     {
+      "float": "10.0"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "fraction_bounds",
+   "pg_sql": "SELECT percentile_cont(0) WITHIN GROUP (ORDER BY i), percentile_cont(1) WITHIN GROUP (ORDER BY i), percentile_disc(0.0) WITHIN GROUP (ORDER BY s), percentile_disc(1.0) WITHIN GROUP (ORDER BY s), percentile_cont(1) WITHIN GROUP (ORDER BY d DESC), percentile_disc(1) WITHIN GROUP (ORDER BY dt DESC) FROM vals",
+   "assay_sql": "SELECT PERCENTILE_CONT(0) WITHIN GROUP (ORDER BY i), PERCENTILE_CONT(1) WITHIN GROUP (ORDER BY i), PERCENTILE_DISC(0.0) WITHIN GROUP (ORDER BY s), PERCENTILE_DISC(1.0) WITHIN GROUP (ORDER BY s), exact_cont(list(CAST(d AS VARCHAR)), '1', true), PERCENTILE_DISC(1) WITHIN GROUP (ORDER BY dt DESC) FROM vals",
+   "difference": "interpolated DECIMAL returns DOUBLE like PostgreSQL (maintainer decision October 17); DuckDB returns DECIMAL with direction-dependent rounding",
+   "sql": "SELECT PERCENTILE_CONT(0) WITHIN GROUP (ORDER BY i), PERCENTILE_CONT(1) WITHIN GROUP (ORDER BY i), PERCENTILE_DISC(0.0) WITHIN GROUP (ORDER BY s), PERCENTILE_DISC(1.0) WITHIN GROUP (ORDER BY s), PERCENTILE_CONT(1) WITHIN GROUP (ORDER BY d DESC), PERCENTILE_DISC(1) WITHIN GROUP (ORDER BY dt DESC) FROM vals;",
+   "reference_outcome": "rows",
+   "columns": [
+    "quantile_cont(0 ORDER BY i)",
+    "quantile_cont(1 ORDER BY i)",
+    "quantile_disc(0.0 ORDER BY s)",
+    "quantile_disc(1.0 ORDER BY s)",
+    "quantile_cont(1 ORDER BY d DESC)",
+    "quantile_disc(1 ORDER BY dt DESC)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE",
+    "VARCHAR",
+    "VARCHAR",
+    "DECIMAL(12,2)",
+    "DATE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "-9.0"
+     },
+     {
+      "float": "12.0"
+     },
+     "",
+     "zed",
+     "-3.00",
+     "2023-12-31"
+    ]
+   ],
+   "assay_types": [
+    "DOUBLE",
+    "DOUBLE",
+    "VARCHAR",
+    "VARCHAR",
+    "DOUBLE",
+    "DATE"
+   ],
+   "assay_rows": [
+    [
+     {
+      "float": "-9.0"
+     },
+     {
+      "float": "12.0"
+     },
+     "",
+     "zed",
+     {
+      "float": "-3.0"
+     },
+     "2023-12-31"
+    ]
+   ],
+   "pg": "agrees",
+   "pg_vs_assay": "agrees"
+  },
+  {
+   "id": "fraction_as_double",
+   "pg_sql": "SELECT percentile_cont(0.3::float8) WITHIN GROUP (ORDER BY i), percentile_disc(0.3::float8) WITHIN GROUP (ORDER BY i) FROM vals",
+   "sql": "SELECT PERCENTILE_CONT(CAST(0.3 AS DOUBLE)) WITHIN GROUP (ORDER BY i), PERCENTILE_DISC(CAST(0.3 AS DOUBLE)) WITHIN GROUP (ORDER BY i) FROM vals;",
+   "reference_outcome": "rows",
+   "columns": [
+    "quantile_cont(CAST(0.3 AS \"DOUBLE\") ORDER BY i)",
+    "quantile_disc(CAST(0.3 AS \"DOUBLE\") ORDER BY i)"
+   ],
+   "types": [
+    "DOUBLE",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     {
+      "float": "2.0"
+     },
+     2
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "duckdb_quantile_spellings",
+   "pg_sql": "SELECT g, percentile_cont(0.25) WITHIN GROUP (ORDER BY i), percentile_disc(0.25) WITHIN GROUP (ORDER BY i), percentile_disc(0.75) WITHIN GROUP (ORDER BY s), percentile_cont(0.25) WITHIN GROUP (ORDER BY d DESC), percentile_disc(0.5) WITHIN GROUP (ORDER BY dt DESC), percentile_cont(1) WITHIN GROUP (ORDER BY i) FROM vals GROUP BY g ORDER BY g",
+   "assay_sql": "SELECT g, QUANTILE_CONT(i, 0.25), QUANTILE_DISC(i, 0.25), QUANTILE(s, 0.75), exact_cont(list(CAST(d AS VARCHAR)), '0.25', true), QUANTILE_DISC(dt, -0.5), QUANTILE_CONT(i, 1) FROM vals GROUP BY g ORDER BY g",
+   "difference": "interpolated DECIMAL returns DOUBLE like PostgreSQL (maintainer decision October 17); DuckDB returns DECIMAL with direction-dependent rounding",
+   "sql": "SELECT g, QUANTILE_CONT(i, 0.25), QUANTILE_DISC(i, 0.25), QUANTILE(s, 0.75), QUANTILE_CONT(d, -0.25), QUANTILE_DISC(dt, -0.5), QUANTILE_CONT(i, 1) FROM vals GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "quantile_cont(i, 0.25)",
+    "quantile_disc(i, 0.25)",
+    "quantile(s, 0.75)",
+    "quantile_cont(d, -0.25)",
+    "quantile_disc(dt, -0.5)",
+    "quantile_cont(i, 1)"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "BIGINT",
+    "VARCHAR",
+    "DECIMAL(12,2)",
+    "DATE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "A",
+     {
+      "float": "3.0"
+     },
+     3,
+     "kiwi",
+     "7.75",
+     "2024-01-31",
+     {
+      "float": "8.0"
+     }
+    ],
+    [
+     "B",
+     {
+      "float": "-5.25"
+     },
+     -9,
+     "lime",
+     "-0.52",
+     "2024-03-03",
+     {
+      "float": "7.0"
+     }
+    ],
+    [
+     "C",
+     {
+      "float": "1.0"
+     },
+     1,
+     "b",
+     "0.02",
+     "2024-01-02",
+     {
+      "float": "2.0"
+     }
+    ],
+    [
+     "D",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     "E",
+     {
+      "float": "3.25"
+     },
+     1,
+     "nan",
+     "5.75",
+     "2024-04-06",
+     {
+      "float": "9.0"
+     }
+    ],
+    [
+     null,
+     {
+      "float": "11.25"
+     },
+     11,
+     "zed",
+     "78.08",
+     "2025-06-06",
+     {
+      "float": "12.0"
+     }
+    ]
+   ],
+   "assay_types": [
+    "VARCHAR",
+    "DOUBLE",
+    "BIGINT",
+    "VARCHAR",
+    "DOUBLE",
+    "DATE",
+    "DOUBLE"
+   ],
+   "assay_rows": [
+    [
+     "A",
+     {
+      "float": "3.0"
+     },
+     3,
+     "kiwi",
+     {
+      "float": "7.75"
+     },
+     "2024-01-31",
+     {
+      "float": "8.0"
+     }
+    ],
+    [
+     "B",
+     {
+      "float": "-5.25"
+     },
+     -9,
+     "lime",
+     {
+      "float": "-0.5275"
+     },
+     "2024-03-03",
+     {
+      "float": "7.0"
+     }
+    ],
+    [
+     "C",
+     {
+      "float": "1.0"
+     },
+     1,
+     "b",
+     {
+      "float": "0.02"
+     },
+     "2024-01-02",
+     {
+      "float": "2.0"
+     }
+    ],
+    [
+     "D",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     "E",
+     {
+      "float": "3.25"
+     },
+     1,
+     "nan",
+     {
+      "float": "5.75"
+     },
+     "2024-04-06",
+     {
+      "float": "9.0"
+     }
+    ],
+    [
+     null,
+     {
+      "float": "11.25"
+     },
+     11,
+     "zed",
+     {
+      "float": "78.0775"
+     },
+     "2025-06-06",
+     {
+      "float": "12.0"
+     }
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "A",
+     "3",
+     "3",
+     "kiwi",
+     "7.75",
+     "2024-01-31",
+     "8"
+    ],
+    [
+     "B",
+     "-5.25",
+     "-9",
+     "lime",
+     "-0.5274999999999999",
+     "2024-03-03",
+     "7"
+    ],
+    [
+     "C",
+     "1",
+     "1",
+     "b",
+     "0.02",
+     "2024-01-02",
+     "2"
+    ],
+    [
+     "D",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     "E",
+     "3.25",
+     "1",
+     "nan",
+     "5.75",
+     "2024-04-06",
+     "9"
+    ],
+    [
+     null,
+     "11.25",
+     "11",
+     "zed",
+     "78.0775",
+     "2025-06-06",
+     "12"
+    ]
+   ],
+   "pg_vs_assay": "agrees"
+  },
+  {
+   "id": "quantile_negative_zero_is_ascending",
+   "pg_sql": "none",
+   "sql": "SELECT QUANTILE_CONT(i, -0.0), QUANTILE_DISC(s, -0.0) FROM vals;",
+   "reference_outcome": "rows",
+   "columns": [
+    "quantile_cont(i, 0.0)",
+    "quantile_disc(s, 0.0)"
+   ],
+   "types": [
+    "DOUBLE",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     {
+      "float": "-9.0"
+     },
+     ""
+    ]
+   ],
+   "pg": "no PostgreSQL equivalent"
+  },
+  {
+   "id": "decimal_interpolation_is_double",
+   "pg_sql": "SELECT g, percentile_cont(0.5) WITHIN GROUP (ORDER BY d), percentile_cont(0.5) WITHIN GROUP (ORDER BY v), percentile_cont(0.3) WITHIN GROUP (ORDER BY v DESC), percentile_cont(0.5) WITHIN GROUP (ORDER BY w) FROM vals WHERE g IN ('A', 'C', 'E') GROUP BY g ORDER BY g",
+   "assay_sql": "SELECT g, exact_cont(list(CAST(d AS VARCHAR)), '0.5', false), exact_cont(list(CAST(v AS VARCHAR)), '0.5', false), exact_cont(list(CAST(v AS VARCHAR)), '0.3', true), exact_cont(list(CAST(w AS VARCHAR)), '0.5', false) FROM vals WHERE g IN ('A', 'C', 'E') GROUP BY g ORDER BY g",
+   "difference": "interpolated DECIMAL returns DOUBLE like PostgreSQL (maintainer decision October 17); DuckDB returns DECIMAL with direction-dependent rounding",
+   "sql": "SELECT g, MEDIAN(d), MEDIAN(v), QUANTILE_CONT(v, -0.3), MEDIAN(w) FROM vals WHERE g IN ('A', 'C', 'E') GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "median(d)",
+    "median(v)",
+    "quantile_cont(v, -0.3)",
+    "median(w)"
+   ],
+   "types": [
+    "VARCHAR",
+    "DECIMAL(12,2)",
+    "DECIMAL(20,2)",
+    "DECIMAL(20,2)",
+    "DECIMAL(38,2)"
+   ],
+   "rows": [
+    [
+     "A",
+     "5.50",
+     "5.50",
+     "7.30",
+     "5.50"
+    ],
+    [
+     "C",
+     "0.01",
+     "0.01",
+     "0.02",
+     "0.01"
+    ],
+    [
+     "E",
+     "3.50",
+     "3.50",
+     "5.00",
+     "3.50"
+    ]
+   ],
+   "assay_types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "assay_rows": [
+    [
+     "A",
+     {
+      "float": "5.5"
+     },
+     {
+      "float": "5.5"
+     },
+     {
+      "float": "7.3"
+     },
+     {
+      "float": "5.5"
+     }
+    ],
+    [
+     "C",
+     {
+      "float": "0.015"
+     },
+     {
+      "float": "0.015"
+     },
+     {
+      "float": "0.02"
+     },
+     {
+      "float": "0.015"
+     }
+    ],
+    [
+     "E",
+     {
+      "float": "3.5"
+     },
+     {
+      "float": "3.5"
+     },
+     {
+      "float": "5.0"
+     },
+     {
+      "float": "3.5"
+     }
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "A",
+     "5.5",
+     "5.5",
+     "7.3",
+     "5.5"
+    ],
+    [
+     "C",
+     "0.015",
+     "0.015",
+     "0.02",
+     "0.015"
+    ],
+    [
+     "E",
+     "3.5",
+     "3.5",
+     "5",
+     "3.5"
+    ]
+   ],
+   "pg_vs_assay": "agrees"
+  },
+  {
+   "id": "empty_input_scalar",
+   "pg_sql": "SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY i), percentile_cont(0.5) WITHIN GROUP (ORDER BY d), percentile_disc(0.5) WITHIN GROUP (ORDER BY s), mode() WITHIN GROUP (ORDER BY s), count(DISTINCT s) FROM empty",
+   "assay_sql": "SELECT MEDIAN(i), exact_cont(list(CAST(d AS VARCHAR)), '0.5', false), PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY s), MODE(s), COUNT(DISTINCT s) FROM empty",
+   "difference": "interpolated DECIMAL returns DOUBLE like PostgreSQL (maintainer decision October 17); DuckDB returns DECIMAL with direction-dependent rounding",
+   "sql": "SELECT MEDIAN(i), MEDIAN(d), PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY s), MODE(s), APPROX_COUNT_DISTINCT(s) FROM empty;",
+   "reference_outcome": "rows",
+   "columns": [
+    "median(i)",
+    "median(d)",
+    "quantile_disc(0.5 ORDER BY s)",
+    "\"mode\"(s)",
+    "approx_count_distinct(s)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DECIMAL(12,2)",
+    "VARCHAR",
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     null,
+     null,
+     null,
+     null,
+     0
+    ]
+   ],
+   "assay_types": [
+    "DOUBLE",
+    "DOUBLE",
+    "VARCHAR",
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "assay_rows": [
+    [
+     null,
+     null,
+     null,
+     null,
+     0
+    ]
+   ],
+   "pg": "agrees",
+   "pg_vs_assay": "agrees"
+  },
+  {
+   "id": "empty_input_grouped",
+   "sql": "SELECT g, PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY f), MODE() WITHIN GROUP (ORDER BY i) FROM empty GROUP BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "quantile_cont(0.5 ORDER BY f)",
+    "\"mode\"() WITHIN GROUP ( ORDER BY i)"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "BIGINT"
+   ],
+   "rows": [],
+   "pg": "agrees"
+  },
+  {
+   "id": "single_row",
+   "pg_sql": "SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY i), percentile_cont(0.9) WITHIN GROUP (ORDER BY d DESC), percentile_disc(0.1) WITHIN GROUP (ORDER BY s), mode() WITHIN GROUP (ORDER BY dt), percentile_cont(0.37) WITHIN GROUP (ORDER BY f) FROM vals WHERE id = 1",
+   "assay_sql": "SELECT MEDIAN(i), exact_cont(list(CAST(d AS VARCHAR)), '0.9', true), PERCENTILE_DISC(0.1) WITHIN GROUP (ORDER BY s), MODE(dt), QUANTILE_CONT(f, 0.37) FROM vals WHERE id = 1",
+   "difference": "interpolated DECIMAL returns DOUBLE like PostgreSQL (maintainer decision October 17); DuckDB returns DECIMAL with direction-dependent rounding",
+   "sql": "SELECT MEDIAN(i), PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY d DESC), PERCENTILE_DISC(0.1) WITHIN GROUP (ORDER BY s), MODE(dt), QUANTILE_CONT(f, 0.37) FROM vals WHERE id = 1;",
+   "reference_outcome": "rows",
+   "columns": [
+    "median(i)",
+    "quantile_cont(0.9 ORDER BY d DESC)",
+    "quantile_disc(0.1 ORDER BY s)",
+    "\"mode\"(dt)",
+    "quantile_cont(f, 0.37)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DECIMAL(12,2)",
+    "VARCHAR",
+    "DATE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "5.0"
+     },
+     "5.50",
+     "pear",
+     "2024-01-15",
+     {
+      "float": "1.5"
+     }
+    ]
+   ],
+   "assay_types": [
+    "DOUBLE",
+    "DOUBLE",
+    "VARCHAR",
+    "DATE",
+    "DOUBLE"
+   ],
+   "assay_rows": [
+    [
+     {
+      "float": "5.0"
+     },
+     {
+      "float": "5.5"
+     },
+     "pear",
+     "2024-01-15",
+     {
+      "float": "1.5"
+     }
+    ]
+   ],
+   "pg": "agrees",
+   "pg_vs_assay": "agrees"
+  },
+  {
+   "id": "all_null_group_and_null_literal",
+   "pg_sql": "SELECT g, percentile_cont(0.5) WITHIN GROUP (ORDER BY i), mode() WITHIN GROUP (ORDER BY s), percentile_disc(0.5) WITHIN GROUP (ORDER BY dt) FROM vals WHERE g = 'D' GROUP BY g",
+   "sql": "SELECT g, MEDIAN(i), MODE(s), PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY dt) FROM vals WHERE g = 'D' GROUP BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "median(i)",
+    "\"mode\"(s)",
+    "quantile_disc(0.5 ORDER BY dt)"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "VARCHAR",
+    "DATE"
+   ],
+   "rows": [
+    [
+     "D",
+     null,
+     null,
+     null
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "mode_plain_ties",
+   "pg_sql": "SELECT g, mode() WITHIN GROUP (ORDER BY m) FROM vals GROUP BY g ORDER BY g",
+   "tie_column": 1,
+   "ties": "SELECT g, list(m ORDER BY m) FROM (SELECT g, m, count(*) AS c, max(count(*)) OVER (PARTITION BY g) AS mx FROM vals WHERE m IS NOT NULL GROUP BY g, m) WHERE c = mx GROUP BY g ORDER BY g",
+   "sql": "SELECT g, MODE(m) FROM vals GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "\"mode\"(m)"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "A",
+     1
+    ],
+    [
+     "B",
+     9
+    ],
+    [
+     "C",
+     4
+    ],
+    [
+     "D",
+     null
+    ],
+    [
+     "E",
+     8
+    ],
+    [
+     null,
+     6
+    ]
+   ],
+   "permitted": [
+    [
+     "A",
+     [
+      1,
+      3
+     ]
+    ],
+    [
+     "B",
+     [
+      7,
+      9
+     ]
+    ],
+    [
+     "C",
+     [
+      4,
+      5
+     ]
+    ],
+    [
+     "E",
+     [
+      8
+     ]
+    ],
+    [
+     null,
+     [
+      6
+     ]
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "A",
+     "1"
+    ],
+    [
+     "B",
+     "7"
+    ],
+    [
+     "C",
+     "4"
+    ],
+    [
+     "D",
+     null
+    ],
+    [
+     "E",
+     "8"
+    ],
+    [
+     null,
+     "6"
+    ]
+   ]
+  },
+  {
+   "id": "mode_within_group_ties",
+   "sql": "SELECT g, MODE() WITHIN GROUP (ORDER BY m) AS asc_mode, MODE() WITHIN GROUP (ORDER BY m DESC) AS desc_mode, MODE() WITHIN GROUP (ORDER BY s) AS s_mode, MODE() WITHIN GROUP (ORDER BY s DESC) AS s_desc FROM vals GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "asc_mode",
+    "desc_mode",
+    "s_mode",
+    "s_desc"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "BIGINT",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "A",
+     1,
+     3,
+     "Fig",
+     "pear"
+    ],
+    [
+     "B",
+     7,
+     9,
+     "",
+     "plum"
+    ],
+    [
+     "C",
+     4,
+     5,
+     "a",
+     "b"
+    ],
+    [
+     "D",
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     "E",
+     8,
+     8,
+     "-inf",
+     "neg"
+    ],
+    [
+     null,
+     6,
+     6,
+     "yak",
+     "zed"
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "mode_types",
+   "pg_sql": "SELECT mode() WITHIN GROUP (ORDER BY i), mode() WITHIN GROUP (ORDER BY d), mode() WITHIN GROUP (ORDER BY dt), mode() WITHIN GROUP (ORDER BY b), mode() WITHIN GROUP (ORDER BY f) FROM vals WHERE g = 'C'",
+   "sql": "SELECT MODE() WITHIN GROUP (ORDER BY i), MODE() WITHIN GROUP (ORDER BY d), MODE() WITHIN GROUP (ORDER BY dt), MODE() WITHIN GROUP (ORDER BY b), MODE() WITHIN GROUP (ORDER BY f) FROM vals WHERE g = 'C';",
+   "reference_outcome": "rows",
+   "columns": [
+    "\"mode\"() WITHIN GROUP ( ORDER BY i)",
+    "\"mode\"() WITHIN GROUP ( ORDER BY d)",
+    "\"mode\"() WITHIN GROUP ( ORDER BY dt)",
+    "\"mode\"() WITHIN GROUP ( ORDER BY b)",
+    "\"mode\"() WITHIN GROUP ( ORDER BY f)"
+   ],
+   "types": [
+    "BIGINT",
+    "DECIMAL(12,2)",
+    "DATE",
+    "BOOLEAN",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     1,
+     "0.02",
+     "2024-01-01",
+     false,
+     {
+      "float": "2.5"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "refuse_mode_real_nan_payloads",
+   "assay_error": "unsupported:",
+   "difference": "DuckDB's MODE counts NaN payloads (NaN, -NaN) as different values, so all four values tie (-inf WITHIN GROUP, NaN by first input position); PostgreSQL has one NaN, which is then the mode",
+   "pg_sql": "none",
+   "sql": "SELECT MODE() WITHIN GROUP (ORDER BY f), MODE(f) FROM vals WHERE g = 'E';",
+   "reference_outcome": "rows",
+   "columns": [
+    "\"mode\"() WITHIN GROUP ( ORDER BY f)",
+    "\"mode\"(f)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "-inf"
+     },
+     {
+      "float": "NaN"
+     }
+    ]
+   ],
+   "pg": "no PostgreSQL equivalent"
+  },
+  {
+   "id": "mode_real_canonical_nan",
+   "sql": "SELECT g, MODE() WITHIN GROUP (ORDER BY f) FROM vals WHERE id <> 22 AND g IN ('C', 'E') GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "\"mode\"() WITHIN GROUP ( ORDER BY f)"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     "C",
+     {
+      "float": "2.5"
+     }
+    ],
+    [
+     "E",
+     {
+      "float": "-inf"
+     }
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "approx_count_distinct_is_exact",
+   "pg_sql": "SELECT g, count(DISTINCT s), count(DISTINCT i), count(DISTINCT dt) FROM vals GROUP BY g ORDER BY g",
+   "assay_sql": "SELECT g, count(DISTINCT s), count(DISTINCT i), count(DISTINCT dt) FROM vals GROUP BY g ORDER BY g",
+   "difference": "DuckDB returns a HyperLogLog estimate; Assay returns the exact distinct count (decision for the maintainer)",
+   "sql": "SELECT g, APPROX_COUNT_DISTINCT(s), APPROX_COUNT_DISTINCT(i), APPROX_COUNT_DISTINCT(dt) FROM vals GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "approx_count_distinct(s)",
+    "approx_count_distinct(i)",
+    "approx_count_distinct(dt)"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "A",
+     5,
+     4,
+     5
+    ],
+    [
+     "B",
+     3,
+     3,
+     4
+    ],
+    [
+     "C",
+     2,
+     2,
+     2
+    ],
+    [
+     "D",
+     0,
+     0,
+     0
+    ],
+    [
+     "E",
+     4,
+     4,
+     4
+    ],
+    [
+     null,
+     2,
+     2,
+     2
+    ]
+   ],
+   "assay_types": [
+    "VARCHAR",
+    "BIGINT",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "assay_rows": [
+    [
+     "A",
+     5,
+     4,
+     5
+    ],
+    [
+     "B",
+     4,
+     3,
+     4
+    ],
+    [
+     "C",
+     2,
+     2,
+     2
+    ],
+    [
+     "D",
+     0,
+     0,
+     0
+    ],
+    [
+     "E",
+     4,
+     4,
+     4
+    ],
+    [
+     null,
+     2,
+     2,
+     2
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "A",
+     "5",
+     "4",
+     "5"
+    ],
+    [
+     "B",
+     "4",
+     "3",
+     "4"
+    ],
+    [
+     "C",
+     "2",
+     "2",
+     "2"
+    ],
+    [
+     "D",
+     "0",
+     "0",
+     "0"
+    ],
+    [
+     "E",
+     "4",
+     "4",
+     "4"
+    ],
+    [
+     null,
+     "2",
+     "2",
+     "2"
+    ]
+   ],
+   "pg_vs_assay": "agrees"
+  },
+  {
+   "id": "approx_count_distinct_estimate_differs",
+   "pg_sql": "SELECT count(DISTINCT s), count(DISTINCT x) FROM big",
+   "assay_sql": "SELECT count(DISTINCT s), count(DISTINCT x) FROM big",
+   "difference": "DuckDB returns a HyperLogLog estimate; Assay returns the exact distinct count (decision for the maintainer)",
+   "sql": "SELECT APPROX_COUNT_DISTINCT(s), APPROX_COUNT_DISTINCT(x) FROM big;",
+   "reference_outcome": "rows",
+   "columns": [
+    "approx_count_distinct(s)",
+    "approx_count_distinct(x)"
+   ],
+   "types": [
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     323,
+     6797
+    ]
+   ],
+   "assay_types": [
+    "BIGINT",
+    "BIGINT"
+   ],
+   "assay_rows": [
+    [
+     300,
+     5796
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "300",
+     "5796"
+    ]
+   ],
+   "pg_vs_assay": "agrees"
+  },
+  {
+   "id": "expressions_having_and_outer_arithmetic",
+   "pg_sql": "SELECT g, percentile_cont(0.5) WITHIN GROUP (ORDER BY i * 2 + 1) AS m, percentile_cont(0.5) WITHIN GROUP (ORDER BY i) + 1 AS shifted, percentile_disc(0.5) WITHIN GROUP (ORDER BY CASE WHEN b THEN s END) AS true_s FROM vals GROUP BY g HAVING percentile_cont(0.5) WITHIN GROUP (ORDER BY i) > 2 ORDER BY g",
+   "sql": "SELECT g, MEDIAN(i * 2 + 1) AS m, MEDIAN(i) + 1 AS shifted, QUANTILE_DISC(CASE WHEN b THEN s END, 0.5) AS true_s FROM vals GROUP BY g HAVING MEDIAN(i) > 2 ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "m",
+    "shifted",
+    "true_s"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DOUBLE",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "A",
+     {
+      "float": "7.0"
+     },
+     {
+      "float": "4.0"
+     },
+     "fig"
+    ],
+    [
+     "E",
+     {
+      "float": "11.0"
+     },
+     {
+      "float": "6.0"
+     },
+     "-inf"
+    ],
+    [
+     null,
+     {
+      "float": "24.0"
+     },
+     {
+      "float": "12.5"
+     },
+     "zed"
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "join_grouping",
+   "pg_sql": "SELECT r.zone, percentile_cont(0.5) WITHIN GROUP (ORDER BY v.i), percentile_cont(0.5) WITHIN GROUP (ORDER BY v.d), mode() WITHIN GROUP (ORDER BY v.m) FROM vals v JOIN regions r ON v.g = r.g GROUP BY r.zone ORDER BY r.zone",
+   "assay_sql": "SELECT r.zone, MEDIAN(v.i), exact_cont(list(CAST(v.d AS VARCHAR)), '0.5', false), MODE() WITHIN GROUP (ORDER BY v.m) FROM vals v JOIN regions r ON v.g = r.g GROUP BY r.zone ORDER BY r.zone",
+   "difference": "interpolated DECIMAL returns DOUBLE like PostgreSQL (maintainer decision October 17); DuckDB returns DECIMAL with direction-dependent rounding",
+   "sql": "SELECT r.zone, MEDIAN(v.i), MEDIAN(v.d), MODE() WITHIN GROUP (ORDER BY v.m) FROM vals v JOIN regions r ON v.g = r.g GROUP BY r.zone ORDER BY r.zone;",
+   "reference_outcome": "rows",
+   "columns": [
+    "zone",
+    "median(v.i)",
+    "median(v.d)",
+    "\"mode\"() WITHIN GROUP ( ORDER BY v.m)"
+   ],
+   "types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DECIMAL(12,2)",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "east",
+     {
+      "float": "2.0"
+     },
+     "0.76",
+     8
+    ],
+    [
+     "west",
+     {
+      "float": "3.0"
+     },
+     "2.25",
+     1
+    ]
+   ],
+   "assay_types": [
+    "VARCHAR",
+    "DOUBLE",
+    "DOUBLE",
+    "BIGINT"
+   ],
+   "assay_rows": [
+    [
+     "east",
+     {
+      "float": "2.0"
+     },
+     {
+      "float": "0.76"
+     },
+     8
+    ],
+    [
+     "west",
+     {
+      "float": "3.0"
+     },
+     {
+      "float": "2.25"
+     },
+     1
+    ]
+   ],
+   "pg": "agrees",
+   "pg_vs_assay": "agrees"
+  },
+  {
+   "id": "shared_input_state",
+   "pg_sql": "SELECT g, percentile_cont(0.5) WITHIN GROUP (ORDER BY x), percentile_disc(0.9) WITHIN GROUP (ORDER BY x), mode() WITHIN GROUP (ORDER BY x), percentile_cont(0.1) WITHIN GROUP (ORDER BY x DESC), count(*) FROM big GROUP BY g ORDER BY g",
+   "sql": "SELECT g, MEDIAN(x), PERCENTILE_DISC(0.9) WITHIN GROUP (ORDER BY x), MODE() WITHIN GROUP (ORDER BY x), QUANTILE_CONT(x, -0.1), COUNT(*) FROM big GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "median(x)",
+    "quantile_disc(0.9 ORDER BY x)",
+    "\"mode\"() WITHIN GROUP ( ORDER BY x)",
+    "quantile_cont(x, -0.1)",
+    "count_star()"
+   ],
+   "types": [
+    "BIGINT",
+    "DOUBLE",
+    "BIGINT",
+    "BIGINT",
+    "DOUBLE",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     0,
+     {
+      "float": "46380.0"
+     },
+     824916,
+     -992603,
+     {
+      "float": "824769.6"
+     },
+     799
+    ],
+    [
+     1,
+     {
+      "float": "-14489.0"
+     },
+     821169,
+     -999610,
+     {
+      "float": "820499.2"
+     },
+     881
+    ],
+    [
+     2,
+     {
+      "float": "38493.0"
+     },
+     818180,
+     -999149,
+     {
+      "float": "818180.0"
+     },
+     851
+    ],
+    [
+     3,
+     {
+      "float": "40928.0"
+     },
+     818937,
+     -998484,
+     {
+      "float": "818667.6"
+     },
+     851
+    ],
+    [
+     4,
+     {
+      "float": "-69117.0"
+     },
+     783365,
+     -998951,
+     {
+      "float": "782283.4"
+     },
+     874
+    ],
+    [
+     5,
+     {
+      "float": "-67261.0"
+     },
+     761120,
+     -999209,
+     {
+      "float": "761120.0"
+     },
+     821
+    ],
+    [
+     6,
+     {
+      "float": "-14383.0"
+     },
+     798483,
+     -997191,
+     {
+      "float": "791335.7999999999"
+     },
+     861
+    ],
+    [
+     null,
+     {
+      "float": "-54860.0"
+     },
+     846740,
+     -972968,
+     {
+      "float": "847324.8"
+     },
+     62
+    ]
+   ],
+   "pg": "agrees"
+  },
+  {
+   "id": "many_batches_grouped",
+   "pg_sql": "SELECT g, percentile_cont(0.5) WITHIN GROUP (ORDER BY q), percentile_cont(0.9) WITHIN GROUP (ORDER BY q), percentile_disc(0.1) WITHIN GROUP (ORDER BY f), percentile_cont(0.75) WITHIN GROUP (ORDER BY f), mode() WITHIN GROUP (ORDER BY m), percentile_disc(0.5) WITHIN GROUP (ORDER BY s DESC) FROM big GROUP BY g ORDER BY g",
+   "tie_column": 5,
+   "ties": "SELECT g, list(m ORDER BY m) FROM (SELECT g, m, count(*) AS c, max(count(*)) OVER (PARTITION BY g) AS mx FROM big WHERE m IS NOT NULL GROUP BY g, m) WHERE c = mx GROUP BY g ORDER BY g",
+   "assay_sql": "SELECT g, exact_cont(list(CAST(q AS VARCHAR)), '0.5', false), exact_cont(list(CAST(q AS VARCHAR)), '0.9', false), PERCENTILE_DISC(0.1) WITHIN GROUP (ORDER BY f), QUANTILE_CONT(f, 0.75), MODE(m), PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY s DESC) FROM big GROUP BY g ORDER BY g",
+   "difference": "interpolated DECIMAL returns DOUBLE like PostgreSQL (maintainer decision October 17); DuckDB returns DECIMAL with direction-dependent rounding",
+   "sql": "SELECT g, MEDIAN(q), PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY q), PERCENTILE_DISC(0.1) WITHIN GROUP (ORDER BY f), QUANTILE_CONT(f, 0.75), MODE(m), PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY s DESC) FROM big GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "median(q)",
+    "quantile_cont(0.9 ORDER BY q)",
+    "quantile_disc(0.1 ORDER BY f)",
+    "quantile_cont(f, 0.75)",
+    "\"mode\"(m)",
+    "quantile_disc(0.5 ORDER BY s DESC)"
+   ],
+   "types": [
+    "BIGINT",
+    "DECIMAL(15,2)",
+    "DECIMAL(15,2)",
+    "DOUBLE",
+    "DOUBLE",
+    "BIGINT",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     0,
+     "48166.57",
+     "88884.23",
+     {
+      "float": "671.5711790860305"
+     },
+     {
+      "float": "1165.5499896302956"
+     },
+     0,
+     "k150"
+    ],
+    [
+     1,
+     "50222.89",
+     "90953.32",
+     {
+      "float": "379.92710482917664"
+     },
+     {
+      "float": "1372.7999875656647"
+     },
+     1,
+     "k149"
+    ],
+    [
+     2,
+     "50198.14",
+     "90762.41",
+     {
+      "float": "9.98836914277831"
+     },
+     {
+      "float": "1488.1254364768167"
+     },
+     2,
+     "k153"
+    ],
+    [
+     3,
+     "51065.11",
+     "90290.55",
+     {
+      "float": "-336.4868509465325"
+     },
+     {
+      "float": "1712.6072866640484"
+     },
+     3,
+     "k153"
+    ],
+    [
+     4,
+     "51665.09",
+     "90607.26",
+     {
+      "float": "-611.2163637868325"
+     },
+     {
+      "float": "1757.9718287277651"
+     },
+     4,
+     "k150"
+    ],
+    [
+     5,
+     "51138.61",
+     "90596.18",
+     {
+      "float": "-823.2292086823577"
+     },
+     {
+      "float": "2026.6898435194025"
+     },
+     0,
+     "k147"
+    ],
+    [
+     6,
+     "50043.66",
+     "89180.45",
+     {
+      "float": "-1050.3365820045947"
+     },
+     {
+      "float": "2110.8586594956514"
+     },
+     1,
+     "k140"
+    ],
+    [
+     null,
+     "39227.38",
+     "90147.68",
+     {
+      "float": "579.4879536657047"
+     },
+     {
+      "float": "1133.222785281609"
+     },
+     0,
+     "k138"
+    ]
+   ],
+   "permitted": [
+    [
+     0,
+     [
+      0
+     ]
+    ],
+    [
+     1,
+     [
+      1
+     ]
+    ],
+    [
+     2,
+     [
+      2
+     ]
+    ],
+    [
+     3,
+     [
+      3
+     ]
+    ],
+    [
+     4,
+     [
+      4
+     ]
+    ],
+    [
+     5,
+     [
+      0
+     ]
+    ],
+    [
+     6,
+     [
+      1
+     ]
+    ],
+    [
+     null,
+     [
+      0
+     ]
+    ]
+   ],
+   "assay_types": [
+    "BIGINT",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "BIGINT",
+    "VARCHAR"
+   ],
+   "assay_rows": [
+    [
+     0,
+     {
+      "float": "48166.57"
+     },
+     {
+      "float": "88884.23200000002"
+     },
+     {
+      "float": "671.5711790860305"
+     },
+     {
+      "float": "1165.5499896302956"
+     },
+     0,
+     "k150"
+    ],
+    [
+     1,
+     {
+      "float": "50222.89"
+     },
+     {
+      "float": "90953.324"
+     },
+     {
+      "float": "379.92710482917664"
+     },
+     {
+      "float": "1372.7999875656647"
+     },
+     1,
+     "k149"
+    ],
+    [
+     2,
+     {
+      "float": "50198.14"
+     },
+     {
+      "float": "90762.418"
+     },
+     {
+      "float": "9.98836914277831"
+     },
+     {
+      "float": "1488.1254364768167"
+     },
+     2,
+     "k153"
+    ],
+    [
+     3,
+     {
+      "float": "51065.11"
+     },
+     {
+      "float": "90290.55"
+     },
+     {
+      "float": "-336.4868509465325"
+     },
+     {
+      "float": "1712.6072866640484"
+     },
+     3,
+     "k153"
+    ],
+    [
+     4,
+     {
+      "float": "51665.095"
+     },
+     {
+      "float": "90607.265"
+     },
+     {
+      "float": "-611.2163637868325"
+     },
+     {
+      "float": "1757.9718287277651"
+     },
+     4,
+     "k150"
+    ],
+    [
+     5,
+     {
+      "float": "51138.61"
+     },
+     {
+      "float": "90596.182"
+     },
+     {
+      "float": "-823.2292086823577"
+     },
+     {
+      "float": "2026.6898435194025"
+     },
+     0,
+     "k147"
+    ],
+    [
+     6,
+     {
+      "float": "50043.66"
+     },
+     {
+      "float": "89180.45"
+     },
+     {
+      "float": "-1050.3365820045947"
+     },
+     {
+      "float": "2110.8586594956514"
+     },
+     1,
+     "k140"
+    ],
+    [
+     null,
+     {
+      "float": "39227.385"
+     },
+     {
+      "float": "90147.685"
+     },
+     {
+      "float": "579.4879536657047"
+     },
+     {
+      "float": "1133.222785281609"
+     },
+     0,
+     "k138"
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "0",
+     "48166.57",
+     "88884.232",
+     "671.5711790860305",
+     "1165.5499896302956",
+     "0",
+     "k150"
+    ],
+    [
+     "1",
+     "50222.89",
+     "90953.32400000001",
+     "379.92710482917664",
+     "1372.7999875656647",
+     "1",
+     "k149"
+    ],
+    [
+     "2",
+     "50198.14",
+     "90762.41799999999",
+     "9.98836914277831",
+     "1488.1254364768167",
+     "2",
+     "k153"
+    ],
+    [
+     "3",
+     "51065.11",
+     "90290.55",
+     "-336.4868509465325",
+     "1712.6072866640484",
+     "3",
+     "k153"
+    ],
+    [
+     "4",
+     "51665.095",
+     "90607.265",
+     "-611.2163637868325",
+     "1757.9718287277651",
+     "4",
+     "k150"
+    ],
+    [
+     "5",
+     "51138.61",
+     "90596.182",
+     "-823.2292086823577",
+     "2026.6898435194023",
+     "0",
+     "k147"
+    ],
+    [
+     "6",
+     "50043.66",
+     "89180.45",
+     "-1050.3365820045947",
+     "2110.8586594956514",
+     "1",
+     "k140"
+    ],
+    [
+     null,
+     "39227.385",
+     "90147.685",
+     "579.4879536657047",
+     "1133.222785281609",
+     "0",
+     "k138"
+    ]
+   ],
+   "pg_vs_assay": "agrees"
+  },
+  {
+   "id": "many_batches_scalar",
+   "pg_sql": "SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY x), percentile_cont(0.99) WITHIN GROUP (ORDER BY q DESC), percentile_cont(0.01) WITHIN GROUP (ORDER BY f), mode() WITHIN GROUP (ORDER BY s), percentile_disc(0.333) WITHIN GROUP (ORDER BY x) FROM big",
+   "assay_sql": "SELECT MEDIAN(x), exact_cont(list(CAST(q AS VARCHAR)), '0.99', true), QUANTILE_CONT(f, 0.01), MODE() WITHIN GROUP (ORDER BY s), PERCENTILE_DISC(0.333) WITHIN GROUP (ORDER BY x) FROM big",
+   "difference": "interpolated DECIMAL returns DOUBLE like PostgreSQL (maintainer decision October 17); DuckDB returns DECIMAL with direction-dependent rounding",
+   "sql": "SELECT MEDIAN(x), PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY q DESC), QUANTILE_CONT(f, 0.01), MODE() WITHIN GROUP (ORDER BY s), PERCENTILE_DISC(0.333) WITHIN GROUP (ORDER BY x) FROM big;",
+   "reference_outcome": "rows",
+   "columns": [
+    "median(x)",
+    "quantile_cont(0.99 ORDER BY q DESC)",
+    "quantile_cont(f, 0.01)",
+    "\"mode\"() WITHIN GROUP ( ORDER BY s)",
+    "quantile_disc(0.333 ORDER BY x)"
+   ],
+   "types": [
+    "DOUBLE",
+    "DECIMAL(15,2)",
+    "DOUBLE",
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     {
+      "float": "-10244.5"
+     },
+     "762.64",
+     {
+      "float": "-1911.6607187172447"
+     },
+     "k049",
+     -339911
+    ]
+   ],
+   "assay_types": [
+    "DOUBLE",
+    "DOUBLE",
+    "DOUBLE",
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "assay_rows": [
+    [
+     {
+      "float": "-10244.5"
+     },
+     {
+      "float": "762.6347999999986"
+     },
+     {
+      "float": "-1911.6607187172447"
+     },
+     "k049",
+     -339911
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "-10244.5",
+     "762.6348000000003",
+     "-1911.6607187172447",
+     "k049",
+     "-339911"
+    ]
+   ],
+   "pg_vs_assay": "agrees"
+  },
+  {
+   "id": "error_fraction_out_of_range",
+   "assay_error": "semantic:",
+   "sql": "SELECT PERCENTILE_CONT(1.5) WITHIN GROUP (ORDER BY i) FROM vals;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: PERCENTILEs can only take parameters in the range [0, 1]",
+   "pg": "error: psql:<stdin>:2: ERROR:  percentile value 1.5 is not between 0 and 1"
+  },
+  {
+   "id": "error_negative_percentile",
+   "assay_error": "semantic:",
+   "sql": "SELECT PERCENTILE_DISC(-0.25) WITHIN GROUP (ORDER BY i) FROM vals;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: PERCENTILEs can only take parameters in the range [0, 1]",
+   "pg": "error: psql:<stdin>:2: ERROR:  percentile value -0.25 is not between 0 and 1"
+  },
+  {
+   "id": "error_quantile_out_of_range",
+   "assay_error": "semantic:",
+   "pg_sql": "none",
+   "sql": "SELECT QUANTILE_DISC(i, -1.5) FROM vals;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: QUANTILE can only take parameters in the range [-1, 1]",
+   "pg": "no PostgreSQL equivalent"
+  },
+  {
+   "id": "error_null_fraction",
+   "assay_error": "unsupported:",
+   "difference": "PostgreSQL returns NULL; DuckDB raises a binder error",
+   "sql": "SELECT PERCENTILE_CONT(NULL) WITHIN GROUP (ORDER BY i) FROM vals;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: QUANTILE argument must not be NULL",
+   "pg": "rows (DuckDB errors)",
+   "pg_rows": [
+    [
+     null
+    ]
+   ]
+  },
+  {
+   "id": "error_non_constant_fraction",
+   "assay_error": "unsupported:",
+   "sql": "SELECT PERCENTILE_CONT(i / 10.0) WITHIN GROUP (ORDER BY i) FROM vals;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: QUANTILE can only take constant parameters",
+   "pg": "error: psql:<stdin>:2: ERROR:  column \"vals.i\" must appear in the GROUP BY clause or be used in an aggregate function"
+  },
+  {
+   "id": "error_percentile_cont_text",
+   "assay_error": "semantic:",
+   "sql": "SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY s) FROM vals;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: No function matches the given name and argument types 'quantile_cont(VARCHAR, DECIMAL(2,1))'. You might need to add explicit type casts.",
+   "pg": "error: psql:<stdin>:2: ERROR:  function percentile_cont(numeric, text) does not exist"
+  },
+  {
+   "id": "error_quantile_cont_boolean",
+   "assay_error": "semantic:",
+   "pg_sql": "none",
+   "sql": "SELECT QUANTILE_CONT(b, 0.5) FROM vals;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: No function matches the given name and argument types 'quantile_cont(BOOLEAN, DECIMAL(2,1))'. You might need to add explicit type casts.",
+   "pg": "no PostgreSQL equivalent"
+  },
+  {
+   "id": "refuse_median_date_timestamp",
+   "assay_error": "unsupported:",
+   "difference": "DuckDB interpolates DATE to TIMESTAMP (not yet an Assay type); PostgreSQL has no MEDIAN and rejects PERCENTILE_CONT over DATE",
+   "pg_sql": "SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY dt) FROM vals",
+   "sql": "SELECT MEDIAN(dt) FROM vals;",
+   "reference_outcome": "rows",
+   "columns": [
+    "median(dt)"
+   ],
+   "types": [
+    "TIMESTAMP"
+   ],
+   "rows": [
+    [
+     "2024-02-29T00:00:00"
+    ]
+   ],
+   "pg": "error: psql:<stdin>:2: ERROR:  function percentile_cont(numeric, date) does not exist"
+  },
+  {
+   "id": "refuse_fraction_list",
+   "assay_error": "unsupported:",
+   "difference": "a list of fractions returns a LIST, which Assay does not have yet",
+   "pg_sql": "SELECT percentile_cont(ARRAY[0.25, 0.75]) WITHIN GROUP (ORDER BY i) FROM vals",
+   "sql": "SELECT QUANTILE_CONT(i, [0.25, 0.75]) FROM vals;",
+   "reference_outcome": "rows",
+   "columns": [
+    "quantile_cont(i, main.list_value(0.25, 0.75))"
+   ],
+   "types": [
+    "DOUBLE[]"
+   ],
+   "rows": [
+    [
+     [
+      {
+       "float": "1.5"
+      },
+      {
+       "float": "7.0"
+      }
+     ]
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "{1.5,7}"
+    ]
+   ]
+  },
+  {
+   "id": "refuse_zero_fraction_desc",
+   "assay_error": "unsupported:",
+   "difference": "DuckDB 1.5.6 returns the minimum (as if ascending); PostgreSQL returns the first value in DESC order (the maximum)",
+   "sql": "SELECT PERCENTILE_DISC(0) WITHIN GROUP (ORDER BY i DESC) FROM vals;",
+   "reference_outcome": "rows",
+   "columns": [
+    "quantile_disc(0 ORDER BY i DESC)"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     -9
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "12"
+    ]
+   ]
+  },
+  {
+   "id": "refuse_distinct",
+   "assay_error": "unsupported:",
+   "difference": "DISTINCT ordered-set aggregates are not implemented (PostgreSQL rejects DISTINCT with WITHIN GROUP)",
+   "pg_sql": "none",
+   "sql": "SELECT MEDIAN(DISTINCT i) FROM vals;",
+   "reference_outcome": "rows",
+   "columns": [
+    "median(DISTINCT i)"
+   ],
+   "types": [
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "5.0"
+     }
+    ]
+   ],
+   "pg": "no PostgreSQL equivalent"
+  },
+  {
+   "id": "refuse_percentile_disc_binary64_index",
+   "assay_error": "unsupported:",
+   "difference": "0.28 * 25 = 7: DuckDB computes ceil(n * q) exactly and returns row 7; PostgreSQL computes it in binary64 (7.000000000000001) and returns row 8",
+   "sql": "SELECT PERCENTILE_DISC(0.28) WITHIN GROUP (ORDER BY x) FROM seq;",
+   "reference_outcome": "rows",
+   "columns": [
+    "quantile_disc(0.28 ORDER BY x)"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     7
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "8"
+    ]
+   ]
+  },
+  {
+   "id": "quantile_disc_exact_index",
+   "pg_sql": "none",
+   "sql": "SELECT QUANTILE_DISC(x, 0.28), PERCENTILE_DISC(0.3) WITHIN GROUP (ORDER BY x), PERCENTILE_DISC(0.32) WITHIN GROUP (ORDER BY x DESC) FROM seq;",
+   "reference_outcome": "rows",
+   "columns": [
+    "quantile_disc(x, 0.28)",
+    "quantile_disc(0.3 ORDER BY x)",
+    "quantile_disc(0.32 ORDER BY x DESC)"
+   ],
+   "types": [
+    "BIGINT",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     7,
+     8,
+     18
+    ]
+   ],
+   "pg": "no PostgreSQL equivalent"
+  },
+  {
+   "id": "decimal_desc_through_subquery",
+   "difference": "interpolated DECIMAL returns DOUBLE like PostgreSQL (maintainer decision October 17); DuckDB returns DECIMAL with direction-dependent rounding",
+   "pg_sql": "SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY x DESC) FROM (SELECT d AS x FROM vals WHERE id IN (1, 2)) s",
+   "assay_sql": "SELECT exact_cont(list(CAST(x AS VARCHAR)), '0.5', true) FROM (SELECT d AS x FROM vals WHERE id IN (1, 2)) s",
+   "sql": "SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY x DESC) FROM (SELECT d AS x FROM vals WHERE id IN (1, 2)) s;",
+   "reference_outcome": "rows",
+   "columns": [
+    "quantile_cont(0.5 ORDER BY x DESC)"
+   ],
+   "types": [
+    "DECIMAL(12,2)"
+   ],
+   "rows": [
+    [
+     "3.88"
+    ]
+   ],
+   "assay_types": [
+    "DOUBLE"
+   ],
+   "assay_rows": [
+    [
+     {
+      "float": "3.875"
+     }
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "3.875"
+    ]
+   ],
+   "pg_vs_assay": "agrees"
+  },
+  {
+   "id": "decimal_asc_through_subquery",
+   "pg_sql": "SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY x) FROM (SELECT d AS x FROM vals WHERE id IN (1, 2)) s",
+   "assay_sql": "SELECT exact_cont(list(CAST(x AS VARCHAR)), '0.5', false) FROM (SELECT d AS x FROM vals WHERE id IN (1, 2)) s",
+   "difference": "interpolated DECIMAL returns DOUBLE like PostgreSQL (maintainer decision October 17); DuckDB returns DECIMAL with direction-dependent rounding",
+   "sql": "SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY x) FROM (SELECT d AS x FROM vals WHERE id IN (1, 2)) s;",
+   "reference_outcome": "rows",
+   "columns": [
+    "quantile_cont(0.5 ORDER BY x)"
+   ],
+   "types": [
+    "DECIMAL(12,2)"
+   ],
+   "rows": [
+    [
+     "3.87"
+    ]
+   ],
+   "assay_types": [
+    "DOUBLE"
+   ],
+   "assay_rows": [
+    [
+     {
+      "float": "3.875"
+     }
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "3.875"
+    ]
+   ],
+   "pg_vs_assay": "agrees"
+  },
+  {
+   "id": "refuse_real_infinite_neighbours",
+   "assay_error": "unsupported:",
+   "difference": "between +inf and +inf DuckDB returns +inf and PostgreSQL NaN",
+   "sql": "SELECT PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY x) FROM edge WHERE g = 1;",
+   "reference_outcome": "rows",
+   "columns": [
+    "quantile_cont(0.75 ORDER BY x)"
+   ],
+   "types": [
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "+inf"
+     }
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "NaN"
+    ]
+   ]
+  },
+  {
+   "id": "refuse_real_overflow",
+   "assay_error": "unsupported:",
+   "difference": "between -1e308 and 1e308 DuckDB returns 0.0 and PostgreSQL +inf (overflow of hi - lo)",
+   "sql": "SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY x) FROM edge WHERE g = 2;",
+   "reference_outcome": "rows",
+   "columns": [
+    "quantile_cont(0.5 ORDER BY x)"
+   ],
+   "types": [
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     {
+      "float": "0.0"
+     }
+    ]
+   ],
+   "pg": "differs",
+   "pg_rows": [
+    [
+     "Infinity"
+    ]
+   ]
+  },
+  {
+   "id": "duckdb_only_spelling_overflow",
+   "pg_sql": "none",
+   "sql": "SELECT g, MEDIAN(x), QUANTILE_CONT(x, 0.25) FROM edge GROUP BY g ORDER BY g;",
+   "reference_outcome": "rows",
+   "columns": [
+    "g",
+    "median(x)",
+    "quantile_cont(x, 0.25)"
+   ],
+   "types": [
+    "BIGINT",
+    "DOUBLE",
+    "DOUBLE"
+   ],
+   "rows": [
+    [
+     1,
+     {
+      "float": "+inf"
+     },
+     {
+      "float": "+inf"
+     }
+    ],
+    [
+     2,
+     {
+      "float": "0.0"
+     },
+     {
+      "float": "-5e+307"
+     }
+    ],
+    [
+     3,
+     {
+      "float": "1.5"
+     },
+     {
+      "float": "1.25"
+     }
+    ]
+   ],
+   "pg": "no PostgreSQL equivalent"
+  }
+ ]
+}

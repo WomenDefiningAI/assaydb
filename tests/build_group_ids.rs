@@ -208,15 +208,15 @@ fn late_payload_finalizes_unselected_groups_and_preserves_offset_refusal() {
     for offset in [0, 1, 70] {
         for optimized in [false, true] {
             let options = Fixture::options(1, 7, optimized);
+            let prepared = rel::prepare(
+                &format!("{query} LIMIT 7 OFFSET {offset}"),
+                &fixture.tables,
+                &options,
+            )
+            .unwrap();
             assert_eq!(
-                rel::prepare(
-                    &format!("{query} LIMIT 7 OFFSET {offset}"),
-                    &fixture.tables,
-                    &options
-                )
-                .err()
-                .unwrap(),
-                "unsupported: LIMIT/OFFSET"
+                execute(&prepared, &options).err().unwrap(),
+                "decimal precision 38 overflow"
             );
         }
     }

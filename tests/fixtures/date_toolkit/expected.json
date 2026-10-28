@@ -1,0 +1,2995 @@
+{
+  "duckdb_version": "1.5.6",
+  "setup_sql": "CREATE TABLE dates(id INTEGER, d DATE, n INTEGER, amount DECIMAL(10,2));\nINSERT INTO dates VALUES\n(1,DATE '1900-01-31',1,10.25),(2,DATE '1900-02-28',-1,20.25),\n(3,DATE '2000-01-31',1,30.25),(4,DATE '2000-02-29',12,40.25),\n(5,DATE '1969-12-31',1,50.25),(6,DATE '2014-12-29',7,60.25),\n(7,DATE '2016-01-03',-7,70.25),(8,DATE '2024-02-29',90,80.25),\n(9,DATE '2024-03-31',-90,90.25),(10,DATE '9999-12-31',0,100.25),\n(11,NULL,1,110.25),(12,DATE '2024-02-29',NULL,120.25),\n(13,DATE '2024-02-29',2,130.25);\nCREATE TABLE empty_dates(d DATE,n INTEGER);\n",
+  "setup_sha256": "8de879c8b7bb5ae3a2b8a00e1834fe2557bad8beea20fc08ccb200bb607c816d",
+  "cases_sha256": "d367cab13f488cb4db0a7c3fbea4d7573ccfad05c1389726f49073fe3caf2131",
+  "postgresql_execution": "not run; documentation agreement only",
+  "cases": [
+    {
+      "id": "trunc_year_1900-03-01",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('year',DATE '1900-03-01') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "1900-01-01T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "1900-01-01"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "trunc_year_2000-02-29",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('year',DATE '2000-02-29') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2000-01-01T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2000-01-01"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "trunc_year_2016-01-03",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('year',DATE '2016-01-03') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2016-01-01T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2016-01-01"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "trunc_quarter_1900-03-01",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('quarter',DATE '1900-03-01') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "1900-01-01T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "1900-01-01"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "trunc_quarter_2000-02-29",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('quarter',DATE '2000-02-29') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2000-01-01T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2000-01-01"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "trunc_quarter_2016-01-03",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('quarter',DATE '2016-01-03') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2016-01-01T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2016-01-01"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "trunc_month_1900-03-01",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('month',DATE '1900-03-01') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "1900-03-01T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "1900-03-01"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "trunc_month_2000-02-29",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('month',DATE '2000-02-29') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2000-02-01T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2000-02-01"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "trunc_month_2016-01-03",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('month',DATE '2016-01-03') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2016-01-01T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2016-01-01"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "trunc_week_1900-03-01",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('week',DATE '1900-03-01') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "1900-02-26T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "1900-02-26"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "trunc_week_2000-02-29",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('week',DATE '2000-02-29') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2000-02-28T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2000-02-28"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "trunc_week_2016-01-03",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('week',DATE '2016-01-03') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2015-12-28T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2015-12-28"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "trunc_day_1900-03-01",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('day',DATE '1900-03-01') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "1900-03-01T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "1900-03-01"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "trunc_day_2000-02-29",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('day',DATE '2000-02-29') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2000-02-29T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2000-02-29"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "trunc_day_2016-01-03",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('day',DATE '2016-01-03') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2016-01-03T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2016-01-03"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "interval_00",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '1900-01-31' + INTERVAL '1' MONTH AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "1900-02-28T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "1900-02-28"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "interval_01",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '2000-01-31' + INTERVAL '1' MONTH AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2000-02-29T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2000-02-29"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "interval_02",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '2024-03-31' - INTERVAL '1' MONTH AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2024-02-29T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2024-02-29"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "interval_03",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '2000-02-29' + INTERVAL '1' YEAR AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2001-02-28T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2001-02-28"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "interval_04",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '2000-02-29' + INTERVAL '4' YEAR AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2004-02-29T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2004-02-29"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "interval_05",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '2000-02-29' - INTERVAL '100' YEAR AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "1900-02-28T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "1900-02-28"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "interval_06",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '2000-02-29' + INTERVAL '-1' YEAR AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "1999-02-28T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "1999-02-28"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "interval_07",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '1900-03-01' - INTERVAL '1' DAY AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "1900-02-28T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "1900-02-28"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "interval_08",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '2000-03-01' - INTERVAL '1' DAY AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2000-02-29T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2000-02-29"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "interval_09",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '1969-12-31' + INTERVAL '1' DAY AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "1970-01-01T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "1970-01-01"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "interval_10",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Correction (Oct 17): live PostgreSQL 17.11 parses WEEK here as a column alias of INTERVAL '1' (one second): SELECT DATE '2024-01-03' + INTERVAL '1' WEEK returns column \"week\" = 2024-01-03 00:00:01, and with AS x it is a syntax error; DuckDB adds 7 days. References disagree, so Assay refuses.",
+      "sql": "SELECT DATE '2024-01-03' + INTERVAL '1' WEEK AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2024-01-10T00:00:00"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "interval_11",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Correction (Oct 17): live PostgreSQL 17.11 parses WEEK here as a column alias of INTERVAL '1' (one second): SELECT DATE '2024-01-03' + INTERVAL '1' WEEK returns column \"week\" = 2024-01-03 00:00:01, and with AS x it is a syntax error; DuckDB adds 7 days. References disagree, so Assay refuses.",
+      "sql": "SELECT DATE '2024-01-03' - INTERVAL '-1' WEEK AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2024-01-10T00:00:00"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "interval_12",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '2024-01-31' + INTERVAL '13' MONTH AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2025-02-28T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2025-02-28"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "interval_13",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '2024-03-31' + INTERVAL '-13' MONTH AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2023-02-28T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2023-02-28"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "interval_14",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '9999-01-31' + INTERVAL '1' MONTH AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "9999-02-28T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "9999-02-28"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "interval_15",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '0001-01-01' + INTERVAL '0' YEAR AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "0001-01-01T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "0001-01-01"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "interval_16",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '2024-02-29' - INTERVAL '-12' MONTH AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2025-02-28T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2025-02-28"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "add",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '1900-02-28'+1 AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "DATE"
+        ],
+        "rows": [
+          [
+            "1900-03-01"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "1900-03-01"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "reverse_add",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT 1+DATE '2000-02-28' AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "DATE"
+        ],
+        "rows": [
+          [
+            "2000-02-29"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2000-02-29"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "subtract",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '2000-03-01'-1 AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "DATE"
+        ],
+        "rows": [
+          [
+            "2000-02-29"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2000-02-29"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "negative",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '1970-01-01'+ -1 AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "DATE"
+        ],
+        "rows": [
+          [
+            "1969-12-31"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "1969-12-31"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "double_negative",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '1969-12-31'- -1 AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "DATE"
+        ],
+        "rows": [
+          [
+            "1970-01-01"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "1970-01-01"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "difference",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '2000-03-01'-DATE '1900-03-01' AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "BIGINT"
+        ],
+        "rows": [
+          [
+            36525
+          ]
+        ]
+      },
+      "rows": [
+        [
+          36525
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "negative_difference",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '0001-01-01'-DATE '9999-12-31' AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "BIGINT"
+        ],
+        "rows": [
+          [
+            -3652058
+          ]
+        ]
+      },
+      "rows": [
+        [
+          -3652058
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "null_add",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '2024-01-01'+NULL AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "DATE"
+        ],
+        "rows": [
+          [
+            null
+          ]
+        ]
+      },
+      "rows": [
+        [
+          null
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "null_subtract",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '2024-01-01'-NULL AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "DATE"
+        ],
+        "rows": [
+          [
+            null
+          ]
+        ]
+      },
+      "rows": [
+        [
+          null
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "null_trunc",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('month',CAST(NULL AS DATE)) AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            null
+          ]
+        ]
+      },
+      "rows": [
+        [
+          null
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "null_interval",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT CAST(NULL AS DATE)+INTERVAL '1' MONTH AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            null
+          ]
+        ]
+      },
+      "rows": [
+        [
+          null
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "null_difference",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT CAST(NULL AS DATE)-DATE '2024-01-01' AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "BIGINT"
+        ],
+        "rows": [
+          [
+            null
+          ]
+        ]
+      },
+      "rows": [
+        [
+          null
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "nested",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "reference_sql": "SELECT CAST(DATE_TRUNC('month',CAST(DATE '2024-01-31'+INTERVAL '1' MONTH AS DATE)) AS DATE)+1 AS x;",
+      "difference": "Explicit reference DATE casts implement Helen\u2019s DATE output decision at each nested boundary.",
+      "sql": "SELECT DATE_TRUNC('month',DATE '2024-01-31'+INTERVAL '1' MONTH)+1 AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "DATE"
+        ],
+        "rows": [
+          [
+            "2024-02-02"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2024-02-02"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "iso_year",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('week',DATE '2014-12-31') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2014-12-29T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "2014-12-29"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "far_future",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('quarter',DATE '9999-12-31') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "9999-10-01T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "9999-10-01"
+        ]
+      ],
+      "types": [
+        "DATE"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "date_part",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_PART('isoyear',DATE '2016-01-03') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "BIGINT"
+        ],
+        "rows": [
+          [
+            2015
+          ]
+        ]
+      },
+      "rows": [
+        [
+          2015
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "columns",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id,d+CAST(n AS INTEGER) AS plus,d-CAST(n AS INTEGER) AS minus,d-DATE '1970-01-01' AS days FROM dates ORDER BY id;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "id",
+          "plus",
+          "minus",
+          "days"
+        ],
+        "types": [
+          "INTEGER",
+          "DATE",
+          "DATE",
+          "BIGINT"
+        ],
+        "rows": [
+          [
+            1,
+            "1900-02-01",
+            "1900-01-30",
+            -25537
+          ],
+          [
+            2,
+            "1900-02-27",
+            "1900-03-01",
+            -25509
+          ],
+          [
+            3,
+            "2000-02-01",
+            "2000-01-30",
+            10987
+          ],
+          [
+            4,
+            "2000-03-12",
+            "2000-02-17",
+            11016
+          ],
+          [
+            5,
+            "1970-01-01",
+            "1969-12-30",
+            -1
+          ],
+          [
+            6,
+            "2015-01-05",
+            "2014-12-22",
+            16433
+          ],
+          [
+            7,
+            "2015-12-27",
+            "2016-01-10",
+            16803
+          ],
+          [
+            8,
+            "2024-05-29",
+            "2023-12-01",
+            19782
+          ],
+          [
+            9,
+            "2024-01-01",
+            "2024-06-29",
+            19813
+          ],
+          [
+            10,
+            "9999-12-31",
+            "9999-12-31",
+            2932896
+          ],
+          [
+            11,
+            null,
+            null,
+            null
+          ],
+          [
+            12,
+            null,
+            null,
+            19782
+          ],
+          [
+            13,
+            "2024-03-02",
+            "2024-02-27",
+            19782
+          ]
+        ]
+      },
+      "rows": [
+        [
+          1,
+          "1900-02-01",
+          "1900-01-30",
+          -25537
+        ],
+        [
+          2,
+          "1900-02-27",
+          "1900-03-01",
+          -25509
+        ],
+        [
+          3,
+          "2000-02-01",
+          "2000-01-30",
+          10987
+        ],
+        [
+          4,
+          "2000-03-12",
+          "2000-02-17",
+          11016
+        ],
+        [
+          5,
+          "1970-01-01",
+          "1969-12-30",
+          -1
+        ],
+        [
+          6,
+          "2015-01-05",
+          "2014-12-22",
+          16433
+        ],
+        [
+          7,
+          "2015-12-27",
+          "2016-01-10",
+          16803
+        ],
+        [
+          8,
+          "2024-05-29",
+          "2023-12-01",
+          19782
+        ],
+        [
+          9,
+          "2024-01-01",
+          "2024-06-29",
+          19813
+        ],
+        [
+          10,
+          "9999-12-31",
+          "9999-12-31",
+          2932896
+        ],
+        [
+          11,
+          null,
+          null,
+          null
+        ],
+        [
+          12,
+          null,
+          null,
+          19782
+        ],
+        [
+          13,
+          "2024-03-02",
+          "2024-02-27",
+          19782
+        ]
+      ],
+      "types": [
+        "BIGINT",
+        "DATE",
+        "DATE",
+        "BIGINT"
+      ],
+      "columns": [
+        "id",
+        "plus",
+        "minus",
+        "days"
+      ]
+    },
+    {
+      "id": "trunc_columns",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id,DATE_TRUNC('year',d) AS y,DATE_TRUNC('quarter',d) AS q,DATE_TRUNC('month',d) AS m,DATE_TRUNC('week',d) AS w,DATE_TRUNC('day',d) AS d FROM dates ORDER BY id;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "id",
+          "y",
+          "q",
+          "m",
+          "w",
+          "d"
+        ],
+        "types": [
+          "INTEGER",
+          "TIMESTAMP",
+          "TIMESTAMP",
+          "TIMESTAMP",
+          "TIMESTAMP",
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            1,
+            "1900-01-01T00:00:00",
+            "1900-01-01T00:00:00",
+            "1900-01-01T00:00:00",
+            "1900-01-29T00:00:00",
+            "1900-01-31T00:00:00"
+          ],
+          [
+            2,
+            "1900-01-01T00:00:00",
+            "1900-01-01T00:00:00",
+            "1900-02-01T00:00:00",
+            "1900-02-26T00:00:00",
+            "1900-02-28T00:00:00"
+          ],
+          [
+            3,
+            "2000-01-01T00:00:00",
+            "2000-01-01T00:00:00",
+            "2000-01-01T00:00:00",
+            "2000-01-31T00:00:00",
+            "2000-01-31T00:00:00"
+          ],
+          [
+            4,
+            "2000-01-01T00:00:00",
+            "2000-01-01T00:00:00",
+            "2000-02-01T00:00:00",
+            "2000-02-28T00:00:00",
+            "2000-02-29T00:00:00"
+          ],
+          [
+            5,
+            "1969-01-01T00:00:00",
+            "1969-10-01T00:00:00",
+            "1969-12-01T00:00:00",
+            "1969-12-29T00:00:00",
+            "1969-12-31T00:00:00"
+          ],
+          [
+            6,
+            "2014-01-01T00:00:00",
+            "2014-10-01T00:00:00",
+            "2014-12-01T00:00:00",
+            "2014-12-29T00:00:00",
+            "2014-12-29T00:00:00"
+          ],
+          [
+            7,
+            "2016-01-01T00:00:00",
+            "2016-01-01T00:00:00",
+            "2016-01-01T00:00:00",
+            "2015-12-28T00:00:00",
+            "2016-01-03T00:00:00"
+          ],
+          [
+            8,
+            "2024-01-01T00:00:00",
+            "2024-01-01T00:00:00",
+            "2024-02-01T00:00:00",
+            "2024-02-26T00:00:00",
+            "2024-02-29T00:00:00"
+          ],
+          [
+            9,
+            "2024-01-01T00:00:00",
+            "2024-01-01T00:00:00",
+            "2024-03-01T00:00:00",
+            "2024-03-25T00:00:00",
+            "2024-03-31T00:00:00"
+          ],
+          [
+            10,
+            "9999-01-01T00:00:00",
+            "9999-10-01T00:00:00",
+            "9999-12-01T00:00:00",
+            "9999-12-27T00:00:00",
+            "9999-12-31T00:00:00"
+          ],
+          [
+            11,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            12,
+            "2024-01-01T00:00:00",
+            "2024-01-01T00:00:00",
+            "2024-02-01T00:00:00",
+            "2024-02-26T00:00:00",
+            "2024-02-29T00:00:00"
+          ],
+          [
+            13,
+            "2024-01-01T00:00:00",
+            "2024-01-01T00:00:00",
+            "2024-02-01T00:00:00",
+            "2024-02-26T00:00:00",
+            "2024-02-29T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          1,
+          "1900-01-01",
+          "1900-01-01",
+          "1900-01-01",
+          "1900-01-29",
+          "1900-01-31"
+        ],
+        [
+          2,
+          "1900-01-01",
+          "1900-01-01",
+          "1900-02-01",
+          "1900-02-26",
+          "1900-02-28"
+        ],
+        [
+          3,
+          "2000-01-01",
+          "2000-01-01",
+          "2000-01-01",
+          "2000-01-31",
+          "2000-01-31"
+        ],
+        [
+          4,
+          "2000-01-01",
+          "2000-01-01",
+          "2000-02-01",
+          "2000-02-28",
+          "2000-02-29"
+        ],
+        [
+          5,
+          "1969-01-01",
+          "1969-10-01",
+          "1969-12-01",
+          "1969-12-29",
+          "1969-12-31"
+        ],
+        [
+          6,
+          "2014-01-01",
+          "2014-10-01",
+          "2014-12-01",
+          "2014-12-29",
+          "2014-12-29"
+        ],
+        [
+          7,
+          "2016-01-01",
+          "2016-01-01",
+          "2016-01-01",
+          "2015-12-28",
+          "2016-01-03"
+        ],
+        [
+          8,
+          "2024-01-01",
+          "2024-01-01",
+          "2024-02-01",
+          "2024-02-26",
+          "2024-02-29"
+        ],
+        [
+          9,
+          "2024-01-01",
+          "2024-01-01",
+          "2024-03-01",
+          "2024-03-25",
+          "2024-03-31"
+        ],
+        [
+          10,
+          "9999-01-01",
+          "9999-10-01",
+          "9999-12-01",
+          "9999-12-27",
+          "9999-12-31"
+        ],
+        [
+          11,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          12,
+          "2024-01-01",
+          "2024-01-01",
+          "2024-02-01",
+          "2024-02-26",
+          "2024-02-29"
+        ],
+        [
+          13,
+          "2024-01-01",
+          "2024-01-01",
+          "2024-02-01",
+          "2024-02-26",
+          "2024-02-29"
+        ]
+      ],
+      "types": [
+        "BIGINT",
+        "DATE",
+        "DATE",
+        "DATE",
+        "DATE",
+        "DATE"
+      ],
+      "columns": [
+        "id",
+        "y",
+        "q",
+        "m",
+        "w",
+        "d"
+      ]
+    },
+    {
+      "id": "monthly_revenue",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('month',d) AS month,SUM(amount) AS revenue FROM dates GROUP BY DATE_TRUNC('month',d) ORDER BY month NULLS LAST;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "month",
+          "revenue"
+        ],
+        "types": [
+          "TIMESTAMP",
+          "DECIMAL(38,2)"
+        ],
+        "rows": [
+          [
+            "1900-01-01T00:00:00",
+            "10.25"
+          ],
+          [
+            "1900-02-01T00:00:00",
+            "20.25"
+          ],
+          [
+            "1969-12-01T00:00:00",
+            "50.25"
+          ],
+          [
+            "2000-01-01T00:00:00",
+            "30.25"
+          ],
+          [
+            "2000-02-01T00:00:00",
+            "40.25"
+          ],
+          [
+            "2014-12-01T00:00:00",
+            "60.25"
+          ],
+          [
+            "2016-01-01T00:00:00",
+            "70.25"
+          ],
+          [
+            "2024-02-01T00:00:00",
+            "330.75"
+          ],
+          [
+            "2024-03-01T00:00:00",
+            "90.25"
+          ],
+          [
+            "9999-12-01T00:00:00",
+            "100.25"
+          ],
+          [
+            null,
+            "110.25"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "1900-01-01",
+          "10.25"
+        ],
+        [
+          "1900-02-01",
+          "20.25"
+        ],
+        [
+          "1969-12-01",
+          "50.25"
+        ],
+        [
+          "2000-01-01",
+          "30.25"
+        ],
+        [
+          "2000-02-01",
+          "40.25"
+        ],
+        [
+          "2014-12-01",
+          "60.25"
+        ],
+        [
+          "2016-01-01",
+          "70.25"
+        ],
+        [
+          "2024-02-01",
+          "330.75"
+        ],
+        [
+          "2024-03-01",
+          "90.25"
+        ],
+        [
+          "9999-12-01",
+          "100.25"
+        ],
+        [
+          null,
+          "110.25"
+        ]
+      ],
+      "types": [
+        "DATE",
+        "DECIMAL(38,2)"
+      ],
+      "columns": [
+        "month",
+        "revenue"
+      ]
+    },
+    {
+      "id": "weekly_counts",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('week',d) AS week,COUNT(*) AS n FROM dates GROUP BY DATE_TRUNC('week',d) ORDER BY week NULLS LAST;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "week",
+          "n"
+        ],
+        "types": [
+          "TIMESTAMP",
+          "BIGINT"
+        ],
+        "rows": [
+          [
+            "1900-01-29T00:00:00",
+            1
+          ],
+          [
+            "1900-02-26T00:00:00",
+            1
+          ],
+          [
+            "1969-12-29T00:00:00",
+            1
+          ],
+          [
+            "2000-01-31T00:00:00",
+            1
+          ],
+          [
+            "2000-02-28T00:00:00",
+            1
+          ],
+          [
+            "2014-12-29T00:00:00",
+            1
+          ],
+          [
+            "2015-12-28T00:00:00",
+            1
+          ],
+          [
+            "2024-02-26T00:00:00",
+            3
+          ],
+          [
+            "2024-03-25T00:00:00",
+            1
+          ],
+          [
+            "9999-12-27T00:00:00",
+            1
+          ],
+          [
+            null,
+            1
+          ]
+        ]
+      },
+      "rows": [
+        [
+          "1900-01-29",
+          1
+        ],
+        [
+          "1900-02-26",
+          1
+        ],
+        [
+          "1969-12-29",
+          1
+        ],
+        [
+          "2000-01-31",
+          1
+        ],
+        [
+          "2000-02-28",
+          1
+        ],
+        [
+          "2014-12-29",
+          1
+        ],
+        [
+          "2015-12-28",
+          1
+        ],
+        [
+          "2024-02-26",
+          3
+        ],
+        [
+          "2024-03-25",
+          1
+        ],
+        [
+          "9999-12-27",
+          1
+        ],
+        [
+          null,
+          1
+        ]
+      ],
+      "types": [
+        "DATE",
+        "BIGINT"
+      ],
+      "columns": [
+        "week",
+        "n"
+      ]
+    },
+    {
+      "id": "days_since",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE '9999-12-31'-MAX(d) AS days FROM dates;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "days"
+        ],
+        "types": [
+          "BIGINT"
+        ],
+        "rows": [
+          [
+            0
+          ]
+        ]
+      },
+      "rows": [
+        [
+          0
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ],
+      "columns": [
+        "days"
+      ]
+    },
+    {
+      "id": "window",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id FROM dates WHERE d>=DATE '2024-03-31'-INTERVAL '90' DAY AND d<=DATE '2024-03-31' ORDER BY id;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "id"
+        ],
+        "types": [
+          "INTEGER"
+        ],
+        "rows": [
+          [
+            8
+          ],
+          [
+            9
+          ],
+          [
+            12
+          ],
+          [
+            13
+          ]
+        ]
+      },
+      "rows": [
+        [
+          8
+        ],
+        [
+          9
+        ],
+        [
+          12
+        ],
+        [
+          13
+        ]
+      ],
+      "types": [
+        "BIGINT"
+      ],
+      "columns": [
+        "id"
+      ]
+    },
+    {
+      "id": "empty",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT DATE_TRUNC('month',d) AS x,d+CAST(n AS INTEGER) AS y FROM empty_dates;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x",
+          "y"
+        ],
+        "types": [
+          "TIMESTAMP",
+          "DATE"
+        ],
+        "rows": []
+      },
+      "rows": [],
+      "types": [
+        "DATE",
+        "DATE"
+      ],
+      "columns": [
+        "x",
+        "y"
+      ]
+    },
+    {
+      "id": "case",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id,CASE WHEN d IS NULL THEN DATE '2000-01-01' ELSE DATE_TRUNC('month',d) END AS x FROM dates ORDER BY id;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "id",
+          "x"
+        ],
+        "types": [
+          "INTEGER",
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            1,
+            "1900-01-01T00:00:00"
+          ],
+          [
+            2,
+            "1900-02-01T00:00:00"
+          ],
+          [
+            3,
+            "2000-01-01T00:00:00"
+          ],
+          [
+            4,
+            "2000-02-01T00:00:00"
+          ],
+          [
+            5,
+            "1969-12-01T00:00:00"
+          ],
+          [
+            6,
+            "2014-12-01T00:00:00"
+          ],
+          [
+            7,
+            "2016-01-01T00:00:00"
+          ],
+          [
+            8,
+            "2024-02-01T00:00:00"
+          ],
+          [
+            9,
+            "2024-03-01T00:00:00"
+          ],
+          [
+            10,
+            "9999-12-01T00:00:00"
+          ],
+          [
+            11,
+            "2000-01-01T00:00:00"
+          ],
+          [
+            12,
+            "2024-02-01T00:00:00"
+          ],
+          [
+            13,
+            "2024-02-01T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          1,
+          "1900-01-01"
+        ],
+        [
+          2,
+          "1900-02-01"
+        ],
+        [
+          3,
+          "2000-01-01"
+        ],
+        [
+          4,
+          "2000-02-01"
+        ],
+        [
+          5,
+          "1969-12-01"
+        ],
+        [
+          6,
+          "2014-12-01"
+        ],
+        [
+          7,
+          "2016-01-01"
+        ],
+        [
+          8,
+          "2024-02-01"
+        ],
+        [
+          9,
+          "2024-03-01"
+        ],
+        [
+          10,
+          "9999-12-01"
+        ],
+        [
+          11,
+          "2000-01-01"
+        ],
+        [
+          12,
+          "2024-02-01"
+        ],
+        [
+          13,
+          "2024-02-01"
+        ]
+      ],
+      "types": [
+        "BIGINT",
+        "DATE"
+      ],
+      "columns": [
+        "id",
+        "x"
+      ]
+    },
+    {
+      "id": "month_column",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT id,d+INTERVAL '1' MONTH AS next,d-INTERVAL '1' YEAR AS prev FROM dates ORDER BY id;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "id",
+          "next",
+          "prev"
+        ],
+        "types": [
+          "INTEGER",
+          "TIMESTAMP",
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            1,
+            "1900-02-28T00:00:00",
+            "1899-01-31T00:00:00"
+          ],
+          [
+            2,
+            "1900-03-28T00:00:00",
+            "1899-02-28T00:00:00"
+          ],
+          [
+            3,
+            "2000-02-29T00:00:00",
+            "1999-01-31T00:00:00"
+          ],
+          [
+            4,
+            "2000-03-29T00:00:00",
+            "1999-02-28T00:00:00"
+          ],
+          [
+            5,
+            "1970-01-31T00:00:00",
+            "1968-12-31T00:00:00"
+          ],
+          [
+            6,
+            "2015-01-29T00:00:00",
+            "2013-12-29T00:00:00"
+          ],
+          [
+            7,
+            "2016-02-03T00:00:00",
+            "2015-01-03T00:00:00"
+          ],
+          [
+            8,
+            "2024-03-29T00:00:00",
+            "2023-02-28T00:00:00"
+          ],
+          [
+            9,
+            "2024-04-30T00:00:00",
+            "2023-03-31T00:00:00"
+          ],
+          [
+            10,
+            "10000-01-31 00:00:00",
+            "9998-12-31T00:00:00"
+          ],
+          [
+            11,
+            null,
+            null
+          ],
+          [
+            12,
+            "2024-03-29T00:00:00",
+            "2023-02-28T00:00:00"
+          ],
+          [
+            13,
+            "2024-03-29T00:00:00",
+            "2023-02-28T00:00:00"
+          ]
+        ]
+      },
+      "rows": [
+        [
+          1,
+          "1900-02-28",
+          "1899-01-31"
+        ],
+        [
+          2,
+          "1900-03-28",
+          "1899-02-28"
+        ],
+        [
+          3,
+          "2000-02-29",
+          "1999-01-31"
+        ],
+        [
+          4,
+          "2000-03-29",
+          "1999-02-28"
+        ],
+        [
+          5,
+          "1970-01-31",
+          "1968-12-31"
+        ],
+        [
+          6,
+          "2015-01-29",
+          "2013-12-29"
+        ],
+        [
+          7,
+          "2016-02-03",
+          "2015-01-03"
+        ],
+        [
+          8,
+          "2024-03-29",
+          "2023-02-28"
+        ],
+        [
+          9,
+          "2024-04-30",
+          "2023-03-31"
+        ],
+        [
+          10,
+          "10000-01-31",
+          "9998-12-31"
+        ],
+        [
+          11,
+          null,
+          null
+        ],
+        [
+          12,
+          "2024-03-29",
+          "2023-02-28"
+        ],
+        [
+          13,
+          "2024-03-29",
+          "2023-02-28"
+        ]
+      ],
+      "types": [
+        "BIGINT",
+        "DATE",
+        "DATE"
+      ],
+      "columns": [
+        "id",
+        "next",
+        "prev"
+      ]
+    },
+    {
+      "id": "hour",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT DATE_TRUNC('hour',DATE '2024-01-01') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2024-01-01T00:00:00"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "minute",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT DATE_TRUNC('minute',DATE '2024-01-01') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2024-01-01T00:00:00"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "interval_hour",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT DATE '2024-01-01'+INTERVAL '1' HOUR AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2024-01-01T01:00:00"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "unquoted",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT DATE '2024-01-01'+INTERVAL 1 DAY AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2024-01-02T00:00:00"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "fractional",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT DATE '2024-01-01'+INTERVAL '1.5' MONTH AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2024-02-01T00:00:00"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "output_interval",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT INTERVAL '1' DAY AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "INTERVAL"
+        ],
+        "rows": [
+          [
+            "1 day, 0:00:00"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "current_date",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT CURRENT_DATE IS NOT NULL AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "BOOLEAN"
+        ],
+        "rows": [
+          [
+            true
+          ]
+        ]
+      },
+      "rows": [
+        [
+          true
+        ]
+      ],
+      "types": [
+        "BOOLEAN"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "now",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT NOW() IS NOT NULL AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "BOOLEAN"
+        ],
+        "rows": [
+          [
+            true
+          ]
+        ]
+      },
+      "rows": [
+        [
+          true
+        ]
+      ],
+      "types": [
+        "BOOLEAN"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "current_timestamp",
+      "ordered": true,
+      "assay_outcome": "rows",
+      "sql": "SELECT CURRENT_TIMESTAMP IS NOT NULL AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "BOOLEAN"
+        ],
+        "rows": [
+          [
+            true
+          ]
+        ]
+      },
+      "rows": [
+        [
+          true
+        ]
+      ],
+      "types": [
+        "BOOLEAN"
+      ],
+      "columns": [
+        "x"
+      ]
+    },
+    {
+      "id": "datediff",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT DATEDIFF('day',DATE '2024-01-01',DATE '2024-02-01') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "BIGINT"
+        ],
+        "rows": [
+          [
+            31
+          ]
+        ]
+      }
+    },
+    {
+      "id": "date_diff",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT DATE_DIFF('day',DATE '2024-01-01',DATE '2024-02-01') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "BIGINT"
+        ],
+        "rows": [
+          [
+            31
+          ]
+        ]
+      }
+    },
+    {
+      "id": "year_alias",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT YEAR(DATE '2024-01-01') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "BIGINT"
+        ],
+        "rows": [
+          [
+            2024
+          ]
+        ]
+      }
+    },
+    {
+      "id": "month_alias",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT MONTH(DATE '2024-01-01') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "BIGINT"
+        ],
+        "rows": [
+          [
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": "day_alias",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT DAY(DATE '2024-01-01') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "BIGINT"
+        ],
+        "rows": [
+          [
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": "overflow_interval",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT DATE '2024-01-01'+INTERVAL '2147483647' YEAR AS x;",
+      "reference": {
+        "status": "error",
+        "error_class": "OutOfRangeException",
+        "message": "Out of Range Error: Interval value 2147483647 years out of range"
+      }
+    },
+    {
+      "id": "overflow_date",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT DATE '2024-01-01'+2147483647 AS x;",
+      "reference": {
+        "status": "error",
+        "error_class": "OutOfRangeException",
+        "message": "Out of Range Error: Date out of range"
+      }
+    },
+    {
+      "id": "wide_offset",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT DATE '2024-01-01'+2147483648 AS x;",
+      "reference": {
+        "status": "error",
+        "error_class": "BinderException",
+        "message": "Binder Error: No function matches the given name and argument types '+(DATE, INTEGER_LITERAL)'. You might need to add explicit type casts.\n\tCandidate functions:\n\t+(TINYINT) -> TINYINT\n\t+(TINYINT, TINYINT) -> TINYINT\n\t+(SMALLINT) -> SMALLINT\n\t+(SMALLINT, SMALLINT) -> SMALLINT\n\t+(INTEGER) -> INTEGER\n\t+(INTEGER, INTEGER) -> INTEGER\n\t+(BIGINT) -> BIGINT\n\t+(BIGINT, BIGINT) -> BIGINT\n\t+(HUGEINT) -> HUGEINT\n\t+(HUGEINT, HUGEINT) -> HUGEINT\n\t+(FLOAT) -> FLOAT\n\t+(FLOAT, FLOAT) -> FLOAT\n\t+(DOUBLE) -> DOUBLE\n\t+(DOUBLE, DOUBLE) -> DOUBLE\n\t+(DECIMAL) -> DECIMAL\n\t+(DECIMAL, DECIMAL) -> DECIMAL\n\t+(UTINYINT) -> UTINYINT\n\t+(UTINYINT, UTINYINT) -> UTINYINT\n\t+(USMALLINT) -> USMALLINT\n\t+(USMALLINT, USMALLINT) -> USMALLINT\n\t+(UINTEGER) -> UINTEGER\n\t+(UINTEGER, UINTEGER) -> UINTEGER\n\t+(UBIGINT) -> UBIGINT\n\t+(UBIGINT, UBIGINT) -> UBIGINT\n\t+(UHUGEINT) -> UHUGEINT\n\t+(UHUGEINT, UHUGEINT) -> UHUGEINT\n\t+(DATE, INTEGER) -> DATE\n\t+(INTEGER, DATE) -> DATE\n\t+(INTERVAL, INTERVAL) -> INTERVAL\n\t+(DATE, INTERVAL) -> TIMESTAMP\n\t+(INTERVAL, DATE) -> TIMESTAMP\n\t+(TIME, INTERVAL) -> TIME\n\t+(INTERVAL, TIME) -> TIME\n\t+(TIMESTAMP, INTERVAL) -> TIMESTAMP\n\t+(INTERVAL, TIMESTAMP) -> TIMESTAMP\n\t+(TIME WITH TIME ZONE, INTERVAL) -> TIME WITH TIME ZONE\n\t+(INTERVAL, TIME WITH TIME ZONE) -> TIME WITH TIME ZONE\n\t+(TIME, DATE) -> TIMESTAMP\n\t+(DATE, TIME) -> TIMESTAMP\n\t+(TIME WITH TIME ZONE, DATE) -> TIMESTAMP WITH TIME ZONE\n\t+(DATE, TIME WITH TIME ZONE) -> TIMESTAMP WITH TIME ZONE\n\t+([ANY[]...]) -> ANY[]\n\t+(BIGNUM, BIGNUM) -> BIGNUM\n\t+(TIMESTAMP WITH TIME ZONE, INTERVAL) -> TIMESTAMP WITH TIME ZONE\n\t+(INTERVAL, TIMESTAMP WITH TIME ZONE) -> TIMESTAMP WITH TIME ZONE\n\n\nLINE 1: SELECT DATE '2024-01-01'+2147483648 AS x;\n                                ^"
+      }
+    },
+    {
+      "id": "bc",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT DATE '0001-01-01'-1 AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "DATE"
+        ],
+        "rows": [
+          [
+            "0001-12-31 (BC)"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "computed_unit",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT DATE_TRUNC(LOWER('month'),DATE '2024-01-01') AS x;",
+      "reference": {
+        "status": "rows",
+        "columns": [
+          "x"
+        ],
+        "types": [
+          "TIMESTAMP"
+        ],
+        "rows": [
+          [
+            "2024-01-01T00:00:00"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "trunc_text",
+      "ordered": true,
+      "assay_outcome": "unsupported",
+      "assay_error": "unsupported:",
+      "difference": "Explicit DATE-only common-domain boundary; see the PostgreSQL agreement and range notes in README.md.",
+      "sql": "SELECT DATE_TRUNC('month',CAST('2024-01-01' AS VARCHAR)) AS x;",
+      "reference": {
+        "status": "error",
+        "error_class": "BinderException",
+        "message": "Binder Error: No function matches the given name and argument types 'date_trunc(STRING_LITERAL, VARCHAR)'. You might need to add explicit type casts.\n\tCandidate functions:\n\tdate_trunc(VARCHAR, DATE) -> TIMESTAMP\n\tdate_trunc(VARCHAR, INTERVAL) -> INTERVAL\n\tdate_trunc(VARCHAR, TIMESTAMP) -> TIMESTAMP\n\tdate_trunc(VARCHAR, TIMESTAMP WITH TIME ZONE) -> TIMESTAMP WITH TIME ZONE\n\n\nLINE 1: SELECT DATE_TRUNC('month',CAST('2024-01-01' AS VARCHAR)) AS x;\n               ^"
+      }
+    }
+  ]
+}

@@ -109,6 +109,8 @@ fn real_cast_matches_sqlite_bits_at_subnormal_exponent_and_adjacent_boundaries()
                 let sql = format!("SELECT CAST('{}' AS REAL)", text.replace('\'', "''"));
                 let result =
                     prepare(&sql, &HashMap::new(), &options).and_then(|p| execute(&p, &options));
+                // Public SQL REAL retains the same pinned SQLite conversion
+                // as column arrays, including incomplete numeric prefixes.
                 if finite {
                     let batch: RecordBatch = result
                         .unwrap_or_else(|e| panic!("{text:?}: {e}"))

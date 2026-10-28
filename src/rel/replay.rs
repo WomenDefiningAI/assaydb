@@ -108,7 +108,8 @@ fn transform(
     if let Some(exact) = exact {
         // Even an empty membership result must evaluate the exact expression:
         // scalar errors on empty input are observable on the serial path.
-        let output = exact(batch)?;
+        let lease = budget.reserve(batch.get_array_memory_size())?;
+        let output = exact(batch, lease)?;
         let seconds = start.elapsed().as_secs_f64();
         check()?;
         let _lease = output.lease;
@@ -300,7 +301,7 @@ mod tests {
         let filter = membership(&budget, &[]);
         let raw = batch(vec![Some(1), None]);
         let batches = vec![raw.clone(); 24];
-        let exact: BatchTransform = Arc::new(|b| {
+        let exact: BatchTransform = Arc::new(|b, _lease| {
             assert_eq!(b.num_rows(), 0);
             Err("injected exact error on empty input".into())
         });
@@ -453,6 +454,7 @@ mod tests {
             op: RelOp::Materialize {
                 id: 7,
                 shared_scan: true,
+                forced: false,
                 input: Box::new(Node {
                     schema: schema.clone(),
                     estimated_rows: 1,
@@ -499,6 +501,7 @@ mod tests {
             },
             RelOp::Limit {
                 count: 1,
+                offset: 0,
                 input: Box::new(leaf()),
             },
             RelOp::Scalar {
@@ -507,6 +510,7 @@ mod tests {
             RelOp::Materialize {
                 id: 7,
                 shared_scan: false,
+                forced: false,
                 input: Box::new(leaf()),
             },
         ] {
@@ -561,6 +565,7 @@ mod tests {
         let materialized = node(RelOp::Materialize {
             id: 0,
             shared_scan: true,
+            forced: false,
             input: Box::new(source),
         });
         let root = node(RelOp::Filter {
@@ -587,6 +592,7 @@ mod tests {
             lane_transforms: HashMap::new(),
             replay_transforms: HashMap::new(),
             materialized: HashMap::new(),
+            recursive_bindings: None,
             sideways_registry_lease: None,
             spill: None,
             budget: budget.clone(),

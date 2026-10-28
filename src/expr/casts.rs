@@ -1,4 +1,4 @@
-//! Explicit INTEGER/REAL/TEXT casts. No implicit conversion rules live here.
+//! Explicit numeric/text casts, including exact DECIMAL. No implicit conversion rules live here.
 use super::*;
 mod sqlite_real;
 
@@ -14,16 +14,32 @@ pub(crate) fn bind(value: Expr, target: Type) -> Result<Expr> {
                 | Type::Binary
                 | Type::Null
         ),
-        // SQLite's REAL formatter is not Rust's Display implementation. Keep
-        // unsupported conversions explicit rather than approximate its output.
+        // DOUBLE/REAL text uses DuckDB 1.5.6's shortest round-trip format
+        // (approved October 16, 2026), not SQLite's %!.15g; see float_text.
         Type::Text => matches!(
             value.ty,
-            Type::Int | Type::Bool | Type::Text | Type::Binary | Type::Null
+            Type::Int
+                | Type::Decimal(_)
+                | Type::Float
+                | Type::Date
+                | Type::Timestamp
+                | Type::Bool
+                | Type::Text
+                | Type::Binary
+                | Type::Null
         ),
         _ => false,
     };
+    if target == Type::Text && value.ty == Type::TimestampTz {
+        // Printed in the session zone with its offset, as both references do.
+        let zone = crate::zone::statement()?.zone;
+        return Ok(Expr {
+            kind: Kind::Function(crate::zone::function("text", &zone), Box::new(value)),
+            ty: Type::Text,
+        });
+    }
     if !supported {
-        return Err(format!("unsupported: CAST {:?} AS {target:?}", value.ty));
+        return Err(format!("unsupported: CAST {:?} AS {target:?}", value.ty).into());
     }
     if matches!(value.kind, Kind::Literal(Literal::Null)) {
         return Ok(Expr {
@@ -76,6 +92,11 @@ fn integer_prefix(bytes: &[u8]) -> i64 {
     } else {
         value as i64
     }
+}
+/// The base SQLite TEXT-to-REAL value, used by explicit REAL casts once the
+/// complete input has been validated.
+pub(crate) fn sqlite_real(bytes: &[u8]) -> Result<f64> {
+    real_prefix(bytes)
 }
 fn real_prefix(bytes: &[u8]) -> Result<f64> {
     let value = sqlite_real::parse(bytes);
@@ -178,6 +199,14 @@ pub(super) fn evaluate(
                 n.checked_add(size).ok_or("cast text size overflow")
             })?,
             Type::Int => rows.checked_mul(40).ok_or("cast text size overflow")?,
+            // Precision-38 coefficients, a sign/decimal point, and leading
+            // fractional zeroes fit in 42 bytes even at scale 38.
+            Type::Decimal(_) => rows.checked_mul(42).ok_or("cast text size overflow")?,
+            Type::Date => rows.checked_mul(10).ok_or("cast text size overflow")?,
+            // "9999-12-31 23:59:59.999999".
+            Type::Timestamp => rows.checked_mul(26).ok_or("cast text size overflow")?,
+            // "-1.7976931348623157e+308" and "-0.00012345678901234567" fit.
+            Type::Float => rows.checked_mul(26).ok_or("cast text size overflow")?,
             Type::Bool => rows,
             Type::Null => 0,
             _ => return Err("unsupported: numeric TEXT formatting".into()),
@@ -226,6 +255,37 @@ pub(super) fn evaluate(
                 }
                 match expr.ty {
                     Type::Int => builder.append_value(numeric(&value.array).value(row).to_string()),
+                    Type::Decimal(scale) => builder.append_value(crate::types::decimal_text(
+                        numeric(&value.array).value(row),
+                        scale,
+                    )),
+                    Type::Date => {
+                        use chrono::Datelike;
+                        let days = value
+                            .array
+                            .as_any()
+                            .downcast_ref::<Date32Array>()
+                            .unwrap()
+                            .value(row);
+                        let date = chrono::NaiveDate::from_ymd_opt(1970, 1, 1)
+                            .unwrap()
+                            .checked_add_signed(chrono::Duration::days(i64::from(days)))
+                            .filter(|date| (1..=9999).contains(&date.year()))
+                            .ok_or("unsupported: DATE to TEXT requires a year in 0001..9999")?;
+                        builder.append_value(date.format("%Y-%m-%d").to_string());
+                    }
+                    // PostgreSQL and DuckDB print the same text in range.
+                    Type::Timestamp => builder.append_value(crate::expr::timestamp::format(
+                        crate::expr::timestamp::value(value.array.as_ref(), row),
+                    )?),
+                    Type::Float => builder.append_value(float_text(
+                        value
+                            .array
+                            .as_any()
+                            .downcast_ref::<Float64Array>()
+                            .unwrap()
+                            .value(row),
+                    )?),
                     Type::Bool => builder.append_value(if boolean(&value.array).value(row) {
                         "1"
                     } else {
@@ -245,7 +305,131 @@ pub(super) fn evaluate(
     Ok(Value::allocated(array, lease))
 }
 
-/// Explicit exact-numeric conversion. Implicit rescaling remains lossless.
+pub const FLOAT_TEXT_NONFINITE: &str =
+    "unsupported: non-finite DOUBLE to TEXT (DuckDB prints inf/nan; PostgreSQL Infinity/NaN)";
+pub const FLOAT_TEXT_NEGATIVE_ZERO: &str = "unsupported: negative zero DOUBLE to TEXT (Assay's -0.0 literal is REAL; DuckDB and PostgreSQL read DECIMAL zero, and their -0 formats differ)";
+
+/// DuckDB 1.5.6 DOUBLE-to-VARCHAR text: the shortest digits that round-trip,
+/// positional when the decimal exponent is in -4..16 (with at least one
+/// fractional digit, e.g. 2.0), otherwise d[.ddd]e+XX / e-XX with at least two
+/// exponent digits. PostgreSQL 17 uses the same digits but prints 2 for 2.0
+/// and switches to exponents at 1e15; DuckDB is followed (Oct 16 decision).
+pub fn float_text(x: f64) -> Result<String> {
+    if !x.is_finite() {
+        return Err(FLOAT_TEXT_NONFINITE.into());
+    }
+    if x == 0.0 {
+        if x.is_sign_negative() {
+            return Err(FLOAT_TEXT_NEGATIVE_ZERO.into());
+        }
+        return Ok("0.0".into());
+    }
+    // Rust's `{:e}` without a precision prints the shortest round-trip digits.
+    let scientific = format!("{x:e}");
+    let (mantissa, exponent) = scientific.split_once('e').unwrap();
+    let exponent: i32 = exponent.parse().unwrap();
+    let (sign, mantissa) = mantissa
+        .strip_prefix('-')
+        .map_or(("", mantissa), |m| ("-", m));
+    let digits = mantissa.replace('.', "");
+    let mut out = String::with_capacity(26);
+    out.push_str(sign);
+    if !(-4..16).contains(&exponent) {
+        out.push_str(&digits[..1]);
+        if digits.len() > 1 {
+            out.push('.');
+            out.push_str(&digits[1..]);
+        }
+        out.push_str(if exponent < 0 { "e-" } else { "e+" });
+        if exponent.unsigned_abs() < 10 {
+            out.push('0');
+        }
+        out.push_str(&exponent.unsigned_abs().to_string());
+    } else if exponent < 0 {
+        out.push_str("0.");
+        out.extend(std::iter::repeat_n('0', (-exponent - 1) as usize));
+        out.push_str(&digits);
+    } else {
+        let integral = exponent as usize + 1;
+        if digits.len() <= integral {
+            out.push_str(&digits);
+            out.extend(std::iter::repeat_n('0', integral - digits.len()));
+            out.push_str(".0");
+        } else {
+            out.push_str(&digits[..integral]);
+            out.push('.');
+            out.push_str(&digits[integral..]);
+        }
+    }
+    Ok(out)
+}
+
+/// Validate an already formatted TEXT value without truncating or copying it.
+/// This remains fallible, so optimizers must not move it across row filters.
+pub(crate) fn evaluate_varchar(
+    expr: &Expr,
+    limit: u64,
+    input: &Input,
+    budget: &Budget,
+) -> Result<Value> {
+    let value = expr.eval(input, budget)?;
+    let strings = value.array.as_any().downcast_ref::<StringArray>().unwrap();
+    for text in strings.iter().flatten() {
+        if text.chars().count() as u64 > limit {
+            return Err(format!(
+                "unsupported: VARCHAR({limit}) result exceeds its character limit; truncation semantics differ"
+            ).into());
+        }
+    }
+    Ok(value)
+}
+
+/// Round the exact dyadic value, not a decimal rendering or a floating product.
+/// For the admitted scales 0..=18, significand * 5^scale needs at most 95 bits.
+fn float_decimal(value: f64, fives: u128, scale: i8, limit: i128) -> Result<i128> {
+    let bits = value.to_bits();
+    let exponent = ((bits >> 52) & 0x7ff) as i32;
+    if exponent == 0x7ff {
+        return Err("decimal cast nonfinite source".into());
+    }
+    let fraction = bits & ((1_u64 << 52) - 1);
+    let (significand, power) = if exponent == 0 {
+        (fraction, -1074)
+    } else {
+        (fraction | (1_u64 << 52), exponent - 1023 - 52)
+    };
+    let numerator = u128::from(significand) * fives;
+    let power = power + i32::from(scale);
+    let magnitude = if power >= 0 {
+        // Check the destination bound before shifting: checked_shl only checks
+        // the shift count, not loss of high bits. Zero/subnormals go below.
+        if power >= 128 || numerator > ((limit as u128 - 1) >> power) {
+            return Err(crate::Error::decimal_precision_overflow());
+        }
+        numerator << power
+    } else {
+        let shift = -power;
+        if shift >= 128 {
+            // A <=95-bit numerator divided by >=2^128 is strictly below 1/2.
+            0
+        } else {
+            let quotient = numerator >> shift;
+            // The top discarded bit alone decides >= half, including ties.
+            quotient + ((numerator >> (shift - 1)) & 1)
+        }
+    };
+    if magnitude >= limit as u128 {
+        return Err(crate::Error::decimal_precision_overflow());
+    }
+    let coefficient = magnitude as i128;
+    Ok(if bits >> 63 == 0 {
+        coefficient
+    } else {
+        -coefficient
+    })
+}
+
+/// Explicit numeric conversion. Implicit rescaling remains lossless.
 pub(crate) fn evaluate_decimal(
     expr: &Expr,
     precision: u8,
@@ -259,8 +443,14 @@ pub(crate) fn evaluate_decimal(
         .with_precision_and_scale(38, scale)
         .map_err(|e| e.to_string())?;
     let limit = factor(precision as i8)?;
-    // Untyped NULL has no numeric scale and never enters the conversion arm.
-    let old = if expr.ty == Type::Null {
+    let floats = value.array.as_any().downcast_ref::<Float64Array>();
+    let fives = if floats.is_some() {
+        5_u128.pow(scale as u32)
+    } else {
+        1
+    };
+    // NULL has no numeric scale; Float uses its exact dyadic conversion below.
+    let old = if matches!(expr.ty, Type::Null | Type::Float) {
         scale
     } else {
         expr.ty.scale()?
@@ -271,10 +461,14 @@ pub(crate) fn evaluate_decimal(
             builder.append_null();
             continue;
         }
+        if let Some(floats) = floats {
+            builder.append_value(float_decimal(floats.value(row), fives, scale, limit)?);
+            continue;
+        }
         let n = numeric(&value.array).value(row);
         let converted = if scale >= old {
             n.checked_mul(adjustment)
-                .ok_or("decimal cast precision overflow")?
+                .ok_or_else(crate::Error::decimal_precision_overflow)?
         } else {
             let divisor = adjustment;
             let quotient = n / divisor;
@@ -288,7 +482,7 @@ pub(crate) fn evaluate_decimal(
             }
         };
         if converted <= -limit || converted >= limit {
-            return Err("decimal cast precision overflow".into());
+            return Err(crate::Error::decimal_precision_overflow());
         }
         builder.append_value(converted);
     }

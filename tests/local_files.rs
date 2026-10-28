@@ -1,3 +1,5 @@
+#[path = "support/promoted_reference.rs"]
+mod promoted_reference;
 use arrow::{
     array::{Array, Int64Array, StringArray},
     datatypes::{DataType, Field, Schema},
@@ -231,19 +233,21 @@ fn csv_rejects_malformed_records_headers_limits_and_keeps_inputs() {
     assert_no_imports(&limited);
 }
 #[test]
-fn guidance_preserves_exact_errors_and_explicit_cast_examples_execute() {
+fn former_guidance_forms_promote_and_explicit_cast_examples_execute() {
     let f = Files::new();
     let mut s = f.session();
     s.execute_sql("CREATE TABLE t(x INTEGER)").unwrap();
     s.execute_sql("INSERT INTO t VALUES(NULL),(2)").unwrap();
-    let e = match s.execute_sql("SELECT COALESCE(x,CAST(3 AS REAL)) FROM t") {
-        Err(e) => e,
-        Ok(_) => panic!("expected guard"),
-    };
-    assert!(e.message.ends_with(
-        "row-dependent mixed Int/Float conditional requires tagged numeric representation"
-    ));
-    assert!(e.guidance().unwrap().contains("2^53"));
+    // Old: the mixed conditional and mixed IN subquery below were refused with
+    // cast guidance. New (Helen, Oct 15): both promote to DOUBLE (DuckDB
+    // answers), so that guidance no longer applies; explicit casts still work.
+    let group = promoted_reference::group("guidance");
+    promoted_reference::check(
+        &mut s,
+        &group,
+        "SELECT COALESCE(x,CAST(3 AS REAL)) FROM t ORDER BY 1",
+        "guidance",
+    );
     assert_eq!(
         ints(
             &query(
@@ -254,15 +258,12 @@ fn guidance_preserves_exact_errors_and_explicit_cast_examples_execute() {
         ),
         vec![2, 3]
     );
-    let e = match s.execute_sql("SELECT 2 IN (SELECT CAST(2 AS REAL))") {
-        Err(e) => e,
-        Ok(_) => panic!("expected IN guard"),
-    };
-    assert!(
-        e.message
-            .ends_with("mixed Int/Float IN subquery comparison")
+    promoted_reference::check(
+        &mut s,
+        &group,
+        "SELECT 2 IN (SELECT CAST(2 AS REAL))",
+        "guidance",
     );
-    assert!(e.guidance().unwrap().contains("truncates"));
     let b = query(&mut s, "SELECT 2 IN (SELECT CAST(2 AS INTEGER))");
     assert!(
         b.column(0)

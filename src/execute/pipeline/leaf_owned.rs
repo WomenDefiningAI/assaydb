@@ -4,10 +4,7 @@ use super::*;
 use crate::expr::Kind;
 use aggregation::source_owned::{SourceOwned, new_state};
 use arrow::datatypes::DataType;
-use parquet::{
-    arrow::ProjectionMask,
-    file::{metadata::RowGroupMetaData, statistics::Statistics},
-};
+use parquet::{arrow::ProjectionMask, file::statistics::Statistics};
 use std::{
     io::{Read, Seek, SeekFrom},
     path::Path,
@@ -19,39 +16,6 @@ pub(crate) mod clustered;
 
 #[cfg(test)]
 mod tests;
-
-// Use the very same leaf mask as the decoder. Root indices are not physical
-// column indices when an earlier (even unselected) root is nested.
-fn decoder_bytes(
-    metadata: &RowGroupMetaData,
-    projection: &ProjectionMask,
-    batch_size: usize,
-) -> Result<usize> {
-    metadata
-        .columns()
-        .iter()
-        .enumerate()
-        .filter(|(leaf, _)| projection.leaf_included(*leaf))
-        .try_fold(16384usize, |bytes, (_, column)| {
-            let encoded = usize::try_from(column.compressed_size())
-                .ok()
-                .and_then(|n| n.checked_mul(2))
-                .and_then(|n| {
-                    n.checked_add(
-                        usize::try_from(column.uncompressed_size())
-                            .ok()?
-                            .checked_mul(4)?,
-                    )
-                });
-            let decoded = usize::try_from(metadata.num_rows())
-                .ok()
-                .and_then(|n| n.min(batch_size).checked_mul(128));
-            encoded
-                .and_then(|n| n.checked_add(decoded?))
-                .and_then(|n| n.checked_add(bytes))
-                .ok_or_else(|| "numeric leaf decoder envelope overflow".into())
-        })
-}
 
 /// The existing two-pass path retains its worker threshold and unchanged SQL shape.
 pub(crate) fn eligible(prepared: &Prepared, options: &Options) -> bool {
@@ -182,7 +146,7 @@ struct Source {
     validate_bounds: bool,
     #[cfg(test)]
     after_batch: Option<AfterBatch>,
-    _metadata_funding: Reservation,
+    _metadata_funding: Arc<Reservation>,
     // Plans, cursors, lane/result descriptors and metadata drop before credit.
     funding: Arc<Reservation>,
 }
@@ -202,8 +166,6 @@ struct Lane {
     rows: u64,
     declined: bool,
     metrics: Metrics,
-    // Decoder workspace remains funded until the cursor has been destroyed.
-    decoder_funding: Option<Reservation>,
 }
 
 impl Lane {
@@ -232,11 +194,7 @@ impl Lane {
                     source.key_projection.clone()
                 };
                 let metadata = source.metadata.metadata().row_group(group);
-                // Fixed-width columns only. Cover compressed input, decompression,
-                // dictionary/level buffers and simultaneous old/new batch buffers.
-                // This is additional to ScanCursor's delivered-array lease.
-                let bytes = decoder_bytes(metadata, &projection, source.options.batch_size)?;
-                self.decoder_funding = Some(source.budget.reserve(bytes)?);
+                // ScanCursor acquires the shared decoder lease before construction.
                 self.progress = Some(admission::GroupProgress::new(metadata.num_rows())?);
                 let factory: FilterFactory = Arc::new(|_| None);
                 let start = Instant::now();
@@ -264,7 +222,6 @@ impl Lane {
                 self.metrics.parquet_uncached_column_rows += uncached;
                 self.metrics.buffered_compressed_bytes_read += bytes;
                 drop(cursor);
-                self.decoder_funding = None;
                 continue;
             };
             let decoded = decoded?;
@@ -513,6 +470,8 @@ pub(crate) fn try_execute_having(
         return Ok(None);
     }
     let metadata = crate::parquet_scan::external_metadata(&file)?;
+    metadata_funding.release_excess(0);
+    let metadata_funding = crate::parquet_scan::decoder_metadata_lease(&metadata, &budget)?;
     let group_count = metadata.metadata().num_row_groups();
     let Kind::Column(key) = prepared.plan.groups[0].kind else {
         unreachable!()
@@ -567,11 +526,10 @@ pub(crate) fn try_execute_having(
     for range in &ranges {
         let mut bounds = None;
         for group in range.clone() {
-            let value = match metadata
-                .metadata()
-                .row_group(group)
-                .column(key_leaf)
+            let column = metadata.metadata().row_group(group).column(key_leaf);
+            let value = match column
                 .statistics()
+                .filter(|_| crate::cardinality::signed_integer_statistics(column))
             {
                 Some(Statistics::Int32(s)) => s
                     .min_opt()
@@ -593,11 +551,8 @@ pub(crate) fn try_execute_having(
     if !separated(hints) {
         return Ok(None);
     }
-    let headers = metadata
-        .metadata()
-        .memory_size()
-        .checked_mul(2)
-        .and_then(|n| n.checked_add(count * 16384))
+    let headers = count
+        .checked_mul(16384)
         .and_then(|n| {
             n.checked_add(
                 (prepared.schema.fields().len()
@@ -654,7 +609,6 @@ pub(crate) fn try_execute_having(
             rows: 0,
             declined: false,
             metrics: Metrics::default(),
-            decoder_funding: None,
         })
         .collect();
     let Some(proof) = run_lanes(lanes, options, &budget)? else {
@@ -746,7 +700,6 @@ pub(crate) fn try_execute_having(
             rows: 0,
             declined: false,
             metrics: Metrics::default(),
-            decoder_funding: None,
         });
     }
     let Some(owners) = run_lanes(lanes, options, &budget)? else {

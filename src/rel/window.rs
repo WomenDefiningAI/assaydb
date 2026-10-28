@@ -1,8 +1,12 @@
-//! Ranking over the completed WHERE/GROUP BY/HAVING stream. Ordinals are
+//! Ranking and aggregate windows over the completed WHERE/GROUP BY/HAVING stream. Ordinals are
 //! explicit sort keys and a second sort restores the input's canonical order.
 use super::*;
 use arrow::compute::{SortColumn, SortOptions};
 
+mod aggregate;
+mod buffered;
+mod frames;
+mod offset;
 mod sort;
 #[cfg(test)]
 mod tests;
@@ -18,8 +22,37 @@ pub enum Ranking {
 #[derive(Debug, Clone, Serialize)]
 pub struct Specification {
     pub function: Ranking,
+    pub aggregate: Option<bind::Agg>,
+    pub offset: Option<offset::Offset>,
+    pub value: Option<frames::ValueFunction>,
+    pub frame: Frame,
     pub partition: Vec<Expr>,
     pub order: Vec<(Expr, bool, bool)>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum Frame {
+    Partition,
+    Range,
+    Rows,
+    Bounded {
+        unit: frames::Unit,
+        start: frames::Bound,
+        end: frames::Bound,
+        exclude: frames::Exclude,
+    },
+}
+
+impl Specification {
+    pub(crate) fn result_type(&self) -> Type {
+        if let Some(value) = &self.value {
+            return value.result_type();
+        }
+        self.offset.as_ref().map_or_else(
+            || self.aggregate.as_ref().map_or(Type::Int, |a| a.ty.clone()),
+            |o| o.input.ty.clone(),
+        )
+    }
 }
 
 pub(super) fn contains(expression: &s::Expr) -> Result<bool> {
@@ -33,18 +66,213 @@ pub(super) fn contains(expression: &s::Expr) -> Result<bool> {
 
 fn forbid(expression: &s::Expr, location: &str) -> Result<()> {
     if contains(expression)? {
-        return Err(format!("unsupported: window function in {location}"));
+        return Err(format!("unsupported: window function in {location}").into());
     }
     Ok(())
 }
 
-pub(super) fn validate_select(select: &s::Select) -> Result<()> {
-    if !select.named_window.is_empty() {
-        return Err("unsupported: named WINDOW clauses".into());
+fn window_key(ident: &s::Ident) -> String {
+    if ident.quote_style.is_some() {
+        ident.value.clone()
+    } else {
+        ident.value.to_lowercase()
     }
-    if select.qualify.is_some() {
-        return Err("unsupported: QUALIFY".into());
+}
+
+/// The named windows of one SELECT, in definition order.
+struct NamedWindows {
+    definitions: Vec<(String, s::Ident, s::WindowSpec)>,
+    later: Vec<String>,
+    used: Vec<bool>,
+}
+impl NamedWindows {
+    fn lookup(&mut self, name: &s::Ident) -> Result<s::WindowSpec> {
+        let key = window_key(name);
+        if let Some(index) = self.definitions.iter().position(|(k, _, _)| *k == key) {
+            self.used[index] = true;
+            return Ok(self.definitions[index].2.clone());
+        }
+        if self.later.contains(&key) {
+            return Err(format!("unsupported: window \"{}\" referenced before its definition (PostgreSQL rejects it; DuckDB accepts it)", name.value).into());
+        }
+        Err(format!(
+            "unsupported: named window \"{}\" does not exist",
+            name.value
+        )
+        .into())
     }
+
+    /// SQL:2011 window refinement, as PostgreSQL 17 and DuckDB 1.5.6 apply it:
+    /// the referenced window's PARTITION BY and ORDER BY are copied, ORDER BY
+    /// may be added only when it has none, and it must not have a frame.
+    fn refine(&mut self, spec: &s::WindowSpec) -> Result<s::WindowSpec> {
+        let Some(name) = &spec.window_name else {
+            return Ok(spec.clone());
+        };
+        let base = self.lookup(name)?;
+        if base.window_frame.is_some() {
+            return Err(format!(
+                "cannot copy window \"{}\" because it has a frame clause",
+                name.value
+            )
+            .into());
+        }
+        if !spec.partition_by.is_empty() {
+            return Err(format!("unsupported: PARTITION BY in a window that references window \"{}\" (PostgreSQL rejects it; DuckDB accepts it)", name.value).into());
+        }
+        if !spec.order_by.is_empty() && !base.order_by.is_empty() {
+            return Err(format!(
+                "cannot override ORDER BY clause of window \"{}\"",
+                name.value
+            )
+            .into());
+        }
+        Ok(s::WindowSpec {
+            window_name: None,
+            partition_by: base.partition_by,
+            order_by: if spec.order_by.is_empty() {
+                base.order_by
+            } else {
+                spec.order_by.clone()
+            },
+            window_frame: spec.window_frame.clone(),
+        })
+    }
+}
+
+/// Replace named window references (`OVER w`, `OVER (w ...)`) in the SELECT
+/// list, QUALIFY and ORDER BY with inline specifications and drop the WINDOW
+/// clause. Idempotent. An unused definition must still bind over `schema`:
+/// PostgreSQL rejects an invalid unused window while DuckDB ignores it, so
+/// such a query is refused rather than answered.
+pub(super) fn resolve_named(
+    select: &mut s::Select,
+    order: &mut Option<s::OrderBy>,
+    schema: &Schema,
+) -> Result<()> {
+    let mut windows = NamedWindows {
+        definitions: Vec::new(),
+        later: select
+            .named_window
+            .iter()
+            .map(|s::NamedWindowDefinition(name, _)| window_key(name))
+            .collect(),
+        used: Vec::new(),
+    };
+    let mut referenced = false;
+    for_each_window_expression(select, order, &mut |e| {
+        syntax::rewrite(e, &mut |e| {
+            if let s::Expr::Function(f) = e {
+                referenced |= matches!(&f.over, Some(s::WindowType::NamedWindow(_)))
+                    || matches!(&f.over, Some(s::WindowType::WindowSpec(spec)) if spec.window_name.is_some());
+            }
+            Ok(false)
+        })
+    })?;
+    if select.named_window.is_empty() && !referenced {
+        exclusion_names(select);
+        return Ok(());
+    }
+    for s::NamedWindowDefinition(name, definition) in std::mem::take(&mut select.named_window) {
+        let key = window_key(&name);
+        windows
+            .later
+            .remove(windows.later.iter().position(|k| *k == key).unwrap());
+        if windows.definitions.iter().any(|(k, _, _)| *k == key) {
+            return Err(format!("window \"{}\" is already defined", name.value).into());
+        }
+        let spec = match &definition {
+            s::NamedWindowExpr::WindowSpec(spec) => windows.refine(spec)?,
+            s::NamedWindowExpr::NamedWindow(_) => {
+                return Err("unsupported: WINDOW name AS other_name without parentheses".into());
+            }
+        };
+        windows.definitions.push((key, name, spec));
+        windows.used.push(false);
+    }
+    for_each_window_expression(select, order, &mut |e| {
+        syntax::rewrite(e, &mut |e| {
+            if let s::Expr::Function(f) = e {
+                match &f.over {
+                    Some(s::WindowType::NamedWindow(name)) => {
+                        f.over = Some(s::WindowType::WindowSpec(windows.lookup(name)?));
+                    }
+                    Some(s::WindowType::WindowSpec(spec)) if spec.window_name.is_some() => {
+                        f.over = Some(s::WindowType::WindowSpec(windows.refine(spec)?));
+                    }
+                    _ => {}
+                }
+            }
+            Ok(false)
+        })
+    })?;
+    for (index, (_, name, spec)) in windows.definitions.iter().enumerate() {
+        if windows.used[index] {
+            continue;
+        }
+        for e in spec
+            .partition_by
+            .iter()
+            .chain(spec.order_by.iter().map(|key| &key.expr))
+        {
+            if contains(e)? || binder(schema).expr(e).is_err() {
+                return Err(format!("unsupported: unused named window \"{}\" does not bind (PostgreSQL rejects it; DuckDB ignores it)", name.value).into());
+            }
+        }
+        if spec.window_frame.is_some() {
+            frames::parse(spec)?;
+        }
+    }
+    exclusion_names(select);
+    Ok(())
+}
+
+/// Restore EXCLUDE spelling in the names of unnamed window outputs.
+fn exclusion_names(select: &mut s::Select) {
+    for item in &mut select.projection {
+        if let s::SelectItem::UnnamedExpr(e) = item {
+            let text = e.to_string();
+            if text.contains(crate::frame_exclusion::MARKER) {
+                *item = s::SelectItem::ExprWithAlias {
+                    expr: e.clone(),
+                    alias: s::Ident::with_quote('"', crate::frame_exclusion::display(&text)),
+                };
+            }
+        }
+    }
+}
+
+fn for_each_window_expression(
+    select: &mut s::Select,
+    order: &mut Option<s::OrderBy>,
+    f: &mut dyn FnMut(&mut s::Expr) -> Result<()>,
+) -> Result<()> {
+    if let Some(s::Distinct::On(keys)) = &mut select.distinct {
+        for key in keys {
+            f(key)?;
+        }
+    }
+    for item in &mut select.projection {
+        if let s::SelectItem::UnnamedExpr(e) | s::SelectItem::ExprWithAlias { expr: e, .. } = item {
+            f(e)?;
+        }
+    }
+    if let Some(e) = &mut select.qualify {
+        f(e)?;
+    }
+    if let Some(s::OrderBy {
+        kind: s::OrderByKind::Expressions(keys),
+        ..
+    }) = order
+    {
+        for key in keys {
+            f(&mut key.expr)?;
+        }
+    }
+    Ok(())
+}
+
+pub(super) fn validate_clauses(select: &s::Select) -> Result<()> {
     if let Some(expr) = &select.selection {
         forbid(expr, "WHERE")?;
     }
@@ -56,6 +284,11 @@ pub(super) fn validate_select(select: &s::Select) -> Result<()> {
             forbid(expr, "GROUP BY")?;
         }
     }
+    Ok(())
+}
+
+pub(super) fn validate_select(select: &s::Select) -> Result<()> {
+    validate_clauses(select)?;
     for item in &select.projection {
         if let s::SelectItem::UnnamedExpr(expr) | s::SelectItem::ExprWithAlias { expr, .. } = item {
             syntax::rewrite(&mut expr.clone(), &mut |expression| {
@@ -65,7 +298,7 @@ pub(super) fn validate_select(select: &s::Select) -> Result<()> {
                 if let s::Expr::Function(function) = expression
                     && function.over.is_some()
                 {
-                    ranking(function)?;
+                    validate_function(function)?;
                 }
                 Ok(false)
             })?;
@@ -74,16 +307,92 @@ pub(super) fn validate_select(select: &s::Select) -> Result<()> {
     Ok(())
 }
 
-fn ranking(function: &s::Function) -> Result<(Ranking, &s::WindowSpec)> {
+/// Aggregate functions accepted with OVER. STRING_AGG and the PERCENTILE_*
+/// and MODE() WITHIN GROUP forms stay refused (see SQL-COVERAGE.md). Window
+/// MODE breaks ties like grouped MODE, by the smallest value (decision
+/// 2026-10-18; DuckDB picks by frame position).
+pub(super) const AGGREGATES: &[&str] = &[
+    "sum",
+    "count",
+    "avg",
+    "min",
+    "max",
+    "stddev",
+    "stddev_samp",
+    "stddev_pop",
+    "variance",
+    "var_samp",
+    "var_pop",
+    "covar_samp",
+    "covar_pop",
+    "corr",
+    "regr_slope",
+    "regr_intercept",
+    "regr_count",
+    "regr_r2",
+    "regr_avgx",
+    "regr_avgy",
+    "regr_sxx",
+    "regr_syy",
+    "regr_sxy",
+    "bool_and",
+    "bool_or",
+    "count_if",
+    "arg_max",
+    "arg_min",
+    "max_by",
+    "min_by",
+    "median",
+    "quantile",
+    "quantile_cont",
+    "quantile_disc",
+    "mode",
+];
+
+fn two_argument(name: &str) -> bool {
+    matches!(
+        name,
+        "covar_samp"
+            | "covar_pop"
+            | "corr"
+            | "regr_slope"
+            | "regr_intercept"
+            | "regr_count"
+            | "regr_r2"
+            | "regr_avgx"
+            | "regr_avgy"
+            | "regr_sxx"
+            | "regr_syy"
+            | "regr_sxy"
+            | "arg_max"
+            | "arg_min"
+            | "max_by"
+            | "min_by"
+            | "quantile"
+            | "quantile_cont"
+            | "quantile_disc"
+    )
+}
+
+pub(super) fn ordered_set(name: &str) -> bool {
+    matches!(
+        name,
+        "median" | "quantile" | "quantile_cont" | "quantile_disc" | "mode"
+    )
+}
+
+fn validate_function(function: &s::Function) -> Result<(Ranking, Frame, &s::WindowSpec)> {
     let name = function.name.to_string().to_lowercase();
+    let aggregate = AGGREGATES.contains(&name.as_str());
     let kind = match name.as_str() {
         "row_number" => Ranking::RowNumber,
         "rank" => Ranking::Rank,
         "dense_rank" => Ranking::DenseRank,
-        "sum" | "count" | "avg" | "min" | "max" => {
-            return Err("unsupported: aggregate window functions".into());
-        }
-        _ => return Err(format!("unsupported: window function {name}")),
+        // Aggregate specifications carry their typed operation separately.
+        "lag" | "lead" | "first_value" | "last_value" | "nth_value" | "ntile" | "percent_rank"
+        | "cume_dist" => Ranking::RowNumber,
+        _ if aggregate => Ranking::RowNumber,
+        _ => return Err(format!("unsupported: window function {name}").into()),
     };
     let Some(s::WindowType::WindowSpec(spec)) = &function.over else {
         return Err("unsupported: named window references".into());
@@ -91,18 +400,99 @@ fn ranking(function: &s::Function) -> Result<(Ranking, &s::WindowSpec)> {
     if spec.window_name.is_some() {
         return Err("unsupported: named window references".into());
     }
-    if spec.window_frame.is_some() {
+    let offset = matches!(name.as_str(), "lag" | "lead");
+    let value = matches!(
+        name.as_str(),
+        "first_value" | "last_value" | "nth_value" | "ntile" | "percent_rank" | "cume_dist"
+    );
+    let nullable = offset || matches!(name.as_str(), "first_value" | "last_value" | "nth_value");
+    if offset && spec.order_by.is_empty() {
+        return Err(format!("unsupported: window function {name} requires ORDER BY").into());
+    }
+    if !aggregate && !offset && !value && spec.window_frame.is_some() {
         return Err("unsupported: window frames (ROWS/RANGE/GROUPS)".into());
     }
-    if function.filter.is_some()
+    let frame = if offset {
+        // LAG/LEAD ignore frames, as both references do.
+        Frame::Partition
+    } else {
+        frames::parse(spec)?
+    };
+    let s::FunctionArguments::List(args) = &function.args else {
+        return Err(if aggregate {
+            "unsupported: aggregate window arguments/modifiers (including DISTINCT/FILTER)"
+        } else if offset {
+            "unsupported: offset window arguments/modifiers (including NULL treatment)"
+        } else {
+            "unsupported: ranking window arguments/modifiers"
+        }
+        .into());
+    };
+    let null_treatment = args
+        .clauses
+        .iter()
+        .any(|c| matches!(c, s::FunctionArgumentClause::IgnoreOrRespectNulls(_)));
+    let distinct = args.duplicate_treatment == Some(s::DuplicateTreatment::Distinct);
+    let arity = args.args.len();
+    let arity_ok = if aggregate {
+        if two_argument(&name) {
+            (2..=3).contains(&arity)
+        } else {
+            arity == 1
+        }
+    } else if offset {
+        (1..=3).contains(&arity)
+    } else if value {
+        arity
+            == match name.as_str() {
+                "nth_value" => 2,
+                "percent_rank" | "cume_dist" => 0,
+                _ => 1,
+            }
+    } else {
+        arity == 0
+    };
+    if null_treatment && !nullable {
+        return Err("unsupported: IGNORE/RESPECT NULLS applies only to FIRST_VALUE, LAST_VALUE, NTH_VALUE, LAG and LEAD (DuckDB 1.5.6; PostgreSQL 17 has no null treatment)".into());
+    }
+    if (function.filter.is_some() && (!aggregate || ordered_set(&name)))
         || function.null_treatment.is_some()
         || !function.within_group.is_empty()
         || function.uses_odbc_syntax
         || !matches!(function.parameters, s::FunctionArguments::None)
-        || !matches!(&function.args, s::FunctionArguments::List(args)
-            if args.args.is_empty() && args.duplicate_treatment.is_none() && args.clauses.is_empty())
+        || !args
+            .clauses
+            .iter()
+            .all(|c| matches!(c, s::FunctionArgumentClause::IgnoreOrRespectNulls(_)))
+        || (distinct && !aggregate)
+        || (!aggregate && args.duplicate_treatment.is_some())
+        || !arity_ok
     {
-        return Err("unsupported: ranking window arguments/modifiers".into());
+        return Err(if aggregate {
+            "unsupported: aggregate window arguments/modifiers (including DISTINCT/FILTER)"
+        } else if offset {
+            "unsupported: offset window arguments/modifiers (including NULL treatment)"
+        } else {
+            "unsupported: ranking window arguments/modifiers"
+        }
+        .into());
+    }
+    for argument in &args.args {
+        match argument {
+            s::FunctionArg::Unnamed(s::FunctionArgExpr::Expr(expr)) => {
+                forbid(expr, "nested window arguments")?
+            }
+            s::FunctionArg::Unnamed(s::FunctionArgExpr::Wildcard)
+                if name == "count" && !distinct => {}
+            _ => {
+                return Err(
+                    "unsupported: aggregate window requires one expression (or COUNT(*))".into(),
+                );
+            }
+        }
+    }
+    if let Some(filter) = &function.filter {
+        forbid(filter, "FILTER")?;
     }
     for expression in spec
         .partition_by
@@ -116,11 +506,13 @@ fn ranking(function: &s::Function) -> Result<(Ranking, &s::WindowSpec)> {
     if spec.order_by.iter().any(|key| key.with_fill.is_some()) {
         return Err("unsupported: window ORDER BY fill".into());
     }
-    Ok((kind, spec))
+    Ok((kind, frame, spec))
 }
 
 fn needs_tuple_order(node: &Node) -> bool {
     match &node.op {
+        RelOp::Generate { .. } => false, // stable cursor encounter order
+        RelOp::RecursiveCte { .. } | RelOp::RecursiveScan { .. } => true,
         RelOp::Join { .. }
         | RelOp::Mark { .. }
         | RelOp::TypedMark { .. }
@@ -193,6 +585,8 @@ fn complete_tuple_order(node: &mut Node) {
 
 fn stabilize_limits(node: &mut Node, shared: bool) -> Result<()> {
     match &mut node.op {
+        RelOp::Generate { .. } => return Ok(()),
+        RelOp::RecursiveCte { .. } | RelOp::RecursiveScan { .. } => return Ok(()),
         RelOp::Window { .. }
         | RelOp::WindowOrder { .. }
         | RelOp::Scan { .. }
@@ -234,13 +628,67 @@ fn stabilize_limits(node: &mut Node, shared: bool) -> Result<()> {
     Ok(())
 }
 
-fn canonical_input(mut input: Node) -> Result<Node> {
+pub(super) fn canonical_input(mut input: Node) -> Result<Node> {
     stabilize_limits(&mut input, false)?;
     if !needs_tuple_order(&input) || input.schema.fields().is_empty() {
         return Ok(input);
     }
     complete_tuple_order(&mut input);
     Ok(input)
+}
+
+/// Bind an aggregate called with OVER (FILTER already lowered) using the
+/// grouped aggregate binders, so window and grouped results share types and
+/// kernels.
+fn bind_aggregate(
+    name: &str,
+    call: &s::Function,
+    bind: &dyn Fn(&s::Expr) -> Result<Expr>,
+    schema: &Schema,
+) -> Result<bind::Agg> {
+    let binder = bind::Binder {
+        schema,
+        table: None,
+        facts: None,
+    };
+    if ordered_set(name) {
+        return binder
+            .ordered_set_with(call, bind)?
+            .ok_or_else(|| "internal: ordered-set window aggregate".into());
+    }
+    let s::FunctionArguments::List(args) = &call.args else {
+        unreachable!()
+    };
+    if two_argument(name) {
+        return bind::statistics::statistical_with(name, args, bind)?
+            .ok_or_else(|| "internal: two-argument window aggregate".into());
+    }
+    let distinct = args.duplicate_treatment == Some(s::DuplicateTreatment::Distinct);
+    let argument = match &args.args[0] {
+        s::FunctionArg::Unnamed(s::FunctionArgExpr::Expr(expr)) => Some(bind(expr)?),
+        _ => None,
+    };
+    if matches!(name, "sum" | "avg")
+        && argument.as_ref().is_some_and(|a| {
+            !matches!(
+                a.ty,
+                Type::Int | Type::Decimal(_) | Type::Float | Type::Null
+            )
+        })
+    {
+        return Err(
+            format!("unsupported: {name} OVER requires Int/Decimal/Float arguments").into(),
+        );
+    }
+    let mut aggregate = bind::Agg::bind_input(name, argument, distinct)?;
+    // DISTINCT cannot change an extreme (MIN/MAX, BOOL_AND/BOOL_OR).
+    if matches!(
+        aggregate.function,
+        bind::Aggregate::Min | bind::Aggregate::Max
+    ) {
+        aggregate.distinct = false;
+    }
+    Ok(aggregate)
 }
 
 impl Planner<'_> {
@@ -357,8 +805,52 @@ impl Planner<'_> {
             if function.over.is_none() {
                 return Ok(false);
             }
-            let (kind, spec) = ranking(function)?;
+            let (kind, frame, spec) = validate_function(function)?;
             let mut spec = spec.clone();
+            let aggregate_name = function.name.to_string().to_lowercase();
+            let is_aggregate = AGGREGATES.contains(&aggregate_name.as_str());
+            let is_offset = matches!(aggregate_name.as_str(), "lag" | "lead");
+            let is_value = matches!(
+                aggregate_name.as_str(),
+                "first_value" | "last_value" | "nth_value" | "ntile" | "percent_rank" | "cume_dist"
+            );
+            // The aggregate call without OVER; FILTER becomes a conditional
+            // first argument exactly as for grouped aggregates.
+            let mut call = function.clone();
+            call.over = None;
+            let mut filtered = Vec::new();
+            if let Some(condition) = call.filter.take() {
+                filtered = aggregate_modifiers::lower_call_filter(&mut call, *condition)?;
+            }
+            let mut argument = if is_offset
+                || (is_value
+                    && !matches!(
+                        aggregate_name.as_str(),
+                        "ntile" | "percent_rank" | "cume_dist"
+                    )) {
+                let s::FunctionArguments::List(args) = &function.args else {
+                    unreachable!()
+                };
+                match &args.args[0] {
+                    s::FunctionArg::Unnamed(s::FunctionArgExpr::Expr(expr)) => Some(expr.clone()),
+                    _ => None,
+                }
+            } else {
+                None
+            };
+            if let Some(argument) = &mut argument {
+                input = self.subqueries(argument, input.clone(), ctes)?;
+            }
+            if is_aggregate && let s::FunctionArguments::List(args) = &mut call.args {
+                for argument in &mut args.args {
+                    if let s::FunctionArg::Unnamed(s::FunctionArgExpr::Expr(expr)) = argument {
+                        input = self.subqueries(expr, input.clone(), ctes)?;
+                    }
+                }
+            }
+            for expression in &mut filtered {
+                input = self.subqueries(expression, input.clone(), ctes)?;
+            }
             for expression in spec
                 .partition_by
                 .iter_mut()
@@ -374,8 +866,46 @@ impl Planner<'_> {
                     bind_node_expression(&input, expr)
                 }
             };
+            // DuckDB evaluates a FILTERed argument on every row, PostgreSQL
+            // only on admitted rows: every argument must be unable to raise an
+            // error DuckDB also raises. The rule is grouped FILTER's
+            // (aggregate_modifiers::filtered_rows_agree; integration candidate 4).
+            for expression in &filtered {
+                if !aggregate_modifiers::filtered_rows_agree(&bind(expression)?, &input) {
+                    return Err("unsupported: aggregate FILTER over an argument that may fail (DuckDB evaluates it on filtered-out rows; PostgreSQL does not)".into());
+                }
+            }
+            let aggregate = if is_aggregate {
+                Some(bind_aggregate(
+                    &aggregate_name,
+                    &call,
+                    &bind,
+                    &input.schema,
+                )?)
+            } else {
+                None
+            };
             let specification = Specification {
                 function: kind,
+                aggregate,
+                offset: if is_offset {
+                    Some(offset::bind(
+                        function,
+                        bind(argument.as_ref().unwrap())?,
+                        &bind,
+                    )?)
+                } else {
+                    None
+                },
+                value: if is_value {
+                    Some(frames::bind_value(
+                        function,
+                        argument.as_ref().map(&bind).transpose()?,
+                    )?)
+                } else {
+                    None
+                },
+                frame,
                 partition: spec.partition_by.iter().map(&bind).collect::<Result<_>>()?,
                 order: spec
                     .order_by
@@ -389,6 +919,7 @@ impl Planner<'_> {
                     })
                     .collect::<Result<_>>()?,
             };
+            frames::validate(&specification)?;
             let name = loop {
                 let candidate = self.fresh();
                 if !input.schema.fields().iter().any(|field| {
@@ -402,13 +933,23 @@ impl Planner<'_> {
                 }
             };
             let mut fields = input.schema.fields().to_vec();
-            fields.push(Arc::new(Type::Int.field(&name, false)));
+            fields.push(Arc::new(
+                specification.result_type().field(
+                    &name,
+                    specification.aggregate.is_some()
+                        || specification.offset.is_some()
+                        || specification
+                            .value
+                            .as_ref()
+                            .is_some_and(|v| v.input.is_some()),
+                ),
+            ));
             input = Node {
                 schema: Arc::new(Schema::new(fields)),
                 estimated_rows: input.estimated_rows,
                 op: RelOp::Window {
                     input: Box::new(input.clone()),
-                    specification,
+                    specification: Box::new(specification),
                 },
             };
             *expr = syntax::ident(&name);
@@ -462,9 +1003,16 @@ pub(super) fn run(
         .iter()
         .chain(specification.order.iter().map(|(e, _, _)| e))
         .collect::<Vec<_>>();
-    let ordinal_column = width + keys.len();
+    let argument = specification
+        .aggregate
+        .as_ref()
+        .and_then(|a| a.input.as_ref())
+        .or_else(|| specification.offset.as_ref().map(|o| &o.input))
+        .or_else(|| specification.value.as_ref().and_then(|v| v.input.as_ref()));
+    let evaluated = keys.iter().copied().chain(argument).collect::<Vec<_>>();
+    let ordinal_column = width + evaluated.len();
     let mut fields = child.schema.fields().to_vec();
-    for (i, expression) in keys.iter().enumerate() {
+    for (i, expression) in evaluated.iter().enumerate() {
         fields.push(Arc::new(
             expression.ty.field(&format!("window_key_{i}"), true),
         ));
@@ -475,6 +1023,7 @@ pub(super) fn run(
         false,
     )));
     let keyed_schema = Arc::new(Schema::new(fields));
+    let reverse = specification.offset.as_ref().is_some_and(|o| o.lead);
     let order = (0..keys.len())
         .map(|i| {
             let (descending, nulls_first) = if i < specification.partition.len() {
@@ -482,7 +1031,7 @@ pub(super) fn run(
             } else {
                 let (_, descending, nulls_first) =
                     &specification.order[i - specification.partition.len()];
-                (*descending, *nulls_first)
+                (*descending ^ reverse, *nulls_first ^ reverse)
             };
             bind::Sort {
                 column: width + i,
@@ -492,7 +1041,7 @@ pub(super) fn run(
         })
         .chain([bind::Sort {
             column: ordinal_column,
-            descending: false,
+            descending: reverse,
             nulls_first: false,
         }])
         .collect();
@@ -500,9 +1049,9 @@ pub(super) fn run(
     let mut ordinal = 0_u64;
     child.run(ctx, &mut |batch| {
         let _metadata = budget.reserve((width + keys.len() + 1).saturating_mul(1024))?;
-        let input = super::input(&batch, &budget, keys.iter().copied())?;
-        let mut values = Vec::with_capacity(keys.len());
-        for key in &keys {
+        let input = super::input(&batch, &budget, evaluated.iter().copied())?;
+        let mut values = Vec::with_capacity(evaluated.len());
+        for key in &evaluated {
             options.cancellation.check()?;
             values.push(key.eval(&input, &budget)?);
         }
@@ -516,25 +1065,21 @@ pub(super) fn run(
             .checked_add(batch.num_rows() as u64)
             .ok_or("window ordinal overflow")?;
         let mut arrays = batch.columns().to_vec();
-        // Window equality follows SQL GROUP BY: both signed zeros share one
-        // partition/peer group. Normalize only the private sorting keys.
-        arrays.extend(values.iter().map(|value| {
-            if let Some(array) = value.array.as_any().downcast_ref::<Float64Array>()
-                && array
-                    .iter()
-                    .flatten()
-                    .any(|value| value == 0.0 && value.is_sign_negative())
-            {
-                Arc::new(Float64Array::from_iter(array.iter().map(|value| {
-                    value.map(|value| if value == 0.0 { 0.0 } else { value })
-                }))) as ArrayRef
+        // Canonical private keys equate signed zeros and all NaN payloads.
+        // The ordinal credit above funds replacement key buffers.
+        arrays.extend(values.iter().enumerate().map(|(index, value)| {
+            if index < keys.len() {
+                crate::expr::numeric_compare::canonical_array(&value.array)
             } else {
                 value.array.clone()
             }
         }));
         arrays.push(Arc::new(UInt64Array::from_iter_values(ordinal..end)));
         ordinal = end;
-        sorter.push(RecordBatch::try_new(keyed_schema.clone(), arrays).map_err(|e| e.to_string())?)
+        sorter.push(
+            RecordBatch::try_new(keyed_schema.clone(), arrays)
+                .map_err(|e| crate::Error::from(e.to_string()))?,
+        )
     })?;
 
     let mut fields = node.schema.fields().to_vec();
@@ -553,6 +1098,53 @@ pub(super) fn run(
         }],
         ctx,
     )?;
+    if let Some(offset) = &specification.offset {
+        return offset::run(
+            node,
+            specification,
+            offset,
+            sorter,
+            restore,
+            keyed_schema,
+            restore_schema,
+            ctx,
+            emit,
+        );
+    }
+    // Ordered-set states are consumed by finalization, so running frames
+    // refold them in the buffered path.
+    let consuming = specification.aggregate.as_ref().is_some_and(|aggregate| {
+        crate::execute::WindowAccumulator::consuming(aggregate)
+            && specification.frame != Frame::Partition
+    });
+    if specification.value.is_some()
+        || consuming
+        || matches!(specification.frame, Frame::Bounded { .. })
+    {
+        return buffered::run(
+            node,
+            specification,
+            sorter,
+            restore,
+            keyed_schema,
+            restore_schema,
+            ctx,
+            emit,
+        );
+    }
+    if let Some(aggregate) = &specification.aggregate {
+        return aggregate::run(
+            node,
+            specification,
+            aggregate,
+            sorter,
+            restore,
+            keyed_schema,
+            restore_schema,
+            ctx,
+            emit,
+        );
+    }
     let mut previous: Option<(RecordBatch, Reservation)> = None;
     let mut row_number = 0_i64;
     let mut rank = 0_i64;
@@ -626,10 +1218,12 @@ pub(super) fn run(
             let arrays = batch
                 .columns()
                 .iter()
-                .map(|array| take(array, &indices, None).map_err(|e| e.to_string()))
+                .map(|array| {
+                    take(array, &indices, None).map_err(|e| crate::Error::from(e.to_string()))
+                })
                 .collect::<Result<Vec<_>>>()?;
-            let last =
-                RecordBatch::try_new(keyed_schema.clone(), arrays).map_err(|e| e.to_string())?;
+            let last = RecordBatch::try_new(keyed_schema.clone(), arrays)
+                .map_err(|e| crate::Error::from(e.to_string()))?;
             let mut credit = credit;
             credit.release_excess(
                 last.get_array_memory_size()
@@ -640,8 +1234,10 @@ pub(super) fn run(
         let mut arrays = batch.columns()[..width].to_vec();
         arrays.push(Arc::new(Int64Array::from(result)));
         arrays.push(batch.column(ordinal_column).clone());
-        restore
-            .push(RecordBatch::try_new(restore_schema.clone(), arrays).map_err(|e| e.to_string())?)
+        restore.push(
+            RecordBatch::try_new(restore_schema.clone(), arrays)
+                .map_err(|e| crate::Error::from(e.to_string()))?,
+        )
     })?;
     drop(previous);
     sort::merge_metrics(&mut ctx.metrics, metrics);
@@ -654,7 +1250,7 @@ pub(super) fn run(
         )?;
         emit(
             RecordBatch::try_new(node.schema.clone(), batch.columns()[..width + 1].to_vec())
-                .map_err(|e| e.to_string())?,
+                .map_err(|e| crate::Error::from(e.to_string()))?,
         )
     })?;
     sort::merge_metrics(&mut ctx.metrics, metrics);
@@ -662,7 +1258,7 @@ pub(super) fn run(
 }
 
 // Compare exact typed Arrow values, with SQL NULL equality for peering. Float
-// uses the same total ordering as Arrow ORDER BY (including signed zero/NaN).
+// uses SQL equality, including signed-zero and NaN peers.
 fn equal_keys(
     a: &RecordBatch,
     ai: usize,
@@ -688,16 +1284,14 @@ fn equal_keys(
             arrow::datatypes::DataType::Int32 => equal!(Int32Array),
             arrow::datatypes::DataType::Decimal128(_, _) => equal!(Decimal128Array),
             arrow::datatypes::DataType::Date32 => equal!(Date32Array),
+            arrow::datatypes::DataType::Timestamp(_, _) => equal!(TimestampMicrosecondArray),
             arrow::datatypes::DataType::Utf8 => equal!(StringArray),
             arrow::datatypes::DataType::Binary => equal!(BinaryArray),
             arrow::datatypes::DataType::Boolean => equal!(BooleanArray),
-            arrow::datatypes::DataType::Float64 => a
-                .as_any()
-                .downcast_ref::<Float64Array>()
-                .unwrap()
-                .value(ai)
-                .total_cmp(&b.as_any().downcast_ref::<Float64Array>().unwrap().value(bi))
-                .is_eq(),
+            arrow::datatypes::DataType::Float64 => crate::expr::numeric_compare::real_equal(
+                a.as_any().downcast_ref::<Float64Array>().unwrap().value(ai),
+                b.as_any().downcast_ref::<Float64Array>().unwrap().value(bi),
+            ),
             arrow::datatypes::DataType::Null => true,
             _ => unreachable!("bound window key type"),
         }

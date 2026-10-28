@@ -99,7 +99,7 @@ impl Having {
                 .expect("admitted numeric output");
             BooleanArray::from_iter(values.iter().map(|v| Some(self.accepts(v.map(i128::from)))))
         };
-        arrow::compute::filter_record_batch(&batch, &mask).map_err(|e| e.to_string())
+        Ok(arrow::compute::filter_record_batch(&batch, &mask).map_err(|e| e.to_string())?)
     }
 }
 
@@ -191,7 +191,7 @@ where
         };
         arrays.push(output_array(array, schema.field(column))?);
     }
-    RecordBatch::try_new(schema.clone(), arrays).map_err(|e| e.to_string())
+    Ok(RecordBatch::try_new(schema.clone(), arrays).map_err(|e| e.to_string())?)
 }
 
 #[cfg(test)]

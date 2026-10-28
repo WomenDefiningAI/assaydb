@@ -83,7 +83,7 @@ impl<'a> PartitionWriter<'a> {
                 .ok_or("partition concat overflow")?,
         )?;
         let batch = concat_batches(&buffer.batches[0].schema(), &buffer.batches)
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| crate::Error::from(e.to_string()))?;
         self.partitions[index]
             .files
             .push_back(self.store.write_batch(&batch)?);
@@ -146,14 +146,16 @@ impl<'a> PartitionWriter<'a> {
                     let arrays = batch
                         .columns()
                         .iter()
-                        .map(|a| take(a, &selected, None).map_err(|e| e.to_string()))
+                        .map(|a| {
+                            take(a, &selected, None).map_err(|e| crate::Error::from(e.to_string()))
+                        })
                         .collect::<Result<Vec<_>>>()?;
                     let compact = RecordBatch::try_new_with_options(
                         batch.schema(),
                         arrays,
                         &arrow::record_batch::RecordBatchOptions::new().with_row_count(Some(count)),
                     )
-                    .map_err(|e| e.to_string())?;
+                    .map_err(|e| crate::Error::from(e.to_string()))?;
                     let available = self
                         .target_bytes
                         .saturating_sub(self.buffers[partition].bytes);

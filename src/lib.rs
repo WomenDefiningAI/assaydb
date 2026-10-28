@@ -6,12 +6,21 @@ pub mod expr;
 pub mod memory;
 pub mod session;
 pub mod types;
+pub mod zone;
 
-pub type Result<T> = std::result::Result<T, String>;
+mod error;
+pub use error::{Error, ErrorCause};
+pub type Result<T> = std::result::Result<T, Error>;
 pub const IMPLEMENTATION_STAGE: &str = "M3: measured single-worker execution";
 
+mod cte_hint_syntax;
 mod dialect;
+pub mod engine_stack;
+mod fetch_syntax;
+mod frame_exclusion;
 mod mixed_numeric;
+#[doc(hidden)]
+pub mod nesting;
 pub mod rel;
 mod syntax;
 
@@ -34,6 +43,7 @@ mod parquet_scan;
 mod aggregate_sum;
 mod group_index;
 mod group_lookup;
+mod moments;
 mod numeric_float;
 
 mod join_filter;
@@ -41,6 +51,7 @@ mod join_filter;
 mod cardinality;
 
 mod scan_predicate;
+mod selection;
 
 pub mod spill;
 

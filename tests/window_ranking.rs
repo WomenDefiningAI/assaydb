@@ -232,6 +232,69 @@ fn canonical_peers_and_output_are_independent_of_workers_batches_and_spill() {
 fn unsupported_window_forms_remain_specific_refusals() {
     let fixture = Fixture::new();
     let mut session = fixture.session(1, 7, false);
+    assert_eq!(
+        session
+            .execute_sql("SELECT DISTINCT region FROM wr ORDER BY RANK() OVER (ORDER BY sales)")
+            .err()
+            .unwrap()
+            .message,
+        "DISTINCT ORDER BY expression must appear in SELECT"
+    );
+    for (sql, expected) in [
+        (
+            "SELECT RANK() OVER () AS r FROM wr QUALIFY r=1",
+            vec![vec![json!(1)]; 12],
+        ),
+        (
+            "SELECT NTILE(2) OVER () FROM wr",
+            (0..12).map(|i| vec![json!(1 + i / 6)]).collect(),
+        ),
+        (
+            "SELECT FIRST_VALUE(sales) OVER () FROM wr",
+            vec![vec![json!(10)]; 12],
+        ),
+    ] {
+        assert_eq!(rows(&query(&mut session, sql)), expected);
+    }
+    // NTILE(2)/FIRST_VALUE over one twelve-row peer group are peer-order
+    // dependent (and there is no final ORDER BY): require membership in the
+    // complete permitted multiset set from the independent model, the
+    // canonical answer, and record DuckDB's answer.
+    let reference: Value =
+        serde_json::from_str(include_str!("fixtures/window_frames/handwritten_ties.json")).unwrap();
+    assert_eq!(reference["duckdb_version"], "1.5.6");
+    let multiset = |rows: &Value| {
+        let mut rows = rows.as_array().unwrap().clone();
+        rows.sort_by_key(|row| row.to_string());
+        Value::Array(rows)
+    };
+    for (id, sql) in [
+        ("wr-ntile-2-over-empty", "SELECT NTILE(2) OVER () FROM wr"),
+        (
+            "wr-first-value-over-empty",
+            "SELECT FIRST_VALUE(sales) OVER () FROM wr",
+        ),
+    ] {
+        let case = reference["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["id"] == id)
+            .unwrap();
+        assert_eq!(case["sql"], sql);
+        assert_eq!(case["compare"], "multiset");
+        let permitted = case["permitted_multisets"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(multiset)
+            .collect::<Vec<_>>();
+        let actual = json!(rows(&query(&mut session, sql)));
+        assert!(permitted.contains(&multiset(&actual)), "{id}: {actual}");
+        assert!(permitted.contains(&multiset(&case["canonical_rows"])));
+        assert!(permitted.contains(&multiset(&case["duckdb_rows"])));
+        assert_eq!(actual, case["canonical_rows"], "{id}: canonical order");
+    }
     for (sql, message) in [
         (
             "SELECT RANK() OVER (ORDER BY id ROWS UNBOUNDED PRECEDING) FROM wr",
@@ -245,32 +308,9 @@ fn unsupported_window_forms_remain_specific_refusals() {
             "SELECT RANK() OVER (ORDER BY id GROUPS UNBOUNDED PRECEDING) FROM wr",
             "window frames",
         ),
-        (
-            "SELECT RANK() OVER w FROM wr WINDOW w AS (ORDER BY id)",
-            "named WINDOW",
-        ),
         ("SELECT RANK() OVER w FROM wr", "named window"),
-        ("SELECT RANK() OVER () AS r FROM wr QUALIFY r=1", "QUALIFY"),
-        ("SELECT SUM(sales) OVER () FROM wr", "aggregate window"),
-        ("SELECT COUNT(*) OVER () FROM wr", "aggregate window"),
-        ("SELECT AVG(sales) OVER () FROM wr", "aggregate window"),
-        ("SELECT MIN(sales) OVER () FROM wr", "aggregate window"),
-        ("SELECT MAX(sales) OVER () FROM wr", "aggregate window"),
-        ("SELECT NTILE(2) OVER () FROM wr", "window function ntile"),
         ("SELECT LAG(sales) OVER () FROM wr", "window function lag"),
         ("SELECT LEAD(sales) OVER () FROM wr", "window function lead"),
-        (
-            "SELECT FIRST_VALUE(sales) OVER () FROM wr",
-            "window function first_value",
-        ),
-        (
-            "SELECT PERCENT_RANK() OVER () FROM wr",
-            "window function percent_rank",
-        ),
-        (
-            "SELECT CUME_DIST() OVER () FROM wr",
-            "window function cume_dist",
-        ),
         (
             "SELECT id FROM wr WHERE ROW_NUMBER() OVER ()=1",
             "window function in WHERE",
@@ -295,10 +335,6 @@ fn unsupported_window_forms_remain_specific_refusals() {
             "SELECT ROW_NUMBER(1) OVER () FROM wr",
             "arguments/modifiers",
         ),
-        (
-            "SELECT DISTINCT region FROM wr ORDER BY RANK() OVER (ORDER BY sales)",
-            "DISTINCT ORDER BY window expression must appear in SELECT",
-        ),
     ] {
         let error = session
             .execute_sql(sql)
@@ -309,6 +345,32 @@ fn unsupported_window_forms_remain_specific_refusals() {
             "{sql}: {error}"
         );
     }
+    // October 18 window extras (old -> new): named windows and
+    // PERCENT_RANK/CUME_DIST answer (DuckDB 1.5.6 and PostgreSQL 17 agree).
+    assert_eq!(
+        rows(&query(
+            &mut session,
+            "SELECT RANK() OVER w FROM wr WINDOW w AS (ORDER BY id) ORDER BY id"
+        )),
+        (1..=12).map(|n| vec![json!(n)]).collect::<Vec<_>>()
+    );
+    let batch = query(
+        &mut session,
+        "SELECT PERCENT_RANK() OVER (),CUME_DIST() OVER () FROM wr",
+    );
+    let column = |index: usize| {
+        batch
+            .column(index)
+            .as_any()
+            .downcast_ref::<Float64Array>()
+            .unwrap()
+            .values()
+            .iter()
+            .map(|x| x.to_bits())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(column(0), vec![0.0_f64.to_bits(); 12]);
+    assert_eq!(column(1), vec![1.0_f64.to_bits(); 12]);
 }
 
 #[test]
@@ -471,8 +533,8 @@ fn typed_float_zero_nan_and_exact_decimal_keys_use_existing_grouping_equality() 
         vec![2, 1, 1, 3, 5],
         vec![3, 5, 3, 1, 2],
         vec![4, 5, 3, 2, 2],
-        vec![5, 7, 4, 1, 4],
-        vec![6, 8, 5, 1, 8],
+        vec![5, 5, 3, 3, 4],
+        vec![6, 8, 4, 1, 8],
         vec![7, 4, 2, 1, 1],
     ]
     .into_iter()
@@ -789,4 +851,25 @@ fn partial_sorts_over_scans_and_prior_windows_have_canonical_ties() {
             }
         }
     }
+}
+
+#[test]
+fn formerly_refused_exact_aggregate_windows_return_values() {
+    let fixture = Fixture::new();
+    let mut session = fixture.session(1, 7, false);
+    let result = query(
+        &mut session,
+        "SELECT SUM(sales) OVER (),COUNT(*) OVER (),MIN(sales) OVER (),MAX(sales) OVER () FROM wr",
+    );
+    assert_eq!(
+        rows(&result),
+        vec![vec![json!(137), json!(12), json!(5), json!(30)]; 12]
+    );
+    let average = query(&mut session, "SELECT AVG(sales) OVER () FROM wr");
+    let values = average
+        .column(0)
+        .as_any()
+        .downcast_ref::<Float64Array>()
+        .unwrap();
+    assert_eq!(values.values().as_ref(), &[137.0 / 9.0; 12]);
 }

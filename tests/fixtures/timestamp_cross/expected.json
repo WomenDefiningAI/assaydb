@@ -1,0 +1,761 @@
+{
+ "duckdb_version": "1.5.6",
+ "cases": [
+  {
+   "id": "greatest_least",
+   "sql": "SELECT id, GREATEST(ts, ts2) AS gr, LEAST(ts, ts2) AS le FROM t ORDER BY id",
+   "duckdb_rows": [
+    [
+     1,
+     {
+      "micros": 1710029100000000
+     },
+     {
+      "micros": 1710028800000000
+     }
+    ],
+    [
+     2,
+     {
+      "micros": 1710033600000000
+     },
+     {
+      "micros": 1710030600000000
+     }
+    ],
+    [
+     3,
+     {
+      "micros": 1710036000000000
+     },
+     {
+      "micros": 1710033600000000
+     }
+    ],
+    [
+     4,
+     {
+      "micros": 1710036300000000
+     },
+     {
+      "micros": 1710036000000000
+     }
+    ],
+    [
+     5,
+     {
+      "micros": 1710118201000000
+     },
+     {
+      "micros": 1710115201000000
+     }
+    ],
+    [
+     6,
+     null,
+     null
+    ],
+    [
+     7,
+     {
+      "micros": 1710122700000007
+     },
+     {
+      "micros": 1710122400000007
+     }
+    ]
+   ]
+  },
+  {
+   "id": "min_max_distinct",
+   "sql": "SELECT g, MIN(ts) AS mn, MAX(ts) AS mx, MIN(tz) AS mntz, MAX(tz) AS mxtz, COUNT(DISTINCT ts) AS d FROM t GROUP BY g ORDER BY g",
+   "duckdb_rows": [
+    [
+     0,
+     {
+      "micros": 1710028800000000
+     },
+     {
+      "micros": 1710122400000007
+     },
+     {
+      "micros": 1710028800000000
+     },
+     {
+      "micros": 1710122400000007
+     },
+     4
+    ],
+    [
+     1,
+     {
+      "micros": 1710030600000000
+     },
+     {
+      "micros": 1710036000000000
+     },
+     {
+      "micros": 1710030600000000
+     },
+     {
+      "micros": 1710036000000000
+     },
+     2
+    ]
+   ]
+  },
+  {
+   "id": "arg_extremes",
+   "sql": "SELECT ARG_MAX(id, ts) AS a, ARG_MIN(ts, v) AS b, MAX_BY(tz, v) AS c, MIN_BY(id, tz) AS e FROM t",
+   "duckdb_rows": [
+    [
+     7,
+     {
+      "micros": 1710036000000000
+     },
+     {
+      "micros": 1710036000000000
+     },
+     1
+    ]
+   ]
+  },
+  {
+   "id": "arg_max_grouped",
+   "sql": "SELECT g, ARG_MAX(ts, v) AS a FROM t GROUP BY g ORDER BY g",
+   "duckdb_rows": [
+    [
+     0,
+     {
+      "micros": 1710028800000000
+     }
+    ],
+    [
+     1,
+     {
+      "micros": 1710036000000000
+     }
+    ]
+   ]
+  },
+  {
+   "id": "approx_count_distinct",
+   "sql": "SELECT APPROX_COUNT_DISTINCT(ts) AS n FROM t",
+   "duckdb_rows": [
+    [
+     5
+    ]
+   ]
+  },
+  {
+   "id": "filter",
+   "sql": "SELECT COUNT(*) FILTER (WHERE ts > TIMESTAMP '2024-03-10 01:00:00') AS n, MAX(ts) FILTER (WHERE v > 1) AS m FROM t",
+   "duckdb_rows": [
+    [
+     4,
+     {
+      "micros": 1710036000000000
+     }
+    ]
+   ]
+  },
+  {
+   "id": "range_hour_minute",
+   "sql": "SELECT id, COUNT(*) OVER (ORDER BY ts RANGE BETWEEN INTERVAL '1' HOUR PRECEDING AND CURRENT ROW) AS c, MIN(v) OVER (ORDER BY ts RANGE BETWEEN INTERVAL '90' MINUTE PRECEDING AND INTERVAL '1' HOUR FOLLOWING) AS m FROM t ORDER BY id",
+   "duckdb_rows": [
+    [
+     1,
+     1,
+     1.5
+    ],
+    [
+     2,
+     2,
+     1.5
+    ],
+    [
+     3,
+     2,
+     -1.0
+    ],
+    [
+     4,
+     2,
+     -1.0
+    ],
+    [
+     5,
+     1,
+     null
+    ],
+    [
+     6,
+     1,
+     3.0
+    ],
+    [
+     7,
+     1,
+     0.5
+    ]
+   ]
+  },
+  {
+   "id": "window_min_max_timestamp",
+   "sql": "SELECT id, MAX(ts) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS m, MIN(tz) OVER (PARTITION BY g ORDER BY id) AS z FROM t ORDER BY id",
+   "duckdb_rows": [
+    [
+     1,
+     {
+      "micros": 1710030600000000
+     },
+     {
+      "micros": 1710028800000000
+     }
+    ],
+    [
+     2,
+     {
+      "micros": 1710036000000000
+     },
+     {
+      "micros": 1710030600000000
+     }
+    ],
+    [
+     3,
+     {
+      "micros": 1710036000000000
+     },
+     {
+      "micros": 1710028800000000
+     }
+    ],
+    [
+     4,
+     {
+      "micros": 1710115201000000
+     },
+     {
+      "micros": 1710030600000000
+     }
+    ],
+    [
+     5,
+     {
+      "micros": 1710115201000000
+     },
+     {
+      "micros": 1710028800000000
+     }
+    ],
+    [
+     6,
+     {
+      "micros": 1710122400000007
+     },
+     {
+      "micros": 1710030600000000
+     }
+    ],
+    [
+     7,
+     {
+      "micros": 1710122400000007
+     },
+     {
+      "micros": 1710028800000000
+     }
+    ]
+   ]
+  },
+  {
+   "id": "bool_count_if",
+   "sql": "SELECT BOOL_OR(ts > TIMESTAMP '2024-03-11 00:00:00') AS b, COUNT_IF(ts IS NULL) AS c FROM t",
+   "duckdb_rows": [
+    [
+     true,
+     1
+    ]
+   ]
+  },
+  {
+   "id": "median_refused",
+   "sql": "SELECT MEDIAN(ts) AS m FROM t",
+   "duckdb_rows": [
+    [
+     {
+      "micros": 1710036000000000
+     }
+    ]
+   ],
+   "assay_error": "unsupported: MEDIAN over TIMESTAMP"
+  },
+  {
+   "id": "quantile_disc_refused",
+   "sql": "SELECT QUANTILE_DISC(ts, 0.5) AS m FROM t",
+   "duckdb_rows": [
+    [
+     {
+      "micros": 1710036000000000
+     }
+    ]
+   ],
+   "assay_error": "unsupported: QUANTILE_DISC over TIMESTAMP"
+  },
+  {
+   "id": "mode_refused",
+   "sql": "SELECT MODE(ts) AS m FROM t",
+   "duckdb_rows": [
+    [
+     {
+      "micros": 1710036000000000
+     }
+    ]
+   ],
+   "assay_error": "unsupported: MODE over TIMESTAMP"
+  },
+  {
+   "id": "string_agg_order_refused",
+   "sql": "SELECT STRING_AGG(CAST(id AS VARCHAR), ',' ORDER BY ts DESC NULLS LAST, id) AS s FROM t",
+   "duckdb_rows": [
+    [
+     "7,5,3,4,2,1,6"
+    ]
+   ],
+   "assay_error": "unsupported: STRING_AGG ORDER BY Timestamp key"
+  },
+  {
+   "id": "stddev_type_error",
+   "sql": "SELECT STDDEV(ts) AS s FROM t",
+   "duckdb_error": "Binder Error: No function matches the given name and argument types 'stddev(TIMESTAMP)'. You might need to add explicit type casts.",
+   "assay_error": "STDDEV requires a numeric argument"
+  },
+  {
+   "id": "corr_type_error",
+   "sql": "SELECT CORR(v, ts) AS c FROM t",
+   "duckdb_error": "Binder Error: No function matches the given name and argument types 'corr(DOUBLE, TIMESTAMP)'. You might need to add explicit type casts.",
+   "assay_error": "CORR requires numeric arguments"
+  },
+  {
+   "id": "groups_frame",
+   "sql": "SELECT id, COUNT(*) OVER (ORDER BY ts GROUPS BETWEEN 1 PRECEDING AND CURRENT ROW) AS c FROM t ORDER BY id",
+   "duckdb_rows": [
+    [
+     1,
+     1
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     3,
+     3
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     6,
+     2
+    ],
+    [
+     7,
+     2
+    ]
+   ]
+  },
+  {
+   "id": "range_exclude_current",
+   "sql": "SELECT id, COUNT(*) OVER (ORDER BY ts RANGE BETWEEN INTERVAL '1' HOUR PRECEDING AND CURRENT ROW EXCLUDE CURRENT ROW) AS c FROM t ORDER BY id",
+   "duckdb_rows": [
+    [
+     1,
+     0
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     4,
+     1
+    ],
+    [
+     5,
+     0
+    ],
+    [
+     6,
+     0
+    ],
+    [
+     7,
+     0
+    ]
+   ]
+  },
+  {
+   "id": "rows_following_start",
+   "sql": "SELECT id, MAX(ts) OVER (ORDER BY id ROWS BETWEEN 1 FOLLOWING AND 2 FOLLOWING) AS m FROM t ORDER BY id",
+   "duckdb_rows": [
+    [
+     1,
+     {
+      "micros": 1710036000000000
+     }
+    ],
+    [
+     2,
+     {
+      "micros": 1710036000000000
+     }
+    ],
+    [
+     3,
+     {
+      "micros": 1710115201000000
+     }
+    ],
+    [
+     4,
+     {
+      "micros": 1710115201000000
+     }
+    ],
+    [
+     5,
+     {
+      "micros": 1710122400000007
+     }
+    ],
+    [
+     6,
+     {
+      "micros": 1710122400000007
+     }
+    ],
+    [
+     7,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "range_following_start",
+   "sql": "SELECT id, COUNT(*) OVER (ORDER BY ts RANGE BETWEEN INTERVAL '30' MINUTE FOLLOWING AND INTERVAL '3' HOUR FOLLOWING) AS c FROM t ORDER BY id",
+   "duckdb_rows": [
+    [
+     1,
+     3
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     4,
+     0
+    ],
+    [
+     5,
+     1
+    ],
+    [
+     6,
+     1
+    ],
+    [
+     7,
+     0
+    ]
+   ]
+  },
+  {
+   "id": "window_arg_max",
+   "sql": "SELECT id, ARG_MAX(id, ts) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS a FROM t ORDER BY id",
+   "duckdb_rows": [
+    [
+     1,
+     1
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     3,
+     3
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     7,
+     7
+    ]
+   ]
+  },
+  {
+   "id": "percent_rank_cume_dist",
+   "sql": "SELECT id, PERCENT_RANK() OVER (ORDER BY ts) AS p, CUME_DIST() OVER (ORDER BY ts) AS c FROM t ORDER BY id",
+   "duckdb_rows": [
+    [
+     1,
+     0.0,
+     0.14285714285714285
+    ],
+    [
+     2,
+     0.16666666666666666,
+     0.2857142857142857
+    ],
+    [
+     3,
+     0.3333333333333333,
+     0.5714285714285714
+    ],
+    [
+     4,
+     0.3333333333333333,
+     0.5714285714285714
+    ],
+    [
+     5,
+     0.6666666666666666,
+     0.7142857142857143
+    ],
+    [
+     6,
+     1.0,
+     1.0
+    ],
+    [
+     7,
+     0.8333333333333334,
+     0.8571428571428571
+    ]
+   ]
+  },
+  {
+   "id": "window_filter_range_day",
+   "sql": "SELECT id, SUM(v) FILTER (WHERE v > 0) OVER (ORDER BY ts RANGE BETWEEN INTERVAL '1' DAY PRECEDING AND CURRENT ROW) AS s FROM t ORDER BY id",
+   "duckdb_rows": [
+    [
+     1,
+     1.5
+    ],
+    [
+     2,
+     4.0
+    ],
+    [
+     3,
+     8.0
+    ],
+    [
+     4,
+     8.0
+    ],
+    [
+     5,
+     6.5
+    ],
+    [
+     6,
+     3.0
+    ],
+    [
+     7,
+     0.5
+    ]
+   ]
+  },
+  {
+   "id": "window_filter_division",
+   "sql": "SELECT id, SUM(10 / v) FILTER (WHERE v > 0) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS s FROM t ORDER BY id",
+   "duckdb_rows": [
+    [
+     1,
+     6.666666666666667
+    ],
+    [
+     2,
+     10.666666666666668
+    ],
+    [
+     3,
+     4.0
+    ],
+    [
+     4,
+     2.5
+    ],
+    [
+     5,
+     2.5
+    ],
+    [
+     6,
+     3.3333333333333335
+    ],
+    [
+     7,
+     23.333333333333332
+    ]
+   ]
+  },
+  {
+   "id": "named_window_timestamptz_range",
+   "sql": "SELECT id, COUNT(*) OVER w AS c FROM t WINDOW w AS (ORDER BY tz RANGE BETWEEN INTERVAL '2' HOUR PRECEDING AND CURRENT ROW) ORDER BY id",
+   "duckdb_rows": [
+    [
+     1,
+     1
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     5,
+     1
+    ],
+    [
+     6,
+     1
+    ],
+    [
+     7,
+     2
+    ]
+   ]
+  },
+  {
+   "id": "range_day_both_sides",
+   "sql": "SELECT id, MIN(ts) OVER (ORDER BY ts RANGE BETWEEN INTERVAL '1' DAY PRECEDING AND INTERVAL '1' DAY FOLLOWING) AS m FROM t ORDER BY id",
+   "duckdb_rows": [
+    [
+     1,
+     {
+      "micros": 1710028800000000
+     }
+    ],
+    [
+     2,
+     {
+      "micros": 1710028800000000
+     }
+    ],
+    [
+     3,
+     {
+      "micros": 1710028800000000
+     }
+    ],
+    [
+     4,
+     {
+      "micros": 1710028800000000
+     }
+    ],
+    [
+     5,
+     {
+      "micros": 1710030600000000
+     }
+    ],
+    [
+     6,
+     null
+    ],
+    [
+     7,
+     {
+      "micros": 1710115201000000
+     }
+    ]
+   ]
+  },
+  {
+   "id": "window_median_refused",
+   "sql": "SELECT id, MEDIAN(ts) OVER (ORDER BY id) AS m FROM t ORDER BY id",
+   "duckdb_rows": [
+    [
+     1,
+     {
+      "micros": 1710028800000000
+     }
+    ],
+    [
+     2,
+     {
+      "micros": 1710029700000000
+     }
+    ],
+    [
+     3,
+     {
+      "micros": 1710030600000000
+     }
+    ],
+    [
+     4,
+     {
+      "micros": 1710033300000000
+     }
+    ],
+    [
+     5,
+     {
+      "micros": 1710036000000000
+     }
+    ],
+    [
+     6,
+     {
+      "micros": 1710036000000000
+     }
+    ],
+    [
+     7,
+     {
+      "micros": 1710036000000000
+     }
+    ]
+   ],
+   "assay_error": "unsupported: MEDIAN over TIMESTAMP"
+  }
+ ]
+}

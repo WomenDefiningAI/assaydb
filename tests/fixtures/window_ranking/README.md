@@ -1,9 +1,13 @@
+> Reference-generation commands below describe the original development workflow.
+> Generators not included in this export require separately provisioned tooling;
+> no historical validation result certifies this candidate.
+
 # Ranking window references
 
 `cases.sql` contains 80 permanent cases. Each comment records whether output
 order is specified and whether the query belongs to the SQLite cross-check
 domain. `setup.sql` defines tiny typed tables. Integer/text cases are checked
-against both DuckDB 1.5.6 and SQLite 3.51; typed decimal/date/Boolean/REAL
+against both DuckDB 1.5.6 and system SQLite 3.51; typed decimal/date/Boolean/REAL
 cases use DuckDB with exact INTEGER rank outputs. No case is discarded on a
 disagreement. The generator exits nonzero and retains both outputs.
 
@@ -21,7 +25,8 @@ Nested derived-table LIMIT over joins/groups is stabilized before row selection
 by completing the visible tuple ordering while retaining explicit primary keys.
 A LIMIT needing canonicalization inside a CTE materialization is refused explicitly;
 This includes single-use CTEs, which are inlined only after window planning.
-CTEs with ranking before their LIMIT remain supported. See [semantics](../../../SEMANTICS-LOG.md) for this conservative boundary.
+CTEs with ranking before their LIMIT remain supported. See SEMANTICS-LOG.md for
+the retained original diagnostic differences and this conservative boundary.
 A separate reverse-order 128-row/four-rowgroup Parquet fixture checks partial
 ORDER BY over scans and completed windows, with and without LIMIT. It requires
 positive parallel reader and external sort counters. WindowOrder sorts physical
@@ -44,18 +49,11 @@ SQL fixture interface cannot retain NaN payloads.
 Regenerate under the shared activity lock, from the repository root:
 
 ```sh
-python3 scripts/with_engine_activity.py window-reference \
-  python3 scripts/window_ranking_reference.py --sqlite /path/to/pinned/sqlite3 --output /tmp/window-ranking-reference.json
+.venv/bin/python research/tools/with_engine_activity.py window-reference \
+  .venv/bin/python tools/testing/window_ranking_reference.py
 ```
 
 No corpus-wide or performance claim follows from these mini-corpus checks.
 Final acceptance requires independent Test Mini reproduction of the exact
 candidate commits, full unchanged corpus/differential checks, and benchmark
 no-regression gates.
-
-PR6's October 16, 2026 qualification includes an independent 80-case regeneration
-and 60 SQLite cross-checks. The unavailable Apple SQLite executable was replaced
-by an explicitly reviewed official upstream 3.51.0 build; original expected
-answers were not changed. This approval applies to that run, not to arbitrary
-future executable substitutions. See [reproduction](REPRODUCE.md) and the
-[qualification report](../../../docs/ENGINE-SNAPSHOT-QUALIFICATION.md).

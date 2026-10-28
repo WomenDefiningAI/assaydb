@@ -46,8 +46,8 @@ def main() -> None:
         "rust_on_path": False,
     }
     args.output.write_text(json.dumps(receipt, indent=2) + "\n")
-    if result.testsRun != 11 or not result.wasSuccessful() or result.skipped:
-        raise RuntimeError("Expected all eleven installed-package tests to pass without skips")
+    if result.testsRun != 12 or not result.wasSuccessful() or result.skipped:
+        raise RuntimeError("Expected all twelve installed-package tests to pass without skips")
 
     with assaydb.connect() as con:
         con.execute("CREATE TABLE events (id INTEGER, label TEXT)")

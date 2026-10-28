@@ -1,0 +1,6190 @@
+{
+  "duckdb_version": "1.5.6",
+  "postgres_version": "17 documentation (installed 17.11)",
+  "postgres_execution": false,
+  "postgres_source_found": false,
+  "docs_sha256": {
+    "datatype-numeric.html": "456ec44f481eb97e1a82d406e323689d4ff86ad0434363a9a31114e9104de380",
+    "datatype-boolean.html": "62d76341dc15ecc1cc18524891cc600b41c96eadbd950fc1d20731101390b684",
+    "datatype-datetime.html": "2c4b162d34ad242212f36bdd887bd3b4f079a7ac05dcee70b3f7fd78c23ba4f4",
+    "datatype-character.html": "e00ec4537150d4a0e8a9b9297032af3a1768808eb2c1854fbc5e62f03f8e4761",
+    "sql-syntax-lexical.html": "9191e22b7b20861b3b02778187cb82aeb6c9f2b02e2998c3e8629d3b244dc844"
+  },
+  "generator_sha256": "453907a7a27d7134f9d2846f46dd24e36bc91970b1ece703ffea66b91791d80c",
+  "cases": [
+    {
+      "id": "c000",
+      "source": "DECIMAL",
+      "expression": "-3.5",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(-3.5 AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -4
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -4
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c001",
+      "source": "DECIMAL",
+      "expression": "-3.5",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(-3.5 AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -4
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -4
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c002",
+      "source": "DECIMAL",
+      "expression": "-2.5",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(-2.5 AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -3
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -3
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c003",
+      "source": "DECIMAL",
+      "expression": "-2.5",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(-2.5 AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -3
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -3
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c004",
+      "source": "DECIMAL",
+      "expression": "-1.5",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(-1.5 AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c005",
+      "source": "DECIMAL",
+      "expression": "-1.5",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(-1.5 AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c006",
+      "source": "DECIMAL",
+      "expression": "-0.5",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(-0.5 AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -1
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -1
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c007",
+      "source": "DECIMAL",
+      "expression": "-0.5",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(-0.5 AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -1
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -1
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c008",
+      "source": "DECIMAL",
+      "expression": "0.5",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(0.5 AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            1
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c009",
+      "source": "DECIMAL",
+      "expression": "0.5",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(0.5 AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            1
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            1
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c010",
+      "source": "DECIMAL",
+      "expression": "1.5",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(1.5 AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c011",
+      "source": "DECIMAL",
+      "expression": "1.5",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(1.5 AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c012",
+      "source": "DECIMAL",
+      "expression": "2.5",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(2.5 AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            3
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            3
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c013",
+      "source": "DECIMAL",
+      "expression": "2.5",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(2.5 AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            3
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            3
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c014",
+      "source": "DECIMAL",
+      "expression": "3.5",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(3.5 AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            4
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            4
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c015",
+      "source": "DECIMAL",
+      "expression": "3.5",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(3.5 AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            4
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            4
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c016",
+      "source": "DECIMAL",
+      "expression": "2.49",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(2.49 AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c017",
+      "source": "DECIMAL",
+      "expression": "2.49",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(2.49 AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c018",
+      "source": "DECIMAL",
+      "expression": "-2.49",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(-2.49 AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c019",
+      "source": "DECIMAL",
+      "expression": "-2.49",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(-2.49 AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c020",
+      "source": "DECIMAL",
+      "expression": "2147483647",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(2147483647 AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2147483647
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2147483647
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c021",
+      "source": "DECIMAL",
+      "expression": "2147483647",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(2147483647 AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2147483647
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2147483647
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c022",
+      "source": "DECIMAL",
+      "expression": "2147483648",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(2147483648 AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type INT64 with value 2147483648 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(2147483648 AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c023",
+      "source": "DECIMAL",
+      "expression": "2147483648",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(2147483648 AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2147483648
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2147483648
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c024",
+      "source": "DECIMAL",
+      "expression": "-2147483648",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(-2147483648 AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2147483648
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2147483648
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c025",
+      "source": "DECIMAL",
+      "expression": "-2147483648",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(-2147483648 AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2147483648
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2147483648
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c026",
+      "source": "DECIMAL",
+      "expression": "9223372036854775807",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(9223372036854775807 AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type INT64 with value 9223372036854775807 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(9223372036854775807 AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c027",
+      "source": "DECIMAL",
+      "expression": "9223372036854775807",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(9223372036854775807 AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            9223372036854775807
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            9223372036854775807
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c028",
+      "source": "DECIMAL",
+      "expression": "9223372036854775808",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(9223372036854775808 AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type INT128 with value 9223372036854775808 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(9223372036854775808 AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c029",
+      "source": "DECIMAL",
+      "expression": "9223372036854775808",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(9223372036854775808 AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type INT128 with value 9223372036854775808 can't be cast because the value is out of range for the destination type INT64\n\nLINE 1: SELECT CAST(9223372036854775808 AS BIGINT)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c030",
+      "source": "DECIMAL",
+      "expression": "CAST('NaN' AS DECIMAL(10,2))",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('NaN' AS DECIMAL(10,2)) AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string \"NaN\" to DECIMAL(10,2)\n\nLINE 1: SELECT CAST(CAST('NaN' AS DECIMAL(10,2)) AS INTEGER)\n                    ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c031",
+      "source": "DECIMAL",
+      "expression": "CAST('NaN' AS DECIMAL(10,2))",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('NaN' AS DECIMAL(10,2)) AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string \"NaN\" to DECIMAL(10,2)\n\nLINE 1: SELECT CAST(CAST('NaN' AS DECIMAL(10,2)) AS BIGINT)\n                    ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c032",
+      "source": "DECIMAL",
+      "expression": "CAST('Infinity' AS DECIMAL(10,2))",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('Infinity' AS DECIMAL(10,2)) AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string \"Infinity\" to DECIMAL(10,2)\n\nLINE 1: SELECT CAST(CAST('Infinity' AS DECIMAL(10,2)) AS INTEGER)\n                    ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c033",
+      "source": "DECIMAL",
+      "expression": "CAST('Infinity' AS DECIMAL(10,2))",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('Infinity' AS DECIMAL(10,2)) AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string \"Infinity\" to DECIMAL(10,2)\n\nLINE 1: SELECT CAST(CAST('Infinity' AS DECIMAL(10,2)) AS BIGINT)\n                    ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c034",
+      "source": "DECIMAL",
+      "expression": "CAST('-Infinity' AS DECIMAL(10,2))",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('-Infinity' AS DECIMAL(10,2)) AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string \"-Infinity\" to DECIMAL(10,2)\n\nLINE 1: SELECT CAST(CAST('-Infinity' AS DECIMAL(10,2)) AS INTEGER)\n                    ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c035",
+      "source": "DECIMAL",
+      "expression": "CAST('-Infinity' AS DECIMAL(10,2))",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('-Infinity' AS DECIMAL(10,2)) AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string \"-Infinity\" to DECIMAL(10,2)\n\nLINE 1: SELECT CAST(CAST('-Infinity' AS DECIMAL(10,2)) AS BIGINT)\n                    ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c036",
+      "source": "DOUBLE",
+      "expression": "CAST('-3.5' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('-3.5' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -4
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -4
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c037",
+      "source": "DOUBLE",
+      "expression": "CAST('-3.5' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('-3.5' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -4
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -4
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c038",
+      "source": "DOUBLE",
+      "expression": "CAST('-2.5' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('-2.5' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c039",
+      "source": "DOUBLE",
+      "expression": "CAST('-2.5' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('-2.5' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c040",
+      "source": "DOUBLE",
+      "expression": "CAST('-1.5' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('-1.5' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c041",
+      "source": "DOUBLE",
+      "expression": "CAST('-1.5' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('-1.5' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c042",
+      "source": "DOUBLE",
+      "expression": "CAST('-0.5' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('-0.5' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c043",
+      "source": "DOUBLE",
+      "expression": "CAST('-0.5' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('-0.5' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c044",
+      "source": "DOUBLE",
+      "expression": "CAST('0.5' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('0.5' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c045",
+      "source": "DOUBLE",
+      "expression": "CAST('0.5' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('0.5' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c046",
+      "source": "DOUBLE",
+      "expression": "CAST('1.5' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('1.5' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c047",
+      "source": "DOUBLE",
+      "expression": "CAST('1.5' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('1.5' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c048",
+      "source": "DOUBLE",
+      "expression": "CAST('2.5' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('2.5' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c049",
+      "source": "DOUBLE",
+      "expression": "CAST('2.5' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('2.5' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c050",
+      "source": "DOUBLE",
+      "expression": "CAST('3.5' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('3.5' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            4
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            4
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c051",
+      "source": "DOUBLE",
+      "expression": "CAST('3.5' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('3.5' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            4
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            4
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c052",
+      "source": "DOUBLE",
+      "expression": "CAST('2.49' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('2.49' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c053",
+      "source": "DOUBLE",
+      "expression": "CAST('2.49' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('2.49' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c054",
+      "source": "DOUBLE",
+      "expression": "CAST('-2.49' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('-2.49' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c055",
+      "source": "DOUBLE",
+      "expression": "CAST('-2.49' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('-2.49' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c056",
+      "source": "DOUBLE",
+      "expression": "CAST('2147483647' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('2147483647' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2147483647
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2147483647
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c057",
+      "source": "DOUBLE",
+      "expression": "CAST('2147483647' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('2147483647' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2147483647
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2147483647
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c058",
+      "source": "DOUBLE",
+      "expression": "CAST('2147483648' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('2147483648' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type DOUBLE with value 2147483648.0 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST('2147483648' AS DOUBLE) AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c059",
+      "source": "DOUBLE",
+      "expression": "CAST('2147483648' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('2147483648' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2147483648
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2147483648
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c060",
+      "source": "DOUBLE",
+      "expression": "CAST('-2147483648' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('-2147483648' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2147483648
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2147483648
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c061",
+      "source": "DOUBLE",
+      "expression": "CAST('-2147483648' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('-2147483648' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2147483648
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2147483648
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c062",
+      "source": "DOUBLE",
+      "expression": "CAST('9223372036854775807' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('9223372036854775807' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type DOUBLE with value 9.223372036854776e+18 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST('9223372036854775807' AS DOUBLE) AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c063",
+      "source": "DOUBLE",
+      "expression": "CAST('9223372036854775807' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('9223372036854775807' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type DOUBLE with value 9.223372036854776e+18 can't be cast because the value is out of range for the destination type INT64\n\nLINE 1: SELECT CAST(CAST('9223372036854775807' AS DOUBLE) AS BIGINT)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c064",
+      "source": "DOUBLE",
+      "expression": "CAST('9223372036854775808' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('9223372036854775808' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type DOUBLE with value 9.223372036854776e+18 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST('9223372036854775808' AS DOUBLE) AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c065",
+      "source": "DOUBLE",
+      "expression": "CAST('9223372036854775808' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('9223372036854775808' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type DOUBLE with value 9.223372036854776e+18 can't be cast because the value is out of range for the destination type INT64\n\nLINE 1: SELECT CAST(CAST('9223372036854775808' AS DOUBLE) AS BIGINT)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c066",
+      "source": "DOUBLE",
+      "expression": "CAST('NaN' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('NaN' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type DOUBLE with value nan can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST('NaN' AS DOUBLE) AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c067",
+      "source": "DOUBLE",
+      "expression": "CAST('NaN' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('NaN' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type DOUBLE with value nan can't be cast because the value is out of range for the destination type INT64\n\nLINE 1: SELECT CAST(CAST('NaN' AS DOUBLE) AS BIGINT)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c068",
+      "source": "DOUBLE",
+      "expression": "CAST('Infinity' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('Infinity' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type DOUBLE with value inf can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST('Infinity' AS DOUBLE) AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c069",
+      "source": "DOUBLE",
+      "expression": "CAST('Infinity' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('Infinity' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type DOUBLE with value inf can't be cast because the value is out of range for the destination type INT64\n\nLINE 1: SELECT CAST(CAST('Infinity' AS DOUBLE) AS BIGINT)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c070",
+      "source": "DOUBLE",
+      "expression": "CAST('-Infinity' AS DOUBLE)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('-Infinity' AS DOUBLE) AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type DOUBLE with value -inf can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST('-Infinity' AS DOUBLE) AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c071",
+      "source": "DOUBLE",
+      "expression": "CAST('-Infinity' AS DOUBLE)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('-Infinity' AS DOUBLE) AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type DOUBLE with value -inf can't be cast because the value is out of range for the destination type INT64\n\nLINE 1: SELECT CAST(CAST('-Infinity' AS DOUBLE) AS BIGINT)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c072",
+      "source": "REAL",
+      "expression": "CAST('-3.5' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('-3.5' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -4
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -4
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c073",
+      "source": "REAL",
+      "expression": "CAST('-3.5' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('-3.5' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -4
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -4
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c074",
+      "source": "REAL",
+      "expression": "CAST('-2.5' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('-2.5' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c075",
+      "source": "REAL",
+      "expression": "CAST('-2.5' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('-2.5' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c076",
+      "source": "REAL",
+      "expression": "CAST('-1.5' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('-1.5' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c077",
+      "source": "REAL",
+      "expression": "CAST('-1.5' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('-1.5' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c078",
+      "source": "REAL",
+      "expression": "CAST('-0.5' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('-0.5' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c079",
+      "source": "REAL",
+      "expression": "CAST('-0.5' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('-0.5' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c080",
+      "source": "REAL",
+      "expression": "CAST('0.5' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('0.5' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c081",
+      "source": "REAL",
+      "expression": "CAST('0.5' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('0.5' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c082",
+      "source": "REAL",
+      "expression": "CAST('1.5' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('1.5' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c083",
+      "source": "REAL",
+      "expression": "CAST('1.5' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('1.5' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c084",
+      "source": "REAL",
+      "expression": "CAST('2.5' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('2.5' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c085",
+      "source": "REAL",
+      "expression": "CAST('2.5' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('2.5' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c086",
+      "source": "REAL",
+      "expression": "CAST('3.5' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('3.5' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            4
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            4
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c087",
+      "source": "REAL",
+      "expression": "CAST('3.5' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('3.5' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            4
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            4
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c088",
+      "source": "REAL",
+      "expression": "CAST('2.49' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('2.49' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c089",
+      "source": "REAL",
+      "expression": "CAST('2.49' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('2.49' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c090",
+      "source": "REAL",
+      "expression": "CAST('-2.49' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('-2.49' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c091",
+      "source": "REAL",
+      "expression": "CAST('-2.49' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('-2.49' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c092",
+      "source": "REAL",
+      "expression": "CAST('2147483647' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('2147483647' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type FLOAT with value 2147483600.0 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST('2147483647' AS REAL) AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c093",
+      "source": "REAL",
+      "expression": "CAST('2147483647' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('2147483647' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2147483648
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2147483648
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c094",
+      "source": "REAL",
+      "expression": "CAST('2147483648' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('2147483648' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type FLOAT with value 2147483600.0 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST('2147483648' AS REAL) AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c095",
+      "source": "REAL",
+      "expression": "CAST('2147483648' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('2147483648' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            2147483648
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2147483648
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c096",
+      "source": "REAL",
+      "expression": "CAST('-2147483648' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('-2147483648' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2147483648
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2147483648
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c097",
+      "source": "REAL",
+      "expression": "CAST('-2147483648' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('-2147483648' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -2147483648
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -2147483648
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c098",
+      "source": "REAL",
+      "expression": "CAST('9223372036854775807' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('9223372036854775807' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type FLOAT with value 9.223372e+18 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST('9223372036854775807' AS REAL) AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c099",
+      "source": "REAL",
+      "expression": "CAST('9223372036854775807' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('9223372036854775807' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type FLOAT with value 9.223372e+18 can't be cast because the value is out of range for the destination type INT64\n\nLINE 1: SELECT CAST(CAST('9223372036854775807' AS REAL) AS BIGINT)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c100",
+      "source": "REAL",
+      "expression": "CAST('9223372036854775808' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('9223372036854775808' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type FLOAT with value 9.223372e+18 can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST('9223372036854775808' AS REAL) AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c101",
+      "source": "REAL",
+      "expression": "CAST('9223372036854775808' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('9223372036854775808' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type FLOAT with value 9.223372e+18 can't be cast because the value is out of range for the destination type INT64\n\nLINE 1: SELECT CAST(CAST('9223372036854775808' AS REAL) AS BIGINT)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c102",
+      "source": "REAL",
+      "expression": "CAST('NaN' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('NaN' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type FLOAT with value nan can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST('NaN' AS REAL) AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c103",
+      "source": "REAL",
+      "expression": "CAST('NaN' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('NaN' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type FLOAT with value nan can't be cast because the value is out of range for the destination type INT64\n\nLINE 1: SELECT CAST(CAST('NaN' AS REAL) AS BIGINT)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c104",
+      "source": "REAL",
+      "expression": "CAST('Infinity' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('Infinity' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type FLOAT with value inf can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST('Infinity' AS REAL) AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c105",
+      "source": "REAL",
+      "expression": "CAST('Infinity' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('Infinity' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type FLOAT with value inf can't be cast because the value is out of range for the destination type INT64\n\nLINE 1: SELECT CAST(CAST('Infinity' AS REAL) AS BIGINT)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c106",
+      "source": "REAL",
+      "expression": "CAST('-Infinity' AS REAL)",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(CAST('-Infinity' AS REAL) AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type FLOAT with value -inf can't be cast because the value is out of range for the destination type INT32\n\nLINE 1: SELECT CAST(CAST('-Infinity' AS REAL) AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c107",
+      "source": "REAL",
+      "expression": "CAST('-Infinity' AS REAL)",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(CAST('-Infinity' AS REAL) AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Type FLOAT with value -inf can't be cast because the value is out of range for the destination type INT64\n\nLINE 1: SELECT CAST(CAST('-Infinity' AS REAL) AS BIGINT)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c108",
+      "source": "TEXT",
+      "expression": "'12'",
+      "target": "INTEGER",
+      "sql": "SELECT CAST('12' AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            12
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            12
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c109",
+      "source": "TEXT",
+      "expression": "'12'",
+      "target": "BIGINT",
+      "sql": "SELECT CAST('12' AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            12
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            12
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c110",
+      "source": "TEXT",
+      "expression": "'12'",
+      "target": "DOUBLE",
+      "sql": "SELECT CAST('12' AS DOUBLE)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "4028000000000000"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "4028000000000000"
+            }
+          ]
+        ],
+        "types": [
+          "DOUBLE"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c111",
+      "source": "TEXT",
+      "expression": "'12'",
+      "target": "REAL",
+      "sql": "SELECT CAST('12' AS REAL)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "4028000000000000"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "4028000000000000"
+            }
+          ]
+        ],
+        "types": [
+          "FLOAT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c112",
+      "source": "TEXT",
+      "expression": "'12'",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST('12' AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "12.00"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "12.00"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c113",
+      "source": "TEXT",
+      "expression": "'12'",
+      "target": "DATE",
+      "sql": "SELECT CAST('12' AS DATE)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: invalid date field format: \"12\", expected format is (YYYY-MM-DD)\n\nLINE 1: SELECT CAST('12' AS DATE)\n               ^"
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c114",
+      "source": "TEXT",
+      "expression": "'  +12  '",
+      "target": "INTEGER",
+      "sql": "SELECT CAST('  +12  ' AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            12
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            12
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c115",
+      "source": "TEXT",
+      "expression": "'  +12  '",
+      "target": "BIGINT",
+      "sql": "SELECT CAST('  +12  ' AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            12
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            12
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c116",
+      "source": "TEXT",
+      "expression": "'  +12  '",
+      "target": "DOUBLE",
+      "sql": "SELECT CAST('  +12  ' AS DOUBLE)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "4028000000000000"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "4028000000000000"
+            }
+          ]
+        ],
+        "types": [
+          "DOUBLE"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c117",
+      "source": "TEXT",
+      "expression": "'  +12  '",
+      "target": "REAL",
+      "sql": "SELECT CAST('  +12  ' AS REAL)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "4028000000000000"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "4028000000000000"
+            }
+          ]
+        ],
+        "types": [
+          "FLOAT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c118",
+      "source": "TEXT",
+      "expression": "'  +12  '",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST('  +12  ' AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "12.00"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "12.00"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c119",
+      "source": "TEXT",
+      "expression": "'  +12  '",
+      "target": "DATE",
+      "sql": "SELECT CAST('  +12  ' AS DATE)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: invalid date field format: \"  +12  \", expected format is (YYYY-MM-DD)\n\nLINE 1: SELECT CAST('  +12  ' AS DATE)\n               ^"
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c120",
+      "source": "TEXT",
+      "expression": "'-12'",
+      "target": "INTEGER",
+      "sql": "SELECT CAST('-12' AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -12
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -12
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c121",
+      "source": "TEXT",
+      "expression": "'-12'",
+      "target": "BIGINT",
+      "sql": "SELECT CAST('-12' AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            -12
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            -12
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c122",
+      "source": "TEXT",
+      "expression": "'-12'",
+      "target": "DOUBLE",
+      "sql": "SELECT CAST('-12' AS DOUBLE)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "c028000000000000"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "c028000000000000"
+            }
+          ]
+        ],
+        "types": [
+          "DOUBLE"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c123",
+      "source": "TEXT",
+      "expression": "'-12'",
+      "target": "REAL",
+      "sql": "SELECT CAST('-12' AS REAL)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "c028000000000000"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "c028000000000000"
+            }
+          ]
+        ],
+        "types": [
+          "FLOAT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c124",
+      "source": "TEXT",
+      "expression": "'-12'",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST('-12' AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "-12.00"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "-12.00"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c125",
+      "source": "TEXT",
+      "expression": "'-12'",
+      "target": "DATE",
+      "sql": "SELECT CAST('-12' AS DATE)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: invalid date field format: \"-12\", expected format is (YYYY-MM-DD)\n\nLINE 1: SELECT CAST('-12' AS DATE)\n               ^"
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c126",
+      "source": "TEXT",
+      "expression": "'+'",
+      "target": "INTEGER",
+      "sql": "SELECT CAST('+' AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string '+' to INT32\n\nLINE 1: SELECT CAST('+' AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c127",
+      "source": "TEXT",
+      "expression": "'+'",
+      "target": "BIGINT",
+      "sql": "SELECT CAST('+' AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string '+' to INT64\n\nLINE 1: SELECT CAST('+' AS BIGINT)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c128",
+      "source": "TEXT",
+      "expression": "'+'",
+      "target": "DOUBLE",
+      "sql": "SELECT CAST('+' AS DOUBLE)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string '+' to DOUBLE\n\nLINE 1: SELECT CAST('+' AS DOUBLE)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c129",
+      "source": "TEXT",
+      "expression": "'+'",
+      "target": "REAL",
+      "sql": "SELECT CAST('+' AS REAL)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string '+' to FLOAT\n\nLINE 1: SELECT CAST('+' AS REAL)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c130",
+      "source": "TEXT",
+      "expression": "'+'",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST('+' AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string \"+\" to DECIMAL(10,2)\n\nLINE 1: SELECT CAST('+' AS DECIMAL(10,2))\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c131",
+      "source": "TEXT",
+      "expression": "'+'",
+      "target": "DATE",
+      "sql": "SELECT CAST('+' AS DATE)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: invalid date field format: \"+\", expected format is (YYYY-MM-DD)\n\nLINE 1: SELECT CAST('+' AS DATE)\n               ^"
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c132",
+      "source": "TEXT",
+      "expression": "''",
+      "target": "INTEGER",
+      "sql": "SELECT CAST('' AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string '' to INT32\n\nLINE 1: SELECT CAST('' AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c133",
+      "source": "TEXT",
+      "expression": "''",
+      "target": "BIGINT",
+      "sql": "SELECT CAST('' AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string '' to INT64\n\nLINE 1: SELECT CAST('' AS BIGINT)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c134",
+      "source": "TEXT",
+      "expression": "''",
+      "target": "DOUBLE",
+      "sql": "SELECT CAST('' AS DOUBLE)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string '' to DOUBLE\n\nLINE 1: SELECT CAST('' AS DOUBLE)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c135",
+      "source": "TEXT",
+      "expression": "''",
+      "target": "REAL",
+      "sql": "SELECT CAST('' AS REAL)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string '' to FLOAT\n\nLINE 1: SELECT CAST('' AS REAL)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c136",
+      "source": "TEXT",
+      "expression": "''",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST('' AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string \"\" to DECIMAL(10,2)\n\nLINE 1: SELECT CAST('' AS DECIMAL(10,2))\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c137",
+      "source": "TEXT",
+      "expression": "''",
+      "target": "DATE",
+      "sql": "SELECT CAST('' AS DATE)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: invalid date field format: \"\", expected format is (YYYY-MM-DD)\n\nLINE 1: SELECT CAST('' AS DATE)\n               ^"
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c138",
+      "source": "TEXT",
+      "expression": "'12abc'",
+      "target": "INTEGER",
+      "sql": "SELECT CAST('12abc' AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string '12abc' to INT32\n\nLINE 1: SELECT CAST('12abc' AS INTEGER)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c139",
+      "source": "TEXT",
+      "expression": "'12abc'",
+      "target": "BIGINT",
+      "sql": "SELECT CAST('12abc' AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string '12abc' to INT64\n\nLINE 1: SELECT CAST('12abc' AS BIGINT)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c140",
+      "source": "TEXT",
+      "expression": "'12abc'",
+      "target": "DOUBLE",
+      "sql": "SELECT CAST('12abc' AS DOUBLE)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string '12abc' to DOUBLE\n\nLINE 1: SELECT CAST('12abc' AS DOUBLE)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c141",
+      "source": "TEXT",
+      "expression": "'12abc'",
+      "target": "REAL",
+      "sql": "SELECT CAST('12abc' AS REAL)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string '12abc' to FLOAT\n\nLINE 1: SELECT CAST('12abc' AS REAL)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c142",
+      "source": "TEXT",
+      "expression": "'12abc'",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST('12abc' AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string \"12abc\" to DECIMAL(10,2)\n\nLINE 1: SELECT CAST('12abc' AS DECIMAL(10,2))\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c143",
+      "source": "TEXT",
+      "expression": "'12abc'",
+      "target": "DATE",
+      "sql": "SELECT CAST('12abc' AS DATE)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: invalid date field format: \"12abc\", expected format is (YYYY-MM-DD)\n\nLINE 1: SELECT CAST('12abc' AS DATE)\n               ^"
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c144",
+      "source": "TEXT",
+      "expression": "'1.5'",
+      "target": "INTEGER",
+      "sql": "SELECT CAST('1.5' AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": "refuse",
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "disagree",
+      "expect": "refuse"
+    },
+    {
+      "id": "c145",
+      "source": "TEXT",
+      "expression": "'1.5'",
+      "target": "BIGINT",
+      "sql": "SELECT CAST('1.5' AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": "refuse",
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            2
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "disagree",
+      "expect": "refuse"
+    },
+    {
+      "id": "c146",
+      "source": "TEXT",
+      "expression": "'1.5'",
+      "target": "DOUBLE",
+      "sql": "SELECT CAST('1.5' AS DOUBLE)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "3ff8000000000000"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "3ff8000000000000"
+            }
+          ]
+        ],
+        "types": [
+          "DOUBLE"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c147",
+      "source": "TEXT",
+      "expression": "'1.5'",
+      "target": "REAL",
+      "sql": "SELECT CAST('1.5' AS REAL)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "3ff8000000000000"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "3ff8000000000000"
+            }
+          ]
+        ],
+        "types": [
+          "FLOAT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c148",
+      "source": "TEXT",
+      "expression": "'1.5'",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST('1.5' AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "1.50"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "1.50"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c149",
+      "source": "TEXT",
+      "expression": "'1.5'",
+      "target": "DATE",
+      "sql": "SELECT CAST('1.5' AS DATE)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: invalid date field format: \"1.5\", expected format is (YYYY-MM-DD)\n\nLINE 1: SELECT CAST('1.5' AS DATE)\n               ^"
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c150",
+      "source": "TEXT",
+      "expression": "'1e2'",
+      "target": "INTEGER",
+      "sql": "SELECT CAST('1e2' AS INTEGER)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": "refuse",
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            100
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "disagree",
+      "expect": "refuse"
+    },
+    {
+      "id": "c151",
+      "source": "TEXT",
+      "expression": "'1e2'",
+      "target": "BIGINT",
+      "sql": "SELECT CAST('1e2' AS BIGINT)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": "refuse",
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            100
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "disagree",
+      "expect": "refuse"
+    },
+    {
+      "id": "c152",
+      "source": "TEXT",
+      "expression": "'1e2'",
+      "target": "DOUBLE",
+      "sql": "SELECT CAST('1e2' AS DOUBLE)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "4059000000000000"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "4059000000000000"
+            }
+          ]
+        ],
+        "types": [
+          "DOUBLE"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c153",
+      "source": "TEXT",
+      "expression": "'1e2'",
+      "target": "REAL",
+      "sql": "SELECT CAST('1e2' AS REAL)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "4059000000000000"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "4059000000000000"
+            }
+          ]
+        ],
+        "types": [
+          "FLOAT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c154",
+      "source": "TEXT",
+      "expression": "'1e2'",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST('1e2' AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "100.00"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "100.00"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c155",
+      "source": "TEXT",
+      "expression": "'1e2'",
+      "target": "DATE",
+      "sql": "SELECT CAST('1e2' AS DATE)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: invalid date field format: \"1e2\", expected format is (YYYY-MM-DD)\n\nLINE 1: SELECT CAST('1e2' AS DATE)\n               ^"
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c156",
+      "source": "TEXT",
+      "expression": "'0x10'",
+      "target": "INTEGER",
+      "sql": "SELECT CAST('0x10' AS INTEGER)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            16
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c157",
+      "source": "TEXT",
+      "expression": "'0x10'",
+      "target": "BIGINT",
+      "sql": "SELECT CAST('0x10' AS BIGINT)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            16
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c158",
+      "source": "TEXT",
+      "expression": "'0x10'",
+      "target": "DOUBLE",
+      "sql": "SELECT CAST('0x10' AS DOUBLE)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string '0x10' to DOUBLE\n\nLINE 1: SELECT CAST('0x10' AS DOUBLE)\n               ^"
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c159",
+      "source": "TEXT",
+      "expression": "'0x10'",
+      "target": "REAL",
+      "sql": "SELECT CAST('0x10' AS REAL)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string '0x10' to FLOAT\n\nLINE 1: SELECT CAST('0x10' AS REAL)\n               ^"
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c160",
+      "source": "TEXT",
+      "expression": "'0x10'",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST('0x10' AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string \"0x10\" to DECIMAL(10,2)\n\nLINE 1: SELECT CAST('0x10' AS DECIMAL(10,2))\n               ^"
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c161",
+      "source": "TEXT",
+      "expression": "'0x10'",
+      "target": "DATE",
+      "sql": "SELECT CAST('0x10' AS DATE)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: invalid date field format: \"0x10\", expected format is (YYYY-MM-DD)\n\nLINE 1: SELECT CAST('0x10' AS DATE)\n               ^"
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c162",
+      "source": "TEXT",
+      "expression": "'1_000'",
+      "target": "INTEGER",
+      "sql": "SELECT CAST('1_000' AS INTEGER)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            1000
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c163",
+      "source": "TEXT",
+      "expression": "'1_000'",
+      "target": "BIGINT",
+      "sql": "SELECT CAST('1_000' AS BIGINT)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            1000
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c164",
+      "source": "TEXT",
+      "expression": "'1_000'",
+      "target": "DOUBLE",
+      "sql": "SELECT CAST('1_000' AS DOUBLE)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "408f400000000000"
+            }
+          ]
+        ],
+        "types": [
+          "DOUBLE"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c165",
+      "source": "TEXT",
+      "expression": "'1_000'",
+      "target": "REAL",
+      "sql": "SELECT CAST('1_000' AS REAL)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "408f400000000000"
+            }
+          ]
+        ],
+        "types": [
+          "FLOAT"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c166",
+      "source": "TEXT",
+      "expression": "'1_000'",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST('1_000' AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a74.1.2.6\u20134.1.2.7, sql-syntax-lexical.html (numeric constants and casts)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "1000.00"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c167",
+      "source": "TEXT",
+      "expression": "'1_000'",
+      "target": "DATE",
+      "sql": "SELECT CAST('1_000' AS DATE)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: invalid date field format: \"1_000\", expected format is (YYYY-MM-DD)\n\nLINE 1: SELECT CAST('1_000' AS DATE)\n               ^"
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c168",
+      "source": "TEXT",
+      "expression": "'2024-02-29'",
+      "target": "DATE",
+      "sql": "SELECT CAST('2024-02-29' AS DATE)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "date": "2024-02-29"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "date": "2024-02-29"
+            }
+          ]
+        ],
+        "types": [
+          "DATE"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c169",
+      "source": "TEXT",
+      "expression": "' 2024-02-29 '",
+      "target": "DATE",
+      "sql": "SELECT CAST(' 2024-02-29 ' AS DATE)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "date": "2024-02-29"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "date": "2024-02-29"
+            }
+          ]
+        ],
+        "types": [
+          "DATE"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c170",
+      "source": "TEXT",
+      "expression": "'2023-02-29'",
+      "target": "DATE",
+      "sql": "SELECT CAST('2023-02-29' AS DATE)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: date field value out of range: \"2023-02-29\"\n\nLINE 1: SELECT CAST('2023-02-29' AS DATE)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c171",
+      "source": "TEXT",
+      "expression": "'2000-01-01'",
+      "target": "DATE",
+      "sql": "SELECT CAST('2000-01-01' AS DATE)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "date": "2000-01-01"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "date": "2000-01-01"
+            }
+          ]
+        ],
+        "types": [
+          "DATE"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c172",
+      "source": "TEXT",
+      "expression": "'0000-01-01'",
+      "target": "DATE",
+      "sql": "SELECT CAST('0000-01-01' AS DATE)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "0001-01-01 (BC)"
+          ]
+        ],
+        "types": [
+          "DATE"
+        ]
+      },
+      "agreement": "disagree",
+      "expect": "refuse"
+    },
+    {
+      "id": "c173",
+      "source": "TEXT",
+      "expression": "'01/02/2024'",
+      "target": "DATE",
+      "sql": "SELECT CAST('01/02/2024' AS DATE)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: invalid date field format: \"01/02/2024\", expected format is (YYYY-MM-DD)\n\nLINE 1: SELECT CAST('01/02/2024' AS DATE)\n               ^"
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c174",
+      "source": "TEXT",
+      "expression": "'infinity'",
+      "target": "DATE",
+      "sql": "SELECT CAST('infinity' AS DATE)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.5.1.1, datatype-datetime.html (ISO date input)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "date": "9999-12-31"
+            }
+          ]
+        ],
+        "types": [
+          "DATE"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c175",
+      "source": "TEXT",
+      "expression": "'true'",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST('true' AS BOOLEAN)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            true
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            true
+          ]
+        ],
+        "types": [
+          "BOOLEAN"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c176",
+      "source": "TEXT",
+      "expression": "'false'",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST('false' AS BOOLEAN)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            false
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            false
+          ]
+        ],
+        "types": [
+          "BOOLEAN"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c177",
+      "source": "TEXT",
+      "expression": "'T'",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST('T' AS BOOLEAN)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            true
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            true
+          ]
+        ],
+        "types": [
+          "BOOLEAN"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c178",
+      "source": "TEXT",
+      "expression": "'f'",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST('f' AS BOOLEAN)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            false
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            false
+          ]
+        ],
+        "types": [
+          "BOOLEAN"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c179",
+      "source": "TEXT",
+      "expression": "'yes'",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST('yes' AS BOOLEAN)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            true
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            true
+          ]
+        ],
+        "types": [
+          "BOOLEAN"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c180",
+      "source": "TEXT",
+      "expression": "'no'",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST('no' AS BOOLEAN)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            false
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            false
+          ]
+        ],
+        "types": [
+          "BOOLEAN"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c181",
+      "source": "TEXT",
+      "expression": "'1'",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST('1' AS BOOLEAN)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            true
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            true
+          ]
+        ],
+        "types": [
+          "BOOLEAN"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c182",
+      "source": "TEXT",
+      "expression": "'0'",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST('0' AS BOOLEAN)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            false
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            false
+          ]
+        ],
+        "types": [
+          "BOOLEAN"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c183",
+      "source": "TEXT",
+      "expression": "' on '",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST(' on ' AS BOOLEAN)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            true
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string ' on ' to BOOL\n\nLINE 1: SELECT CAST(' on ' AS BOOLEAN)\n               ^"
+      },
+      "agreement": "disagree",
+      "expect": "refuse"
+    },
+    {
+      "id": "c184",
+      "source": "TEXT",
+      "expression": "'off'",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST('off' AS BOOLEAN)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            false
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string 'off' to BOOL\n\nLINE 1: SELECT CAST('off' AS BOOLEAN)\n               ^"
+      },
+      "agreement": "disagree",
+      "expect": "refuse"
+    },
+    {
+      "id": "c185",
+      "source": "TEXT",
+      "expression": "'tr'",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST('tr' AS BOOLEAN)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            true
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string 'tr' to BOOL\n\nLINE 1: SELECT CAST('tr' AS BOOLEAN)\n               ^"
+      },
+      "agreement": "disagree",
+      "expect": "refuse"
+    },
+    {
+      "id": "c186",
+      "source": "TEXT",
+      "expression": "'unknown'",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST('unknown' AS BOOLEAN)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string 'unknown' to BOOL\n\nLINE 1: SELECT CAST('unknown' AS BOOLEAN)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c187",
+      "source": "TEXT",
+      "expression": "''",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST('' AS BOOLEAN)",
+      "postgres": {
+        "status": "error"
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not convert string '' to BOOL\n\nLINE 1: SELECT CAST('' AS BOOLEAN)\n               ^"
+      },
+      "agreement": "agree-error",
+      "expect": "refuse"
+    },
+    {
+      "id": "c188",
+      "source": "BOOLEAN",
+      "expression": "TRUE",
+      "target": "TEXT",
+      "sql": "SELECT CAST(TRUE AS TEXT)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "true"
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c189",
+      "source": "BOOLEAN",
+      "expression": "TRUE",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(TRUE AS INTEGER)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            1
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c190",
+      "source": "BOOLEAN",
+      "expression": "TRUE",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(TRUE AS BIGINT)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            1
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c191",
+      "source": "BOOLEAN",
+      "expression": "FALSE",
+      "target": "TEXT",
+      "sql": "SELECT CAST(FALSE AS TEXT)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "false"
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c192",
+      "source": "BOOLEAN",
+      "expression": "FALSE",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(FALSE AS INTEGER)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c193",
+      "source": "BOOLEAN",
+      "expression": "FALSE",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(FALSE AS BIGINT)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            0
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c194",
+      "source": "INTEGER",
+      "expression": "-1",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST(-1 AS BOOLEAN)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            true
+          ]
+        ],
+        "types": [
+          "BOOLEAN"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c195",
+      "source": "INTEGER",
+      "expression": "0",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST(0 AS BOOLEAN)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            false
+          ]
+        ],
+        "types": [
+          "BOOLEAN"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c196",
+      "source": "INTEGER",
+      "expression": "1",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST(1 AS BOOLEAN)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            true
+          ]
+        ],
+        "types": [
+          "BOOLEAN"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c197",
+      "source": "INTEGER",
+      "expression": "2",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST(2 AS BOOLEAN)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            true
+          ]
+        ],
+        "types": [
+          "BOOLEAN"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c198",
+      "source": "INTEGER",
+      "expression": "2147483648",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST(2147483648 AS BOOLEAN)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.6, datatype-boolean.html (input spellings; output is not a CAST-to-text specification)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            true
+          ]
+        ],
+        "types": [
+          "BOOLEAN"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c199",
+      "source": "DECIMAL",
+      "expression": "CAST(0.00 AS DECIMAL(38,2))",
+      "target": "TEXT",
+      "sql": "SELECT CAST(CAST(0.00 AS DECIMAL(38,2)) AS TEXT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            "0.00"
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "0.00"
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c200",
+      "source": "DOUBLE",
+      "expression": "CAST(0.00 AS DOUBLE)",
+      "target": "TEXT",
+      "sql": "SELECT CAST(CAST(0.00 AS DOUBLE) AS TEXT)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "0.0"
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c201",
+      "source": "DECIMAL",
+      "expression": "CAST(-0.00 AS DECIMAL(38,2))",
+      "target": "TEXT",
+      "sql": "SELECT CAST(CAST(-0.00 AS DECIMAL(38,2)) AS TEXT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            "0.00"
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "0.00"
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c202",
+      "source": "DOUBLE",
+      "expression": "CAST(-0.00 AS DOUBLE)",
+      "target": "TEXT",
+      "sql": "SELECT CAST(CAST(-0.00 AS DOUBLE) AS TEXT)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "0.0"
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c203",
+      "source": "DECIMAL",
+      "expression": "CAST(1.20 AS DECIMAL(38,2))",
+      "target": "TEXT",
+      "sql": "SELECT CAST(CAST(1.20 AS DECIMAL(38,2)) AS TEXT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            "1.20"
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "1.20"
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c204",
+      "source": "DOUBLE",
+      "expression": "CAST(1.20 AS DOUBLE)",
+      "target": "TEXT",
+      "sql": "SELECT CAST(CAST(1.20 AS DOUBLE) AS TEXT)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "1.2"
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c205",
+      "source": "DECIMAL",
+      "expression": "CAST(-12.50 AS DECIMAL(38,2))",
+      "target": "TEXT",
+      "sql": "SELECT CAST(CAST(-12.50 AS DECIMAL(38,2)) AS TEXT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            "-12.50"
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "-12.50"
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c206",
+      "source": "DOUBLE",
+      "expression": "CAST(-12.50 AS DOUBLE)",
+      "target": "TEXT",
+      "sql": "SELECT CAST(CAST(-12.50 AS DOUBLE) AS TEXT)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "-12.5"
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c207",
+      "source": "DECIMAL",
+      "expression": "CAST(0.000001 AS DECIMAL(38,6))",
+      "target": "TEXT",
+      "sql": "SELECT CAST(CAST(0.000001 AS DECIMAL(38,6)) AS TEXT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            "0.000001"
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "0.000001"
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c208",
+      "source": "DOUBLE",
+      "expression": "CAST(0.000001 AS DOUBLE)",
+      "target": "TEXT",
+      "sql": "SELECT CAST(CAST(0.000001 AS DOUBLE) AS TEXT)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "1e-06"
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c209",
+      "source": "DECIMAL",
+      "expression": "CAST(12345678901234567890.123456789012345678 AS DECIMAL(38,18))",
+      "target": "TEXT",
+      "sql": "SELECT CAST(CAST(12345678901234567890.123456789012345678 AS DECIMAL(38,18)) AS TEXT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            "12345678901234567890.123456789012345678"
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "12345678901234567890.123456789012345678"
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c210",
+      "source": "DOUBLE",
+      "expression": "CAST(12345678901234567890.123456789012345678 AS DOUBLE)",
+      "target": "TEXT",
+      "sql": "SELECT CAST(CAST(12345678901234567890.123456789012345678 AS DOUBLE) AS TEXT)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "1.2345678901234567e+19"
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c211",
+      "source": "DOUBLE",
+      "expression": "CAST(1.25 AS DOUBLE)",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST(CAST(1.25 AS DOUBLE) AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "1.25"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c212",
+      "source": "DOUBLE",
+      "expression": "CAST(2.675 AS DOUBLE)",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST(CAST(2.675 AS DOUBLE) AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "2.68"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c213",
+      "source": "DOUBLE",
+      "expression": "CAST(0.5 AS DOUBLE)",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST(CAST(0.5 AS DOUBLE) AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "0.50"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c214",
+      "source": "DOUBLE",
+      "expression": "CAST(2.0 AS DOUBLE)",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST(CAST(2.0 AS DOUBLE) AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "2.00"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "2.00"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c215",
+      "source": "DOUBLE",
+      "expression": "CAST(123456789012345.0 AS DOUBLE)",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST(CAST(123456789012345.0 AS DOUBLE) AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "error",
+        "error": "Conversion Error: Could not cast value 123456789012345.000000 to DECIMAL(10,2)\n\nLINE 1: SELECT CAST(CAST(123456789012345.0 AS DOUBLE) AS DECIMAL(10,2))\n               ^"
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c216",
+      "source": "TEXT",
+      "expression": "'1.235'",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST('1.235' AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "1.24"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "1.24"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c217",
+      "source": "TEXT",
+      "expression": "'-1.235'",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST('-1.235' AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "-1.24"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "-1.24"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c218",
+      "source": "TEXT",
+      "expression": "'1e2'",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST('1e2' AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "100.00"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "100.00"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c219",
+      "source": "TEXT",
+      "expression": "'99.995'",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST('99.995' AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "100.00"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "100.00"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c220",
+      "source": "TEXT",
+      "expression": "'-0.000'",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST('-0.000' AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "0.00"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "0.00"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c221",
+      "source": "TEXT",
+      "expression": "'0.000000000000000000000005'",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST('0.000000000000000000000005' AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "0.00"
+            }
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "0.00"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c222",
+      "source": "NULL",
+      "expression": "NULL",
+      "target": "INTEGER",
+      "sql": "SELECT CAST(NULL AS INTEGER)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            null
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            null
+          ]
+        ],
+        "types": [
+          "INTEGER"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c223",
+      "source": "NULL",
+      "expression": "NULL",
+      "target": "BIGINT",
+      "sql": "SELECT CAST(NULL AS BIGINT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            null
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            null
+          ]
+        ],
+        "types": [
+          "BIGINT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c224",
+      "source": "NULL",
+      "expression": "NULL",
+      "target": "REAL",
+      "sql": "SELECT CAST(NULL AS REAL)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            null
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            null
+          ]
+        ],
+        "types": [
+          "FLOAT"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c225",
+      "source": "NULL",
+      "expression": "NULL",
+      "target": "DOUBLE",
+      "sql": "SELECT CAST(NULL AS DOUBLE)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            null
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            null
+          ]
+        ],
+        "types": [
+          "DOUBLE"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c226",
+      "source": "NULL",
+      "expression": "NULL",
+      "target": "TEXT",
+      "sql": "SELECT CAST(NULL AS TEXT)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            null
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            null
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c227",
+      "source": "NULL",
+      "expression": "NULL",
+      "target": "BOOLEAN",
+      "sql": "SELECT CAST(NULL AS BOOLEAN)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            null
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            null
+          ]
+        ],
+        "types": [
+          "BOOLEAN"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c228",
+      "source": "NULL",
+      "expression": "NULL",
+      "target": "DATE",
+      "sql": "SELECT CAST(NULL AS DATE)",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            null
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            null
+          ]
+        ],
+        "types": [
+          "DATE"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c229",
+      "source": "NULL",
+      "expression": "NULL",
+      "target": "DECIMAL(10,2)",
+      "sql": "SELECT CAST(NULL AS DECIMAL(10,2))",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            null
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            null
+          ]
+        ],
+        "types": [
+          "DECIMAL(10,2)"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c230",
+      "source": "TEXT",
+      "expression": "'abcd'",
+      "target": "VARCHAR(3)",
+      "sql": "SELECT CAST('abcd' AS VARCHAR(3))",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            "abc"
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.3, datatype-character.html (explicit truncation)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "abcd"
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "disagree",
+      "expect": "refuse"
+    },
+    {
+      "id": "c231",
+      "source": "TEXT",
+      "expression": "'\u00e9\u754c'",
+      "target": "VARCHAR(2)",
+      "sql": "SELECT CAST('\u00e9\u754c' AS VARCHAR(2))",
+      "postgres": {
+        "status": "ok",
+        "rows": [
+          [
+            "\u00e9\u754c"
+          ]
+        ]
+      },
+      "citation": "PostgreSQL 17 \u00a78.3, datatype-character.html",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            "\u00e9\u754c"
+          ]
+        ],
+        "types": [
+          "VARCHAR"
+        ]
+      },
+      "agreement": "agree",
+      "expect": "value"
+    },
+    {
+      "id": "c232",
+      "source": "DECIMAL",
+      "expression": "1.2345",
+      "target": "DECIMAL",
+      "sql": "SELECT CAST(1.2345 AS DECIMAL)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "decimal": "1.235"
+            }
+          ]
+        ],
+        "types": [
+          "DECIMAL(18,3)"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    },
+    {
+      "id": "c233",
+      "source": "INTEGER",
+      "expression": "1",
+      "target": "FLOAT",
+      "sql": "SELECT CAST(1 AS FLOAT)",
+      "postgres": {
+        "status": "unknown"
+      },
+      "citation": "PostgreSQL 17 \u00a78.1.1\u20138.1.3, datatype-numeric.html (ranges, scale, ties, IEEE widths)",
+      "policy": null,
+      "duckdb": {
+        "status": "ok",
+        "rows": [
+          [
+            {
+              "f64": "3ff0000000000000"
+            }
+          ]
+        ],
+        "types": [
+          "FLOAT"
+        ]
+      },
+      "agreement": "unknown",
+      "expect": "refuse"
+    }
+  ],
+  "analysis": {
+    "setup": [
+      "CREATE TABLE revenue(id INTEGER, amount DECIMAL(10,2), quantity TEXT)",
+      "INSERT INTO revenue VALUES(1,12.50,' +12 '),(2,-2.50,'7'),(3,NULL,NULL)"
+    ],
+    "sql": "SELECT id, CAST(amount AS INTEGER), CAST(quantity AS INTEGER) FROM revenue ORDER BY id",
+    "rows": [
+      [
+        1,
+        13,
+        12
+      ],
+      [
+        2,
+        -3,
+        7
+      ],
+      [
+        3,
+        null,
+        null
+      ]
+    ]
+  }
+}

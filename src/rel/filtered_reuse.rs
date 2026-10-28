@@ -50,8 +50,13 @@ impl Entry {
 // Inspect the retained plan without allocating or changing any scan projection.
 fn scans<'a>(node: &'a Node, visit: &mut impl FnMut(&'a Node)) {
     match &node.op {
+        RelOp::Generate { .. } => (),
         RelOp::Scan { .. } => visit(node),
-        RelOp::Materialize { .. } | RelOp::One | RelOp::Empty => (),
+        RelOp::Materialize { .. }
+        | RelOp::One
+        | RelOp::Empty
+        | RelOp::RecursiveCte { .. }
+        | RelOp::RecursiveScan { .. } => (),
         RelOp::WindowOrder { input, .. }
         | RelOp::Window { input, .. }
         | RelOp::Unary { input, .. }

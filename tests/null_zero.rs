@@ -79,7 +79,6 @@ fn scalar_null_zero_and_remainder_preserve_types_and_checked_errors() {
                 "SELECT CAST(1 AS REAL)/0",
                 "SELECT 1/CAST('-0' AS REAL)",
                 "SELECT CAST(1 AS REAL)%0",
-                "SELECT 1%CAST('0.9' AS REAL)",
             ] {
                 all_null(&query(&mut session, sql), 0, 1, DataType::Float64);
             }
@@ -100,12 +99,15 @@ fn scalar_null_zero_and_remainder_preserve_types_and_checked_errors() {
                     "{sql}"
                 );
             }
+            // REAL remainder is fmod, as DuckDB 1.5.6 (maintainer decision,
+            // October 17, 2026); formerly SQLite's truncating integer remainder.
             for (sql, expected) in [
-                ("SELECT CAST('7.9' AS REAL)%3", 1.0),
-                ("SELECT -7%CAST('3.9' AS REAL)", -1.0),
-                ("SELECT CAST('1e100' AS REAL)%2", 1.0),
-                ("SELECT CAST('-1e100' AS REAL)%3", -2.0),
-                ("SELECT 9007199254740993%CAST(2 AS REAL)", 1.0),
+                ("SELECT 1%CAST('0.9' AS REAL)", 0.09999999999999998),
+                ("SELECT CAST('7.9' AS REAL)%3", 1.9000000000000004),
+                ("SELECT -7%CAST('3.9' AS REAL)", -3.1),
+                ("SELECT CAST('1e100' AS REAL)%2", 0.0),
+                ("SELECT CAST('-1e100' AS REAL)%3", -1.0),
+                ("SELECT 9007199254740993%CAST(2 AS REAL)", 0.0),
             ] {
                 let batch = query(&mut session, sql);
                 assert_eq!(
@@ -119,11 +121,21 @@ fn scalar_null_zero_and_remainder_preserve_types_and_checked_errors() {
                     "{sql}"
                 );
             }
+            // Exact DECIMAL remainder (October 17, 2026; formerly refused).
+            let batch = query(&mut session, "SELECT 7.0%3, -7.5%2");
+            for (column, expected) in [(0, 10), (1, -15)] {
+                let array = batch
+                    .column(column)
+                    .as_any()
+                    .downcast_ref::<arrow::array::Decimal128Array>()
+                    .unwrap();
+                assert_eq!((array.value(0), array.scale()), (expected, 1));
+            }
             for (sql, expected) in [
                 ("SELECT -9223372036854775808/-1", "BIGINT overflow"),
+                ("SELECT 7.0%0", "division by zero"),
                 ("SELECT 7.0/0", "division by zero"),
                 ("SELECT 7/CAST('0' AS DECIMAL(10,0))", "division by zero"),
-                ("SELECT 7.0%3", "exact DECIMAL remainder"),
                 ("SELECT '7'%3", "remainder requires"),
                 ("SELECT CASE WHEN TRUE THEN NULL ELSE missing END", "column"),
             ] {

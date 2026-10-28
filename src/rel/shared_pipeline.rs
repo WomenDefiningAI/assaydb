@@ -8,6 +8,7 @@ fn target(node: &Node) -> Option<(usize, &Node, &Node)> {
             id,
             input,
             shared_scan: true,
+            ..
         } if matches!(input.op, RelOp::Scan { .. }) => Some((*id, input, node)),
         _ => None,
     }

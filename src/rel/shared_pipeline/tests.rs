@@ -390,6 +390,7 @@ fn reference_transform_declines_candidate_and_baseline_filters_cached_rows() {
             id: 7,
             input: Box::new(source),
             shared_scan: true,
+            forced: false,
         },
     };
     let mut ctx = Context {
@@ -406,6 +407,7 @@ fn reference_transform_declines_candidate_and_baseline_filters_cached_rows() {
         lane_transforms: HashMap::new(),
         replay_transforms: HashMap::new(),
         materialized: HashMap::from([(7, storage.clone())]),
+        recursive_bindings: None,
         sideways_registry_lease: None,
         spill: None,
         budget: budget.clone(),

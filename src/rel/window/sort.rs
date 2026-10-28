@@ -115,7 +115,8 @@ impl Sorter {
                     .and_then(|n| n.checked_add(4096))
                     .ok_or("window sort size overflow")?;
                 let _workspace = budget.reserve(work)?;
-                let batch = concat_batches(&schema, &batches).map_err(|e| e.to_string())?;
+                let batch = concat_batches(&schema, &batches)
+                    .map_err(|e| crate::Error::from(e.to_string()))?;
                 let columns = order
                     .iter()
                     .map(|key| SortColumn {
@@ -126,7 +127,7 @@ impl Sorter {
                         }),
                     })
                     .collect();
-                let indices = crate::external_sort::sort_indices(columns, rows)?;
+                let indices = crate::external_sort::sort_indices(columns, rows, &budget)?;
                 drop(batches);
                 drop(leases);
                 for offset in (0..rows).step_by(batch_rows) {
@@ -135,9 +136,15 @@ impl Sorter {
                     let arrays = batch
                         .columns()
                         .iter()
-                        .map(|array| take(array, &selected, None).map_err(|e| e.to_string()))
+                        .map(|array| {
+                            take(array, &selected, None)
+                                .map_err(|e| crate::Error::from(e.to_string()))
+                        })
                         .collect::<Result<Vec<_>>>()?;
-                    emit(RecordBatch::try_new(schema.clone(), arrays).map_err(|e| e.to_string())?)?;
+                    emit(
+                        RecordBatch::try_new(schema.clone(), arrays)
+                            .map_err(|e| crate::Error::from(e.to_string()))?,
+                    )?;
                 }
                 Ok(SortMetrics {
                     seconds: start.elapsed().as_secs_f64(),

@@ -135,27 +135,38 @@ fn nested_roots_fund_the_decoded_physical_pages() {
     let page_bytes = group.column(2).byte_range().1 as usize;
     assert_eq!(page_bytes, group.column(2).compressed_size() as usize);
     assert!(page_bytes > 100 * group.column(1).compressed_size() as usize);
-    let expected =
-        16384 + 2 * page_bytes + 4 * group.column(2).uncompressed_size() as usize + 37 * 128;
+    let expected = page_bytes
+        + group.column(2).uncompressed_size() as usize
+        + 8192
+        + 2 * 37 * (16 + 12)
+        + 1024;
     let budget = Budget::new(expected);
     let funding = budget
-        .reserve(decoder_bytes(group, &key, 37).unwrap())
+        .reserve({
+            let estimate =
+                crate::parquet_scan::DecoderEstimate::reader(&metadata, &key, None, None, 37)
+                    .unwrap();
+            estimate.workspace + estimate.batch
+        })
         .unwrap();
     assert_eq!(budget.used(), expected);
     assert!(budget.used() >= page_bytes);
     // The helper sums every physical leaf, including multi-leaf roots.
     let all = ProjectionMask::roots(schema, [0, 1]);
-    let all_expected = 16384
-        + group
-            .columns()
-            .iter()
-            .map(|column| {
-                2 * column.compressed_size() as usize
-                    + 4 * column.uncompressed_size() as usize
-                    + 37 * 128
-            })
-            .sum::<usize>();
-    assert_eq!(decoder_bytes(group, &all, 37).unwrap(), all_expected);
+    let all_expected = group
+        .columns()
+        .iter()
+        .map(|column| {
+            column.compressed_size() as usize
+                + column.uncompressed_size() as usize
+                + 8192
+                + 2 * 37 * (16 + 12)
+                + 1024
+        })
+        .sum::<usize>();
+    let all_estimate =
+        crate::parquet_scan::DecoderEstimate::reader(&metadata, &all, None, None, 37).unwrap();
+    assert_eq!(all_estimate.workspace + all_estimate.batch, all_expected);
     drop(funding);
     assert_eq!(budget.used(), 0);
 }
@@ -185,7 +196,7 @@ fn live_leaf_cancellation_and_failure_release_all_reservations_and_permits() {
                         return Ok(());
                     }
                     assert!(lane.cursor.is_some());
-                    assert!(lane.decoder_funding.is_some());
+                    assert!(lane.cursor.as_ref().unwrap().decoder_funded());
                     assert!(lane.source.budget.used() > 0);
                     assert_eq!(lane.source.budget.active_workers(), workers - 1);
                     if aggregate {
@@ -212,7 +223,7 @@ fn live_leaf_cancellation_and_failure_release_all_reservations_and_permits() {
                     dense: budget.source_dense_allowance(DENSE_ALLOWANCE),
                     validate_bounds: false,
                     after_batch: Some(after_batch),
-                    _metadata_funding: budget.reserve(64 << 10).unwrap(),
+                    _metadata_funding: budget.reserve(64 << 10).unwrap().into(),
                     funding: Arc::new(budget.reserve(64 << 10).unwrap()),
                 });
                 drop(executor);
@@ -231,7 +242,6 @@ fn live_leaf_cancellation_and_failure_release_all_reservations_and_permits() {
                         rows: 0,
                         declined: false,
                         metrics: Metrics::default(),
-                        decoder_funding: None,
                     })
                     .collect();
                 drop(source);

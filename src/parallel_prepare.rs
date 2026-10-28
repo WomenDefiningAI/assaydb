@@ -68,7 +68,7 @@ mod tests {
         use std::{panic::AssertUnwindSafe, sync::Mutex};
         for workers in [2, 4] {
             for mode in 0..5 {
-                let budget = Budget::new(1 << 20);
+                let budget = Budget::new(16 << 20);
                 let release = Mutex::new(Some(budget.hold_helper_exits()));
                 let count = workers + 2;
                 let credit = budget.reserve(count * 8192).unwrap();
@@ -93,7 +93,7 @@ mod tests {
                         }
                         cancel.check()?;
                         if mode == 1 && (index == 0 || index == 1) {
-                            return Err(format!("failure {index}"));
+                            return Err(format!("failure {index}").into());
                         }
                         if mode == 2 && index == 1 {
                             panic!("helper panic");
@@ -129,7 +129,7 @@ mod tests {
     #[test]
     fn ordered_errors_and_cancellation_join_every_task_and_release_permits() {
         for workers in [1, 2, 4, 10] {
-            let budget = Budget::new(1 << 20);
+            let budget = Budget::new(16 << 20);
             let completed = AtomicUsize::new(0);
             let credit = budget.reserve(8192 * 10).unwrap();
             let error = map(10, workers, &budget, |index| -> Result<usize> {

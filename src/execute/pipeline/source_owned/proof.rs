@@ -325,11 +325,11 @@ pub(super) fn prove(
     }))
 }
 fn submit(runtime: &mut Runtime<SourceJob>, producer: ProofProducer) -> Result<JobId> {
-    runtime
+    Ok(runtime
         .try_submit(JobKind::Morsel, move |cancel| {
             producer.step(cancel).map(SourceJob::Proof)
         })
-        .map_err(|rejected| rejected.reason.to_owned())
+        .map_err(|rejected| rejected.reason.to_owned())?)
 }
 #[cfg(test)]
 mod tests;

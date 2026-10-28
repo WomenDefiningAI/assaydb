@@ -1,10 +1,13 @@
-//! Explicitly approved temporary refusal; no SQLite affinity emulation.
+//! Mixed Int/Float IN subqueries: the former explicit refusal is replaced by
+//! DOUBLE comparison (Helen, October 15: promote like DuckDB 1.5.6). No SQLite
+//! affinity emulation. Old refusal assertions now check DuckDB answers.
+#[path = "support/promoted_reference.rs"]
+mod promoted_reference;
 use arrow::array::BooleanArray;
 use assaydb::{
     execute::Options,
     session::{Limits, Output, Session},
 };
-const ERROR: &str = "mixed Int/Float IN subquery comparison";
 fn session(workers: usize, optimized: bool) -> Session {
     Session::new(
         &std::env::temp_dir(),
@@ -18,22 +21,25 @@ fn session(workers: usize, optimized: bool) -> Session {
     )
     .unwrap()
 }
-fn refused(s: &mut Session, sql: &str) {
-    let error = s
-        .execute_sql(sql)
-        .err()
-        .expect("must refuse before execution");
-    assert_eq!(error.kind, "unsupported", "{sql}: {error}");
-    assert!(error.message.contains(ERROR), "{sql}: {error}");
-}
 #[test]
-fn both_orders_and_contexts_refuse_even_empty_or_all_null_inputs() {
+fn both_orders_and_contexts_match_duckdb_even_empty_or_all_null_inputs() {
     for workers in [1, 10] {
         for optimized in [false, true] {
             let mut s = session(workers, optimized);
             s.execute_sql("CREATE TABLE ints(n INTEGER)").unwrap();
             s.execute_sql("CREATE TABLE reals(x REAL)").unwrap();
             for populated in [false, true] {
+                let group = promoted_reference::group(if populated {
+                    "in_matrix_populated"
+                } else {
+                    "in_matrix_empty"
+                });
+                let context =
+                    format!("workers={workers} optimized={optimized} populated={populated}");
+                // Old: every form below was refused. New: DuckDB's answer.
+                let refused = |s: &mut Session, sql: &str| {
+                    promoted_reference::check(s, &group, sql, &context)
+                };
                 if populated {
                     s.execute_sql("INSERT INTO ints VALUES(1),(9007199254740993),(NULL)")
                         .unwrap();
@@ -82,16 +88,37 @@ fn both_orders_and_contexts_refuse_even_empty_or_all_null_inputs() {
     }
 }
 #[test]
-fn original_eight_oracle_disagreements_remain_identical_sql_and_are_refused() {
+fn original_eight_oracle_disagreements_remain_identical_sql_and_membership_matches_duckdb() {
     let fixture: serde_json::Value =
         serde_json::from_str(include_str!("fixtures/mixed-in-original-wrong.json")).unwrap();
     assert_eq!(fixture["record_count"], 8);
+    let group = promoted_reference::group("in_original8");
     for workers in [1, 10] {
         for optimized in [false, true] {
             let mut s = session(workers, optimized);
-            for record in fixture["records"].as_array().unwrap() {
+            for (record, reference) in fixture["records"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .zip(group["entries"].as_array().unwrap())
+            {
                 assert_eq!(record["original_outcome"]["status"], "wrong-answer");
-                refused(&mut s, record["sql"].as_str().unwrap());
+                let sql = record["sql"].as_str().unwrap();
+                assert_eq!(reference["sql"], sql);
+                // Old: refused. New: the IN/NOT IN subquery columns (7, 8)
+                // compare in DOUBLE and equal DuckDB 1.5.6. Direct, IN-list and
+                // NULLIF columns keep the exact Int/Float relation, as before.
+                let Output::Query { execution, .. } = s.execute_sql(sql).unwrap() else {
+                    panic!("query")
+                };
+                let actual = promoted_reference::cells(&execution.batch);
+                let expected = &reference["rows"][0];
+                for column in [7, 8] {
+                    assert_eq!(
+                        actual[0][column], expected[column],
+                        "{sql}: column {column}"
+                    );
+                }
             }
         }
     }

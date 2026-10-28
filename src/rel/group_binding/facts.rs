@@ -413,7 +413,36 @@ fn visit(e: &mut Expr, left: &mut usize, narrow_columns: &[bool]) -> Fact {
                 }
             }
         }
-        Kind::Cast(a) | Kind::CastDecimal(a, _, _) => {
+        // Explicit dialect casts have width, syntax and disagreement checks.
+        // Even an Int-to-Int cast can fail before the result boundary.
+        Kind::DialectCast(a, target) => {
+            use crate::expr::cast_dialect::Target;
+            let fact = visit(a, left, narrow_columns);
+            if !fact.total {
+                Fact::unknown()
+            } else if fact.is_null() {
+                Fact::null()
+            } else if matches!(target, Target::Integer | Target::BigInt) {
+                // Both spellings check the signed 64-bit range.
+                if a.ty == Type::Int
+                    && fact.range.is_some_and(|(lo, hi)| {
+                        lo >= i128::from(i64::MIN) && hi <= i128::from(i64::MAX)
+                    })
+                {
+                    fact
+                } else {
+                    Fact::unknown()
+                }
+            } else if *target == Target::Float && a.ty == Type::Int {
+                Fact {
+                    float_exponent: float_bound(fact, &a.ty),
+                    ..Fact::total()
+                }
+            } else {
+                Fact::unknown()
+            }
+        }
+        Kind::Cast(a) | Kind::CastVarchar(a, _) | Kind::CastDecimal(a, _, _) => {
             let fact = visit(a, left, narrow_columns);
             if !fact.total {
                 Fact::unknown()

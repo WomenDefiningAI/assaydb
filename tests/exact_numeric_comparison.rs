@@ -1,4 +1,6 @@
 //! Approved mathematical Int/Float comparisons; DECIMAL remains its own contract.
+#[path = "support/promoted_reference.rs"]
+mod promoted_reference;
 use arrow::array::{ArrayRef, BooleanArray, Decimal128Array, Float64Array};
 use assaydb::{
     execute::{Options, execute, prepare},
@@ -35,22 +37,31 @@ fn check(batch: &arrow::record_batch::RecordBatch, values: &[Option<bool>]) {
         );
     }
 }
-const MIXED_IN: &str = "mixed Int/Float IN subquery comparison";
-fn refused(sql: &str, options: &Options, session: &mut Session) {
-    let error = prepare(sql, &HashMap::new(), options)
-        .err()
-        .expect("mixed IN must not bind");
-    assert!(error.contains(MIXED_IN), "{sql}: {error}");
-    let error = session
-        .execute_sql(sql)
-        .err()
-        .expect("mixed IN must not execute");
-    assert_eq!(error.kind, "unsupported", "{sql}: {error}");
-    assert!(error.message.contains(MIXED_IN), "{sql}: {error}");
+/// Old: mixed Int/Float IN subqueries were refused. New (Helen, October 15):
+/// they compare in DOUBLE like DuckDB 1.5.6; answers are the migrated DuckDB
+/// references, checked through both the public API and the session.
+fn membership(sql: &str, options: &Options, session: &mut Session, group: &serde_json::Value) {
+    let expected = group["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["sql"] == sql)
+        .unwrap_or_else(|| panic!("no reference for {sql}"));
+    let rows = expected["rows"].as_array().unwrap();
+    assert_eq!(rows.len(), 1, "{sql}");
+    let values = rows[0]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|cell| cell["bool"].as_bool())
+        .collect::<Vec<_>>();
+    check(&query(sql, options), &values);
+    promoted_reference::check(session, group, sql, "session");
 }
 
 #[test]
 fn public_comparison_and_membership_matrix() {
+    let group = promoted_reference::group("exact_membership");
     for workers in [1, 10] {
         for relational_optimizations in [false, true] {
             let options = Options {
@@ -77,9 +88,30 @@ fn public_comparison_and_membership_matrix() {
                     let sql = format!(
                         "SELECT {projection},({left}) IN ({right}),({left}) IN (SELECT {right}),({left}) NOT IN (SELECT {right}),NULLIF({left},{right}) IS NULL"
                     );
-                    // Keep every original 46-query oracle SQL record as an
-                    // explicit refusal. Direct/list/NULLIF controls are additive.
-                    refused(&sql, &options, &mut session);
+                    // Every original 46-query oracle SQL record now executes:
+                    // direct/list/NULLIF columns keep the exact relation, while
+                    // the IN/NOT IN subquery columns use DOUBLE (DuckDB answer).
+                    let subquery = format!(
+                        "SELECT ({left}) IN (SELECT {right}),({left}) NOT IN (SELECT {right})"
+                    );
+                    let reference = &group["entries"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .find(|entry| entry["sql"] == subquery.as_str())
+                        .unwrap()["rows"][0];
+                    let values = expected(order)
+                        .into_iter()
+                        .chain([order == 0])
+                        .map(Some)
+                        .chain([
+                            reference[0]["bool"].as_bool(),
+                            reference[1]["bool"].as_bool(),
+                        ])
+                        .chain([Some(order == 0)])
+                        .collect::<Vec<_>>();
+                    check(&query(&sql, &options), &values);
+                    membership(&subquery, &options, &mut session, &group);
                     let sql = format!(
                         "SELECT {projection},({left}) IN ({right}),({left}) NOT IN ({right}),NULLIF({left},{right}) IS NULL"
                     );
@@ -106,7 +138,7 @@ fn public_comparison_and_membership_matrix() {
                 "SELECT CAST('9007199254740992' AS REAL) NOT IN(SELECT 9007199254740993 UNION ALL SELECT NULL)",
                 "SELECT 9007199254740993 IN(SELECT CAST('9007199254740992' AS REAL) WHERE FALSE),NULL IN(SELECT CAST('1' AS REAL) WHERE FALSE)",
             ] {
-                refused(sql, &options, &mut session);
+                membership(sql, &options, &mut session, &group);
             }
             check(
                 &query(
@@ -173,13 +205,14 @@ fn table_filter_join_and_membership_preserve_original_rows() {
             ] {
                 s.execute_sql(sql).unwrap();
             }
+            // Old: refused. New: DOUBLE membership; both 2^53 and 2^53+1 match
+            // the rounded REAL keys, so neither count is 1 (DuckDB answers).
+            let group = promoted_reference::group("exact_tables");
             for sql in [
                 "SELECT COUNT(*)=1 FROM l WHERE n IN(SELECT x FROM r)",
                 "SELECT COUNT(*)=1 FROM l WHERE n NOT IN(SELECT x FROM r WHERE x IS NOT NULL)",
             ] {
-                let error = s.execute_sql(sql).err().expect("mixed IN refusal");
-                assert_eq!(error.kind, "unsupported");
-                assert!(error.message.contains(MIXED_IN), "{sql}: {error}");
+                promoted_reference::check(&mut s, &group, sql, "table membership");
             }
             for sql in [
                 "SELECT COUNT(*)=1 FROM l WHERE n=CAST('9007199254740992' AS REAL)",

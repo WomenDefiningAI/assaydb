@@ -128,8 +128,11 @@ fn dynamic_scan_sql_matrix_preserves_nulls_duplicates_coercions_order_and_errors
                 }
             }
         }
-        // FLOAT aggregate inputs are currently refused by the binder. Scheduling
-        // must neither widen that semantic domain nor turn the refusal into output.
+        // FLOAT inputs now use canonical ordered addition. Even this adversarial
+        // cancellation fixture must be independent of scan scheduling/batching.
+        let sql = "SELECT k,SUM(f),AVG(f) FROM many GROUP BY k";
+        let prepared = prepare(sql, &tables.0, &base).unwrap();
+        let expected = execute(&prepared, &base).unwrap().batch;
         for workers in [1, 2, 4, 10] {
             for batch_size in [1, 7, 8192] {
                 let options = Options {
@@ -137,16 +140,9 @@ fn dynamic_scan_sql_matrix_preserves_nulls_duplicates_coercions_order_and_errors
                     batch_size,
                     ..base.clone()
                 };
-                assert_eq!(
-                    prepare(
-                        "SELECT k,SUM(f),AVG(f) FROM many GROUP BY k",
-                        &tables.0,
-                        &options
-                    )
-                    .err()
-                    .as_deref(),
-                    Some("expected numeric type, got Float")
-                );
+                let actual = execute(&prepared, &options).unwrap();
+                assert_eq!(actual.batch, expected);
+                assert_eq!(actual.metrics.pipeline_producers, 0);
             }
         }
         let prepared = prepare("SELECT id FROM many WHERE k < 3", &tables.0, &base).unwrap();

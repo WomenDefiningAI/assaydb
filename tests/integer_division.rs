@@ -19,7 +19,7 @@ fn ints(batch: &RecordBatch, column: usize) -> Vec<Option<i64>> {
         .iter()
         .collect()
 }
-fn scalar_contract(run: &mut impl FnMut(&str) -> Result<RecordBatch, String>) {
+fn scalar_contract(run: &mut impl FnMut(&str) -> Result<RecordBatch, assaydb::Error>) {
     // Original pilot SQL, unchanged: expr:29836 and expr:3684.
     for (sql, expected) in [
         ("SELECT 12 / + 16 + - 6", -6),
@@ -73,7 +73,7 @@ fn scalar_contract(run: &mut impl FnMut(&str) -> Result<RecordBatch, String>) {
     }
 }
 
-fn column_contract(run: &mut impl FnMut(&str) -> Result<RecordBatch, String>) {
+fn column_contract(run: &mut impl FnMut(&str) -> Result<RecordBatch, assaydb::Error>) {
     let expected = vec![
         Some(2),
         Some(-2),
@@ -241,7 +241,7 @@ fn native_session_integer_division_and_atomic_update() {
                 let mut run =
                     |sql: &str| match session.execute_sql(sql).map_err(|error| error.message)? {
                         Output::Query { execution, .. } => Ok(execution.batch.clone()),
-                        _ => Err("expected query".to_owned()),
+                        _ => Err("expected query".into()),
                     };
                 scalar_contract(&mut run);
                 column_contract(&mut run);

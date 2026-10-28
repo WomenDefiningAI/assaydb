@@ -82,6 +82,17 @@ rounding, not a claim of strictly correctly rounded IEEE conversion. Boundary
 oracle fixtures retain the exact results. Text/numeric coercion is not generally
 implicit outside these supported casts.
 
+The October 21 compatibility repair restores these existing public conversions
+after a candidate incorrectly routed INTEGER/INT and REAL through strict dialect
+casts. INTEGER/INT text conversions consume the signed integer prefix (zero when
+there is no prefix); REAL text conversions use the pinned SQLite parser. Numeric
+INTEGER/INT conversions truncate toward zero and saturate at signed 64-bit limits;
+INTEGER-to-INTEGER remains identity for exact intermediate values. NULLs and the
+previous nonfinite refusal boundaries remain unchanged. BIGINT and DOUBLE/FLOAT8
+keep their separate dialect contracts. Arithmetic overflow checks are unaffected.
+This restores the stated contract; it does not authorize changed expected answers
+or establish independent qualification of the repaired candidate.
+
 ## Conditionals and exact comparison
 
 CASE/COALESCE select lazily after ordinary name/type binding. NULLIF returns its

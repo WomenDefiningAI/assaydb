@@ -16,7 +16,7 @@ use arrow::{
 };
 use parquet::arrow::{
     ProjectionMask,
-    arrow_reader::{ArrowPredicateFn, ParquetRecordBatchReaderBuilder, RowFilter},
+    arrow_reader::{ArrowPredicateFn, RowFilter},
 };
 use serde::Serialize;
 use sqlparser::{
@@ -24,34 +24,46 @@ use sqlparser::{
     dialect::GenericDialect,
     tokenizer::{Token, Tokenizer},
 };
+mod aggregate_modifiers;
 mod aggregate_reuse;
 mod branch_facts;
 mod build_groups;
 mod column_projection;
 mod correlated;
 mod demand_filter;
+mod derived_aliases;
+mod distinct_on;
 mod empty_in;
 mod filtered_reuse;
 mod funded_concat;
 mod group_binding;
+mod group_by_all;
 mod having_output;
 mod in_subquery;
+mod integer_series;
 mod lane_fusion;
 mod left_count;
 mod membership_safety;
 mod numeric_leaf;
 mod ordered_batches;
+mod outer_join;
 mod paired_existence;
 #[cfg(test)]
 mod planner_safety_tests;
 mod probe;
+mod recursive;
 mod replay;
 mod reverse_lanes;
 mod runtime_filter;
+mod scalar_existence;
+mod select_modifiers;
+mod series;
 mod set_ops;
 mod shared_pipeline;
 mod shared_retry;
 mod sideways;
+mod subplan_reuse;
+mod values;
 mod window;
 
 use std::{
@@ -62,6 +74,12 @@ use std::{
     time::Instant,
 };
 
+pub(crate) fn using_hidden(field: &Field) -> bool {
+    outer_join::hidden(field)
+}
+pub(crate) fn using_star_conflict(field: &Field) -> bool {
+    field.metadata().contains_key(outer_join::STAR_CONFLICT)
+}
 #[derive(Debug, Clone, Serialize)]
 pub struct Node {
     #[serde(serialize_with = "serialize_schema")]
@@ -83,6 +101,20 @@ pub enum CorrelatedMarker {
 }
 #[derive(Debug, Clone, Serialize)]
 pub enum RelOp {
+    Generate {
+        specification: Box<series::Specification>,
+    },
+    RecursiveCte {
+        id: usize,
+        anchor: Box<Node>,
+        step: Box<Node>,
+        distinct: bool,
+        accumulate: bool,
+    },
+    RecursiveScan {
+        id: usize,
+        accumulated: bool,
+    },
     Scan {
         path: PathBuf,
         columns: Vec<usize>,
@@ -95,6 +127,7 @@ pub enum RelOp {
         id: usize,
         input: Box<Node>,
         shared_scan: bool,
+        forced: bool,
     },
     UnionAll {
         left: Box<Node>,
@@ -132,7 +165,8 @@ pub enum RelOp {
     },
     Window {
         input: Box<Node>,
-        specification: window::Specification,
+        // Boxed: the specification is the enum's largest payload.
+        specification: Box<window::Specification>,
     },
     Filter {
         predicate: Expr,
@@ -147,6 +181,7 @@ pub enum RelOp {
     },
     Limit {
         count: usize,
+        offset: usize,
         input: Box<Node>,
     },
     Join {
@@ -279,10 +314,11 @@ pub(crate) fn prepare_with_local_files(
     views: &HashMap<String, &ViewDefinition>,
     local_reader: Option<&LocalReader<'_>>,
 ) -> Result<Prepared> {
+    let _statement = crate::zone::enter(options.time_zone, options.fixed_clock);
     let q = bind::parse(sql)?;
     let words = Tokenizer::new(&GenericDialect {}, sql)
         .tokenize()
-        .map_err(|e| e.to_string())?
+        .map_err(|e| crate::Error::from(e.to_string()))?
         .into_iter()
         .filter_map(|t| match t {
             Token::Word(w) => Some(w.value.to_lowercase()),
@@ -294,6 +330,7 @@ pub(crate) fn prepare_with_local_files(
         options,
         words,
         serial: 0,
+        set_operand: false,
         views,
         local_reader,
         active_views: Vec::new(),
@@ -306,6 +343,7 @@ pub(crate) fn prepare_with_local_files(
     if options.relational_optimizations {
         root = crate::cte::share_scans(root, options.memory_bytes)?;
     }
+    series::apply_final_caps(&mut root);
     let plan = identity(&root.schema)?;
     crate::mixed_numeric::validate_node(&root)?;
     Ok(Prepared {
@@ -325,6 +363,8 @@ struct Planner<'a> {
     options: &'a Options,
     words: HashSet<String>,
     serial: usize,
+    /// The next `query` call plans a set-operation operand.
+    set_operand: bool,
 }
 impl Planner<'_> {
     fn fresh(&mut self) -> String {
@@ -337,10 +377,12 @@ impl Planner<'_> {
         }
     }
     fn scan_path(&self, path: PathBuf, preserve_columns: bool) -> Result<Node> {
-        let builder =
-            ParquetRecordBatchReaderBuilder::try_new(File::open(&path).map_err(|e| e.to_string())?)
-                .map_err(|e| e.to_string())?;
-        let full = Type::external_schema(builder.schema());
+        let planning_budget = Budget::new(self.options.memory_bytes);
+        let (builder, _metadata_lease) = crate::parquet_scan::accounted_metadata(
+            &File::open(&path).map_err(|e| crate::Error::from(e.to_string()))?,
+            &planning_budget,
+        )?;
+        let full = Type::input_schema(builder.schema());
         let mut columns = full
             .fields()
             .iter()
@@ -377,7 +419,9 @@ impl Planner<'_> {
                         let mut high = i128::MIN;
                         for group in builder.metadata().row_groups() {
                             use parquet::file::statistics::Statistics;
-                            let range = match group.column(*i).statistics() {
+                            let range = match group.column(*i).statistics().filter(|_| {
+                                crate::cardinality::signed_integer_statistics(group.column(*i))
+                            }) {
                                 Some(Statistics::Int32(s)) => s
                                     .min_opt()
                                     .zip(s.max_opt())
@@ -424,7 +468,35 @@ impl Planner<'_> {
             }
             return self.table_with_joins(table_with_joins, ctes, preserve_columns);
         }
+        let derived = matches!(t, s::TableFactor::Derived { .. });
         let (mut node, alias, base) = match t {
+            s::TableFactor::Table {
+                name,
+                alias,
+                args: Some(args),
+                with_hints,
+                version: None,
+                partitions,
+                with_ordinality,
+                json_path: None,
+                sample: None,
+                index_hints,
+            } if name.0.len() == 1
+                && with_hints.is_empty()
+                && partitions.is_empty()
+                && index_hints.is_empty()
+                && matches!(
+                    name.to_string().to_ascii_lowercase().as_str(),
+                    "range" | "generate_series"
+                ) =>
+            {
+                let function = name.to_string().to_ascii_lowercase();
+                (
+                    series::bind(&function, args, *with_ordinality, alias.as_ref())?,
+                    alias,
+                    Some(function),
+                )
+            }
             s::TableFactor::Table {
                 name,
                 alias,
@@ -437,13 +509,37 @@ impl Planner<'_> {
                 sample: None,
                 index_hints,
             } if with_hints.is_empty() && partitions.is_empty() && index_hints.is_empty() => {
-                let name = name.to_string().to_lowercase();
+                // CTE identity uses decoded single identifiers, including
+                // quoted names. Keep existing catalog qualification otherwise.
+                let recurring_key = if name.0.len() == 2
+                    && name.0[0]
+                        .as_ident()
+                        .is_some_and(|i| i.value.eq_ignore_ascii_case("recurring"))
+                {
+                    name.0[1]
+                        .as_ident()
+                        .map(|i| recursive::planner::recurring_key(&i.value))
+                        .filter(|key| ctes.contains_key(key))
+                } else {
+                    None
+                };
+                let decoded_cte = if let Some(key) = recurring_key {
+                    Some(key)
+                } else if name.0.len() == 1 {
+                    name.0[0]
+                        .as_ident()
+                        .map(|ident| ident.value.to_lowercase())
+                        .filter(|key| ctes.contains_key(key))
+                } else {
+                    None
+                };
+                let name = decoded_cte.unwrap_or_else(|| name.to_string().to_lowercase());
                 let node = if let Some(n) = ctes.get(&name) {
                     n.clone()
                 } else if let Some(view) = self.views.get(&name).copied() {
                     self.options.cancellation.check()?;
                     if self.active_views.contains(&name) {
-                        return Err(format!("semantic: circular view: {name}"));
+                        return Err(format!("semantic: circular view: {name}").into());
                     }
                     self.expanded_views += 1;
                     if self.active_views.len() >= 64 || self.expanded_views > 256 {
@@ -452,7 +548,7 @@ impl Planner<'_> {
                     // A view's own filter/projection columns must survive scan pruning.
                     let tokens = Tokenizer::new(&GenericDialect {}, &view.query.to_string())
                         .tokenize()
-                        .map_err(|e| e.to_string())?;
+                        .map_err(|e| crate::Error::from(e.to_string()))?;
                     self.words
                         .extend(tokens.into_iter().filter_map(|token| match token {
                             Token::Word(word) => Some(word.value.to_lowercase()),
@@ -491,7 +587,11 @@ impl Planner<'_> {
                         .clone();
                     self.scan_path(path, preserve_columns)?
                 };
-                (node, alias, Some(name))
+                let base = name
+                    .strip_prefix("\0recurring:")
+                    .unwrap_or(&name)
+                    .to_owned();
+                (node, alias, Some(base))
             }
             s::TableFactor::Table {
                 name,
@@ -540,7 +640,15 @@ impl Planner<'_> {
                 subquery,
                 alias,
             } => (self.query(*subquery.clone(), ctes)?, alias, None),
-            _ => return Err(format!("unsupported: table factor {t}")),
+            _ => return Err(format!("unsupported: table factor {t}").into()),
+        };
+        let renamed = if derived {
+            let (prepared, renamed) =
+                derived_aliases::apply(node, alias.as_ref().map_or(&[], |a| a.columns.as_slice()))?;
+            node = prepared;
+            renamed
+        } else {
+            false
         };
         // Relational schemas currently encode qualifiers in field-name strings.
         // Do not silently strip a legitimate dotted output/column alias when
@@ -554,7 +662,8 @@ impl Planner<'_> {
             return Err("unsupported: relational wildcard over dotted input names".into());
         }
         let qualifier = alias.as_ref().map(|a| a.name.value.to_lowercase()).or(base);
-        if let Some(alias) = alias
+        if !renamed
+            && let Some(alias) = alias
             && !alias.columns.is_empty()
             && alias.columns.len() != node.schema.fields().len()
         {
@@ -568,6 +677,7 @@ impl Planner<'_> {
             .map(|(i, f)| {
                 let name = alias
                     .as_ref()
+                    .filter(|_| !renamed)
                     .and_then(|a| a.columns.get(i))
                     .map(|c| c.name.value.clone())
                     .unwrap_or_else(|| f.name().rsplit('.').next().unwrap().into());
@@ -578,7 +688,10 @@ impl Planner<'_> {
                 })
             })
             .collect::<Vec<_>>();
-        let schema = Arc::new(Schema::new(fields));
+        let schema = Arc::new(Schema::new_with_metadata(
+            fields,
+            node.schema.metadata().clone(),
+        ));
         if schema != node.schema {
             node = Node {
                 schema,
@@ -590,33 +703,157 @@ impl Planner<'_> {
         }
         Ok(node)
     }
+    /// Guarded AND across inner joins: `a JOIN b ON x WHERE y` is the
+    /// conjunction `x AND y` over a and b. When an ON conjunct may fail and
+    /// other conjuncts exist (WHERE or another ON), the chain is planned as a
+    /// comma join with its ON conjuncts added to WHERE, so those conjuncts
+    /// guard it exactly as in a single WHERE (DuckDB and PostgreSQL pool inner
+    /// join conditions the same way). All-total chains keep their plan.
+    fn inner_join_chain(
+        &mut self,
+        item: &s::TableWithJoins,
+        ctes: &HashMap<String, Node>,
+        preserve_columns: bool,
+        others: bool,
+    ) -> Result<InnerChain> {
+        if item.joins.is_empty()
+            || !item.joins.iter().all(|join| {
+                matches!(
+                    &join.join_operator,
+                    s::JoinOperator::Join(s::JoinConstraint::On(_))
+                        | s::JoinOperator::Inner(s::JoinConstraint::On(_))
+                        | s::JoinOperator::CrossJoin
+                )
+            })
+        {
+            return Ok(InnerChain::Other);
+        }
+        let mut nodes = vec![self.relation(&item.relation, ctes, preserve_columns)?];
+        let mut conditions = Vec::new();
+        let mut fallible = false;
+        let mut bindable = true;
+        for join in &item.joins {
+            nodes.push(self.relation(&join.relation, ctes, preserve_columns)?);
+            let on = match &join.join_operator {
+                s::JoinOperator::Join(s::JoinConstraint::On(e))
+                | s::JoinOperator::Inner(s::JoinConstraint::On(e)) => syntax::conjuncts(e.clone()),
+                _ => Vec::new(),
+            };
+            let mut scope = nodes[0].clone();
+            for right in &nodes[1..] {
+                scope = Node {
+                    schema: combined(&scope.schema, &right.schema),
+                    estimated_rows: 0,
+                    op: RelOp::Join {
+                        left: Box::new(scope),
+                        right: Box::new(right.clone()),
+                        kind: JoinKind::Inner,
+                        keys: Vec::new(),
+                        residual: None,
+                    },
+                };
+            }
+            for p in &on {
+                match bind_node_expression(&scope, p) {
+                    Ok(e) => fallible |= can_fail(&e, &scope),
+                    Err(_) => bindable = false,
+                }
+            }
+            conditions.push(on);
+        }
+        if bindable && fallible && (others || item.joins.len() > 1) {
+            return Ok(InnerChain::Flattened(
+                nodes,
+                conditions.into_iter().flatten().collect(),
+            ));
+        }
+        // The same joins table_with_joins builds for INNER/CROSS.
+        let mut nodes = nodes.into_iter();
+        let mut node = nodes.next().unwrap();
+        for (right, on) in nodes.zip(conditions) {
+            node = self.join(node, right, JoinKind::Inner, on)?;
+        }
+        Ok(InnerChain::Joined(Box::new(node)))
+    }
     fn table_with_joins(
         &mut self,
         item: &s::TableWithJoins,
         ctes: &HashMap<String, Node>,
         preserve_columns: bool,
     ) -> Result<Node> {
+        use outer_join::{Outer, Using};
+        // NATURAL selects columns the SQL text never names: keep every scan
+        // column of this FROM item so pruning cannot hide a common column.
+        let preserve_columns = preserve_columns
+            || item.joins.iter().any(|join| {
+                join_constraint(&join.join_operator)
+                    .is_some_and(|c| matches!(c, s::JoinConstraint::Natural))
+            });
         let mut node = self.relation(&item.relation, ctes, preserve_columns)?;
         for join in &item.joins {
             let right = self.relation(&join.relation, ctes, preserve_columns)?;
+            enum Kind {
+                Plain(JoinKind),
+                Outer(Outer),
+            }
             let (kind, constraint) = match &join.join_operator {
-                s::JoinOperator::Join(c) | s::JoinOperator::Inner(c) => (JoinKind::Inner, c),
-                s::JoinOperator::Left(c) | s::JoinOperator::LeftOuter(c) => (JoinKind::Left, c),
-                s::JoinOperator::LeftSemi(c) | s::JoinOperator::Semi(c) => (JoinKind::Semi, c),
-                s::JoinOperator::LeftAnti(c) | s::JoinOperator::Anti(c) => (JoinKind::Anti, c),
-                s::JoinOperator::CrossJoin => (JoinKind::Inner, &s::JoinConstraint::None),
+                s::JoinOperator::Join(c) | s::JoinOperator::Inner(c) => {
+                    (Kind::Outer(Outer::Inner), c)
+                }
+                s::JoinOperator::Left(c) | s::JoinOperator::LeftOuter(c) => {
+                    (Kind::Outer(Outer::Left), c)
+                }
+                s::JoinOperator::Right(c) | s::JoinOperator::RightOuter(c) => {
+                    (Kind::Outer(Outer::Right), c)
+                }
+                s::JoinOperator::FullOuter(c) => (Kind::Outer(Outer::Full), c),
+                s::JoinOperator::LeftSemi(c) | s::JoinOperator::Semi(c) => {
+                    (Kind::Plain(JoinKind::Semi), c)
+                }
+                s::JoinOperator::LeftAnti(c) | s::JoinOperator::Anti(c) => {
+                    (Kind::Plain(JoinKind::Anti), c)
+                }
+                s::JoinOperator::CrossJoin => {
+                    (Kind::Plain(JoinKind::Inner), &s::JoinConstraint::None)
+                }
                 _ => return Err("unsupported: join kind".into()),
             };
-            let on = match constraint {
-                s::JoinConstraint::On(e) => syntax::conjuncts(e.clone()),
-                s::JoinConstraint::None => Vec::new(),
-                _ => return Err("unsupported: join requires ON".into()),
+            node = match (kind, constraint) {
+                (Kind::Outer(kind), s::JoinConstraint::Using(columns)) => {
+                    self.using_join(node, right, kind, Using::Columns(columns))?
+                }
+                (Kind::Outer(kind), s::JoinConstraint::Natural) => {
+                    self.using_join(node, right, kind, Using::Natural)?
+                }
+                (Kind::Outer(Outer::Right | Outer::Full), s::JoinConstraint::None) => {
+                    return Err("unsupported: join requires ON".into());
+                }
+                (Kind::Outer(kind @ (Outer::Right | Outer::Full)), s::JoinConstraint::On(e)) => {
+                    self.outer_join(node, right, kind, syntax::conjuncts(e.clone()))?
+                }
+                (kind, constraint) => {
+                    let kind = match kind {
+                        Kind::Plain(kind) => kind,
+                        Kind::Outer(Outer::Inner) => JoinKind::Inner,
+                        Kind::Outer(Outer::Left) => JoinKind::Left,
+                        Kind::Outer(_) => unreachable!(),
+                    };
+                    let on = match constraint {
+                        s::JoinConstraint::On(e) => syntax::conjuncts(e.clone()),
+                        s::JoinConstraint::None => Vec::new(),
+                        _ => {
+                            return Err("unsupported: USING/NATURAL with SEMI or ANTI join".into());
+                        }
+                    };
+                    self.join(node, right, kind, on)?
+                }
             };
-            node = self.join(node, right, kind, on)?;
         }
         Ok(node)
     }
     fn query(&mut self, mut q: s::Query, parent_ctes: &HashMap<String, Node>) -> Result<Node> {
+        let _depth = crate::nesting::query_depth(std::mem::take(&mut self.set_operand))?;
+        select_modifiers::lower_fetch(&mut q, self.options)?;
         if q.fetch.is_some()
             || !q.locks.is_empty()
             || q.for_clause.is_some()
@@ -628,12 +865,18 @@ impl Planner<'_> {
         }
         let mut ctes = parent_ctes.clone();
         if let Some(with) = q.with.take() {
-            if with.recursive {
-                return Err("unsupported: recursive CTE".into());
-            }
+            let recursive = with.recursive;
             for c in with.cte_tables {
-                let mut node = self.query(*c.query, &ctes)?;
-                if self.options.relational_optimizations {
+                let name = c.alias.name.value.to_lowercase();
+                let forced = matches!(c.materialized, Some(s::CteAsMaterialized::Materialized));
+                let inline = matches!(c.materialized, Some(s::CteAsMaterialized::NotMaterialized));
+                let mut node = if recursive {
+                    self.recursive_cte(c, &ctes)?
+                } else {
+                    let node = self.query(*c.query, &ctes)?;
+                    crate::cte::column_aliases(node, &c.alias.columns)?
+                };
+                if forced || (self.options.relational_optimizations && !inline) {
                     self.serial += 1;
                     node = Node {
                         schema: node.schema.clone(),
@@ -642,14 +885,20 @@ impl Planner<'_> {
                             id: self.serial,
                             input: Box::new(node),
                             shared_scan: false,
+                            forced,
                         },
                     };
                 }
-                if !c.alias.columns.is_empty() {
-                    return Err("unsupported: CTE column aliases".into());
-                }
-                ctes.insert(c.alias.name.value.to_lowercase(), node);
+                ctes.insert(name, node);
             }
+        }
+        if let s::SetExpr::Query(inner) = q.body.as_ref() {
+            // A parenthesized query (e.g. a set-operation branch with its own
+            // ORDER BY/LIMIT). Outer modifiers apply to its completed result.
+            let order = q.order_by.take();
+            let limit = q.limit_clause.take();
+            let node = self.query(inner.as_ref().clone(), &ctes)?;
+            return set_ops::compound_modifiers(node, order, limit);
         }
         if let s::SetExpr::SetOperation {
             op,
@@ -658,12 +907,29 @@ impl Planner<'_> {
             right,
         } = q.body.as_ref()
         {
-            let union_all =
-                *op == s::SetOperator::Union && *set_quantifier == s::SetQuantifier::All;
+            let by_name = matches!(
+                set_quantifier,
+                s::SetQuantifier::ByName
+                    | s::SetQuantifier::AllByName
+                    | s::SetQuantifier::DistinctByName
+            );
+            if by_name && *op != s::SetOperator::Union {
+                return Err("unsupported: BY NAME requires UNION".into());
+            }
+            let all = matches!(
+                set_quantifier,
+                s::SetQuantifier::All | s::SetQuantifier::AllByName
+            );
+            let union_all = *op == s::SetOperator::Union && all;
+            let multiset = all && matches!(op, s::SetOperator::Intersect | s::SetOperator::Except);
             if !union_all
+                && !multiset
                 && (!matches!(
                     set_quantifier,
-                    s::SetQuantifier::None | s::SetQuantifier::Distinct
+                    s::SetQuantifier::None
+                        | s::SetQuantifier::Distinct
+                        | s::SetQuantifier::ByName
+                        | s::SetQuantifier::DistinctByName
                 ) || !matches!(
                     op,
                     s::SetOperator::Union
@@ -674,15 +940,22 @@ impl Planner<'_> {
             {
                 return Err("unsupported: set operation quantifier".into());
             }
-            if q.order_by.is_some() || q.limit_clause.is_some() || q.fetch.is_some() {
-                return Err("unsupported: UNION modifiers".into());
-            }
+            // ORDER BY/LIMIT/OFFSET apply to the whole compound result.
+            let order = q.order_by.take();
+            let limit = q.limit_clause.take();
             let mut a = q.clone();
             a.body = left.clone();
             let mut b = q.clone();
             b.body = right.clone();
+            self.set_operand = true;
             let left = self.query(a, &ctes)?;
+            self.set_operand = true;
             let right = self.query(b, &ctes)?;
+            let (left, right) = if by_name {
+                set_ops::align_by_name(left, right)?
+            } else {
+                (left, right)
+            };
             if left.schema.fields().len() != right.schema.fields().len() {
                 return Err("UNION column count mismatch".into());
             }
@@ -699,22 +972,36 @@ impl Planner<'_> {
                 .iter()
                 .map(|f| f.name().clone())
                 .collect::<Vec<_>>();
-            if !union_all {
-                return set_ops::distinct(left, right, *op, names, types);
-            }
-            return Ok(Node {
-                schema: schema(&names, &types),
-                estimated_rows: left.estimated_rows.saturating_add(right.estimated_rows),
-                op: RelOp::UnionAll {
-                    left: Box::new(left),
-                    right: Box::new(right),
-                },
-            });
+            let node = if multiset {
+                set_ops::multiset(left, right, *op, names, types)?
+            } else if !union_all {
+                set_ops::distinct(left, right, *op, names, types)?
+            } else {
+                Node {
+                    schema: schema(&names, &types),
+                    estimated_rows: left.estimated_rows.saturating_add(right.estimated_rows),
+                    op: RelOp::UnionAll {
+                        left: Box::new(left),
+                        right: Box::new(right),
+                    },
+                }
+            };
+            return set_ops::compound_modifiers(node, order, limit);
+        }
+        if let s::SetExpr::Values(values) = q.body.as_ref() {
+            let values = values.clone();
+            let order = q.order_by.take();
+            let limit = q.limit_clause.take();
+            let node = self.values(values, &ctes)?;
+            return set_ops::compound_modifiers(node, order, limit);
         }
         let s::SetExpr::Select(select) = q.body.as_mut() else {
             return Err("unsupported: set operations".into());
         };
-        window::validate_select(select)?;
+        // Preserve clause barriers before WHERE is taken. Projection-window
+        // capability checks follow ordinal resolution in select(), so a GROUP
+        // BY ordinal selecting any window is a semantic error first.
+        window::validate_clauses(select)?;
         let mut predicates = select
             .selection
             .take()
@@ -732,7 +1019,17 @@ impl Planner<'_> {
         let mut relations = Vec::new();
         let preserve_columns = bind::has_wildcards(&select.projection);
         for item in std::mem::take(&mut select.from) {
-            relations.push(self.table_with_joins(&item, &ctes, preserve_columns)?);
+            let others = !predicates.is_empty();
+            match self.inner_join_chain(&item, &ctes, preserve_columns, others)? {
+                InnerChain::Flattened(nodes, on) => {
+                    relations.extend(nodes);
+                    predicates.extend(on);
+                }
+                InnerChain::Joined(node) => relations.push(*node),
+                InnerChain::Other => {
+                    relations.push(self.table_with_joins(&item, &ctes, preserve_columns)?)
+                }
+            }
         }
         if relations.is_empty() {
             relations.push(Node {
@@ -785,6 +1082,14 @@ impl Planner<'_> {
             if !self.options.relational_optimizations || !local_pushdown_is_total {
                 continue;
             }
+            // Guarded AND (expr::guard): a conjunct that may fail is moved
+            // below the rest of WHERE only together with every other
+            // conjunct, so no subquery join or later filter can stop being
+            // its guard. Total conjuncts only remove rows they decide.
+            let wholly_local = !multiple_relations
+                && predicates
+                    .iter()
+                    .all(|p| binder(&node.schema).expr(p).is_ok());
             let local = predicates
                 .iter()
                 .filter_map(|p| local_condition(p, &node.schema))
@@ -792,9 +1097,7 @@ impl Planner<'_> {
                 // still yielding a local necessary condition. Check that moved
                 // expression too, on every row of its destination input.
                 .filter(|p| {
-                    !multiple_relations
-                        || bind_node_expression(node, p)
-                            .is_ok_and(|e| membership_safety::expression_is_total(&e, node))
+                    wholly_local || bind_node_expression(node, p).is_ok_and(|e| !can_fail(&e, node))
                 })
                 .collect::<Vec<_>>();
             // Remove only whole predicates actually admitted above; extracted
@@ -834,6 +1137,29 @@ impl Planner<'_> {
                     true
                 }
             });
+            // Guarded AND: a conjunct that may fail and is not a join key
+            // waits for the final WHERE filter unless every remaining
+            // conjunct is evaluated with it at this (last) join; otherwise a
+            // conjunct joined later could no longer guard it.
+            if !(relations.is_empty() && predicates.is_empty()) {
+                let scope = Node {
+                    schema: schema.clone(),
+                    estimated_rows: 0,
+                    op: RelOp::Join {
+                        left: Box::new(root.clone()),
+                        right: Box::new(right.clone()),
+                        kind: JoinKind::Inner,
+                        keys: Vec::new(),
+                        residual: None,
+                    },
+                };
+                let (attached, held): (Vec<_>, Vec<_>) = ready.into_iter().partition(|p| {
+                    join_key_nodes(p, &root, &right).is_some()
+                        || bind_node_expression(&scope, p).is_ok_and(|e| !can_fail(&e, &scope))
+                });
+                ready = attached;
+                predicates.extend(held);
+            }
             // Build the accumulated smaller side; stream the newly joined table.
             root = if root.estimated_rows <= right.estimated_rows {
                 self.join(right, root, JoinKind::Inner, ready)?
@@ -841,6 +1167,7 @@ impl Planner<'_> {
                 self.join(root, right, JoinKind::Inner, ready)?
             };
         }
+        guard_membership_values(&mut predicates, &root);
         let mut remaining = Vec::new();
         for mut predicate in predicates {
             match predicate {
@@ -878,13 +1205,23 @@ impl Planner<'_> {
     }
     fn join(
         &self,
+        left: Node,
+        right: Node,
+        kind: JoinKind,
+        predicates: Vec<s::Expr>,
+    ) -> Result<Node> {
+        self.join_with_keys(left, right, kind, predicates, Vec::new())
+    }
+    /// `keys` are already-bound (left, right) equality keys, e.g. USING pairs.
+    fn join_with_keys(
+        &self,
         mut left: Node,
         mut right: Node,
         kind: JoinKind,
         predicates: Vec<s::Expr>,
+        mut keys: Vec<(Expr, Expr)>,
     ) -> Result<Node> {
         let all = combined(&left.schema, &right.schema);
-        let mut keys = Vec::new();
         let mut residual = Vec::new();
         for p in predicates {
             // Validate in the original scope before testing one side; otherwise
@@ -896,6 +1233,7 @@ impl Planner<'_> {
                 residual.push(p);
             }
         }
+        guard_keys(&mut keys, &residual, &left, &right);
         // Check the original, complete ON condition before moving any term.
         // Total moved terms cannot create phantom errors; total keys and other
         // residual terms cannot lose required errors when rows are removed.
@@ -971,6 +1309,22 @@ impl Planner<'_> {
         };
         let mut fields = Vec::new();
         for from in &select.from {
+            // USING/NATURAL merge columns: an unqualified name must resolve to
+            // the merged column, never to an outer column after ambiguity.
+            if from.joins.iter().any(|join| {
+                join_constraint(&join.join_operator).is_some_and(|c| {
+                    matches!(c, s::JoinConstraint::Using(_) | s::JoinConstraint::Natural)
+                })
+            }) {
+                fields.extend(
+                    self.table_with_joins(from, ctes, false)?
+                        .schema
+                        .fields()
+                        .iter()
+                        .cloned(),
+                );
+                continue;
+            }
             fields.extend(
                 self.relation(&from.relation, ctes, false)?
                     .schema
@@ -1000,6 +1354,7 @@ impl Planner<'_> {
         let s::SetExpr::Select(select) = q.body.as_mut() else {
             unreachable!()
         };
+        window::resolve_named(select, &mut q.order_by, &local)?;
         window::validate_select(select)?;
         let mut correlated = Vec::new();
         let mut predicates = Vec::new();
@@ -1353,30 +1708,37 @@ impl Planner<'_> {
         mut input: Node,
         ctes: &HashMap<String, Node>,
     ) -> Result<Node> {
-        let limit = q
-            .limit_clause
-            .take()
-            .map(|c| -> Result<usize> {
-                match c {
-                    s::LimitClause::LimitOffset {
-                        limit: Some(s::Expr::Value(v)),
-                        offset: None,
-                        limit_by,
-                    } if limit_by.is_empty() => match v.value {
-                        s::Value::Number(n, _) => {
-                            n.parse::<usize>().map_err(|_| "invalid LIMIT".into())
-                        }
-                        _ => Err("unsupported: LIMIT".into()),
-                    },
-                    _ => Err("unsupported: LIMIT/OFFSET".into()),
-                }
-            })
-            .transpose()?;
+        let limit = select_modifiers::pagination(q.limit_clause.take())?;
         let s::SetExpr::Select(select) = q.body.as_mut() else {
             unreachable!()
         };
+        window::resolve_named(select, &mut q.order_by, &input.schema)?;
+        group_by_all::lower(select, &mut q.order_by, &input.schema)?;
         let visible_columns = select.projection.len();
+        bind::resolve_group_positions(select)?;
+        let distinct_on = distinct_on::prepare(select, &mut q.order_by, &input.schema)?;
+        let qualify = self.qualify_projection(select, &input.schema)?;
         self.window_order_projection(select, &mut q.order_by)?;
+        aggregate_modifiers::lower_filters(select, &input)?;
+        // ROLLUP/CUBE/GROUPING SETS (and GROUPING() over a plain GROUP BY)
+        // aggregate each grouping set separately; see aggregate_modifiers.
+        let grouping_sets = aggregate_modifiers::grouping_sets(&select.group_by)?;
+        let grouping_calls = aggregate_modifiers::grouping_calls(select)?;
+        let grouping = if grouping_sets.is_some() || !grouping_calls.is_empty() {
+            let (keys, sets) = match grouping_sets {
+                Some(g) => (g.keys, g.sets),
+                None => match &select.group_by {
+                    s::GroupByExpr::Expressions(keys, mods) if mods.is_empty() => {
+                        (keys.clone(), vec![(0..keys.len()).collect()])
+                    }
+                    _ => return Err("unsupported: group modifiers".into()),
+                },
+            };
+            select.group_by = s::GroupByExpr::Expressions(keys, Vec::new());
+            Some(sets)
+        } else {
+            None
+        };
         let distinct = match select.distinct.take() {
             None => false, // The parser also represents explicit SELECT ALL as None.
             Some(s::Distinct::Distinct) => true,
@@ -1410,7 +1772,68 @@ impl Planner<'_> {
                 _ => Ok(found),
             })?;
         let (aggregates, aggregate_live) = empty_in::aggregate_usage(select)?;
-        if !groups.is_empty() || !aggregates.is_empty() {
+        if let Some(sets) = &grouping {
+            if windowed {
+                return Err("unsupported: window functions with ROLLUP/CUBE/GROUPING SETS".into());
+            }
+            let group_input_schema = input.schema.clone();
+            group_source_schema = Some(group_input_schema.clone());
+            let built = self.grouping_input(
+                input,
+                &groups,
+                sets,
+                &aggregates,
+                &aggregate_live,
+                &grouping_calls,
+            )?;
+            input = built.node;
+            let (expressions, names, grouped_columns) =
+                (built.expressions, built.names, built.grouped_columns);
+            let mut replace = |e: &mut s::Expr| -> Result<bool> {
+                let matched = expressions.iter().position(|a| a == e).or_else(|| {
+                    if !grouped_columns.is_empty()
+                        && matches!(e, s::Expr::Identifier(_) | s::Expr::CompoundIdentifier(_))
+                    {
+                        binder(&group_input_schema).expr(e).ok().and_then(|bound| {
+                            if let crate::expr::Kind::Column(column) = bound.kind {
+                                grouped_columns.iter().find_map(|&(source, group)| {
+                                    (source == column).then_some(group)
+                                })
+                            } else {
+                                None
+                            }
+                        })
+                    } else {
+                        None
+                    }
+                });
+                if let Some(i) = matched {
+                    *e = syntax::ident(&names[i]);
+                    Ok(true)
+                } else {
+                    Ok(false)
+                }
+            };
+            for p in &mut select.projection {
+                let (e, alias) = match p {
+                    s::SelectItem::UnnamedExpr(e) => {
+                        (e.clone(), s::Ident::with_quote('"', e.to_string()))
+                    }
+                    s::SelectItem::ExprWithAlias { expr, alias } => (expr.clone(), alias.clone()),
+                    _ => unreachable!(),
+                };
+                let mut e = e;
+                syntax::rewrite(&mut e, &mut replace)?;
+                *p = s::SelectItem::ExprWithAlias { expr: e, alias };
+            }
+            if let Some(mut e) = select.having.take() {
+                syntax::rewrite(&mut e, &mut replace)?;
+                input = self.subqueries(&mut e, input, ctes)?;
+                let bound = group_binding::expression(&e, &input, &group_input_schema)?;
+                input = filtered(input, bound, self.options.relational_optimizations)?;
+            }
+            select.group_by = s::GroupByExpr::Expressions(Vec::new(), Vec::new());
+        } else if !groups.is_empty() || !aggregates.is_empty() {
             let mut inner = bind::parse("SELECT 1")?;
             let s::SetExpr::Select(inside) = inner.body.as_mut() else {
                 unreachable!()
@@ -1512,13 +1935,21 @@ impl Planner<'_> {
             if let Some(mut e) = select.having.take() {
                 syntax::rewrite(&mut e, &mut replace)?;
                 input = self.subqueries(&mut e, input, ctes)?;
-                let bound = group_binding::expression(&e, &input, &group_input_schema)?;
+                let bound = match group_binding::expression(&e, &input, &group_input_schema) {
+                    Ok(bound) => bound,
+                    Err(error) if error.contains("unknown or ambiguous column:") => {
+                        group_binding::checked_cast_having(&e, &mut input, &group_input_schema)?
+                            .ok_or(error)?
+                    }
+                    Err(error) => return Err(error),
+                };
                 input = filtered(input, bound, self.options.relational_optimizations)?;
             }
             select.group_by = s::GroupByExpr::Expressions(Vec::new(), Vec::new());
         } else if select.having.is_some() {
             return Err("unsupported: HAVING without aggregation".into());
         }
+        let mut completed_windows: Vec<(s::Expr, s::Expr)> = Vec::new();
         for p in &mut select.projection {
             empty_in::preserve_projection_name(p)?;
             if let s::SelectItem::UnnamedExpr(e) | s::SelectItem::ExprWithAlias { expr: e, .. } = p
@@ -1526,8 +1957,27 @@ impl Planner<'_> {
                 let original = e.to_string();
                 let has_window = window::contains(e)?;
                 if has_window {
+                    let source = qualify.map(|_| e.clone());
+                    // QUALIFY alias expansion can repeat a SELECT window. Reuse
+                    // its completed column in this SELECT scope, including when
+                    // it is a subtree of the predicate. Stacking the same window
+                    // again wastes two sorts and adds avoidable recursive depth.
+                    if source.is_some() {
+                        syntax::rewrite(e, &mut |expr| {
+                            if let Some((_, value)) =
+                                completed_windows.iter().find(|(old, _)| old == expr)
+                            {
+                                *expr = value.clone();
+                                return Ok(true);
+                            }
+                            Ok(false)
+                        })?;
+                    }
                     input =
                         self.window_expression(e, input, ctes, group_source_schema.as_deref())?;
+                    if let Some(source) = source {
+                        completed_windows.push((source, e.clone()));
+                    }
                 }
                 input = self.subqueries(e, input, ctes)?;
                 if has_window && matches!(p, s::SelectItem::UnnamedExpr(_)) {
@@ -1541,17 +1991,32 @@ impl Planner<'_> {
                 }
             }
         }
+        if let Some(index) = qualify {
+            let s::SelectItem::ExprWithAlias { expr, .. } = select.projection.remove(index) else {
+                unreachable!()
+            };
+            let predicate = if let Some(source) = group_source_schema.as_deref() {
+                group_binding::expression(&expr, &input, source)?
+            } else {
+                bind_node_expression(&input, &expr)?
+            };
+            // QUALIFY is after every window, before projection/DISTINCT/ORDER/LIMIT.
+            input = filtered(input, predicate, false)?;
+        }
         let mut root = if let Some(source) = group_source_schema {
             group_binding::projection(&q, input, &source)?
         } else {
             unary(&q, input)?
         };
+        if let Some(keys) = distinct_on {
+            root = distinct_on::apply(root, &keys)?;
+        }
         if root.schema.fields().len() > visible_columns {
             root = Node {
                 schema: Arc::new(
                     root.schema
                         .project(&(0..visible_columns).collect::<Vec<_>>())
-                        .map_err(|e| e.to_string())?,
+                        .map_err(|e| crate::Error::from(e.to_string()))?,
                 ),
                 estimated_rows: root.estimated_rows,
                 op: RelOp::Project {
@@ -1576,12 +2041,21 @@ impl Planner<'_> {
                     }));
             }
         }
-        if let Some(count) = limit {
+        if let Some((count, offset)) = limit {
+            series::cap_identity_source(
+                &mut root,
+                if count == 0 {
+                    0
+                } else {
+                    count as u128 + offset as u128
+                },
+            );
             root = Node {
                 schema: root.schema.clone(),
-                estimated_rows: root.estimated_rows.min(count),
+                estimated_rows: root.estimated_rows.saturating_sub(offset).min(count),
                 op: RelOp::Limit {
                     count,
+                    offset,
                     input: Box::new(root),
                 },
             };
@@ -1723,6 +2197,138 @@ fn filtered(input: Node, predicate: Expr, estimates: bool) -> Result<Node> {
             input: Box::new(input),
         },
     })
+}
+fn join_constraint(operator: &s::JoinOperator) -> Option<&s::JoinConstraint> {
+    match operator {
+        s::JoinOperator::Join(c)
+        | s::JoinOperator::Inner(c)
+        | s::JoinOperator::Left(c)
+        | s::JoinOperator::LeftOuter(c)
+        | s::JoinOperator::Right(c)
+        | s::JoinOperator::RightOuter(c)
+        | s::JoinOperator::FullOuter(c)
+        | s::JoinOperator::Semi(c)
+        | s::JoinOperator::LeftSemi(c)
+        | s::JoinOperator::RightSemi(c)
+        | s::JoinOperator::Anti(c)
+        | s::JoinOperator::LeftAnti(c)
+        | s::JoinOperator::RightAnti(c)
+        | s::JoinOperator::StraightJoin(c) => Some(c),
+        s::JoinOperator::AsOf { constraint, .. } => Some(constraint),
+        s::JoinOperator::CrossJoin | s::JoinOperator::CrossApply | s::JoinOperator::OuterApply => {
+            None
+        }
+    }
+}
+/// Whether evaluating `e` over `input` can raise a value error, for the
+/// guarded-AND planner rules. Proven-total expressions cannot. Beyond that
+/// proof, comparisons of exact numerics with REAL and the promotion markers
+/// add no error of their own (exact comparison; the precision-38 value
+/// converts to a finite DOUBLE), so mixed Int/Float join conditions do not
+/// change plans. Everything else is assumed to be able to fail.
+fn can_fail(e: &Expr, input: &Node) -> bool {
+    use crate::expr::{Kind, Op};
+    if membership_safety::expression_is_total(e, input) {
+        return false;
+    }
+    let numeric = |e: &Expr| matches!(e.ty, Type::Int | Type::Decimal(_) | Type::Float);
+    match &e.kind {
+        Kind::Binary(Op::Eq | Op::Ne | Op::Lt | Op::Le | Op::Gt | Op::Ge, a, b)
+            if numeric(a) && numeric(b) && (a.ty == Type::Float || b.ty == Type::Float) =>
+        {
+            can_fail(a, input) || can_fail(b, input)
+        }
+        Kind::Binary(Op::And | Op::Or, a, b) => can_fail(a, input) || can_fail(b, input),
+        Kind::Not(a) | Kind::IsNull(a, _) => can_fail(a, input),
+        Kind::Function(name, a)
+            if name == crate::mixed_numeric::PROMOTE
+                || name == crate::mixed_numeric::PROMOTED_COMPARE =>
+        {
+            can_fail(a, input)
+        }
+        Kind::Cast(a) if e.ty == Type::Float && numeric(a) => can_fail(a, input),
+        _ => true,
+    }
+}
+enum InnerChain {
+    Flattened(Vec<Node>, Vec<s::Expr>),
+    Joined(Box<Node>),
+    Other,
+}
+/// Guarded AND for join keys: a key that may fail is computed for every row
+/// of its input before any pair exists. Wrap it as
+/// `CASE WHEN <total same-side conjuncts> THEN key END`, so it is evaluated
+/// only on rows those conjuncts do not reject; a NULL key matches nothing,
+/// and such a row's pairs fail the same conjunct anyway. Applied at every
+/// optimizer setting. Conjuncts that may fail themselves cannot guard a key.
+fn guard_keys(keys: &mut [(Expr, Expr)], residual: &[s::Expr], left: &Node, right: &Node) {
+    let guard = |key: &mut Expr, side: &Node| {
+        if !can_fail(key, side) {
+            return;
+        }
+        let guards = residual
+            .iter()
+            .filter(|p| binder(&side.schema).expr(p).is_ok())
+            .filter_map(|p| bind_node_expression(side, p).ok())
+            .filter(|e| !can_fail(e, side))
+            .collect::<Vec<_>>();
+        if let Some(condition) = guards.into_iter().reduce(|a, b| Expr {
+            ty: Type::Bool,
+            kind: crate::expr::Kind::Binary(crate::expr::Op::And, Box::new(a), Box::new(b)),
+        }) {
+            *key = guarded_value(condition, key.clone());
+        }
+    };
+    for (a, b) in keys.iter_mut() {
+        guard(a, left);
+        guard(b, right);
+    }
+}
+fn guarded_value(condition: Expr, value: Expr) -> Expr {
+    let ty = value.ty.clone();
+    Expr {
+        kind: crate::expr::Kind::Case(
+            vec![(condition, value)],
+            Box::new(Expr {
+                kind: crate::expr::Kind::Literal(crate::expr::Literal::Null),
+                ty: ty.clone(),
+            }),
+        ),
+        ty,
+    }
+}
+/// Guarded AND for `value [NOT] IN (subquery)` conjuncts of WHERE: the value
+/// becomes a join key computed for every row, so a value that may fail is
+/// wrapped as `CASE WHEN <total sibling conjuncts> THEN value END`. Rows the
+/// siblings reject are rejected by WHERE whatever the membership result.
+fn guard_membership_values(predicates: &mut [s::Expr], root: &Node) {
+    let guards = predicates
+        .iter()
+        .filter(|p| bind_node_expression(root, p).is_ok_and(|e| !can_fail(&e, root)))
+        .cloned()
+        .collect::<Vec<_>>();
+    if guards.is_empty() {
+        return;
+    }
+    for predicate in predicates.iter_mut() {
+        let s::Expr::InSubquery { expr, .. } = predicate else {
+            continue;
+        };
+        if bind_node_expression(root, expr).is_ok_and(|e| !can_fail(&e, root)) {
+            continue;
+        }
+        use s::helpers::attached_token::AttachedToken;
+        **expr = s::Expr::Case {
+            case_token: AttachedToken::empty(),
+            end_token: AttachedToken::empty(),
+            operand: None,
+            conditions: vec![s::CaseWhen {
+                condition: syntax::and(guards.clone()).unwrap(),
+                result: (**expr).clone(),
+            }],
+            else_result: None,
+        };
+    }
 }
 fn join_key_nodes(p: &s::Expr, left: &Node, right: &Node) -> Option<(Expr, Expr)> {
     if let s::Expr::Nested(p) = p {
@@ -1923,6 +2529,7 @@ struct Context<'a> {
     lane_transforms: HashMap<usize, crate::parquet_scan::BatchTransform>,
     replay_transforms: HashMap<usize, Expr>,
     materialized: HashMap<usize, Arc<Materialized>>,
+    recursive_bindings: Option<Box<recursive::runtime::Binding>>,
     // Declared after the map so its allocation is freed before its credit.
     sideways_registry_lease: Option<Reservation>,
     spill: Option<crate::spill::SpillStore>,
@@ -1950,7 +2557,13 @@ fn scan_target(node: &Node, mut expressions: Vec<Expr>) -> Result<Option<ScanTar
         return Ok(None);
     }
     match &node.op {
-        RelOp::Scan { .. } => {
+        RelOp::Scan { .. }
+        | RelOp::Materialize {
+            id: subplan_reuse::ID,
+            ..
+        } => {
+            // A shared subplan is a replay target in its output scope. Do not
+            // remap through its producer or install consumer filters inside it.
             let mut keys = std::collections::BTreeSet::new();
             for expr in &expressions {
                 expr.columns(&mut keys);
@@ -2382,6 +2995,10 @@ pub(crate) fn merge(a: &mut Metrics, b: &Metrics) {
     a.cte_reuses += b.cte_reuses;
     a.scan_reuses += b.scan_reuses;
     a.scan_materializations += b.scan_materializations;
+    a.subplan_materializations += b.subplan_materializations;
+    a.subplan_reuses += b.subplan_reuses;
+    a.subplan_rows += b.subplan_rows;
+    a.subplan_fallbacks += b.subplan_fallbacks;
     a.cached_scan_filters += b.cached_scan_filters;
     a.filtered_scan_materializations += b.filtered_scan_materializations;
     a.filtered_scan_reuses += b.filtered_scan_reuses;
@@ -2452,7 +3069,9 @@ impl Node {
                 emit(batch)
             })
         };
-        ctx.metrics.operator_profiles.push(serde_json::json!({"operator":match &self.op {RelOp::Scan{..}=>"Scan",RelOp::Join{..}=>"HashJoin",RelOp::Unary{plan,..}=>if plan.aggregation{"Aggregate"}else{"ProjectSort"},RelOp::Filter{..}=>"Filter",RelOp::Mark{..}=>"NullAwareMark",RelOp::TypedMark{..}=>"TypedNullAwareMark",RelOp::CorrelatedMark{..}=>"CorrelatedMark",RelOp::Scalar{..}=>"ScalarCardinality",RelOp::ScalarDefault{..}=>"ScalarEmptyDefault",RelOp::Rename{..}=>"Rename",RelOp::Project{..}=>"ColumnProject",RelOp::Limit{..}=>"Limit",RelOp::UnionAll{..}=>"UnionAll",RelOp::One=>"One",RelOp::Empty=>"Empty",RelOp::Window{..}=>"Window",RelOp::WindowOrder{..}=>"WindowInputSort",RelOp::Materialize{shared_scan,..}=>if *shared_scan {"SharedScan"} else {"CteMaterialize"}},"estimated_rows":self.estimated_rows,"output_rows":output_rows,"inclusive_seconds":start.elapsed().as_secs_f64(),"timing_scope":"includes child execution and downstream consumer; do not sum"}));
+        if ctx.recursive_bindings.is_none() {
+            ctx.metrics.operator_profiles.push(serde_json::json!({"operator":match &self.op {RelOp::Generate{..}=>"Generate",RelOp::RecursiveCte{..}=>"RecursiveCte",RelOp::RecursiveScan{..}=>"RecursiveScan",RelOp::Scan{..}=>"Scan",RelOp::Join{..}=>"HashJoin",RelOp::Unary{plan,..}=>if plan.aggregation{"Aggregate"}else{"ProjectSort"},RelOp::Filter{..}=>"Filter",RelOp::Mark{..}=>"NullAwareMark",RelOp::TypedMark{..}=>"TypedNullAwareMark",RelOp::CorrelatedMark{..}=>"CorrelatedMark",RelOp::Scalar{..}=>"ScalarCardinality",RelOp::ScalarDefault{..}=>"ScalarEmptyDefault",RelOp::Rename{..}=>"Rename",RelOp::Project{..}=>"ColumnProject",RelOp::Limit{..}=>"Limit",RelOp::UnionAll{..}=>"UnionAll",RelOp::One=>"One",RelOp::Empty=>"Empty",RelOp::Window{..}=>"Window",RelOp::WindowOrder{..}=>"WindowInputSort",RelOp::Materialize{id,shared_scan,..}=>if *id == subplan_reuse::ID {"SharedSubplan"} else if *shared_scan {"SharedScan"} else {"CteMaterialize"}},"estimated_rows":self.estimated_rows,"output_rows":output_rows,"inclusive_seconds":start.elapsed().as_secs_f64(),"timing_scope":"includes child execution and downstream consumer; do not sum"}));
+        }
         result
     }
     fn run_inner(
@@ -2473,6 +3092,19 @@ impl Node {
             return Ok(());
         }
         match &self.op {
+            RelOp::Generate { specification } => series::run(self, specification, ctx, emit),
+            RelOp::RecursiveCte {
+                id,
+                anchor,
+                step,
+                distinct,
+                accumulate,
+            } => {
+                recursive::runtime::run(self, *id, anchor, step, *distinct, *accumulate, ctx, emit)
+            }
+            RelOp::RecursiveScan { id, accumulated } => {
+                recursive::runtime::scan(*id, *accumulated, ctx, emit)
+            }
             RelOp::WindowOrder { input, order } => window::run_order(input, order, ctx, emit),
             RelOp::Window {
                 input,
@@ -2488,6 +3120,7 @@ impl Node {
                 id,
                 input,
                 shared_scan,
+                ..
             } => {
                 let stored = materialized_storage(*id, input, *shared_scan, ctx)?;
                 let filter = if *shared_scan {
@@ -2551,8 +3184,8 @@ impl Node {
                                 .saturating_add(256),
                         )?;
                         let mask = scan_key_mask(batch, filter, &ctx.budget)?;
-                        let filtered =
-                            filter_record_batch(batch, &mask).map_err(|e| e.to_string())?;
+                        let filtered = filter_record_batch(batch, &mask)
+                            .map_err(|e| crate::Error::from(e.to_string()))?;
                         ctx.metrics.filter_seconds += start.elapsed().as_secs_f64();
                         emit(filtered)
                     } else {
@@ -2584,12 +3217,12 @@ impl Node {
                                     ..Default::default()
                                 },
                             )
-                            .map_err(|e| e.to_string())
+                            .map_err(|e| crate::Error::from(e.to_string()))
                         })
                         .collect::<Result<Vec<_>>>()?;
                     emit(
                         RecordBatch::try_new(self.schema.clone(), arrays)
-                            .map_err(|e| e.to_string())?,
+                            .map_err(|e| crate::Error::from(e.to_string()))?,
                     )
                 };
                 left.run(ctx, &mut send)?;
@@ -2618,12 +3251,12 @@ impl Node {
                         &scalar,
                         &b.column(*value).as_ref(),
                     )
-                    .map_err(|e| e.to_string())?;
+                    .map_err(|e| crate::Error::from(e.to_string()))?;
                     let mut arrays = b.columns().to_vec();
                     arrays[*value] = array;
                     emit(
                         RecordBatch::try_new(self.schema.clone(), arrays)
-                            .map_err(|e| e.to_string())?,
+                            .map_err(|e| crate::Error::from(e.to_string()))?,
                     )
                 })
             }
@@ -2633,7 +3266,7 @@ impl Node {
                     Vec::new(),
                     &RecordBatchOptions::new().with_row_count(Some(1)),
                 )
-                .map_err(|e| e.to_string())?,
+                .map_err(|e| crate::Error::from(e.to_string()))?,
             ),
             RelOp::Scalar { input: child } => {
                 let mut found = None;
@@ -2724,7 +3357,7 @@ impl Node {
                     arrays.push(Arc::new(BooleanArray::from_iter(mask)));
                     emit(
                         RecordBatch::try_new(self.schema.clone(), arrays)
-                            .map_err(|e| e.to_string())?,
+                            .map_err(|e| crate::Error::from(e.to_string()))?,
                     )
                 })
             }
@@ -2733,8 +3366,9 @@ impl Node {
                     return Ok(());
                 }
                 let mut retained = filtered_reuse::Pending::new(self, ctx);
-                let file = File::open(path).map_err(|e| e.to_string())?;
-                let metadata = crate::parquet_scan::external_metadata(&file)?;
+                let file = File::open(path).map_err(|e| crate::Error::from(e.to_string()))?;
+                let (metadata, _metadata_lease) =
+                    crate::parquet_scan::accounted_metadata(&file, &ctx.budget)?;
                 ctx.metrics.selected_column_compressed_bytes += metadata
                     .metadata()
                     .row_groups()
@@ -2810,7 +3444,9 @@ impl Node {
                                 if let Err(message) = &result {
                                     *error.lock().unwrap() = Some(message.clone());
                                 }
-                                result.map_err(arrow::error::ArrowError::ComputeError)
+                                result.map_err(|e| {
+                                    arrow::error::ArrowError::ComputeError(e.to_string())
+                                })
                             },
                         ))
                     }));
@@ -2848,7 +3484,7 @@ impl Node {
                                 let start = Instant::now();
                                 let result: Result<BooleanArray> = (|| {
                                     let values = input(&batch, &budget, [&expression])?;
-                                    let mask = expression.eval(&values, &budget)?;
+                                    let mask = expression.eval_filter(&values, &budget)?;
                                     Ok(boolean(&mask.array).clone())
                                 })(
                                 );
@@ -2861,7 +3497,9 @@ impl Node {
                                 if let Err(message) = &result {
                                     *error.lock().unwrap() = Some(message.clone());
                                 }
-                                result.map_err(arrow::error::ArrowError::ComputeError)
+                                result.map_err(|e| {
+                                    arrow::error::ArrowError::ComputeError(e.to_string())
+                                })
                             },
                         ))
                     }));
@@ -2878,7 +3516,7 @@ impl Node {
                         let schema = metadata
                             .schema()
                             .project(columns)
-                            .map_err(|e| e.to_string())?;
+                            .map_err(|e| crate::Error::from(e.to_string()))?;
                         crate::parquet_scan::exact_filter(
                             expression,
                             &schema,
@@ -2899,14 +3537,14 @@ impl Node {
                     .map(|_| Arc::new(Mutex::new((0usize, 0usize))));
                 let lane_transform = lane_transform.map(|transform| {
                     let stats = lane_stats.as_ref().unwrap().clone();
-                    Arc::new(move |batch: RecordBatch| {
+                    Arc::new(move |batch: RecordBatch, lease| {
                         let rows = batch.num_rows();
                         let bytes = batch.get_array_memory_size();
                         let mut stats = stats.lock().unwrap();
                         stats.0 += rows;
                         stats.1 += bytes;
                         drop(stats);
-                        transform(batch)
+                        transform(batch, lease)
                     }) as crate::parquet_scan::BatchTransform
                 });
                 let in_lane = lane_transform.is_some();
@@ -2939,7 +3577,7 @@ impl Node {
                     };
                     let batch = batch?;
                     let bytes = batch.get_array_memory_size();
-                    let _lease = ctx.budget.reserve(bytes)?;
+                    let _lease = reader.take_batch_lease();
                     if !transformed && !in_lane {
                         ctx.metrics.decoded_arrow_bytes_total += bytes;
                     }
@@ -3014,18 +3652,29 @@ impl Node {
                 Ok(())
             }
             RelOp::Project { input, columns } => input.run(ctx, &mut |b| {
-                emit(b.project(columns).map_err(|e| e.to_string())?)
+                emit(
+                    b.project(columns)
+                        .map_err(|e| crate::Error::from(e.to_string()))?,
+                )
             }),
             RelOp::Rename { input } => input.run(ctx, &mut |b| {
                 emit(
                     RecordBatch::try_new(self.schema.clone(), b.columns().to_vec())
-                        .map_err(|e| e.to_string())?,
+                        .map_err(|e| crate::Error::from(e.to_string()))?,
                 )
             }),
-            RelOp::Limit { count, input } => {
+            RelOp::Limit {
+                count,
+                offset,
+                input,
+            } => {
+                if *count == 0 && series::try_zero_limit(input, ctx)? {
+                    return Ok(());
+                }
                 // Keep the child and all its finalizations intact. Only the
                 // completed ORDER BY permutation/gather is bounded by LIMIT.
                 if ctx.options.relational_optimizations
+                    && *offset == 0
                     && !ctx.options.error_replay.canonical()
                     && ctx.spill.is_none()
                     && let RelOp::Unary { plan, input: child } = &input.op
@@ -3064,11 +3713,14 @@ impl Node {
                     return Ok(());
                 }
                 let mut remaining = *count;
+                let mut skip = *offset;
                 input.run(ctx, &mut |b| {
-                    let n = remaining.min(b.num_rows());
+                    let start = skip.min(b.num_rows());
+                    skip -= start;
+                    let n = remaining.min(b.num_rows() - start);
                     remaining -= n;
                     if n > 0 {
-                        emit(b.slice(0, n))?;
+                        emit(b.slice(start, n))?;
                     }
                     Ok(())
                 })
@@ -3077,6 +3729,9 @@ impl Node {
                 predicate,
                 input: child,
             } => {
+                if scalar_existence::try_filtered(child, predicate, ctx, emit)? {
+                    return Ok(());
+                }
                 if let Some(metrics) = numeric_leaf::try_filtered(child, predicate, ctx, emit)? {
                     numeric_leaf::merge_metrics(&mut ctx.metrics, &metrics);
                     return Ok(());
@@ -3155,9 +3810,9 @@ impl Node {
                 let mut seconds = 0.;
                 let result = child.run(ctx, &mut |b| {
                     let start = Instant::now();
-                    let mask = predicate.eval(&input(&b, &budget, [predicate])?, &budget)?;
-                    let filtered =
-                        filter_record_batch(&b, boolean(&mask.array)).map_err(|e| e.to_string())?;
+                    let mask = predicate.eval_filter(&input(&b, &budget, [predicate])?, &budget)?;
+                    let filtered = filter_record_batch(&b, boolean(&mask.array))
+                        .map_err(|e| crate::Error::from(e.to_string()))?;
                     let _lease = budget.reserve(filtered.get_array_memory_size())?;
                     seconds += start.elapsed().as_secs_f64();
                     if filtered.num_rows() > 0 {
@@ -3171,216 +3826,7 @@ impl Node {
                 ctx.metrics.filter_seconds += seconds;
                 result
             }
-            RelOp::Unary { plan, input: child } => {
-                if let Some(metrics) =
-                    numeric_leaf::try_clustered_plan(plan, child, None, ctx, emit)?
-                {
-                    numeric_leaf::merge_metrics(&mut ctx.metrics, &metrics);
-                    return Ok(());
-                }
-                if let Some(metrics) = shared_pipeline::try_execute(plan, child, ctx, emit)? {
-                    shared_pipeline::merge_metrics(&mut ctx.metrics, &metrics);
-                    merge(&mut ctx.metrics, &metrics);
-                    return Ok(());
-                }
-                if ctx.options.relational_optimizations
-                    && ctx.options.projection_pushdown
-                    && let Some(columns) =
-                        column_projection::columns(plan, &child.schema, &self.schema)
-                {
-                    let budget = ctx.budget.clone();
-                    let mut metrics = Metrics::default();
-                    child.run(ctx, &mut |batch| {
-                        let start = Instant::now();
-                        let (output, _lease) = column_projection::project(
-                            &batch,
-                            &columns,
-                            self.schema.clone(),
-                            &budget,
-                        )?;
-                        metrics.column_projection_batches += 1;
-                        metrics.column_projection_rows += batch.num_rows();
-                        metrics.rows_after_filter += batch.num_rows();
-                        metrics.batches += 1;
-                        metrics.expression_seconds += start.elapsed().as_secs_f64();
-                        emit(output)
-                    })?;
-                    merge(&mut ctx.metrics, &metrics);
-                    return Ok(());
-                }
-                let prepared = Prepared {
-                    auto_simple: None,
-                    internal_output: true,
-                    plan: plan.clone(),
-                    schema: child.schema.clone(),
-                    relational: None,
-                };
-                if let Some(metrics) = build_groups::try_execute(&prepared, child, ctx, emit)? {
-                    merge(&mut ctx.metrics, &metrics);
-                    return Ok(());
-                }
-                if let Some(metrics) = left_count::try_execute(&prepared, child, ctx, emit)? {
-                    merge(&mut ctx.metrics, &metrics);
-                    return Ok(());
-                }
-                if let Some(metrics) = numeric_leaf::try_execute(&prepared, child, ctx, emit)? {
-                    numeric_leaf::merge_metrics(&mut ctx.metrics, &metrics);
-                    return Ok(());
-                }
-                if plan.aggregation
-                    && (!plan.groups.is_empty() || plan.aggregates.iter().any(|a| a.distinct))
-                    && let Some(store) = ctx.spill.clone()
-                {
-                    let options = ctx.options;
-                    let budget = ctx.budget.clone();
-                    let mut sorter = if plan.order.is_empty() {
-                        None
-                    } else {
-                        let settings = options.spill.as_ref().unwrap();
-                        Some(crate::external_sort::ExternalSort::new(
-                            self.schema.clone(),
-                            plan.order.clone(),
-                            store.clone(),
-                            budget.clone(),
-                            options.cancellation.clone(),
-                            settings.sort_run_bytes,
-                            settings.merge_fan_in,
-                            options.batch_size,
-                        )?)
-                    };
-                    let metrics = crate::external_aggregate::run(
-                        &prepared,
-                        options,
-                        budget,
-                        store,
-                        |send| child.run(ctx, send),
-                        &mut |batch| {
-                            if let Some(sorter) = &mut sorter {
-                                sorter.push(batch)
-                            } else {
-                                emit(batch)
-                            }
-                        },
-                    )?;
-                    merge(&mut ctx.metrics, &metrics);
-                    if let Some(sorter) = sorter {
-                        let sorted = sorter.finish(emit)?;
-                        ctx.metrics.external_sort_runs += sorted.runs;
-                        ctx.metrics.external_sort_merge_passes += sorted.merge_passes;
-                        ctx.metrics.external_sort_rows += sorted.rows;
-                        ctx.metrics.output_sort_seconds += sorted.seconds;
-                    }
-                    return Ok(());
-                }
-                if !plan.order.is_empty()
-                    && let Some(store) = ctx.spill.clone()
-                {
-                    let settings = ctx.options.spill.as_ref().unwrap();
-                    let mut sorter = crate::external_sort::ExternalSort::new(
-                        self.schema.clone(),
-                        plan.order.clone(),
-                        store,
-                        ctx.budget.clone(),
-                        ctx.options.cancellation.clone(),
-                        settings.sort_run_bytes,
-                        settings.merge_fan_in,
-                        ctx.options.batch_size,
-                    )?;
-                    let mut projected = prepared;
-                    projected.plan.order.clear();
-                    let options = ctx.options;
-                    let budget = ctx.budget.clone();
-                    let mut metrics = Metrics::default();
-                    if plan.aggregation {
-                        // Group state is still in memory; the external aggregate
-                        // path is a separate M3 requirement. Sorting is independent.
-                        let result =
-                            execute::execute_stream(&projected, options, budget, |send| {
-                                child.run(ctx, send)
-                            })?;
-                        merge(&mut metrics, &result.metrics);
-                        sorter.push(result.batch.clone())?;
-                    } else {
-                        child.run(ctx, &mut |batch| {
-                            let result = execute::execute_stream(
-                                &projected,
-                                options,
-                                budget.clone(),
-                                |send| send(batch),
-                            )?;
-                            merge(&mut metrics, &result.metrics);
-                            sorter.push(result.batch.clone())
-                        })?;
-                    }
-                    let sorted = sorter.finish(emit)?;
-                    merge(&mut ctx.metrics, &metrics);
-                    ctx.metrics.external_sort_runs += sorted.runs;
-                    ctx.metrics.external_sort_merge_passes += sorted.merge_passes;
-                    ctx.metrics.external_sort_rows += sorted.rows;
-                    ctx.metrics.output_sort_seconds += sorted.seconds;
-                    return Ok(());
-                }
-                if plan.aggregation && plan.order.is_empty() {
-                    let metrics = execute::execute_aggregate_stream(
-                        &prepared,
-                        ctx.options,
-                        ctx.budget.clone(),
-                        |send| child.run(ctx, send),
-                        emit,
-                    )?;
-                    merge(&mut ctx.metrics, &metrics);
-                    return Ok(());
-                }
-                if !plan.aggregation && plan.order.is_empty() {
-                    let budget = ctx.budget.clone();
-                    let options = ctx.options;
-                    let mut metrics = Metrics::default();
-                    child.run(ctx, &mut |b| {
-                        let result =
-                            execute::execute_stream(&prepared, options, budget.clone(), |send| {
-                                send(b)
-                            })?;
-                        merge(&mut metrics, &result.metrics);
-                        if result.batch.schema() == self.schema {
-                            return emit(result.batch.clone());
-                        }
-                        // A direct Int64 projection can have a narrow prepared
-                        // schema even when execution disables pushdown. Keep the
-                        // general executor's evaluation and validation, then
-                        // narrow only those output fields using checked INTEGER
-                        // conversion. The enabled pushdown path still shares
-                        // the source arrays without wide intermediate copies.
-                        let _lease = budget
-                            .reserve(result.batch.get_array_memory_size().saturating_add(256))?;
-                        let arrays = result
-                            .batch
-                            .columns()
-                            .iter()
-                            .zip(self.schema.fields())
-                            .map(|(array, field)| {
-                                if field.data_type() == &arrow::datatypes::DataType::Int64
-                                    && array.data_type() != field.data_type()
-                                {
-                                    execute::materialize(array, &Type::Int)
-                                } else {
-                                    Ok(array.clone())
-                                }
-                            })
-                            .collect::<Result<Vec<_>>>()?;
-                        let batch = RecordBatch::try_new(self.schema.clone(), arrays)
-                            .map_err(|e| e.to_string())?;
-                        emit(batch)
-                    })?;
-                    merge(&mut ctx.metrics, &metrics);
-                    return Ok(());
-                }
-                let result =
-                    execute::execute_stream(&prepared, ctx.options, ctx.budget.clone(), |send| {
-                        child.run(ctx, send)
-                    })?;
-                merge(&mut ctx.metrics, &result.metrics);
-                emit(result.batch.clone())
-            }
+            RelOp::Unary { plan, input: child } => self.run_unary(plan, child, ctx, emit),
             RelOp::Join {
                 left,
                 right,
@@ -3396,6 +3842,212 @@ impl Node {
             } => in_subquery::run(self, left, right, value, *negated, ctx, emit),
         }
     }
+    // Keep large projection/aggregation temporaries off the recursive dispatcher
+    // frame. A QUALIFY over grouped windows can traverse many ordinary UNION
+    // inputs; those nodes must not reserve a Unary workspace on every level.
+    fn run_unary(
+        &self,
+        plan: &bind::Plan,
+        child: &Node,
+        ctx: &mut Context<'_>,
+        emit: &mut dyn FnMut(RecordBatch) -> Result<()>,
+    ) -> Result<()> {
+        if let Some(metrics) = numeric_leaf::try_clustered_plan(plan, child, None, ctx, emit)? {
+            numeric_leaf::merge_metrics(&mut ctx.metrics, &metrics);
+            return Ok(());
+        }
+        if let Some(metrics) = shared_pipeline::try_execute(plan, child, ctx, emit)? {
+            shared_pipeline::merge_metrics(&mut ctx.metrics, &metrics);
+            merge(&mut ctx.metrics, &metrics);
+            return Ok(());
+        }
+        if ctx.options.relational_optimizations
+            && ctx.options.projection_pushdown
+            && let Some(columns) = column_projection::columns(plan, &child.schema, &self.schema)
+        {
+            let budget = ctx.budget.clone();
+            let mut metrics = Metrics::default();
+            child.run(ctx, &mut |batch| {
+                let start = Instant::now();
+                let (output, _lease) =
+                    column_projection::project(&batch, &columns, self.schema.clone(), &budget)?;
+                metrics.column_projection_batches += 1;
+                metrics.column_projection_rows += batch.num_rows();
+                metrics.rows_after_filter += batch.num_rows();
+                metrics.batches += 1;
+                metrics.expression_seconds += start.elapsed().as_secs_f64();
+                emit(output)
+            })?;
+            merge(&mut ctx.metrics, &metrics);
+            return Ok(());
+        }
+        let prepared = Prepared {
+            auto_simple: None,
+            internal_output: true,
+            plan: plan.clone(),
+            schema: child.schema.clone(),
+            relational: None,
+        };
+        if let Some(metrics) = build_groups::try_execute(&prepared, child, ctx, emit)? {
+            merge(&mut ctx.metrics, &metrics);
+            return Ok(());
+        }
+        if let Some(metrics) = left_count::try_execute(&prepared, child, ctx, emit)? {
+            merge(&mut ctx.metrics, &metrics);
+            return Ok(());
+        }
+        if let Some(metrics) = numeric_leaf::try_execute(&prepared, child, ctx, emit)? {
+            numeric_leaf::merge_metrics(&mut ctx.metrics, &metrics);
+            return Ok(());
+        }
+        if plan.aggregation
+            && (!plan.groups.is_empty() || plan.aggregates.iter().any(|a| a.distinct))
+            && let Some(store) = ctx.spill.clone()
+        {
+            let options = ctx.options;
+            let budget = ctx.budget.clone();
+            let mut sorter = if plan.order.is_empty() {
+                None
+            } else {
+                let settings = options.spill.as_ref().unwrap();
+                Some(crate::external_sort::ExternalSort::new(
+                    self.schema.clone(),
+                    plan.order.clone(),
+                    store.clone(),
+                    budget.clone(),
+                    options.cancellation.clone(),
+                    settings.sort_run_bytes,
+                    settings.merge_fan_in,
+                    options.batch_size,
+                )?)
+            };
+            let metrics = crate::external_aggregate::run(
+                &prepared,
+                options,
+                budget,
+                store,
+                |send| child.run(ctx, send),
+                &mut |batch| {
+                    if let Some(sorter) = &mut sorter {
+                        sorter.push(batch)
+                    } else {
+                        emit(batch)
+                    }
+                },
+            )?;
+            merge(&mut ctx.metrics, &metrics);
+            if let Some(sorter) = sorter {
+                let sorted = sorter.finish(emit)?;
+                ctx.metrics.external_sort_runs += sorted.runs;
+                ctx.metrics.external_sort_merge_passes += sorted.merge_passes;
+                ctx.metrics.external_sort_rows += sorted.rows;
+                ctx.metrics.output_sort_seconds += sorted.seconds;
+            }
+            return Ok(());
+        }
+        if !plan.order.is_empty()
+            && let Some(store) = ctx.spill.clone()
+        {
+            let settings = ctx.options.spill.as_ref().unwrap();
+            let mut sorter = crate::external_sort::ExternalSort::new(
+                self.schema.clone(),
+                plan.order.clone(),
+                store,
+                ctx.budget.clone(),
+                ctx.options.cancellation.clone(),
+                settings.sort_run_bytes,
+                settings.merge_fan_in,
+                ctx.options.batch_size,
+            )?;
+            let mut projected = prepared;
+            projected.plan.order.clear();
+            let options = ctx.options;
+            let budget = ctx.budget.clone();
+            let mut metrics = Metrics::default();
+            if plan.aggregation {
+                // Group state is still in memory; the external aggregate
+                // path is a separate M3 requirement. Sorting is independent.
+                let result = execute::execute_stream(&projected, options, budget, |send| {
+                    child.run(ctx, send)
+                })?;
+                merge(&mut metrics, &result.metrics);
+                sorter.push(result.batch.clone())?;
+            } else {
+                child.run(ctx, &mut |batch| {
+                    let result =
+                        execute::execute_stream(&projected, options, budget.clone(), |send| {
+                            send(batch)
+                        })?;
+                    merge(&mut metrics, &result.metrics);
+                    sorter.push(result.batch.clone())
+                })?;
+            }
+            let sorted = sorter.finish(emit)?;
+            merge(&mut ctx.metrics, &metrics);
+            ctx.metrics.external_sort_runs += sorted.runs;
+            ctx.metrics.external_sort_merge_passes += sorted.merge_passes;
+            ctx.metrics.external_sort_rows += sorted.rows;
+            ctx.metrics.output_sort_seconds += sorted.seconds;
+            return Ok(());
+        }
+        if plan.aggregation && plan.order.is_empty() {
+            let metrics = execute::execute_aggregate_stream(
+                &prepared,
+                ctx.options,
+                ctx.budget.clone(),
+                |send| child.run(ctx, send),
+                emit,
+            )?;
+            merge(&mut ctx.metrics, &metrics);
+            return Ok(());
+        }
+        if !plan.aggregation && plan.order.is_empty() {
+            let budget = ctx.budget.clone();
+            let options = ctx.options;
+            let mut metrics = Metrics::default();
+            child.run(ctx, &mut |b| {
+                let result =
+                    execute::execute_stream(&prepared, options, budget.clone(), |send| send(b))?;
+                merge(&mut metrics, &result.metrics);
+                if result.batch.schema() == self.schema {
+                    return emit(result.batch.clone());
+                }
+                // A direct Int64 projection can have a narrow prepared
+                // schema even when execution disables pushdown. Keep the
+                // general executor's evaluation and validation, then
+                // narrow only those output fields using checked INTEGER
+                // conversion. The enabled pushdown path still shares
+                // the source arrays without wide intermediate copies.
+                let _lease =
+                    budget.reserve(result.batch.get_array_memory_size().saturating_add(256))?;
+                let arrays = result
+                    .batch
+                    .columns()
+                    .iter()
+                    .zip(self.schema.fields())
+                    .map(|(array, field)| {
+                        if field.data_type() == &arrow::datatypes::DataType::Int64
+                            && array.data_type() != field.data_type()
+                        {
+                            execute::materialize(array, &Type::Int)
+                        } else {
+                            Ok(array.clone())
+                        }
+                    })
+                    .collect::<Result<Vec<_>>>()?;
+                let batch =
+                    RecordBatch::try_new(self.schema.clone(), arrays).map_err(|e| e.to_string())?;
+                emit(batch)
+            })?;
+            merge(&mut ctx.metrics, &metrics);
+            return Ok(());
+        }
+        let result = execute::execute_stream(&prepared, ctx.options, ctx.budget.clone(), |send| {
+            child.run(ctx, send)
+        })?;
+        merge(&mut ctx.metrics, &result.metrics);
+        emit(result.batch.clone())
+    }
     // For a small existence/anti left side, hash its rows and mark matches while
     // streaming the larger right side. Duplicate left rows retain independent
     // match bits; NULL equality keys never match; ON residuals use original
@@ -3410,24 +4062,39 @@ impl Node {
         kind: JoinKind,
         keys: &[(Expr, Expr)],
         residual: Option<&Expr>,
+        cached_candidate: Option<BufferedOutput>,
     ) -> Result<()> {
         let budget = ctx.budget.clone();
         let compact_text = ctx.options.relational_optimizations;
-        let mut batches = Vec::new();
-        let mut leases = Vec::new();
-        left.run(ctx, &mut |b| {
-            leases.push(budget.reserve(b.get_array_memory_size())?);
-            batches.push(b);
-            Ok(())
-        })?;
-        let rows = batches.iter().map(RecordBatch::num_rows).sum::<usize>();
+        let completed = cached_candidate.is_some();
+        let mut candidate = cached_candidate.unwrap_or(BufferedOutput {
+            batches: Vec::new(),
+            reservations: Vec::new(),
+        });
+        if !completed {
+            left.run(ctx, &mut |b| {
+                candidate
+                    .reservations
+                    .push(budget.reserve(b.get_array_memory_size())?);
+                candidate.batches.push(b);
+                Ok(())
+            })?;
+        }
+        let rows = candidate
+            .batches
+            .iter()
+            .map(RecordBatch::num_rows)
+            .sum::<usize>();
         if rows > u32::MAX as usize {
             return Err("resource-limit: join build indices".into());
         }
-        let funded_build =
-            funded_concat::for_join(&left.schema, &batches, &budget, &ctx.options.cancellation)?;
-        drop(batches);
-        drop(leases);
+        let funded_build = funded_concat::for_join(
+            &left.schema,
+            &candidate.batches,
+            &budget,
+            &ctx.options.cancellation,
+        )?;
+        drop(candidate);
         let build = funded_build.batch();
         let values = input(build, &budget, keys.iter().map(|(e, _)| e))?;
         let keys_values = keys
@@ -3603,19 +4270,18 @@ impl Node {
                     let arrays = build
                         .columns()
                         .iter()
-                        .map(|a| take(a, &lidx, None).map_err(|e| e.to_string()))
-                        .chain(
-                            probe
-                                .columns()
-                                .iter()
-                                .map(|a| take(a, &ridx, None).map_err(|e| e.to_string())),
-                        )
+                        .map(|a| {
+                            take(a, &lidx, None).map_err(|e| crate::Error::from(e.to_string()))
+                        })
+                        .chain(probe.columns().iter().map(|a| {
+                            take(a, &ridx, None).map_err(|e| crate::Error::from(e.to_string()))
+                        }))
                         .collect::<Result<Vec<_>>>()?;
                     let batch = RecordBatch::try_new(combined_schema.clone(), arrays)
-                        .map_err(|e| e.to_string())?;
+                        .map_err(|e| crate::Error::from(e.to_string()))?;
                     let _lease = budget.reserve(batch.get_array_memory_size())?;
                     let expr = residual.unwrap();
-                    let mask = expr.eval(&input(&batch, &budget, [expr])?, &budget)?;
+                    let mask = expr.eval_filter(&input(&batch, &budget, [expr])?, &budget)?;
                     for (l, yes) in li.iter().zip(boolean(&mask.array).iter()) {
                         if yes == Some(true) {
                             matched[*l as usize] = true;
@@ -3657,29 +4323,72 @@ impl Node {
         let start = Instant::now();
         // Emit bounded batches rather than one allocation proportional to the
         // whole retained side. Input order and duplicate multiplicity survive.
-        let mut keep = Vec::with_capacity(batch_size);
+        // Prepay the new retained-candidate path without changing the legacy
+        // reverse join's allocation policy or adding byte walks to its output.
+        let quantum = if completed {
+            batch_size.min(rows.max(1))
+        } else {
+            batch_size
+        };
+        let _output_workspace = if completed {
+            Some(
+                budget.reserve(
+                    quantum
+                        .checked_mul(8)
+                        .and_then(|n| n.checked_add(build.num_columns().saturating_mul(128)))
+                        .and_then(|n| n.checked_add(1024))
+                        .ok_or("join output size overflow")?,
+                )?,
+            )
+        } else {
+            None
+        };
+        let mut keep = Vec::with_capacity(quantum);
         let mut count = 0;
         let mut flush = |keep: &mut Vec<u32>| -> Result<()> {
             if keep.is_empty() {
                 return Ok(());
             }
-            let indices =
-                UInt32Array::from(std::mem::replace(keep, Vec::with_capacity(batch_size)));
+            ctx.options.cancellation.check()?;
+            let indices = if completed {
+                UInt32Array::from(keep.clone())
+            } else {
+                UInt32Array::from(std::mem::replace(keep, Vec::with_capacity(quantum)))
+            };
+            let _output = if completed {
+                let bytes = build.columns().iter().try_fold(1024usize, |bytes, array| {
+                    bytes
+                        .checked_add(crate::join_filter::gather_bytes(array, &indices)?)
+                        .ok_or_else(|| "join output size overflow".to_owned())
+                })?;
+                Some(budget.reserve(bytes)?)
+            } else {
+                None
+            };
             let arrays = build
                 .columns()
                 .iter()
-                .map(|a| take(a, &indices, None).map_err(|e| e.to_string()))
+                .map(|a| take(a, &indices, None).map_err(|e| crate::Error::from(e.to_string())))
                 .collect::<Result<Vec<_>>>()?;
-            let batch =
-                RecordBatch::try_new(self.schema.clone(), arrays).map_err(|e| e.to_string())?;
-            let _lease = budget.reserve(batch.get_array_memory_size())?;
+            let batch = RecordBatch::try_new(self.schema.clone(), arrays)
+                .map_err(|e| crate::Error::from(e.to_string()))?;
+            let _legacy_output = if completed {
+                None
+            } else {
+                Some(budget.reserve(batch.get_array_memory_size())?)
+            };
             count += batch.num_rows();
-            emit(batch)
+            emit(batch)?;
+            keep.clear();
+            Ok(())
         };
         for (row, yes) in matched.into_iter().enumerate() {
+            if row.is_multiple_of(1024) {
+                ctx.options.cancellation.check()?;
+            }
             if yes == (kind == JoinKind::Semi) {
                 keep.push(row as u32);
-                if keep.len() == batch_size {
+                if keep.len() == quantum {
                     flush(&mut keep)?;
                 }
             }
@@ -3742,7 +4451,7 @@ impl Node {
         )?;
         right
             .run(ctx, &mut |b| r.push(b))
-            .map_err(|e| format!("{e}; external join build partitioning"))?;
+            .map_err(|e| e.context("; external join build partitioning"))?;
         let r = r.finish()?;
         let mut l = crate::external_join::Side::new(
             left.schema.clone(),
@@ -3752,7 +4461,7 @@ impl Node {
             options,
         )?;
         left.run(ctx, &mut |b| l.push(b))
-            .map_err(|e| format!("{e}; external join probe partitioning"))?;
+            .map_err(|e| e.context("; external join probe partitioning"))?;
         let l = l.finish()?;
         let metrics = crate::external_join::run(
             l,
@@ -3781,10 +4490,14 @@ impl Node {
         residual: Option<&Expr>,
         downstream: Option<lane_fusion::Suffix>,
     ) -> Result<()> {
+        let lane_budget = ctx.budget.clone();
+        let lane_cancel = ctx.options.cancellation.clone();
         if ctx.spill.is_some() {
             return self.spilled_join(
                 ctx,
-                &mut |batch| lane_fusion::deliver(batch, &downstream, emit),
+                &mut |batch| {
+                    lane_fusion::deliver(batch, &downstream, &lane_budget, &lane_cancel, emit)
+                },
                 left,
                 right,
                 crate::external_join::Mode::Rows(kind),
@@ -3794,7 +4507,7 @@ impl Node {
         }
         if matches!(kind, JoinKind::Semi | JoinKind::Anti)
             && paired_existence::try_execute(self, ctx, &mut |batch| {
-                lane_fusion::deliver(batch, &downstream, emit)
+                lane_fusion::deliver(batch, &downstream, &lane_budget, &lane_cancel, emit)
             })?
         {
             return Ok(());
@@ -3810,13 +4523,21 @@ impl Node {
         {
             return self.reverse_existence_join(
                 ctx,
-                &mut |batch| lane_fusion::deliver(batch, &downstream, emit),
+                &mut |batch| {
+                    lane_fusion::deliver(batch, &downstream, &lane_budget, &lane_cancel, emit)
+                },
                 left,
                 right,
                 kind,
                 keys,
                 residual,
+                None,
             );
+        }
+        if scalar_existence::try_execute(self, ctx, &mut |batch| {
+            lane_fusion::deliver(batch, &downstream, &lane_budget, &lane_cancel, emit)
+        })? {
+            return Ok(());
         }
         self.hash_join_with_probe(
             ctx, emit, left, right, kind, keys, residual, downstream, None, None,
@@ -4054,7 +4775,7 @@ impl Node {
                         descriptors,
                     );
                     let (suffix, reached_scan) =
-                        lane_fusion::Suffix::prepend(transform, downstream);
+                        lane_fusion::Suffix::prepend_selected(transform, downstream);
                     let result = lane_fusion::run(left, ctx, suffix, emit);
                     if let Some(installed) = scan_filter {
                         installed.restore(ctx);
@@ -4075,7 +4796,9 @@ impl Node {
                 }
             }
         }
-        let mut output = |batch| lane_fusion::deliver(batch, &downstream, emit);
+        let lane_cancel = ctx.options.cancellation.clone();
+        let mut output =
+            |batch| lane_fusion::deliver(batch, &downstream, &budget, &lane_cancel, emit);
         let mut kernel = probe::Kernel {
             map: map.view(),
             build,
@@ -4213,7 +4936,65 @@ pub(crate) fn execute_in_budget(
     if options.error_replay.canonical() {
         return shared_retry::canonical(root, options, budget, internal_output);
     }
-    shared_retry::execute(root, options, budget, internal_output)
+    if options.workers > 1
+        && budget.limit().saturating_sub(budget.used()) <= 2 * crate::memory::THREAD_MEMORY_BYTES
+    {
+        // There is no room for one helper plus downstream headroom. Choose the
+        // caller before allocating a retry guard, preserving serial diagnostics.
+        let serial = Options {
+            workers: 1,
+            ..options.clone()
+        };
+        return shared_retry::execute(root, &serial, budget, internal_output);
+    }
+    let started = Instant::now();
+    let entry_workers = budget.active_workers();
+    let entry_decoder_refusals = budget.decoder_refusals();
+    let entry_transform_refusals = budget.parallel_transform_refusals();
+    // Parallel producers may overlap decoder and fused-transform lifetimes which
+    // fit sequentially. Capture immutable sources before any SQL work. Failure
+    // to fund this optional guard must not replace the ordinary outcome.
+    let sources = if options.workers > 1 && options.spill.is_none() && entry_workers == 0 {
+        shared_retry::Sources::capture(root, &budget, options).ok()
+    } else {
+        None
+    };
+    let guarded_used = budget.used();
+    let result = shared_retry::execute(root, options, budget.clone(), internal_output);
+    if matches!(&result, Err(error) if error.starts_with("resource-limit: accounted memory"))
+        && (budget.decoder_refusals() > entry_decoder_refusals
+            || budget.parallel_transform_refusals() > entry_transform_refusals)
+        && let Some(sources) = sources
+    {
+        // The first attempt publishes no result. All queues, cursors, partial
+        // aggregates and helpers must have exited before the same plan retries.
+        if budget.used() != guarded_used || budget.active_workers() != entry_workers {
+            return Err("parallel scan retry retained ownership".into());
+        }
+        sources.verify(options)?;
+        let serial = Options {
+            workers: 1,
+            ..options.clone()
+        };
+        let replay = shared_retry::execute(root, &serial, budget.clone(), internal_output);
+        if replay.is_ok() {
+            sources.verify(options)?;
+        }
+        return replay.map(|mut output| {
+            if budget.decoder_refusals() > entry_decoder_refusals {
+                output.metrics.decoder_serial_retries += 1;
+            }
+            if budget.parallel_transform_refusals() > entry_transform_refusals {
+                output.metrics.parallel_transform_serial_retries += 1;
+            }
+            output.metrics.workers = options.workers;
+            output.metrics.execution_seconds = started.elapsed().as_secs_f64();
+            output.metrics.peak_reserved_bytes = budget.peak();
+            output.metrics.worker_threads_peak = budget.peak_threads();
+            output
+        });
+    }
+    result
 }
 struct BufferedOutput {
     batches: Vec<RecordBatch>,
@@ -4226,6 +5007,31 @@ fn execute_once(
     shared_attempt: Option<Arc<crate::execute::pipeline::fallback::Attempt>>,
     internal_output: bool,
 ) -> Result<Execution> {
+    let mut subplan_fallbacks = 0;
+    if options.relational_optimizations
+        && !options.error_replay.canonical()
+        && options.spill.is_none()
+        && let Some(candidate) = subplan_reuse::candidate(root, &budget, options)
+    {
+        let cache_used = std::sync::atomic::AtomicBool::new(false);
+        let result = execute_once_with_demand_cache(
+            &candidate.root,
+            options,
+            budget.clone(),
+            None,
+            internal_output,
+            Some(&cache_used),
+        );
+        candidate.verify(options)?;
+        drop(candidate);
+        if let Ok(output) = result {
+            return Ok(output);
+        }
+        // No result has escaped. Recreate all state using the original raw-scan
+        // sharing plan, including its own SQL/decode error chronology.
+        options.cancellation.check()?;
+        subplan_fallbacks = 1;
+    }
     if options.relational_optimizations
         && !options.error_replay.canonical()
         && options.spill.is_none()
@@ -4246,6 +5052,7 @@ fn execute_once(
         drop(candidate);
         if let Ok(mut output) = result {
             output.metrics.aggregate_scan_reuses += 1;
+            output.metrics.subplan_fallbacks += subplan_fallbacks;
             return Ok(output);
         }
         options.cancellation.check()?;
@@ -4269,6 +5076,10 @@ fn execute_once(
     } else {
         result
     }
+    .map(|mut output| {
+        output.metrics.subplan_fallbacks += subplan_fallbacks;
+        output
+    })
 }
 
 fn execute_once_with_demand_cache(
@@ -4311,6 +5122,7 @@ fn execute_once_with_demand_cache(
         lane_transforms: HashMap::new(),
         replay_transforms: HashMap::new(),
         materialized: HashMap::new(),
+        recursive_bindings: None,
         sideways_registry_lease: None,
         spill: options
             .spill
@@ -4371,7 +5183,7 @@ fn execute_once_with_demand_cache(
         if let Some(store) = ctx.spill.take()
             && let Err(cleanup) = store.finish()
         {
-            return Err(format!("{error}; {cleanup}"));
+            return Err(format!("{error}; {cleanup}").into());
         }
         return Err(error);
     }
@@ -4387,7 +5199,8 @@ fn execute_once_with_demand_cache(
             .map(RecordBatch::get_array_memory_size)
             .sum(),
     )?;
-    let batch = concat_batches(&root.schema, &output.batches).map_err(|e| e.to_string())?;
+    let batch = concat_batches(&root.schema, &output.batches)
+        .map_err(|e| crate::Error::from(e.to_string()))?;
     // This is the public query boundary. A derived relation, aggregate result,
     // grouping key or sort key is not a returned BIGINT value.
     let batch = if !internal_output
@@ -4432,7 +5245,8 @@ fn execute_once_with_demand_cache(
                 }
             })
             .collect::<Result<Vec<_>>>()?;
-        RecordBatch::try_new(Arc::new(Schema::new(fields)), arrays).map_err(|e| e.to_string())?
+        RecordBatch::try_new(Arc::new(Schema::new(fields)), arrays)
+            .map_err(|e| crate::Error::from(e.to_string()))?
     } else {
         batch
     };
@@ -4647,7 +5461,9 @@ fn materialized_storage(
         return Ok(stored);
     }
     let stored = if let Some(stored) = ctx.materialized.get(&id).cloned() {
-        if shared_scan {
+        if id == subplan_reuse::ID {
+            ctx.metrics.subplan_reuses += 1;
+        } else if shared_scan {
             ctx.metrics.scan_reuses += 1;
         } else {
             ctx.metrics.cte_reuses += 1;
@@ -4678,9 +5494,19 @@ fn materialized_storage(
                         return Err("aggregate reuse build exceeds proven count bound".into());
                     }
                 }
+                let metadata = if id == subplan_reuse::ID {
+                    // The shared result can be wider than a raw scan. Cover
+                    // retained column handles and both vectors' growth overlap.
+                    batch
+                        .num_columns()
+                        .saturating_mul(64)
+                        .saturating_add(4 * std::mem::size_of::<RecordBatch>() + 256)
+                } else {
+                    256
+                };
                 retained
                     .reservations
-                    .push(budget.reserve(batch.get_array_memory_size() + 256)?);
+                    .push(budget.reserve(batch.get_array_memory_size().saturating_add(metadata))?);
                 retained.batches.push(batch);
                 Ok(())
             })?;
@@ -4696,7 +5522,14 @@ fn materialized_storage(
             sideways::fund_registry(ctx, 1)?;
         }
         ctx.materialized.insert(id, stored.clone());
-        if shared_scan {
+        if id == subplan_reuse::ID {
+            ctx.metrics.subplan_materializations += 1;
+            ctx.metrics.subplan_rows += stored
+                .batches
+                .iter()
+                .map(RecordBatch::num_rows)
+                .sum::<usize>();
+        } else if shared_scan {
             ctx.metrics.scan_materializations += 1;
         } else {
             ctx.metrics.cte_materializations += 1;

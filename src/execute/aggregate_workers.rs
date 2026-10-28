@@ -22,7 +22,7 @@ pub(super) struct Batch {
     pub _group_lease: Reservation,
 }
 struct Report {
-    error: Option<(usize, String)>,
+    error: Option<(usize, crate::Error)>,
     bounded: usize,
     seconds: f64,
 }
@@ -57,7 +57,10 @@ impl Workers {
                     && (agg.distinct
                         || !matches!(
                             agg.function,
-                            Aggregate::Count | Aggregate::Sum | Aggregate::Avg
+                            Aggregate::Count
+                                | Aggregate::Sum
+                                | Aggregate::Avg
+                                | Aggregate::Moment { .. }
                         ))
             })
         {
@@ -74,6 +77,10 @@ impl Workers {
         // One outstanding batch, channel envelopes, reports, descriptors and
         // Arc headers. Values and group-index buffers retain their own leases.
         let Ok(metadata) = budget.reserve(permits.count * 4096 + aggregates.len() * 512) else {
+            return Ok(None);
+        };
+        let Ok(mut threads) = budget.reserve(permits.count * crate::memory::THREAD_MEMORY_BYTES)
+        else {
             return Ok(None);
         };
         let canonical: Vec<usize> = sources
@@ -114,8 +121,10 @@ impl Workers {
             workers.senders.push(send);
             workers.receivers.push(result);
             let cancellation = options.cancellation.clone();
-            let live = budget.thread_started();
+            let live =
+                budget.thread_started_with(threads.split_off(crate::memory::THREAD_MEMORY_BYTES)?);
             let handle = thread::Builder::new()
+                .stack_size(crate::engine_stack::WORKER_STACK_BYTES)
                 .name(format!("assaydb-aggregate-{owner}"))
                 .spawn(move || {
                     while let Ok(batch) = receive.recv() {
@@ -129,13 +138,12 @@ impl Workers {
                                 while state.counts.len() < batch.group_count {
                                     state.push();
                                 }
-                                state.update_plain(
+                                state.update_independent(
                                     function,
                                     batch.values[*index].as_ref(),
                                     &batch.groups,
                                     batch.rows,
                                     scalar,
-                                    true,
                                 )
                             })();
                             match update {
@@ -187,20 +195,19 @@ impl Workers {
             send.send(batch.clone())
                 .map_err(|_| "aggregate worker stopped before batch")?;
         }
-        let mut error: Option<(usize, String)> = None;
+        let mut error: Option<(usize, crate::Error)> = None;
         let mut bounded = 0;
         let mut seconds = 0.;
         for (index, aggregate) in aggregates.iter().enumerate() {
             if sources[index] != index || self.owns(index) {
                 continue;
             }
-            match states[index].update_plain(
+            match states[index].update_independent(
                 &aggregate.function,
                 batch.values[index].as_ref(),
                 &batch.groups,
                 batch.rows,
                 self.scalar,
-                true,
             ) {
                 Ok(n) => bounded += n,
                 Err(e) => {
@@ -302,7 +309,7 @@ mod tests {
     }
     #[test]
     fn aliases_late_groups_nulls_and_batch_buffers_keep_one_state_owner() {
-        let budget = Budget::new(1 << 20);
+        let budget = Budget::new(16 << 20);
         let state_charge = budget.reserve(65536).unwrap();
         let aggregates = aggregates(&[
             Aggregate::Sum,
@@ -366,7 +373,7 @@ mod tests {
     }
     #[test]
     fn earlier_worker_error_beats_later_coordinator_error() {
-        let budget = Budget::new(1 << 20);
+        let budget = Budget::new(16 << 20);
         let state_charge = budget.reserve(65536).unwrap();
         let aggregates = aggregates(&[Aggregate::Count, Aggregate::Sum, Aggregate::Count]);
         let sources = [0, 1, 2];
@@ -404,7 +411,7 @@ mod tests {
     #[test]
     fn pending_acknowledgements_drop_without_blocking_or_retaining_batches() {
         for cancel in [false, true] {
-            let budget = Budget::new(1 << 20);
+            let budget = Budget::new(16 << 20);
             let state_charge = budget.reserve(65536).unwrap();
             let aggregates = aggregates(&[Aggregate::Count, Aggregate::Sum]);
             let sources = [0, 1];
@@ -441,7 +448,7 @@ mod tests {
     #[test]
     fn multiple_helper_errors_and_earlier_coordinator_error_keep_index_priority() {
         for coordinator_error in [false, true] {
-            let budget = Budget::new(1 << 20);
+            let budget = Budget::new(16 << 20);
             let aggregates = aggregates(&[Aggregate::Count, Aggregate::Sum, Aggregate::Count]);
             let sources = [0, 1, 2];
             let mut states: Vec<_> = aggregates.iter().map(States::new).collect();
@@ -489,7 +496,7 @@ mod tests {
         let aggregates = aggregates(&[Aggregate::Sum, Aggregate::Count]);
         let sources = [0, 1];
         for mode in [0, 1, 2] {
-            let budget = Budget::new(if mode == 0 { 1 } else { 1 << 20 });
+            let budget = Budget::new(if mode == 0 { 1 } else { 16 << 20 });
             let held = (mode == 1).then(|| budget.workers(3, 3));
             let options = Options {
                 workers: 4,

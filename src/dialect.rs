@@ -1,5 +1,6 @@
-//! Preserve sqlparser's pinned GenericDialect, adding only approved empty IN lists.
+//! Preserve pinned GenericDialect with approved empty IN lists and QUALIFY.
 use sqlparser::dialect::{Dialect, GenericDialect};
+use sqlparser::{keywords::Keyword, parser::Parser, tokenizer::Token};
 
 #[derive(Debug)]
 pub struct QueryDialect;
@@ -24,6 +25,35 @@ impl Dialect for QueryDialect {
     }
     fn supports_in_empty_list(&self) -> bool {
         true
+    }
+    fn is_select_item_alias(&self, explicit: bool, kw: &Keyword, parser: &mut Parser) -> bool {
+        if !explicit && *kw == Keyword::QUALIFY {
+            // GenericDialect otherwise consumes QUALIFY as an implicit alias
+            // in SELECTs without FROM. Preserve previously legal aliases when
+            // no predicate follows (including SELECT 1 qualify FROM ...).
+            return match parser.peek_token().token {
+                Token::EOF | Token::SemiColon | Token::Comma | Token::RParen => true,
+                Token::Word(word) => {
+                    word.keyword == Keyword::QUALIFY
+                        || !GenericDialect.is_column_alias(&word.keyword, parser)
+                }
+                _ => false,
+            };
+        }
+        if !explicit && *kw == Keyword::WINDOW {
+            // `WINDOW name AS (` starts a WINDOW clause even without FROM
+            // (DuckDB and PostgreSQL); GenericDialect would read WINDOW as an
+            // implicit alias. Other uses of the word keep their meaning.
+            if let (Token::Word(_), Token::Word(as_word), Token::LParen) = (
+                parser.peek_nth_token(0).token,
+                parser.peek_nth_token(1).token,
+                parser.peek_nth_token(2).token,
+            ) && as_word.keyword == Keyword::AS
+            {
+                return false;
+            }
+        }
+        GenericDialect.is_select_item_alias(explicit, kw, parser)
     }
     // Forward every non-default GenericDialect flag in pinned sqlparser0.58.
     generic_flags!(

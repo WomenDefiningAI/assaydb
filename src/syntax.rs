@@ -112,6 +112,52 @@ pub fn and(es: Vec<s::Expr>) -> Option<s::Expr> {
         right: Box::new(b),
     })
 }
+/// Aggregate function names bound by `bind::Binder::aggregate` (lowercase).
+pub const AGGREGATE_NAMES: &[&str] = &[
+    "sum",
+    "avg",
+    "count",
+    "min",
+    "max",
+    // STRING_AGG(text, separator ORDER BY ...) (src/rel/aggregate_modifiers.rs).
+    "string_agg",
+    // Statistical and boolean aggregates (src/bind/statistics.rs).
+    "stddev",
+    "stddev_samp",
+    "stddev_pop",
+    "variance",
+    "var_samp",
+    "var_pop",
+    "covar_samp",
+    "covar_pop",
+    "corr",
+    "regr_slope",
+    "regr_intercept",
+    "regr_count",
+    "regr_r2",
+    "regr_avgx",
+    "regr_avgy",
+    "regr_sxx",
+    "regr_syy",
+    "regr_sxy",
+    "bool_and",
+    "bool_or",
+    "every",
+    "count_if",
+    "arg_max",
+    "arg_min",
+    "max_by",
+    "min_by",
+    // Ordered-set and distribution aggregates (src/bind/ordered_set.rs).
+    "median",
+    "quantile",
+    "quantile_cont",
+    "quantile_disc",
+    "percentile_cont",
+    "percentile_disc",
+    "mode",
+    "approx_count_distinct",
+];
 pub fn is_aggregate(e: &s::Expr) -> bool {
-    matches!(e,s::Expr::Function(f) if f.over.is_none() && ["sum","avg","count","min","max"].contains(&f.name.to_string().to_lowercase().as_str()))
+    matches!(e,s::Expr::Function(f) if f.over.is_none() && AGGREGATE_NAMES.contains(&f.name.to_string().to_lowercase().as_str()))
 }

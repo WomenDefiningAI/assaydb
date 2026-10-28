@@ -202,7 +202,7 @@ fn top_k_sort_key_errors_are_row_major_and_limit_zero_consumes_input() {
 }
 
 #[test]
-fn top_k_offset_rejection_matches_parent_even_for_zero_offset() {
+fn top_k_offset_slices_completed_order_even_for_zero_offset() {
     let fixture = Fixture::new(257, false);
     for offset in [0, 1, 300] {
         let sql = format!("SELECT id FROM t ORDER BY id LIMIT 7 OFFSET {offset}");
@@ -211,8 +211,16 @@ fn top_k_offset_rejection_matches_parent_even_for_zero_offset() {
                 relational_optimizations,
                 ..Options::default()
             };
-            let error = prepare(&sql, &fixture.tables, &options).err().unwrap();
-            assert_eq!(error, "unsupported: LIMIT/OFFSET");
+            let result =
+                execute(&prepare(&sql, &fixture.tables, &options).unwrap(), &options).unwrap();
+            let actual = result
+                .batch
+                .column(0)
+                .as_any()
+                .downcast_ref::<Int64Array>()
+                .unwrap();
+            let expected = (offset..257).take(7).map(|i| i as i64).collect::<Vec<_>>();
+            assert_eq!(actual.values().as_ref(), expected.as_slice());
         }
     }
 }

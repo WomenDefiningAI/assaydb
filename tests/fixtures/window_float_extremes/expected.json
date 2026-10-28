@@ -1,0 +1,6667 @@
+{
+ "duckdb_version": "1.5.6",
+ "cases": [
+  {
+   "id": "rows_2p_1f_partitioned",
+   "sql": "SELECT id, MIN(reading) OVER (PARTITION BY sensor ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 FOLLOWING) AS mn, MAX(reading) OVER (PARTITION BY sensor ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 FOLLOWING) AS mx, MIN(peer) OVER (PARTITION BY sensor ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 FOLLOWING) AS pmn, MAX(peer) OVER (PARTITION BY sensor ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 FOLLOWING) AS pmx FROM t ORDER BY id",
+   "rows": [
+    [
+     0,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     1,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     4,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     5,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     }
+    ],
+    [
+     7,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     8,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     9,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     10,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     11,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     12,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     13,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     14,
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     15,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     16,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     17,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     18,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     19,
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     20,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     21,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     22,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     23,
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     24,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     25,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     26,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     27,
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     28,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     29,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     30,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     31,
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     32,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     33,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     34,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     35,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     36,
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     37,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     38,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     39,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "rows_current_unbounded_following",
+   "sql": "SELECT id, MIN(reading) OVER (PARTITION BY sensor ORDER BY id ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) AS mn, MAX(reading) OVER (PARTITION BY sensor ORDER BY id ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) AS mx, MIN(peer) OVER (PARTITION BY sensor ORDER BY id ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) AS pmn, MAX(peer) OVER (PARTITION BY sensor ORDER BY id ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) AS pmx FROM t ORDER BY id",
+   "rows": [
+    [
+     0,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     1,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     2,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     3,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     4,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     5,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     7,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     8,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     9,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     10,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     11,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     12,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     13,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     14,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     15,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     16,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     17,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     18,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     19,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     20,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     21,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     22,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     23,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     24,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     25,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     26,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     27,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     28,
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     29,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     30,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     31,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     32,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     33,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     }
+    ],
+    [
+     34,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     }
+    ],
+    [
+     35,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     36,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     37,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     }
+    ],
+    [
+     38,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     }
+    ],
+    [
+     39,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "rows_unbounded_preceding_2f",
+   "sql": "SELECT id, MIN(reading) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND 2 FOLLOWING) AS mn, MAX(reading) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND 2 FOLLOWING) AS mx, MIN(peer) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND 2 FOLLOWING) AS pmn, MAX(peer) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND 2 FOLLOWING) AS pmx FROM t ORDER BY id",
+   "rows": [
+    [
+     0,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     1,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     2,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     3,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     4,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     5,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     7,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     8,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     9,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     10,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     11,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     12,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     13,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     14,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     15,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     16,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     17,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     18,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     19,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     20,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     21,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     22,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     23,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     24,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     25,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     26,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     27,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     28,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     29,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     30,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     31,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     32,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     33,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     34,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     35,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     36,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     37,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     38,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     39,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "rows_3p_current",
+   "sql": "SELECT id, MIN(reading) OVER (ORDER BY id ROWS BETWEEN 3 PRECEDING AND CURRENT ROW) AS mn, MAX(reading) OVER (ORDER BY id ROWS BETWEEN 3 PRECEDING AND CURRENT ROW) AS mx, MIN(peer) OVER (ORDER BY id ROWS BETWEEN 3 PRECEDING AND CURRENT ROW) AS pmn, MAX(peer) OVER (ORDER BY id ROWS BETWEEN 3 PRECEDING AND CURRENT ROW) AS pmx FROM t ORDER BY id",
+   "rows": [
+    [
+     0,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     1,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     2,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     3,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     4,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     5,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     7,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     8,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     9,
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     10,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     11,
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     }
+    ],
+    [
+     12,
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     }
+    ],
+    [
+     13,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     14,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     15,
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     16,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     17,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     18,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     19,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     20,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     21,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     22,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     23,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     24,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     25,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     26,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     27,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     }
+    ],
+    [
+     28,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     }
+    ],
+    [
+     29,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     30,
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     31,
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     32,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     33,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     34,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     35,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     36,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     37,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     38,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     39,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "rows_0p_4f",
+   "sql": "SELECT id, MIN(reading) OVER (ORDER BY id ROWS BETWEEN CURRENT ROW AND 4 FOLLOWING) AS mn, MAX(reading) OVER (ORDER BY id ROWS BETWEEN CURRENT ROW AND 4 FOLLOWING) AS mx, MIN(peer) OVER (ORDER BY id ROWS BETWEEN CURRENT ROW AND 4 FOLLOWING) AS pmn, MAX(peer) OVER (ORDER BY id ROWS BETWEEN CURRENT ROW AND 4 FOLLOWING) AS pmx FROM t ORDER BY id",
+   "rows": [
+    [
+     0,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     1,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     2,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     3,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     4,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     5,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     7,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     8,
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     }
+    ],
+    [
+     9,
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     10,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     11,
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     12,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     13,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     14,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     15,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     16,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     17,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     18,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     19,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     20,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     21,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     22,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     23,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     24,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     }
+    ],
+    [
+     25,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     26,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     27,
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     28,
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     29,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     30,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     31,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     32,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     33,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     34,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     35,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     36,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     37,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     38,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     39,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "range_int_5p_5f",
+   "sql": "SELECT id, MIN(reading) OVER (ORDER BY id RANGE BETWEEN 5 PRECEDING AND 5 FOLLOWING) AS mn, MAX(reading) OVER (ORDER BY id RANGE BETWEEN 5 PRECEDING AND 5 FOLLOWING) AS mx, MIN(peer) OVER (ORDER BY id RANGE BETWEEN 5 PRECEDING AND 5 FOLLOWING) AS pmn, MAX(peer) OVER (ORDER BY id RANGE BETWEEN 5 PRECEDING AND 5 FOLLOWING) AS pmx FROM t ORDER BY id",
+   "rows": [
+    [
+     0,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     1,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     2,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     3,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     4,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     5,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     7,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     8,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     9,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     10,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     11,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     12,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     13,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     14,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     15,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     16,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     17,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     18,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     19,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     20,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     21,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     22,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     23,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     24,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     25,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     26,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     27,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     28,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     29,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     30,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     31,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     32,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     33,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     34,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     35,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     36,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     37,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     38,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     39,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "range_int_partitioned_8p_current",
+   "sql": "SELECT id, MIN(reading) OVER (PARTITION BY sensor ORDER BY id RANGE BETWEEN 8 PRECEDING AND CURRENT ROW) AS mn, MAX(reading) OVER (PARTITION BY sensor ORDER BY id RANGE BETWEEN 8 PRECEDING AND CURRENT ROW) AS mx, MIN(peer) OVER (PARTITION BY sensor ORDER BY id RANGE BETWEEN 8 PRECEDING AND CURRENT ROW) AS pmn, MAX(peer) OVER (PARTITION BY sensor ORDER BY id RANGE BETWEEN 8 PRECEDING AND CURRENT ROW) AS pmx FROM t ORDER BY id",
+   "rows": [
+    [
+     0,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     1,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     5,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     }
+    ],
+    [
+     7,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     8,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     9,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     }
+    ],
+    [
+     10,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     }
+    ],
+    [
+     11,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     12,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     13,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     14,
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     15,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     16,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     17,
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     18,
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     19,
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     }
+    ],
+    [
+     20,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     21,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     22,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     23,
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     24,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     25,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     }
+    ],
+    [
+     26,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     }
+    ],
+    [
+     27,
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     28,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     29,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     30,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     31,
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     32,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     33,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     34,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     35,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     }
+    ],
+    [
+     36,
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     37,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     38,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     39,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "rows_ordered_by_float_peer",
+   "sql": "SELECT id, MIN(reading) OVER (ORDER BY peer ASC NULLS LAST, id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS mn, MAX(reading) OVER (ORDER BY peer ASC NULLS LAST, id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS mx, MIN(peer) OVER (ORDER BY peer ASC NULLS LAST, id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS pmn, MAX(peer) OVER (ORDER BY peer ASC NULLS LAST, id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS pmx FROM t ORDER BY id",
+   "rows": [
+    [
+     0,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     1,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     5,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     }
+    ],
+    [
+     7,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     8,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     }
+    ],
+    [
+     9,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     }
+    ],
+    [
+     10,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     11,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "fff0000000000000"
+     }
+    ],
+    [
+     12,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "3fd0000000000000"
+     }
+    ],
+    [
+     13,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     14,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     15,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     }
+    ],
+    [
+     16,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     17,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     }
+    ],
+    [
+     18,
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     }
+    ],
+    [
+     19,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     }
+    ],
+    [
+     20,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     21,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     }
+    ],
+    [
+     22,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     }
+    ],
+    [
+     23,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     24,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     }
+    ],
+    [
+     25,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     }
+    ],
+    [
+     26,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     null,
+     null
+    ],
+    [
+     27,
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     }
+    ],
+    [
+     28,
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     }
+    ],
+    [
+     29,
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     30,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     31,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     }
+    ],
+    [
+     32,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     33,
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     }
+    ],
+    [
+     34,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "3fd0000000000000"
+     }
+    ],
+    [
+     35,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     36,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     37,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     }
+    ],
+    [
+     38,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     }
+    ],
+    [
+     39,
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "default_frame_float_peers",
+   "sql": "SELECT id, MIN(reading) OVER (ORDER BY peer ASC NULLS LAST) AS mn, MAX(reading) OVER (ORDER BY peer ASC NULLS LAST) AS mx, MIN(peer) OVER (ORDER BY peer ASC NULLS LAST) AS pmn, MAX(peer) OVER (ORDER BY peer ASC NULLS LAST) AS pmx FROM t ORDER BY id",
+   "rows": [
+    [
+     0,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     1,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     5,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     }
+    ],
+    [
+     7,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     8,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     }
+    ],
+    [
+     9,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     }
+    ],
+    [
+     10,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     11,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "fff0000000000000"
+     }
+    ],
+    [
+     12,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3fd0000000000000"
+     }
+    ],
+    [
+     13,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     14,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     15,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     }
+    ],
+    [
+     16,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     17,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     }
+    ],
+    [
+     18,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     }
+    ],
+    [
+     19,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     }
+    ],
+    [
+     20,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     21,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     }
+    ],
+    [
+     22,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     }
+    ],
+    [
+     23,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     24,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     }
+    ],
+    [
+     25,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     }
+    ],
+    [
+     26,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     27,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "fff0000000000000"
+     }
+    ],
+    [
+     28,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3fd0000000000000"
+     }
+    ],
+    [
+     29,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     30,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     31,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     }
+    ],
+    [
+     32,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     33,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     }
+    ],
+    [
+     34,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     }
+    ],
+    [
+     35,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     }
+    ],
+    [
+     36,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     37,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     }
+    ],
+    [
+     38,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     }
+    ],
+    [
+     39,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "whole_partition",
+   "sql": "SELECT id, MIN(reading) OVER (PARTITION BY sensor) AS mn, MAX(reading) OVER (PARTITION BY sensor) AS mx, MIN(peer) OVER (PARTITION BY sensor) AS pmn, MAX(peer) OVER (PARTITION BY sensor) AS pmx FROM t ORDER BY id",
+   "rows": [
+    [
+     0,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     1,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     2,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     3,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     4,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     5,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     7,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     8,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     9,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     10,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     11,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     12,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     13,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     14,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     15,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     16,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     17,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     18,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     19,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     20,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     21,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     22,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     23,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     24,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     25,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     26,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     27,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     28,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     29,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     30,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     31,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     32,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     33,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     34,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     35,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     36,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     37,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     38,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     39,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "prefix_rows",
+   "sql": "SELECT id, MIN(reading) OVER (PARTITION BY sensor ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS mn, MAX(reading) OVER (PARTITION BY sensor ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS mx, MIN(peer) OVER (PARTITION BY sensor ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS pmn, MAX(peer) OVER (PARTITION BY sensor ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS pmx FROM t ORDER BY id",
+   "rows": [
+    [
+     0,
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     1,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     }
+    ],
+    [
+     2,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     }
+    ],
+    [
+     3,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     }
+    ],
+    [
+     4,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     5,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     }
+    ],
+    [
+     6,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "3fd0000000000000"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     }
+    ],
+    [
+     7,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "3fe0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     8,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     9,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "7ff0000000000000"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "3ff0000000000000"
+     }
+    ],
+    [
+     10,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "4024000000000000"
+     }
+    ],
+    [
+     11,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     12,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     13,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     14,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     15,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     16,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     17,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     18,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     19,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     20,
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     21,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     22,
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     23,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     24,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     25,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     26,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     27,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     28,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     29,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     30,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     31,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     32,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     33,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     34,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     35,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     36,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "c024000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     37,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     38,
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "0000000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ],
+    [
+     39,
+     {
+      "float": "bfd0000000000000"
+     },
+     {
+      "float": "NaN"
+     },
+     {
+      "float": "fff0000000000000"
+     },
+     {
+      "float": "NaN"
+     }
+    ]
+   ]
+  }
+ ]
+}

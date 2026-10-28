@@ -1,0 +1,849 @@
+{
+  "duckdb_version": "1.5.6",
+  "canonical_order": "insertion order (ascending id); stable window sort",
+  "method": "Exhaustive peer permutations (or complete first-position choices) evaluated by an independent Python model; one permutation per whole answer",
+  "frames_setup": [
+    "CREATE TABLE t(id INTEGER,k INTEGER,v INTEGER,f DOUBLE)",
+    "INSERT INTO t VALUES(1,1,2,1e16),(2,1,NULL,1),(3,3,4,-1e16),(4,NULL,8,1)"
+  ],
+  "ranking_setup_sha256": "4d6a326e834dcb5992812fba4fa032a8481cd48d4485992285e0aae5f0c61c75",
+  "cases": [
+    {
+      "id": "hw-frames-value-peers",
+      "sql": "SELECT id,LAST_VALUE(v) OVER(ORDER BY k),FIRST_VALUE(v) OVER(ORDER BY k ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING),NTH_VALUE(v,2) OVER(ORDER BY k) FROM t ORDER BY id",
+      "compare": "ordered",
+      "peer_groups": [
+        [
+          1,
+          2
+        ],
+        [
+          3
+        ],
+        [
+          4
+        ]
+      ],
+      "permutation_count": 2,
+      "permitted_rows": [
+        [
+          [
+            1,
+            null,
+            2,
+            null
+          ],
+          [
+            2,
+            null,
+            null,
+            null
+          ],
+          [
+            3,
+            4,
+            4,
+            null
+          ],
+          [
+            4,
+            8,
+            8,
+            null
+          ]
+        ],
+        [
+          [
+            1,
+            2,
+            2,
+            2
+          ],
+          [
+            2,
+            2,
+            null,
+            2
+          ],
+          [
+            3,
+            4,
+            4,
+            2
+          ],
+          [
+            4,
+            8,
+            8,
+            2
+          ]
+        ]
+      ],
+      "canonical_rows": [
+        [
+          1,
+          null,
+          2,
+          null
+        ],
+        [
+          2,
+          null,
+          null,
+          null
+        ],
+        [
+          3,
+          4,
+          4,
+          null
+        ],
+        [
+          4,
+          8,
+          8,
+          null
+        ]
+      ],
+      "duckdb_rows": [
+        [
+          1,
+          null,
+          2,
+          null
+        ],
+        [
+          2,
+          null,
+          null,
+          null
+        ],
+        [
+          3,
+          4,
+          4,
+          null
+        ],
+        [
+          4,
+          8,
+          8,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "hw-frames-float-fold-order",
+      "sql": "SELECT SUM(f) OVER(ORDER BY id ROWS UNBOUNDED PRECEDING),SUM(f) OVER(ORDER BY id ROWS BETWEEN 2 PRECEDING AND CURRENT ROW),AVG(f) OVER() FROM t ORDER BY id",
+      "compare": "ordered",
+      "peer_groups": [
+        [
+          1,
+          2,
+          3,
+          4
+        ]
+      ],
+      "permutation_count": 24,
+      "permitted_rows": [
+        [
+          [
+            {
+              "float_bits": "4341c37937e08000"
+            },
+            {
+              "float_bits": "4341c37937e08000"
+            },
+            {
+              "float_bits": "3fd0000000000000"
+            }
+          ],
+          [
+            {
+              "float_bits": "4341c37937e08000"
+            },
+            {
+              "float_bits": "4341c37937e08000"
+            },
+            {
+              "float_bits": "3fd0000000000000"
+            }
+          ],
+          [
+            {
+              "float_bits": "0000000000000000"
+            },
+            {
+              "float_bits": "0000000000000000"
+            },
+            {
+              "float_bits": "3fd0000000000000"
+            }
+          ],
+          [
+            {
+              "float_bits": "3ff0000000000000"
+            },
+            {
+              "float_bits": "c341c37937e08000"
+            },
+            {
+              "float_bits": "3fd0000000000000"
+            }
+          ]
+        ],
+        [
+          [
+            {
+              "float_bits": "4341c37937e08000"
+            },
+            {
+              "float_bits": "4341c37937e08000"
+            },
+            {
+              "float_bits": "0000000000000000"
+            }
+          ],
+          [
+            {
+              "float_bits": "4341c37937e08000"
+            },
+            {
+              "float_bits": "4341c37937e08000"
+            },
+            {
+              "float_bits": "0000000000000000"
+            }
+          ],
+          [
+            {
+              "float_bits": "0000000000000000"
+            },
+            {
+              "float_bits": "0000000000000000"
+            },
+            {
+              "float_bits": "0000000000000000"
+            }
+          ],
+          [
+            {
+              "float_bits": "3ff0000000000000"
+            },
+            {
+              "float_bits": "c341c37937e08000"
+            },
+            {
+              "float_bits": "0000000000000000"
+            }
+          ]
+        ],
+        [
+          [
+            {
+              "float_bits": "4341c37937e08000"
+            },
+            {
+              "float_bits": "4341c37937e08000"
+            },
+            {
+              "float_bits": "3fe0000000000000"
+            }
+          ],
+          [
+            {
+              "float_bits": "4341c37937e08000"
+            },
+            {
+              "float_bits": "4341c37937e08000"
+            },
+            {
+              "float_bits": "3fe0000000000000"
+            }
+          ],
+          [
+            {
+              "float_bits": "0000000000000000"
+            },
+            {
+              "float_bits": "0000000000000000"
+            },
+            {
+              "float_bits": "3fe0000000000000"
+            }
+          ],
+          [
+            {
+              "float_bits": "3ff0000000000000"
+            },
+            {
+              "float_bits": "c341c37937e08000"
+            },
+            {
+              "float_bits": "3fe0000000000000"
+            }
+          ]
+        ]
+      ],
+      "canonical_rows": [
+        [
+          {
+            "float_bits": "4341c37937e08000"
+          },
+          {
+            "float_bits": "4341c37937e08000"
+          },
+          {
+            "float_bits": "3fd0000000000000"
+          }
+        ],
+        [
+          {
+            "float_bits": "4341c37937e08000"
+          },
+          {
+            "float_bits": "4341c37937e08000"
+          },
+          {
+            "float_bits": "3fd0000000000000"
+          }
+        ],
+        [
+          {
+            "float_bits": "0000000000000000"
+          },
+          {
+            "float_bits": "0000000000000000"
+          },
+          {
+            "float_bits": "3fd0000000000000"
+          }
+        ],
+        [
+          {
+            "float_bits": "3ff0000000000000"
+          },
+          {
+            "float_bits": "c341c37937e08000"
+          },
+          {
+            "float_bits": "3fd0000000000000"
+          }
+        ]
+      ],
+      "duckdb_rows": [
+        [
+          {
+            "float_bits": "4341c37937e08000"
+          },
+          {
+            "float_bits": "4341c37937e08000"
+          },
+          {
+            "float_bits": "3fd0000000000000"
+          }
+        ],
+        [
+          {
+            "float_bits": "4341c37937e08000"
+          },
+          {
+            "float_bits": "4341c37937e08000"
+          },
+          {
+            "float_bits": "3fd0000000000000"
+          }
+        ],
+        [
+          {
+            "float_bits": "0000000000000000"
+          },
+          {
+            "float_bits": "0000000000000000"
+          },
+          {
+            "float_bits": "3fd0000000000000"
+          }
+        ],
+        [
+          {
+            "float_bits": "3ff0000000000000"
+          },
+          {
+            "float_bits": "c341c37937e08000"
+          },
+          {
+            "float_bits": "3fd0000000000000"
+          }
+        ]
+      ],
+      "duckdb_in_permitted": true
+    },
+    {
+      "id": "wr-ntile-2-over-empty",
+      "sql": "SELECT NTILE(2) OVER () FROM wr",
+      "compare": "multiset",
+      "peer_groups": [
+        [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ]
+      ],
+      "choice_count": 924,
+      "permitted_multisets": [
+        [
+          [
+            1
+          ],
+          [
+            1
+          ],
+          [
+            1
+          ],
+          [
+            1
+          ],
+          [
+            1
+          ],
+          [
+            1
+          ],
+          [
+            2
+          ],
+          [
+            2
+          ],
+          [
+            2
+          ],
+          [
+            2
+          ],
+          [
+            2
+          ],
+          [
+            2
+          ]
+        ]
+      ],
+      "canonical_rows": [
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ],
+      "duckdb_rows": [
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "id": "wr-first-value-over-empty",
+      "sql": "SELECT FIRST_VALUE(sales) OVER () FROM wr",
+      "compare": "multiset",
+      "peer_groups": [
+        [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ]
+      ],
+      "choice_count": 12,
+      "permitted_multisets": [
+        [
+          [
+            10
+          ],
+          [
+            10
+          ],
+          [
+            10
+          ],
+          [
+            10
+          ],
+          [
+            10
+          ],
+          [
+            10
+          ],
+          [
+            10
+          ],
+          [
+            10
+          ],
+          [
+            10
+          ],
+          [
+            10
+          ],
+          [
+            10
+          ],
+          [
+            10
+          ]
+        ],
+        [
+          [
+            20
+          ],
+          [
+            20
+          ],
+          [
+            20
+          ],
+          [
+            20
+          ],
+          [
+            20
+          ],
+          [
+            20
+          ],
+          [
+            20
+          ],
+          [
+            20
+          ],
+          [
+            20
+          ],
+          [
+            20
+          ],
+          [
+            20
+          ],
+          [
+            20
+          ]
+        ],
+        [
+          [
+            30
+          ],
+          [
+            30
+          ],
+          [
+            30
+          ],
+          [
+            30
+          ],
+          [
+            30
+          ],
+          [
+            30
+          ],
+          [
+            30
+          ],
+          [
+            30
+          ],
+          [
+            30
+          ],
+          [
+            30
+          ],
+          [
+            30
+          ],
+          [
+            30
+          ]
+        ],
+        [
+          [
+            null
+          ],
+          [
+            null
+          ],
+          [
+            null
+          ],
+          [
+            null
+          ],
+          [
+            null
+          ],
+          [
+            null
+          ],
+          [
+            null
+          ],
+          [
+            null
+          ],
+          [
+            null
+          ],
+          [
+            null
+          ],
+          [
+            null
+          ],
+          [
+            null
+          ]
+        ],
+        [
+          [
+            5
+          ],
+          [
+            5
+          ],
+          [
+            5
+          ],
+          [
+            5
+          ],
+          [
+            5
+          ],
+          [
+            5
+          ],
+          [
+            5
+          ],
+          [
+            5
+          ],
+          [
+            5
+          ],
+          [
+            5
+          ],
+          [
+            5
+          ],
+          [
+            5
+          ]
+        ],
+        [
+          [
+            7
+          ],
+          [
+            7
+          ],
+          [
+            7
+          ],
+          [
+            7
+          ],
+          [
+            7
+          ],
+          [
+            7
+          ],
+          [
+            7
+          ],
+          [
+            7
+          ],
+          [
+            7
+          ],
+          [
+            7
+          ],
+          [
+            7
+          ],
+          [
+            7
+          ]
+        ]
+      ],
+      "canonical_rows": [
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ]
+      ],
+      "duckdb_rows": [
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ],
+        [
+          10
+        ]
+      ]
+    }
+  ]
+}

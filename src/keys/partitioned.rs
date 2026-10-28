@@ -25,7 +25,7 @@ fn capacity(values: &[Value], start: usize, len: usize) -> Option<usize> {
             DataType::Null => 0,
             DataType::Boolean => 1,
             DataType::Int32 | DataType::Date32 => 4,
-            DataType::Int64 | DataType::Float64 => 8,
+            DataType::Int64 | DataType::Float64 | DataType::Timestamp(_, _) => 8,
             DataType::Decimal128(_, _) => 16,
             DataType::Utf8 => {
                 let array = value.array.as_any().downcast_ref::<StringArray>()?;

@@ -428,6 +428,7 @@ fn rewrite(
                 id: BUILD_ID,
                 input: Box::new(input),
                 shared_scan: false,
+                forced: false,
             },
         };
     }
@@ -488,14 +489,20 @@ fn rewrite(
             input: Box::new(rewrite(input, fact, p, stored, guarded)),
             plan: plan.clone(),
         },
-        RelOp::Limit { input, count } => RelOp::Limit {
+        RelOp::Limit {
+            input,
+            count,
+            offset,
+        } => RelOp::Limit {
             input: Box::new(rewrite(input, fact, p, stored, guarded)),
             count: *count,
+            offset: *offset,
         },
         RelOp::Materialize {
             input,
             id,
             shared_scan,
+            forced,
         } => {
             // A raw shared-scan ID must never cache the substituted aggregate.
             if *shared_scan && contains(input, fact) {
@@ -505,6 +512,7 @@ fn rewrite(
                 input: Box::new(rewrite(input, fact, p, stored, guarded)),
                 id: *id,
                 shared_scan: *shared_scan,
+                forced: *forced,
             }
         }
         RelOp::Join {
@@ -638,6 +646,7 @@ pub(super) fn candidate<'a>(
             id,
             input: Box::new(p.node.clone()),
             shared_scan: false,
+            forced: false,
         },
     };
     Some(Candidate {

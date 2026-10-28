@@ -124,7 +124,8 @@ struct Batch {
 enum Message {
     Batch(usize, Batch),
     End(usize),
-    Error(usize, String),
+    Error(usize, crate::Error),
+    Retry(usize),
 }
 
 // Every claim uses one monotone counter. Each lane's FIFO therefore contains
@@ -200,6 +201,8 @@ pub(crate) struct ParallelReader {
     caller: Option<Box<CallerGroup>>,
     caller_lane: Arc<Lane>,
     done: bool,
+    retry: Option<Reader>,
+    _parquet_metadata: Arc<Reservation>,
     _metadata: Reservation,
     _readers: ScanReaders,
 }
@@ -217,6 +220,7 @@ impl ParallelReader {
     ) -> Result<Self> {
         let slots = workers.count;
         let worker_limit = options.workers - 1;
+        let parquet_metadata = crate::parquet_scan::decoder_metadata_lease(&metadata, budget)?;
         // Ordered delivery needs enough lookahead to overlap whole row groups.
         // Bound message count independently of bytes; metadata sizes cannot
         // bound Arrow allocations (dictionary/RLE expansion can be enormous).
@@ -229,11 +233,25 @@ impl ParallelReader {
             .unwrap_or(1)
             .clamp(1, 32);
         let participants = slots + 1;
+        let filter = factory(Arc::default());
+        let decoder = crate::parquet_scan::DecoderEstimate::reader(
+            &metadata,
+            &projection,
+            filter.as_ref(),
+            None,
+            options.batch_size,
+        )?;
+        drop(filter);
+        let payload_headroom = budget
+            .limit()
+            .saturating_sub(budget.used())
+            .saturating_sub(slots.saturating_mul(crate::memory::THREAD_MEMORY_BYTES))
+            .saturating_sub(
+                participants.saturating_mul(decoder.workspace.saturating_add(decoder.batch)),
+            );
         // This is a backpressure threshold, not prepaid payload credit. Both
-        // lanes and caller reserve returned payload after reader.next(); the
-        // existing third-party decoder memory exemption still applies.
-        let lane_bytes = (budget.limit().saturating_sub(budget.used()) / 32).min(64 * 1024 * 1024)
-            / participants;
+        // lanes and caller transfer prepaid decoder output credit into messages.
+        let lane_bytes = (payload_headroom / 32).min(64 * 1024 * 1024) / participants;
         let groups = metadata.metadata().num_row_groups();
         let mut metadata_lease = budget.reserve(
             participants
@@ -251,7 +269,7 @@ impl ParallelReader {
         // remaining headroom; it must not crowd out the current decoder.
         let expanded_slots = (queue_slots + 1) * LOOKAHEAD_GROUPS;
         let extra = participants * (expanded_slots - queue_slots) * 128;
-        let expand = extra <= budget.limit().saturating_sub(budget.used()) / 32
+        let expand = extra <= payload_headroom.saturating_sub(metadata_lease.bytes()) / 32
             && metadata_lease.try_grow(extra);
         let (queue_slots, lane_bytes) = if expand {
             (expanded_slots, lane_bytes * LOOKAHEAD_GROUPS)
@@ -267,11 +285,21 @@ impl ParallelReader {
         let stop = Arc::new(AtomicBool::new(false));
         let transform = transform.map(|transform| {
             let stop = stop.clone();
-            Arc::new(move |batch| {
+            let budget = budget.clone();
+            Arc::new(move |batch, lease| {
                 if stop.load(Ordering::Acquire) {
                     return Err("cancelled: parallel scan stopped".into());
                 }
-                transform(batch)
+                transform(batch, lease).inspect_err(|error| {
+                    // This optional scan lane also owns fused downstream work.
+                    // Its scratch/output can overlap other readers even when
+                    // every decoder lease was admitted successfully. Record
+                    // only accounted-memory refusals from this parallel path;
+                    // the whole-query owner decides whether replay is safe.
+                    if error.starts_with("resource-limit: accounted memory ") {
+                        budget.record_parallel_transform_refusal();
+                    }
+                })
             }) as BatchTransform
         });
         let mut local_options = options.clone();
@@ -306,6 +334,8 @@ impl ParallelReader {
             caller: None,
             caller_lane: Arc::new(Lane::default()),
             done: false,
+            retry: None,
+            _parquet_metadata: parquet_metadata,
             _metadata: metadata_lease,
             _readers: workers,
         };
@@ -326,8 +356,9 @@ impl ParallelReader {
             let stats = result.stats.clone();
             let options = local_options.clone();
             let claims = claims.clone();
-            let live = budget.thread_started();
+            let live = budget.thread_started()?;
             let handle = thread::Builder::new()
+                .stack_size(crate::engine_stack::WORKER_STACK_BYTES)
                 .name(format!("assaydb-scan-{slot}"))
                 .spawn(move || {
                     let mut current_group = None;
@@ -352,7 +383,7 @@ impl ParallelReader {
                                 return Ok(());
                             }
                             let start = Instant::now();
-                            let mut reader = Reader::filtered_group(
+                            let mut reader = match Reader::filtered_group(
                                 file.try_clone().map_err(|e| e.to_string())?,
                                 metadata.clone(),
                                 projection.clone(),
@@ -361,7 +392,21 @@ impl ParallelReader {
                                 &options,
                                 &budget,
                                 group,
-                            )?;
+                            ) {
+                                Ok(reader) => reader,
+                                Err(error) if error.starts_with("resource-limit:") => {
+                                    // No decoder or output for this group exists.
+                                    // Stop claiming work; ordered delivery retries
+                                    // on the caller after earlier output is freed.
+                                    let _ = send.send(Message::Retry(group));
+                                    return Ok(());
+                                }
+                                Err(error) => return Err(error),
+                            };
+                            if reader.take_decoder_refusal().is_some() {
+                                let _ = send.send(Message::Retry(group));
+                                return Ok(());
+                            }
                             let mut active = start.elapsed().as_secs_f64();
                             loop {
                                 if stop.load(Ordering::Acquire) {
@@ -405,8 +450,8 @@ impl ParallelReader {
                                     .get_array_memory_size()
                                     .checked_add(256)
                                     .ok_or("queued batch overflow")?;
-                                let lease = budget.reserve(bytes)?;
-                                reader.transfer_batch_ownership();
+                                let mut lease = reader.take_batch_lease();
+                                lease.absorb(budget.reserve(256)?);
                                 let pending = Pending::new(&stats, &lane, bytes);
                                 let message = Message::Batch(
                                     group,
@@ -465,6 +510,9 @@ impl ParallelReader {
         }
         Ok(result)
     }
+    pub fn take_batch_lease(&mut self) -> Reservation {
+        self.delivered.take().expect("queued batch credit")
+    }
     pub fn statistics(&self) -> Statistics {
         self.stats.lock().unwrap().clone()
     }
@@ -474,6 +522,7 @@ impl ParallelReader {
         // Disconnect first: a producer can be waiting to send into a full queue.
         self.receivers.clear();
         self.caller = None;
+        self.retry = None;
         for lane in &self.lanes {
             lane.ready.notify_all();
         }
@@ -538,8 +587,8 @@ impl ParallelReader {
                 .get_array_memory_size()
                 .checked_add(256)
                 .ok_or("queued batch overflow")?;
-            let lease = cfg.budget.reserve(bytes)?;
-            reader.transfer_batch_ownership();
+            let mut lease = reader.take_batch_lease();
+            lease.absorb(cfg.budget.reserve(256)?);
             let pending = Pending::new(&self.stats, &self.caller_lane, bytes);
             Ok(Some(Batch {
                 batch,
@@ -583,6 +632,16 @@ impl ParallelReader {
             self.cancel.check()?;
             if self.stop.load(Ordering::Acquire) {
                 return Err("cancelled: parallel scan stopped".into());
+            }
+            if let Some(reader) = &mut self.retry {
+                if let Some(batch) = reader.next() {
+                    let batch = batch?;
+                    self.delivered = Some(reader.take_batch_lease());
+                    return Ok(Some(batch));
+                }
+                self.retry = None;
+                self.group += 1;
+                continue;
             }
             let owner = self.claims.ownership[self.group].load(Ordering::Acquire);
             if owner == UNCLAIMED {
@@ -653,6 +712,22 @@ impl ParallelReader {
                         return Err("parallel scan error order violated".into());
                     }
                     return Err(error);
+                }
+                Message::Retry(group) => {
+                    if group != self.group {
+                        return Err("parallel scan retry order violated".into());
+                    }
+                    let cfg = &self.caller_config;
+                    self.retry = Some(Reader::filtered_group(
+                        File::open(&cfg.path).map_err(|e| e.to_string())?,
+                        cfg.metadata.clone(),
+                        cfg.projection.clone(),
+                        &cfg.factory,
+                        cfg.transform.clone(),
+                        &cfg.options,
+                        &cfg.budget,
+                        group,
+                    )?);
                 }
             }
         }
@@ -780,8 +855,7 @@ mod tests {
             let (release, wait) = mpsc::channel();
             let wait = Mutex::new(wait);
             let transform: BatchTransform = {
-                let budget = budget.clone();
-                Arc::new(move |batch| {
+                Arc::new(move |batch, lease| {
                     let first = batch
                         .column(0)
                         .as_any()
@@ -798,7 +872,7 @@ mod tests {
                     if (8..16).contains(&first) && matches!(mode, "later-error" | "early-drop") {
                         return Err("injected later caller error".into());
                     }
-                    let lease = budget.reserve(batch.get_array_memory_size())?;
+                    // Retain the incoming batch credit.
                     Ok(crate::parquet_scan::TransformedBatch {
                         batch,
                         lease,
@@ -945,16 +1019,45 @@ mod tests {
     fn byte_backpressure_is_per_lane_and_cancellable_with_ordered_delivery() {
         let fixture = Fixture::new(4096);
         for cancel in [false, true] {
-            let budget = Budget::new(128 << 10);
             let options = Options {
                 workers: 4,
                 batch_size: 1,
                 parquet_cache_bytes: None,
                 ..Options::default()
             };
-            let mut reader = fixture
-                .reader(&options, &budget, Arc::new(|_| None))
-                .unwrap();
+            // Preserve the original 128 KiB payload allowance after funding
+            // the newly tracked metadata, four decoders and three helpers.
+            let metadata =
+                crate::parquet_scan::external_metadata(&File::open(&fixture.0).unwrap()).unwrap();
+            let decoder = crate::parquet_scan::DecoderEstimate::reader(
+                &metadata,
+                &ProjectionMask::all(),
+                None,
+                None,
+                options.batch_size,
+            )
+            .unwrap();
+            let budget = Budget::new(
+                (128 << 10)
+                    + metadata.metadata().memory_size()
+                    + 4 * (decoder.workspace + decoder.batch)
+                    + 3 * crate::memory::THREAD_MEMORY_BYTES,
+            );
+            // Exercise byte backpressure with explicitly funded lanes; normal
+            // query admission additionally leaves downstream headroom.
+            let mut reader = Reader::Parallel(Box::new(
+                ParallelReader::new(
+                    &fixture.0,
+                    metadata,
+                    ProjectionMask::all(),
+                    Arc::new(|_| None),
+                    None,
+                    &options,
+                    &budget,
+                    budget.scan_readers(3, 3),
+                )
+                .unwrap(),
+            ));
             assert_eq!(reader.parallel_statistics().unwrap().queue_slots, 8);
             // The byte gate, rather than the eight-message channel, stalls all
             // three lanes after their existing two-batch progress allowance.
@@ -1012,7 +1115,7 @@ mod tests {
                         >= 8
                     {
                         let message = "injected predicate failure".to_string();
-                        *error.lock().unwrap() = Some(message.clone());
+                        *error.lock().unwrap() = Some(message.clone().into());
                         return Err(arrow::error::ArrowError::ComputeError(message));
                     }
                     Ok(BooleanArray::from(vec![true; batch.num_rows()]))
@@ -1056,14 +1159,13 @@ mod tests {
         let transform: BatchTransform = {
             let calls = calls.clone();
             let release = release.clone();
-            let budget = budget.clone();
-            Arc::new(move |batch| {
+            Arc::new(move |batch, lease| {
                 if calls.fetch_add(1, Ordering::Relaxed) == 0 {
                     started.send(()).unwrap();
                     release.wait();
                 }
                 let output = batch.slice(0, 0);
-                let lease = budget.reserve(output.get_array_memory_size())?;
+                // A zero-row slice still shares the original Arrow buffers.
                 Ok(crate::parquet_scan::TransformedBatch {
                     batch: output,
                     lease,
@@ -1141,8 +1243,7 @@ mod tests {
                 let (release, wait) = mpsc::channel();
                 let wait = Mutex::new(wait);
                 let transform: BatchTransform = {
-                    let budget = budget.clone();
-                    Arc::new(move |batch| {
+                    Arc::new(move |batch, lease| {
                         let first = batch
                             .column(0)
                             .as_any()
@@ -1161,7 +1262,7 @@ mod tests {
                         } else {
                             batch
                         };
-                        let lease = budget.reserve(batch.get_array_memory_size())?;
+                        // Retain the incoming batch credit.
                         Ok(crate::parquet_scan::TransformedBatch {
                             batch,
                             lease,
@@ -1328,7 +1429,7 @@ mod tests {
                     assert_eq!(budget.live_threads(), scan_slots + 1);
                     assert_eq!(budget.peak_threads(), workers);
                     let error = crate::parallel_prepare::map::<()>(2, workers, &budget, |i| {
-                        Err(format!("build error {i}"))
+                        Err(format!("build error {i}").into())
                     })
                     .unwrap_err();
                     assert_eq!(error, "build error 0");
@@ -1416,8 +1517,7 @@ mod tests {
                 assert_eq!(budget.used(), 0);
 
                 let transform: BatchTransform = {
-                    let budget = budget.clone();
-                    Arc::new(move |batch| {
+                    Arc::new(move |batch, lease| {
                         let ids = batch
                             .column(0)
                             .as_any()
@@ -1425,10 +1525,10 @@ mod tests {
                             .unwrap();
                         for id in ids.values() {
                             if *id >= 8 {
-                                return Err(format!("error in group {}", id / 8));
+                                return Err(format!("error in group {}", id / 8).into());
                             }
                         }
-                        let lease = budget.reserve(batch.get_array_memory_size())?;
+                        // Retain the incoming batch credit.
                         Ok(crate::parquet_scan::TransformedBatch {
                             batch,
                             lease,

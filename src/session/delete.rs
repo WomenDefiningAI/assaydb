@@ -43,6 +43,7 @@ impl Session {
             .tables
             .get(&table_name)
             .ok_or_else(|| semantic(format!("unknown table: {table_name}")))?;
+        let _statement = crate::zone::enter(self.options.time_zone, self.options.fixed_clock);
         let binder = Binder {
             schema: &table.schema,
             table: Some(&table_name),

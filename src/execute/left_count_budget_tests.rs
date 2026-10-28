@@ -9,7 +9,7 @@ mod fixture;
 use fixture::{Fixture, custom_fixture_with_nullability};
 
 impl Fixture {
-    fn run(&self, sql: &str, options: &Options) -> Result<Execution, String> {
+    fn run(&self, sql: &str, options: &Options) -> Result<Execution, crate::Error> {
         execute(&rel::prepare(sql, &self.tables, options)?, options)
     }
 
@@ -19,7 +19,7 @@ impl Fixture {
         sql: &str,
         options: &Options,
         budget: Budget,
-    ) -> Result<Execution, String> {
+    ) -> Result<Execution, crate::Error> {
         assert!(options.spill.is_none());
         execute_in_budget(&rel::prepare(sql, &self.tables, options)?, options, budget)
     }

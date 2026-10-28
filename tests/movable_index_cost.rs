@@ -99,12 +99,13 @@ fn duplicate_numeric_anti_join_with_scalar_filter_matches_serial() {
                 let result = execute(&plan, &options);
                 if case == 0 {
                     let metrics = &result.as_ref().unwrap().metrics;
-                    // The scalar filter prevents reversal. Duplicate bounded
-                    // keys exercise dense admission, not owned compaction or
-                    // a membership rebuild, even with several probe workers.
-                    assert_eq!(metrics.join_build_rows, 4097);
-                    assert_eq!(metrics.dense_joins, 1);
-                    assert_eq!(metrics.reverse_existence_joins, 0);
+                    // Complete AVG, then retain the 125 non-NULL balances
+                    // above it (keys 130..256 except 172 and 215). The scalar
+                    // cross join builds one row: 4097 -> 126 build rows.
+                    assert_eq!(metrics.join_build_rows, 126);
+                    assert_eq!(metrics.dense_joins, usize::from(workers == 1));
+                    assert_eq!(metrics.reverse_existence_numeric_lane_joins, usize::from(workers > 1));
+                    assert_eq!(metrics.reverse_existence_joins, 1);
                     assert_eq!(metrics.join_rejection_bitmaps, 0);
                 }
                 assert_eq!(result.map(|result| result.batch), expected, "workers={workers}, batch={batch_size}: {sql}");

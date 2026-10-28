@@ -150,6 +150,8 @@ fn wide_values_survive_every_internal_consumer() {
                     vec![vec![Some(1)]],
                 ),
             ] {
+                // INTEGER-to-INTEGER retains exact precision-38 intermediate
+                // values. Only the returned/stored BIGINT boundary narrows.
                 let batch = query(&mut s, &sql).unwrap_or_else(|e| panic!("{sql}: {e}"));
                 assert_eq!(
                     rows(&batch),
@@ -157,17 +159,14 @@ fn wide_values_survive_every_internal_consumer() {
                     "workers={workers} optimized={relational_optimizations}: {sql}"
                 );
             }
-            // Existing syntax limitation remains a declared refusal. The
-            // derived-table ORDER BY x case above exercises supported wide sorting.
-            let unsupported = query(
+            // The private sort key keeps precision-38 intermediates and is
+            // stripped before the public BIGINT boundary.
+            let sorted = query(
                 &mut s,
                 &format!("SELECT a FROM t ORDER BY {m}+a DESC NULLS LAST LIMIT 2"),
             )
-            .unwrap_err();
-            assert!(
-                unsupported.contains("ORDER BY must name an output or ordinal"),
-                "{unsupported}"
-            );
+            .unwrap();
+            assert_eq!(rows(&sorted), vec![vec![Some(2)], vec![Some(2)]]);
             for sql in [
                 format!("SELECT {m}+1"),
                 format!("SELECT SUM({m}+a) FROM t"),

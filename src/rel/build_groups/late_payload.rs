@@ -35,9 +35,13 @@ impl Selected {
         let arrays = batch
             .columns()
             .iter()
-            .map(|array| arrow::compute::take(array, &indices, None).map_err(|e| e.to_string()))
+            .map(|array| {
+                arrow::compute::take(array, &indices, None)
+                    .map_err(|e| crate::Error::from(e.to_string()))
+            })
             .collect::<Result<Vec<_>>>()?;
-        let batch = RecordBatch::try_new(batch.schema(), arrays).map_err(|e| e.to_string())?;
+        let batch = RecordBatch::try_new(batch.schema(), arrays)
+            .map_err(|e| crate::Error::from(e.to_string()))?;
         // As in the parent sorter, release construction slack before delivery.
         // No schema or Fields were allocated, so retain the parent's exact
         // array-bytes-plus-1024 credit, including for wide/long-named schemas.
@@ -281,7 +285,7 @@ impl Selection<'_> {
                         .collect();
                     selected = Some(Selected::copy(
                         RecordBatch::try_new(self.output_schema.clone(), columns)
-                            .map_err(|e| e.to_string())?,
+                            .map_err(|e| crate::Error::from(e.to_string()))?,
                         &budget,
                     )?);
                     Ok(())

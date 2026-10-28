@@ -1,12 +1,13 @@
 //! Accounted engine buffers/state, not an OS or third-party decoder memory cap.
 use crate::Result;
 use std::sync::{
-    Arc, Condvar, Mutex,
+    Arc, Condvar, Mutex, Weak,
     atomic::{AtomicBool, Ordering},
 };
 use std::time::Duration;
 mod worker;
 pub(crate) use worker::Joined;
+pub(crate) const THREAD_MEMORY_BYTES: usize = 512 * 1024;
 #[derive(Debug)]
 struct State {
     used: usize,
@@ -18,6 +19,8 @@ struct State {
     live_threads: usize,
     peak_live_threads: usize,
     source_dense_bytes: usize,
+    decoder_refusals: usize,
+    parallel_transform_refusals: usize,
 }
 #[derive(Clone, Debug)]
 pub struct Budget(Arc<Shared>);
@@ -25,8 +28,16 @@ pub struct Budget(Arc<Shared>);
 struct Shared {
     state: Mutex<State>,
     worker_ready: Condvar,
+    metadata: Mutex<std::collections::HashMap<usize, MetadataLease>>,
     #[cfg(test)]
     helper_exit: Mutex<Option<Arc<worker::testing::ExitHook>>>,
+}
+#[derive(Debug)]
+struct MetadataLease {
+    // A weak owner prevents the allocation address being reused while its
+    // registry entry is live, without retaining the footer's heap buffers.
+    owner: Weak<parquet::file::metadata::ParquetMetaData>,
+    credit: Weak<Reservation>,
 }
 #[derive(Debug)]
 pub struct Reservation {
@@ -116,6 +127,7 @@ impl Drop for ScanReaders {
 /// Instrument an admitted thread from before spawn until after join.
 pub(crate) struct LiveThread {
     budget: Budget,
+    _memory: Reservation,
 }
 impl Drop for LiveThread {
     fn drop(&mut self) {
@@ -149,8 +161,11 @@ impl Budget {
                 live_threads: 0,
                 peak_live_threads: 0,
                 source_dense_bytes: 0,
+                decoder_refusals: 0,
+                parallel_transform_refusals: 0,
             }),
             worker_ready: Condvar::new(),
+            metadata: Mutex::new(std::collections::HashMap::new()),
             #[cfg(test)]
             helper_exit: Mutex::new(None),
         }))
@@ -165,7 +180,7 @@ impl Budget {
             return Err(format!(
                 "resource-limit: accounted memory {used} exceeds budget {}; requested {bytes}, live {}",
                 s.limit, s.used
-            ));
+            ).into());
         }
         s.used = used;
         s.peak = s.peak.max(used);
@@ -173,6 +188,31 @@ impl Budget {
             budget: self.clone(),
             bytes,
         })
+    }
+    /// One charge per shared metadata allocation in this query domain. Owners
+    /// retain both the metadata and this lease; the registry owns neither.
+    pub(crate) fn metadata(
+        &self,
+        metadata: &Arc<parquet::file::metadata::ParquetMetaData>,
+    ) -> Result<Arc<Reservation>> {
+        let key = Arc::as_ptr(metadata) as usize;
+        let mut shared = self.0.metadata.lock().unwrap();
+        if let Some(lease) = shared.get(&key).and_then(|entry| entry.credit.upgrade()) {
+            return Ok(lease);
+        }
+        shared
+            .retain(|_, entry| entry.owner.strong_count() != 0 && entry.credit.strong_count() != 0);
+        // memory_size traverses every row group. Measure only on first charge,
+        // not once again for every reader of this same immutable allocation.
+        let lease = Arc::new(self.reserve(metadata.memory_size())?);
+        shared.insert(
+            key,
+            MetadataLease {
+                owner: Arc::downgrade(metadata),
+                credit: Arc::downgrade(&lease),
+            },
+        );
+        Ok(lease)
     }
     pub fn peak(&self) -> usize {
         self.0.state.lock().unwrap().peak
@@ -182,6 +222,20 @@ impl Budget {
     }
     pub fn limit(&self) -> usize {
         self.0.state.lock().unwrap().limit
+    }
+    pub(crate) fn record_decoder_refusal(&self) {
+        let mut state = self.0.state.lock().unwrap();
+        state.decoder_refusals = state.decoder_refusals.saturating_add(1);
+    }
+    pub(crate) fn decoder_refusals(&self) -> usize {
+        self.0.state.lock().unwrap().decoder_refusals
+    }
+    pub(crate) fn record_parallel_transform_refusal(&self) {
+        let mut state = self.0.state.lock().unwrap();
+        state.parallel_transform_refusals = state.parallel_transform_refusals.saturating_add(1);
+    }
+    pub(crate) fn parallel_transform_refusals(&self) -> usize {
+        self.0.state.lock().unwrap().parallel_transform_refusals
     }
     pub(crate) fn source_dense_allowance(&self, cap: usize) -> SourceDenseAllowance {
         let mut state = self.0.state.lock().unwrap();
@@ -261,13 +315,24 @@ impl Budget {
     }
     /// Called by the parent before spawning, after thread admission. Keep the
     /// guard until join returns, then drop it before releasing the thread slot.
-    pub(crate) fn thread_started(&self) -> LiveThread {
+    pub(crate) fn thread_started(&self) -> Result<LiveThread> {
+        // SF1 scan measurements: approximately 512 KiB resident per helper,
+        // including stack and thread-local allocator state. This is an estimate,
+        // not an OS stack/RSS limit. Keep it funded through the parent join.
+        let memory = self.reserve(THREAD_MEMORY_BYTES)?;
+        Ok(self.thread_started_with(memory))
+    }
+    /// Optional pools prepay all helpers before transferring any operator state.
+    pub(crate) fn thread_started_with(&self, memory: Reservation) -> LiveThread {
+        assert!(memory.belongs_to(self));
+        assert_eq!(memory.bytes(), THREAD_MEMORY_BYTES);
         let mut s = self.0.state.lock().unwrap();
         s.live_threads += 1;
         debug_assert!(s.live_threads <= s.thread_slots);
         s.peak_live_threads = s.peak_live_threads.max(s.live_threads);
         LiveThread {
             budget: self.clone(),
+            _memory: memory,
         }
     }
     /// Spawn-to-join execution-thread peak, including the query's coordinator.
@@ -303,7 +368,7 @@ mod tests {
     use super::*;
     #[test]
     fn idle_scan_readers_release_permits_without_losing_upstream_progress() {
-        let budget = Budget::new(1024);
+        let budget = Budget::new(2 << 20);
         let readers = budget.scan_readers(3, 3);
         assert_eq!(readers.count, 3);
         assert_eq!(budget.active_workers(), 0);

@@ -327,7 +327,7 @@ impl SourceOwned {
             };
             arrays.push(output_array(array, schema.field(arrays.len()))?);
         }
-        RecordBatch::try_new(schema.clone(), arrays).map_err(|e| e.to_string())
+        Ok(RecordBatch::try_new(schema.clone(), arrays).map_err(|e| e.to_string())?)
     }
     pub(in crate::execute) fn output_bytes(
         &self,

@@ -6,7 +6,7 @@ use std::sync::{
 
 #[test]
 fn worker_requeues_without_coordinator_or_additional_credit() {
-    let budget = Budget::new(1 << 20);
+    let budget = Budget::new(16 << 20);
     let mut runtime = Runtime::new(&budget, 2, 1, Cancellation::default()).unwrap();
     let mut payload = Some(budget.reserve(4096).unwrap());
     let (started, wait_started) = mpsc::channel();
@@ -66,7 +66,7 @@ fn worker_requeues_without_coordinator_or_additional_credit() {
 
 #[test]
 fn caller_yields_and_drains_ready_receipts_before_more_work() {
-    let budget = Budget::new(1 << 20);
+    let budget = Budget::new(16 << 20);
     let mut runtime = Runtime::new(&budget, 1, 2, Cancellation::default()).unwrap();
     let calls = Arc::new(AtomicUsize::new(0));
     let count = calls.clone();
@@ -105,7 +105,7 @@ impl Drop for Discarded {
 
 #[test]
 fn retry_joins_running_continuation_without_requeue_or_cancellation() {
-    let budget = Budget::new(1 << 20);
+    let budget = Budget::new(16 << 20);
     let cancel = Cancellation::default();
     let mut runtime = Runtime::<usize>::new(&budget, 2, 2, cancel.clone()).unwrap();
     let credit = budget.reserve(4096).unwrap();
@@ -147,7 +147,7 @@ fn retry_joins_running_continuation_without_requeue_or_cancellation() {
 #[test]
 fn cancellation_and_panic_after_yield_release_the_retained_owner() {
     for panic in [false, true] {
-        let budget = Budget::new(1 << 20);
+        let budget = Budget::new(16 << 20);
         let cancel = Cancellation::default();
         let mut runtime = Runtime::<usize>::new(&budget, 1, 1, cancel.clone()).unwrap();
         let credit = budget.reserve(4096).unwrap();

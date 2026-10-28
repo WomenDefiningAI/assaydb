@@ -20,21 +20,32 @@ mod predicate_memory;
 use predicate_memory::PredicateMemory;
 
 pub(super) struct Suffix {
-    transform: BatchTransform,
+    transform: crate::selection::Transform,
     lanes: Vec<Arc<AtomicBool>>,
 }
 impl Suffix {
     /// A receipt is marked only when every stage reaches the actual scan dispatch.
+    #[cfg(test)]
     pub(super) fn prepend(
         transform: BatchTransform,
         downstream: Option<Self>,
     ) -> (Self, Arc<AtomicBool>) {
+        Self::prepend_eager(transform, downstream, crate::spill::Cancellation::default())
+    }
+    pub(super) fn prepend_eager(
+        transform: BatchTransform,
+        downstream: Option<Self>,
+        cancel: crate::spill::Cancellation,
+    ) -> (Self, Arc<AtomicBool>) {
+        Self::prepend_selected(eager(transform, cancel), downstream)
+    }
+    pub(super) fn prepend_selected(
+        transform: crate::selection::Transform,
+        downstream: Option<Self>,
+    ) -> (Self, Arc<AtomicBool>) {
         let reached_scan = Arc::new(AtomicBool::new(false));
         let (transform, mut lanes) = match downstream {
-            Some(suffix) => (
-                compose(Some(transform), Some(suffix.transform)).unwrap(),
-                suffix.lanes,
-            ),
+            Some(suffix) => (compose_selected(transform, suffix.transform), suffix.lanes),
             None => (transform, Vec::new()),
         };
         lanes.push(reached_scan.clone());
@@ -56,6 +67,7 @@ pub(super) fn admitted(node: &Node, ctx: &Context<'_>) -> Result<bool> {
                 | DataType::Int64
                 | DataType::Float64
                 | DataType::Date32
+                | DataType::Timestamp(arrow::datatypes::TimeUnit::Microsecond, _)
                 | DataType::Decimal128(_, _)
                 | DataType::Utf8
         )
@@ -107,24 +119,61 @@ pub(super) fn compose(
     second: Option<BatchTransform>,
 ) -> Option<BatchTransform> {
     match (first, second) {
-        (Some(first), Some(second)) => Some(Arc::new(move |batch| {
-            let intermediate = first(batch)?;
-            let result = second(intermediate.batch);
-            drop(intermediate.lease);
-            result
+        (Some(first), Some(second)) => Some(Arc::new(move |batch, lease| {
+            let intermediate = first(batch, lease)?;
+            second(intermediate.batch, intermediate.lease)
         })),
         (first, second) => first.or(second),
     }
+}
+
+fn compose_selected(
+    first: crate::selection::Transform,
+    second: crate::selection::Transform,
+) -> crate::selection::Transform {
+    Arc::new(move |batch| second(first(batch)?))
+}
+
+fn eager(
+    transform: BatchTransform,
+    cancel: crate::spill::Cancellation,
+) -> crate::selection::Transform {
+    Arc::new(move |batch| {
+        let budget = batch.lease.budget();
+        let input = batch.materialize(&budget, &cancel)?;
+        let result = transform(input.batch, input.lease);
+        result.map(crate::selection::Batch::from_output)
+    })
+}
+
+fn raw(
+    transform: crate::selection::Transform,
+    budget: crate::memory::Budget,
+    cancel: crate::spill::Cancellation,
+) -> BatchTransform {
+    Arc::new(move |batch, lease| {
+        cancel.check()?;
+        transform(crate::selection::Batch::from_output(TransformedBatch {
+            batch,
+            lease,
+            preserve_empty: false,
+        }))?
+        .materialize(&budget, &cancel)
+    })
 }
 
 /// Fallback delivery applies the same pending total suffix on the coordinator.
 pub(super) fn deliver(
     batch: RecordBatch,
     transform: &Option<Suffix>,
+    budget: &crate::memory::Budget,
+    cancel: &crate::spill::Cancellation,
     emit: &mut dyn FnMut(RecordBatch) -> Result<()>,
 ) -> Result<()> {
     if let Some(transform) = transform {
-        let output = (transform.transform)(batch)?;
+        cancel.check()?;
+        let output = (transform.transform)(crate::selection::Batch::adopt(batch, budget)?)?
+            .materialize(budget, cancel)?;
         if output.batch.num_rows() > 0 {
             emit(output.batch)?;
         }
@@ -144,18 +193,24 @@ pub(super) fn probe_transform(
     options: &Options,
     stats: Arc<Mutex<probe::Statistics>>,
     descriptors: Reservation,
-) -> BatchTransform {
+) -> crate::selection::Transform {
     let cancellation = options.cancellation.clone();
     Arc::new(move |batch| {
         let _descriptors = &descriptors;
-        let (batch, lease, report) =
-            build.probe_unique(batch, &keys, kind, output_schema.clone(), &cancellation)?;
+        let (batch, lease, report) = build.probe_unique(
+            &batch.batch,
+            batch.rows.as_ref().map(|r| r.indices.as_slice()),
+            &keys,
+            kind,
+            output_schema.clone(),
+            &cancellation,
+        )?;
         stats.lock().unwrap().merge(report);
-        Ok(TransformedBatch {
+        Ok(crate::selection::Batch::from_output(TransformedBatch {
             batch,
             lease,
             preserve_empty: false,
-        })
+        }))
     })
 }
 
@@ -233,7 +288,14 @@ pub(super) fn run(
             for receipt in &suffix.lanes {
                 receipt.store(true, Ordering::Relaxed);
             }
-            let previous = ctx.lane_transforms.insert(id, suffix.transform);
+            let previous = ctx.lane_transforms.insert(
+                id,
+                raw(
+                    suffix.transform,
+                    ctx.budget.clone(),
+                    ctx.options.cancellation.clone(),
+                ),
+            );
             let result = node.run(ctx, emit);
             ctx.lane_transforms.remove(&id);
             if let Some(previous) = previous {
@@ -248,26 +310,47 @@ pub(super) fn run(
                 None
             };
             let stats = Arc::new(Mutex::new(FilterStats::default()));
-            let transform = crate::parquet_scan::exact_filter(
-                predicate.clone(),
-                &input.schema,
-                &ctx.budget,
-                &ctx.options.cancellation,
-                false,
-                stats.clone(),
-            )?;
-            let transform = if scratch.is_empty() {
-                transform
-            } else {
+            let selected = crate::selection::Program::new(predicate, &input.schema, &ctx.budget)?;
+            let transform = if let Some(program) = selected {
                 let budget = ctx.budget.clone();
-                let cancellation = ctx.options.cancellation.clone();
-                Arc::new(move |batch: RecordBatch| {
-                    cancellation.check()?;
-                    // Fund compiled patterns, character matching and substring
-                    // buffers before evaluation allocates any of them.
-                    let _scratch = budget.reserve(scratch.bytes(&batch)?)?;
-                    transform(batch)
-                }) as BatchTransform
+                let cancel = ctx.options.cancellation.clone();
+                let stats = stats.clone();
+                Arc::new(move |batch: crate::selection::Batch| {
+                    let start = std::time::Instant::now();
+                    let rows = batch.len();
+                    let bytes = batch.batch.get_array_memory_size();
+                    let output = program.select(batch, &budget, &cancel)?;
+                    let mut stats = stats.lock().unwrap();
+                    stats.rows += rows;
+                    stats.bytes += bytes;
+                    stats.output_rows += output.len();
+                    stats.batches += 1;
+                    stats.seconds += start.elapsed().as_secs_f64();
+                    Ok(output)
+                }) as crate::selection::Transform
+            } else {
+                let transform = crate::parquet_scan::exact_filter(
+                    predicate.clone(),
+                    &input.schema,
+                    &ctx.budget,
+                    &ctx.options.cancellation,
+                    false,
+                    stats.clone(),
+                )?;
+                let transform = if scratch.is_empty() {
+                    transform
+                } else {
+                    let budget = ctx.budget.clone();
+                    let cancellation = ctx.options.cancellation.clone();
+                    Arc::new(move |batch: RecordBatch, lease| {
+                        cancellation.check()?;
+                        // Fund compiled patterns, character matching and substring
+                        // buffers before evaluation allocates any of them.
+                        let _scratch = budget.reserve(scratch.bytes(&batch)?)?;
+                        transform(batch, lease)
+                    }) as BatchTransform
+                };
+                eager(transform, ctx.options.cancellation.clone())
             };
             let installed = target.and_then(|(id, expression)| {
                 if let std::collections::hash_map::Entry::Vacant(entry) =
@@ -279,7 +362,7 @@ pub(super) fn run(
                     None
                 }
             });
-            suffix.transform = compose(Some(transform), Some(suffix.transform)).unwrap();
+            suffix.transform = compose_selected(transform, suffix.transform);
             let result = run(input, ctx, suffix, emit);
             if let Some(id) = installed {
                 ctx.static_filters.remove(&id);
@@ -298,16 +381,17 @@ pub(super) fn run(
             };
             let schema = node.schema.clone();
             let budget = ctx.budget.clone();
-            let transform: BatchTransform = Arc::new(move |batch| {
+            let transform: crate::selection::Transform = Arc::new(move |input| {
                 let (batch, lease) =
-                    column_projection::project(&batch, &columns, schema.clone(), &budget)?;
-                Ok(TransformedBatch {
+                    column_projection::project(&input.batch, &columns, schema.clone(), &budget)?;
+                Ok(crate::selection::Batch {
                     batch,
+                    rows: input.rows,
                     lease,
                     preserve_empty: false,
                 })
             });
-            suffix.transform = compose(Some(transform), Some(suffix.transform)).unwrap();
+            suffix.transform = compose_selected(transform, suffix.transform);
             run(input, ctx, suffix, emit)
         }
         RelOp::Join {
@@ -366,15 +450,125 @@ mod tests {
         )
         .unwrap();
         let output = super::super::combined(input_schema, &batch().schema());
-        probe_transform(
-            build,
-            vec![(column.clone(), column)],
-            JoinKind::Inner,
-            output,
-            options,
-            stats,
-            budget.reserve(2048).unwrap(),
+        raw(
+            probe_transform(
+                build,
+                vec![(column.clone(), column)],
+                JoinKind::Inner,
+                output,
+                options,
+                stats,
+                budget.reserve(2048).unwrap(),
+            ),
+            budget.clone(),
+            options.cancellation.clone(),
         )
+    }
+
+    #[test]
+    fn selected_probe_uses_parent_ordinals_and_gathers_only_matches() {
+        use arrow::array::StringArray;
+        let budget = Budget::new(1 << 20);
+        let options = Options::default();
+        let source = RecordBatch::try_new(
+            Arc::new(Schema::new(vec![
+                Field::new("k", DataType::Int64, true),
+                Field::new("s", DataType::Utf8, true),
+            ])),
+            vec![
+                Arc::new(Int64Array::from(vec![
+                    Some(2),
+                    Some(1),
+                    Some(2),
+                    None,
+                    Some(9),
+                ])),
+                Arc::new(StringArray::from(vec![
+                    "skip", "keep", "keep", "keep", "keep",
+                ])),
+            ],
+        )
+        .unwrap()
+        .slice(1, 4);
+        let expression = crate::bind::bind(
+            &crate::bind::parse("SELECT k WHERE s LIKE 'keep%' AND k>=2").unwrap(),
+            &source.schema(),
+            None,
+            true,
+        )
+        .unwrap()
+        .filter
+        .unwrap();
+        let program = crate::selection::Program::new(&expression, &source.schema(), &budget)
+            .unwrap()
+            .unwrap();
+        for kind in [JoinKind::Inner, JoinKind::Semi, JoinKind::Anti] {
+            let input = program
+                .select(
+                    crate::selection::Batch::adopt(source.clone(), &budget).unwrap(),
+                    &budget,
+                    &options.cancellation,
+                )
+                .unwrap();
+            assert_eq!(input.rows.as_ref().unwrap().indices, vec![1, 3]);
+            // Drop the predicate-only text before the first gather, retaining
+            // the original numeric backing buffer and unchanged row ordinals.
+            let (projected, lease) =
+                column_projection::project(&input.batch, &[0], batch().schema(), &budget).unwrap();
+            assert!(Arc::ptr_eq(projected.column(0), source.column(0)));
+            let selected = crate::selection::Batch {
+                batch: projected,
+                rows: input.rows,
+                lease,
+                preserve_empty: false,
+            };
+            let column = Expr {
+                ty: Type::Int,
+                kind: Kind::Column(0),
+            };
+            let build = probe::owned::OwnedBuild::new(
+                batch(),
+                std::slice::from_ref(&column),
+                &budget,
+                true,
+                &options.cancellation,
+            )
+            .unwrap();
+            let schema = if kind == JoinKind::Inner {
+                super::super::combined(&selected.batch.schema(), &batch().schema())
+            } else {
+                selected.batch.schema()
+            };
+            let stats = Arc::new(Mutex::new(probe::Statistics::default()));
+            let probe = probe_transform(
+                build,
+                vec![(column.clone(), column)],
+                kind,
+                schema,
+                &options,
+                stats.clone(),
+                budget.reserve(2048).unwrap(),
+            );
+            let output = probe(selected).unwrap();
+            let expected = if kind == JoinKind::Anti { 9 } else { 2 };
+            assert_eq!(
+                output
+                    .batch
+                    .column(0)
+                    .as_any()
+                    .downcast_ref::<Int64Array>()
+                    .unwrap()
+                    .values()
+                    .as_ref(),
+                &[expected]
+            );
+            assert!(output.rows.is_none());
+            assert_eq!(stats.lock().unwrap().output_rows, 1);
+            drop(output);
+            drop(probe);
+        }
+        drop(program);
+        assert_eq!(budget.used(), 0);
     }
 
     #[test]
@@ -382,9 +576,10 @@ mod tests {
         let budget = Budget::new(1 << 20);
         let options = Options::default();
         let transform = stage(&budget, &options, &batch().schema(), Arc::default());
+        let input_lease = budget.reserve(batch().get_array_memory_size()).unwrap();
         let held = budget.reserve(budget.limit() - budget.used()).unwrap();
         options.cancellation.cancel();
-        let error = match transform(batch()) {
+        let error = match transform(batch(), input_lease) {
             Err(error) => error,
             Ok(_) => panic!("expected cancellation"),
         };
@@ -409,18 +604,21 @@ mod tests {
             let second = stage(&budget, &options, &schema, Arc::default());
             let denial_budget = budget.clone();
             let cancellation = options.cancellation.clone();
-            let suffix: BatchTransform = Arc::new(move |batch| {
+            let suffix: BatchTransform = Arc::new(move |batch, lease| {
                 if cancel {
                     cancellation.cancel();
-                    second(batch)
+                    second(batch, lease)
                 } else {
                     let _denied =
                         denial_budget.reserve(denial_budget.limit() - denial_budget.used())?;
-                    second(batch)
+                    second(batch, lease)
                 }
             });
             let transform = compose(Some(first), Some(suffix)).unwrap();
-            let error = match transform(batch()) {
+            let error = match transform(
+                batch(),
+                budget.reserve(batch().get_array_memory_size()).unwrap(),
+            ) {
                 Err(error) => error,
                 Ok(_) => panic!("expected failure"),
             };
@@ -486,6 +684,7 @@ mod tests {
                 lane_transforms: Default::default(),
                 replay_transforms: Default::default(),
                 materialized: Default::default(),
+                recursive_bindings: None,
                 sideways_registry_lease: None,
                 spill: None,
                 budget: budget.clone(),
@@ -493,7 +692,7 @@ mod tests {
             };
             assert!(admitted(&filter, &ctx).unwrap());
             let (suffix, reached) = Suffix::prepend(
-                Arc::new(|_| panic!("unfunded predicate must not execute")),
+                Arc::new(|_, _| panic!("unfunded predicate must not execute")),
                 None,
             );
             let error = run(&filter, &mut ctx, suffix, &mut |_| {
@@ -601,6 +800,7 @@ mod tests {
                 lane_transforms: Default::default(),
                 replay_transforms: Default::default(),
                 materialized: Default::default(),
+                recursive_bindings: None,
                 sideways_registry_lease: None,
                 spill: None,
                 budget: budget.clone(),
@@ -744,6 +944,7 @@ mod tests {
                     lane_transforms: Default::default(),
                     replay_transforms: Default::default(),
                     materialized: Default::default(),
+                    recursive_bindings: None,
                     sideways_registry_lease: None,
                     spill: None,
                     budget: budget.clone(),
@@ -850,6 +1051,7 @@ mod tests {
                 lane_transforms: Default::default(),
                 replay_transforms: Default::default(),
                 materialized: Default::default(),
+                recursive_bindings: None,
                 sideways_registry_lease: None,
                 spill: None,
                 budget: budget.clone(),

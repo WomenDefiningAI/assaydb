@@ -1,0 +1,5 @@
+{
+  "transport": "isolated Unix socket; TCP disabled",
+  "cases": [],
+  "unavailable": "PostgreSQL reference unavailable: host shared-memory permission failure during initialization."
+}

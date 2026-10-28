@@ -50,6 +50,7 @@ pub(crate) fn try_top_k_indices(
                     | DataType::Float64
                     | DataType::Decimal128(_, _)
                     | DataType::Date32
+                    | DataType::Timestamp(arrow::datatypes::TimeUnit::Microsecond, _)
                     | DataType::Utf8
                     | DataType::Binary
             )
@@ -74,7 +75,11 @@ pub(crate) fn try_top_k_indices(
         .filter(|column| column.values.data_type() != &DataType::Null)
         .cloned()
         .collect::<Vec<_>>();
-    let comparator = LexicographicalComparator::try_new(&columns).map_err(|e| e.to_string())?;
+    let Ok((columns, _float_credit)) = canonical_columns(columns, budget) else {
+        return Ok(None);
+    };
+    let comparator = LexicographicalComparator::try_new(&columns)
+        .map_err(|e| crate::Error::from(e.to_string()))?;
     let compare = |a: u32, b: u32| {
         comparator
             .compare(a as usize, b as usize)
@@ -156,15 +161,41 @@ fn sift_down(heap: &mut [u32], compare: &impl Fn(u32, u32) -> Ordering) {
 /// ties every row, so omit it without changing any remaining key's priority.
 /// Consume the already funded descriptors; the caller's existing sort workspace
 /// covers the indices, including the all-tied identity permutation.
-pub(crate) fn sort_indices(mut columns: Vec<SortColumn>, rows: usize) -> Result<UInt32Array> {
+pub(crate) fn sort_indices(
+    columns: Vec<SortColumn>,
+    rows: usize,
+    budget: &Budget,
+) -> Result<UInt32Array> {
+    let (mut columns, _float_credit) = canonical_columns(columns, budget)?;
     columns.retain(|column| column.values.data_type() != &arrow::datatypes::DataType::Null);
     if columns.is_empty() {
         let rows =
             u32::try_from(rows).map_err(|_| "resource-limit: sort exceeds 32-bit indices")?;
         Ok(UInt32Array::from_iter_values(0..rows))
     } else {
-        lexsort_to_indices(&columns, None).map_err(|e| e.to_string())
+        Ok(lexsort_to_indices(&columns, None).map_err(|e| crate::Error::from(e.to_string()))?)
     }
+}
+
+/// Reserve before copying; projections keep their original floating bits.
+fn canonical_columns(
+    mut columns: Vec<SortColumn>,
+    budget: &Budget,
+) -> Result<(Vec<SortColumn>, Option<Reservation>)> {
+    let bytes = columns.iter().try_fold(0usize, |bytes, column| {
+        bytes
+            .checked_add(crate::expr::numeric_compare::canonical_bytes(
+                &column.values,
+            )?)
+            .ok_or_else(|| "float sort key size overflow".to_string())
+    })?;
+    let credit = (bytes != 0).then(|| budget.reserve(bytes)).transpose()?;
+    if credit.is_some() {
+        for column in &mut columns {
+            column.values = crate::expr::numeric_compare::canonical_array(&column.values);
+        }
+    }
+    Ok((columns, credit))
 }
 
 #[derive(Default)]
@@ -194,13 +225,27 @@ impl Cursor {
                 batch.batch.get_array_memory_size(),
                 batch.batch.num_rows(),
             )?)?;
+            // Repeated ORDER BY expressions can copy the same physical column
+            // several times. Fund every private copy before encoding merge keys.
+            let float_bytes = order.iter().try_fold(0usize, |bytes, s| {
+                bytes
+                    .checked_add(crate::expr::numeric_compare::canonical_bytes(
+                        batch.batch.column(s.column),
+                    )?)
+                    .ok_or_else(|| "float merge key size overflow".to_string())
+            })?;
+            let _float_credit = (float_bytes != 0)
+                .then(|| budget.reserve(float_bytes))
+                .transpose()?;
             let columns = order
                 .iter()
-                .map(|s| batch.batch.column(s.column).clone())
+                .map(|s| {
+                    crate::expr::numeric_compare::canonical_array(batch.batch.column(s.column))
+                })
                 .collect::<Vec<_>>();
             let rows = converter
                 .convert_columns(&columns)
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| crate::Error::from(e.to_string()))?;
             self.batch = Some(batch);
             self.rows = Some(rows);
             self.keys_lease = Some(lease);
@@ -253,7 +298,8 @@ impl BufferedOutput<'_> {
                 a.checked_add(b).ok_or("merge buffer overflow")
             })?;
         let _lease = self.budget.reserve(workspace(bytes, self.rows)?)?;
-        let batch = concat_batches(&self.schema, &self.batches).map_err(|e| e.to_string())?;
+        let batch = concat_batches(&self.schema, &self.batches)
+            .map_err(|e| crate::Error::from(e.to_string()))?;
         (self.emit)(batch)?;
         self.batches.clear();
         self.leases.clear();
@@ -371,7 +417,8 @@ impl ExternalSort {
             return Err("resource-limit: sort run exceeds 32-bit indices".into());
         }
         let _workspace = self.budget.reserve(workspace(self.pending_bytes, rows)?)?;
-        let combined = concat_batches(&self.schema, &self.pending).map_err(|e| e.to_string())?;
+        let combined = concat_batches(&self.schema, &self.pending)
+            .map_err(|e| crate::Error::from(e.to_string()))?;
         let columns = self
             .order
             .iter()
@@ -383,7 +430,7 @@ impl ExternalSort {
                 }),
             })
             .collect::<Vec<_>>();
-        let indices = sort_indices(columns, rows)?;
+        let indices = sort_indices(columns, rows, &self.budget)?;
         let mut files = VecDeque::new();
         // Take directly from the combined run into compact replay batches.
         // Stored memory estimates must not retain an entire sliced parent.
@@ -396,10 +443,12 @@ impl ExternalSort {
                 let arrays = combined
                     .columns()
                     .iter()
-                    .map(|a| take(a, &selected, None).map_err(|e| e.to_string()))
+                    .map(|a| {
+                        take(a, &selected, None).map_err(|e| crate::Error::from(e.to_string()))
+                    })
                     .collect::<Result<Vec<_>>>()?;
-                let batch =
-                    RecordBatch::try_new(self.schema.clone(), arrays).map_err(|e| e.to_string())?;
+                let batch = RecordBatch::try_new(self.schema.clone(), arrays)
+                    .map_err(|e| crate::Error::from(e.to_string()))?;
                 if batch.get_array_memory_size() <= self.replay_bytes || count == 1 {
                     break batch;
                 }
@@ -434,7 +483,7 @@ impl ExternalSort {
                 })
                 .collect(),
         )
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::Error::from(e.to_string()))?;
         let mut cursors = runs
             .into_iter()
             .map(|run| Cursor {
@@ -496,8 +545,8 @@ impl ExternalSort {
                         a.checked_add(b).ok_or("merge output size overflow")
                     })?;
                 let _output = self.budget.reserve(workspace(bytes, selected.len())?)?;
-                let batch =
-                    interleave_record_batch(&batches, &selected).map_err(|e| e.to_string())?;
+                let batch = interleave_record_batch(&batches, &selected)
+                    .map_err(|e| crate::Error::from(e.to_string()))?;
                 output.push(batch)?;
                 selected.clear();
             }

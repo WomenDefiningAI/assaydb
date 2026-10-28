@@ -189,6 +189,7 @@ fn append_id(node: Node) -> Node {
                     id: SOURCE_ID,
                     input: right,
                     shared_scan: false,
+                    forced: false,
                 },
             };
             RelOp::Join {
@@ -215,11 +216,15 @@ fn expression_bytes(expr: &Expr) -> usize {
     let payload = match &expr.kind {
         Kind::Literal(Literal::Text(s)) => s.len(),
         Kind::Literal(Literal::Binary(b)) => b.len(),
-        Kind::Binary(_, a, b) | Kind::Like(a, b, _) | Kind::Position(a, b) | Kind::NullIf(a, b) => {
-            expression_bytes(a).saturating_add(expression_bytes(b))
-        }
+        Kind::Binary(_, a, b)
+        | Kind::Like(a, b, _)
+        | Kind::Position(a, b)
+        | Kind::NullIf(a, b)
+        | Kind::Pack(a, b) => expression_bytes(a).saturating_add(expression_bytes(b)),
         Kind::Function(name, a) => name.len().saturating_add(expression_bytes(a)),
         Kind::Cast(a)
+        | Kind::DialectCast(a, _)
+        | Kind::CastVarchar(a, _)
         | Kind::CastDecimal(a, _, _)
         | Kind::Not(a)
         | Kind::Neg(a)
@@ -276,10 +281,12 @@ pub(super) fn node_bytes(node: &Node) -> usize {
         )
     });
     let payload = match &node.op {
+        RelOp::RecursiveCte { .. } | RelOp::RecursiveScan { .. } => usize::MAX,
         RelOp::Scan { path, .. } => path.as_os_str().len(),
-        RelOp::Rename { input } | RelOp::Limit { input, .. } | RelOp::Materialize { input, .. } => {
-            node_bytes(input)
-        }
+        RelOp::Rename { input }
+        | RelOp::Limit { input, .. }
+        | RelOp::Scalar { input }
+        | RelOp::Materialize { input, .. } => node_bytes(input),
         RelOp::Project { input, columns } => {
             node_bytes(input).saturating_add(columns.len().saturating_mul(64))
         }
@@ -307,6 +314,11 @@ pub(super) fn node_bytes(node: &Node) -> usize {
                     .saturating_add(expression_bytes(b))
             },
         ),
+        RelOp::ScalarDefault {
+            input, fallback, ..
+        } => node_bytes(input).saturating_add(node_bytes(fallback)),
+        RelOp::UnionAll { left, right } => node_bytes(left).saturating_add(node_bytes(right)),
+        RelOp::Generate { .. } => usize::MAX, // no scan-owned fused path
         RelOp::One | RelOp::Empty => 0,
         _ => usize::MAX,
     };
@@ -745,6 +757,7 @@ mod tests {
             lane_transforms: HashMap::new(),
             replay_transforms: HashMap::new(),
             materialized: HashMap::new(),
+            recursive_bindings: None,
             sideways_registry_lease: None,
             spill: None,
             budget: budget.clone(),
@@ -810,6 +823,7 @@ mod tests {
                     op: RelOp::Empty,
                 }),
                 shared_scan: false,
+                forced: false,
             },
         };
         let baseline = budget.used();
@@ -853,6 +867,7 @@ mod tests {
                         id: SOURCE_ID,
                         input: Box::new(input.clone()),
                         shared_scan: false,
+                        forced: false,
                     },
                 };
                 let mut emitted = 0;

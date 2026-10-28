@@ -1,0 +1,2862 @@
+{
+  "duckdb_version": "1.5.6",
+  "cases_sha256": "97c3134665905aee68a309d90352d3fcbd95ce154143f0c2899f49a5236235f8",
+  "float_policy": "Exact binary64 bits, including signed zero.",
+  "setup": [
+    "CREATE TABLE discounts (k INTEGER, l_discount DECIMAL(4,2))",
+    "INSERT INTO discounts VALUES (1,0.05),(1,0.05),(2,-0.02),(2,NULL)",
+    "CREATE TABLE lab_groups (group_id INTEGER, label VARCHAR)",
+    "INSERT INTO lab_groups VALUES (11,'positive_low'),(22,'positive_high'),(33,'negative_low'),(44,'negative_high'),(55,'missing'),(66,'mixed')",
+    "CREATE TABLE instruments (instrument_id INTEGER, group_id INTEGER)",
+    "INSERT INTO instruments VALUES (101,11),(102,22),(103,33),(104,44),(105,55),(106,66),(201,11),(202,22),(203,33),(204,44)",
+    "CREATE TABLE readings (instrument_id INTEGER, reading DECIMAL(12,8))",
+    "INSERT INTO readings VALUES (101,0.07324999),(102,0.07325001),(103,-0.07324999),(104,-0.07325001),(105,NULL),(106,0.03),(201,0.07324999),(202,0.07325001),(203,-0.07324999),(204,-0.07325001),(105,NULL),(106,0.07),(101,0.07324999),(102,0.07325001),(103,-0.07324999),(104,-0.07325001),(106,0.11),(106,NULL)"
+  ],
+  "cases": [
+    {
+      "id": "double_cast",
+      "ordered": false,
+      "sql": "SELECT CAST(9007199254740993 AS DOUBLE) AS v;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "f64": "4340000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "double_colon",
+      "ordered": false,
+      "sql": "SELECT (-9007199254740995)::DOUBLE AS v;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "f64": "c340000000000002"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "double_null",
+      "ordered": false,
+      "sql": "SELECT CAST(NULL AS DOUBLE) AS v;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "double_decimal",
+      "ordered": false,
+      "sql": "SELECT CAST(12345678901234567890.123456789012345678 AS DOUBLE) AS v;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "f64": "43e56a95319d63e1"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "double_precision_cast",
+      "ordered": false,
+      "sql": "SELECT CAST(9007199254740993 AS DOUBLE PRECISION) AS v;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "f64": "4340000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "double_precision_colon",
+      "ordered": false,
+      "sql": "SELECT (-9007199254740995)::DOUBLE PRECISION AS v;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "f64": "c340000000000002"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "double_precision_null",
+      "ordered": false,
+      "sql": "SELECT CAST(NULL AS DOUBLE PRECISION) AS v;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "double_precision_decimal",
+      "ordered": false,
+      "sql": "SELECT CAST(12345678901234567890.123456789012345678 AS DOUBLE PRECISION) AS v;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "f64": "43e56a95319d63e1"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "float8_cast",
+      "ordered": false,
+      "sql": "SELECT CAST(9007199254740993 AS FLOAT8) AS v;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "f64": "4340000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "float8_colon",
+      "ordered": false,
+      "sql": "SELECT (-9007199254740995)::FLOAT8 AS v;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "f64": "c340000000000002"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "float8_null",
+      "ordered": false,
+      "sql": "SELECT CAST(NULL AS FLOAT8) AS v;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "float8_decimal",
+      "ordered": false,
+      "sql": "SELECT CAST(12345678901234567890.123456789012345678 AS FLOAT8) AS v;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "f64": "43e56a95319d63e1"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "float_cast",
+      "ordered": false,
+      "assay_error": "unsupported: CAST AS FLOAT precision differs between references",
+      "difference": "DuckDB 1.5.6 uses binary32 for bare FLOAT, unlike the card's binary64 premise and PostgreSQL. Assay refuses the ambiguous target pending a precision decision.",
+      "sql": "SELECT CAST(9007199254740993 AS FLOAT) AS v;",
+      "types": [
+        "FLOAT"
+      ],
+      "rows": [
+        [
+          {
+            "f64": "4340000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "float_colon",
+      "ordered": false,
+      "assay_error": "unsupported: CAST AS FLOAT precision differs between references",
+      "difference": "DuckDB 1.5.6 uses binary32 for bare FLOAT, unlike the card's binary64 premise and PostgreSQL. Assay refuses the ambiguous target pending a precision decision.",
+      "sql": "SELECT (-9007199254740995)::FLOAT AS v;",
+      "types": [
+        "FLOAT"
+      ],
+      "rows": [
+        [
+          {
+            "f64": "c340000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "float_null",
+      "ordered": false,
+      "assay_error": "unsupported: CAST AS FLOAT precision differs between references",
+      "difference": "DuckDB 1.5.6 uses binary32 for bare FLOAT, unlike the card's binary64 premise and PostgreSQL. Assay refuses the ambiguous target pending a precision decision.",
+      "sql": "SELECT CAST(NULL AS FLOAT) AS v;",
+      "types": [
+        "FLOAT"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "float_decimal",
+      "ordered": false,
+      "assay_error": "unsupported: CAST AS FLOAT precision differs between references",
+      "difference": "DuckDB 1.5.6 uses binary32 for bare FLOAT, unlike the card's binary64 premise and PostgreSQL. Assay refuses the ambiguous target pending a precision decision.",
+      "sql": "SELECT CAST(12345678901234567890.123456789012345678 AS FLOAT) AS v;",
+      "types": [
+        "FLOAT"
+      ],
+      "rows": [
+        [
+          {
+            "f64": "43e56a9540000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "text_integer",
+      "ordered": false,
+      "sql": "SELECT CAST(-9223372036854775808 AS TEXT) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "-9223372036854775808"
+        ]
+      ]
+    },
+    {
+      "id": "text_decimal",
+      "ordered": false,
+      "sql": "SELECT CAST(1.50 AS TEXT) AS p, CAST(-0.05 AS TEXT) AS n, CAST(0.00 AS TEXT) AS z;",
+      "types": [
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "1.50",
+          "-0.05",
+          "0.00"
+        ]
+      ]
+    },
+    {
+      "id": "text_date",
+      "ordered": false,
+      "sql": "SELECT CAST(DATE '2024-02-29' AS TEXT) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "2024-02-29"
+        ]
+      ]
+    },
+    {
+      "id": "text_null_empty",
+      "ordered": false,
+      "sql": "SELECT CAST(NULL AS TEXT) AS n, CAST('' AS TEXT) AS e;",
+      "types": [
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          null,
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "varchar_integer",
+      "ordered": false,
+      "sql": "SELECT CAST(-9223372036854775808 AS VARCHAR) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "-9223372036854775808"
+        ]
+      ]
+    },
+    {
+      "id": "varchar_decimal",
+      "ordered": false,
+      "sql": "SELECT CAST(1.50 AS VARCHAR) AS p, CAST(-0.05 AS VARCHAR) AS n, CAST(0.00 AS VARCHAR) AS z;",
+      "types": [
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "1.50",
+          "-0.05",
+          "0.00"
+        ]
+      ]
+    },
+    {
+      "id": "varchar_date",
+      "ordered": false,
+      "sql": "SELECT CAST(DATE '2024-02-29' AS VARCHAR) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "2024-02-29"
+        ]
+      ]
+    },
+    {
+      "id": "varchar_null_empty",
+      "ordered": false,
+      "sql": "SELECT CAST(NULL AS VARCHAR) AS n, CAST('' AS VARCHAR) AS e;",
+      "types": [
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          null,
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "string_integer",
+      "ordered": false,
+      "sql": "SELECT CAST(-9223372036854775808 AS STRING) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "-9223372036854775808"
+        ]
+      ]
+    },
+    {
+      "id": "string_decimal",
+      "ordered": false,
+      "sql": "SELECT CAST(1.50 AS STRING) AS p, CAST(-0.05 AS STRING) AS n, CAST(0.00 AS STRING) AS z;",
+      "types": [
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "1.50",
+          "-0.05",
+          "0.00"
+        ]
+      ]
+    },
+    {
+      "id": "string_date",
+      "ordered": false,
+      "sql": "SELECT CAST(DATE '2024-02-29' AS STRING) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "2024-02-29"
+        ]
+      ]
+    },
+    {
+      "id": "string_null_empty",
+      "ordered": false,
+      "sql": "SELECT CAST(NULL AS STRING) AS n, CAST('' AS STRING) AS e;",
+      "types": [
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          null,
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "character_varying_integer",
+      "ordered": false,
+      "sql": "SELECT CAST(-9223372036854775808 AS CHARACTER VARYING) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "-9223372036854775808"
+        ]
+      ]
+    },
+    {
+      "id": "character_varying_decimal",
+      "ordered": false,
+      "sql": "SELECT CAST(1.50 AS CHARACTER VARYING) AS p, CAST(-0.05 AS CHARACTER VARYING) AS n, CAST(0.00 AS CHARACTER VARYING) AS z;",
+      "types": [
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "1.50",
+          "-0.05",
+          "0.00"
+        ]
+      ]
+    },
+    {
+      "id": "character_varying_date",
+      "ordered": false,
+      "sql": "SELECT CAST(DATE '2024-02-29' AS CHARACTER VARYING) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "2024-02-29"
+        ]
+      ]
+    },
+    {
+      "id": "character_varying_null_empty",
+      "ordered": false,
+      "sql": "SELECT CAST(NULL AS CHARACTER VARYING) AS n, CAST('' AS CHARACTER VARYING) AS e;",
+      "types": [
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          null,
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "char_varying_integer",
+      "ordered": false,
+      "sql": "SELECT CAST(-9223372036854775808 AS CHAR VARYING) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "-9223372036854775808"
+        ]
+      ]
+    },
+    {
+      "id": "char_varying_decimal",
+      "ordered": false,
+      "sql": "SELECT CAST(1.50 AS CHAR VARYING) AS p, CAST(-0.05 AS CHAR VARYING) AS n, CAST(0.00 AS CHAR VARYING) AS z;",
+      "types": [
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "1.50",
+          "-0.05",
+          "0.00"
+        ]
+      ]
+    },
+    {
+      "id": "char_varying_date",
+      "ordered": false,
+      "sql": "SELECT CAST(DATE '2024-02-29' AS CHAR VARYING) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "2024-02-29"
+        ]
+      ]
+    },
+    {
+      "id": "char_varying_null_empty",
+      "ordered": false,
+      "sql": "SELECT CAST(NULL AS CHAR VARYING) AS n, CAST('' AS CHAR VARYING) AS e;",
+      "types": [
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          null,
+          ""
+        ]
+      ]
+    },
+    {
+      "id": "double_identity",
+      "ordered": false,
+      "sql": "SELECT CAST(CAST(1.25 AS DOUBLE) AS FLOAT8) AS v;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "f64": "3ff4000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "negative_zero_identity",
+      "ordered": false,
+      "assay_error": "unsupported: CAST AS FLOAT precision differs between references",
+      "difference": "DuckDB 1.5.6 uses binary32 for bare FLOAT, unlike the card's binary64 premise and PostgreSQL. Assay refuses the ambiguous target pending a precision decision.",
+      "sql": "SELECT CAST(-CAST(0 AS DOUBLE) AS FLOAT) AS v;",
+      "types": [
+        "FLOAT"
+      ],
+      "rows": [
+        [
+          {
+            "f64": "8000000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "varchar_unicode",
+      "ordered": false,
+      "sql": "SELECT CAST('\u00e9\ud83d\ude00' AS VARCHAR(2)) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "\u00e9\ud83d\ude00"
+        ]
+      ]
+    },
+    {
+      "id": "varying_bound",
+      "ordered": false,
+      "sql": "SELECT CAST('\u00e9\ud83d\ude00' AS CHARACTER VARYING(2)) AS a, CAST('\u00e9\ud83d\ude00' AS CHAR VARYING(2)) AS b;",
+      "types": [
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "\u00e9\ud83d\ude00",
+          "\u00e9\ud83d\ude00"
+        ]
+      ]
+    },
+    {
+      "id": "varchar_empty_null",
+      "ordered": false,
+      "sql": "SELECT CAST('' AS VARCHAR(1)) AS e, CAST(NULL AS VARCHAR(1)) AS n;",
+      "types": [
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "",
+          null
+        ]
+      ]
+    },
+    {
+      "id": "varchar_decimal_fits",
+      "ordered": false,
+      "sql": "SELECT CAST(-1.50 AS VARCHAR(5)) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "-1.50"
+        ]
+      ]
+    },
+    {
+      "id": "varchar_date_fits",
+      "ordered": false,
+      "sql": "SELECT CAST(DATE '0001-01-01' AS VARCHAR(10)) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "0001-01-01"
+        ]
+      ]
+    },
+    {
+      "id": "column_aliases_ordered",
+      "ordered": true,
+      "sql": "SELECT id, CAST(d AS DOUBLE) AS amount, CAST(d AS VARCHAR) AS label FROM (SELECT 1 AS id, 1.50 AS d UNION ALL SELECT 2, -1.50 UNION ALL SELECT 3, 1.50 UNION ALL SELECT 4, NULL) s ORDER BY id;",
+      "types": [
+        "INTEGER",
+        "DOUBLE",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "f64": "3ff8000000000000"
+          },
+          "1.50"
+        ],
+        [
+          2,
+          {
+            "f64": "bff8000000000000"
+          },
+          "-1.50"
+        ],
+        [
+          3,
+          {
+            "f64": "3ff8000000000000"
+          },
+          "1.50"
+        ],
+        [
+          4,
+          null,
+          null
+        ]
+      ]
+    },
+    {
+      "id": "duplicate_bag",
+      "ordered": false,
+      "sql": "SELECT CAST(d AS VARCHAR) AS v FROM (SELECT 1 AS id, 1.50 AS d UNION ALL SELECT 2, -1.50 UNION ALL SELECT 3, 1.50 UNION ALL SELECT 4, NULL) s;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "1.50"
+        ],
+        [
+          "-1.50"
+        ],
+        [
+          "1.50"
+        ],
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "empty_input",
+      "ordered": false,
+      "sql": "SELECT CAST(d AS DOUBLE) AS amount, CAST(d AS VARCHAR(1)) AS label FROM (SELECT 1 AS id, 1.50 AS d UNION ALL SELECT 2, -1.50 UNION ALL SELECT 3, 1.50 UNION ALL SELECT 4, NULL) s WHERE id < 0;",
+      "types": [
+        "DOUBLE",
+        "VARCHAR"
+      ],
+      "rows": []
+    },
+    {
+      "id": "grouped_labels",
+      "ordered": true,
+      "sql": "SELECT CAST(d AS VARCHAR(5)) AS label, COUNT(*) AS n FROM (SELECT 1 AS id, 1.50 AS d UNION ALL SELECT 2, -1.50 UNION ALL SELECT 3, 1.50 UNION ALL SELECT 4, NULL) s GROUP BY d ORDER BY label NULLS LAST;",
+      "types": [
+        "VARCHAR",
+        "BIGINT"
+      ],
+      "rows": [
+        [
+          "-1.50",
+          1
+        ],
+        [
+          "1.50",
+          2
+        ],
+        [
+          null,
+          1
+        ]
+      ]
+    },
+    {
+      "id": "invoice_total",
+      "ordered": false,
+      "sql": "SELECT CAST(SUM(d) AS VARCHAR) AS label, CAST(SUM(d) AS DOUBLE) AS amount FROM (SELECT 1 AS id, 1.50 AS d UNION ALL SELECT 2, -1.50 UNION ALL SELECT 3, 1.50 UNION ALL SELECT 4, NULL) s;",
+      "types": [
+        "VARCHAR",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          "1.50",
+          {
+            "f64": "3ff8000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "repeated_aggregate",
+      "ordered": false,
+      "sql": "SELECT MIN(CAST(d AS VARCHAR(5))) AS lo, MAX(CAST(d AS VARCHAR(5))) AS hi FROM (SELECT 1 AS id, 1.50 AS d UNION ALL SELECT 2, -1.50 UNION ALL SELECT 3, 1.50 UNION ALL SELECT 4, NULL) s;",
+      "types": [
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "-1.50",
+          "1.50"
+        ]
+      ]
+    },
+    {
+      "id": "reached_rows",
+      "ordered": false,
+      "sql": "SELECT CAST(s AS VARCHAR(1)) AS v FROM (SELECT 1 AS id, 'a' AS s UNION ALL SELECT 2, 'long') t WHERE id = 1;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "a"
+        ]
+      ]
+    },
+    {
+      "id": "lazy_case",
+      "ordered": false,
+      "sql": "SELECT CASE WHEN TRUE THEN 'ok' ELSE CAST('long' AS VARCHAR(1)) END AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "ok"
+        ]
+      ]
+    },
+    {
+      "id": "lazy_coalesce",
+      "ordered": false,
+      "sql": "SELECT COALESCE('ok', CAST('long' AS VARCHAR(1))) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "ok"
+        ]
+      ]
+    },
+    {
+      "id": "double_rounding_pair",
+      "ordered": false,
+      "sql": "SELECT CAST(9007199254740993 AS DOUBLE) AS even_down, CAST(9007199254740995 AS DOUBLE) AS even_up;",
+      "types": [
+        "DOUBLE",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "f64": "4340000000000000"
+          },
+          {
+            "f64": "4340000000000002"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "varchar_too_long",
+      "ordered": false,
+      "assay_error": "unsupported: VARCHAR(3)",
+      "difference": "DuckDB ignores the length; PostgreSQL truncates. Assay refuses the overlength result.",
+      "sql": "SELECT CAST('abcd' AS VARCHAR(3)) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "abcd"
+        ]
+      ]
+    },
+    {
+      "id": "varchar_trailing_space",
+      "ordered": false,
+      "assay_error": "unsupported: VARCHAR(1)",
+      "difference": "No trimming or truncation of trailing spaces is authorized.",
+      "sql": "SELECT CAST('a ' AS VARCHAR(1)) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "a "
+        ]
+      ]
+    },
+    {
+      "id": "text_double_refusal",
+      "ordered": false,
+      "assay_error": "unsupported: DOUBLE/FLOAT cast requires a numeric source",
+      "difference": "Text-to-DOUBLE parsing is deferred; REAL keeps its SQLite prefix parser.",
+      "sql": "SELECT CAST('1.25' AS DOUBLE) AS v;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          {
+            "f64": "3ff4000000000000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "invalid_text_double_refusal",
+      "ordered": false,
+      "assay_error": "unsupported: DOUBLE/FLOAT cast requires a numeric source",
+      "reference_error": true,
+      "difference": "DuckDB conversion error; Assay refuses all text-to-DOUBLE sources at binding.",
+      "sql": "SELECT CAST('1.25tail' AS DOUBLE) AS v;",
+      "reference_error_text": "Conversion Error: Could not convert string '1.25tail' to DOUBLE\n\nLINE 1: SELECT CAST('1.25tail' AS DOUBLE) AS v;\n               ^"
+    },
+    {
+      "id": "float_text_refusal",
+      "ordered": false,
+      "assay_error": "unsupported: CAST Float AS Text",
+      "difference": "Float-to-text formatting remains refused pending a semantics decision.",
+      "sql": "SELECT CAST(CAST(1.25 AS DOUBLE) AS VARCHAR) AS v;",
+      "types": [
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "1.25"
+        ]
+      ]
+    },
+    {
+      "id": "bool_text_legacy",
+      "ordered": false,
+      "assay_rows": [
+        [
+          "1",
+          "0"
+        ]
+      ],
+      "difference": "Aliases retain the existing TEXT boolean 1/0 format. DuckDB/PostgreSQL use true/false; changing it awaits Helen.",
+      "sql": "SELECT CAST(TRUE AS VARCHAR) AS t, CAST(FALSE AS VARCHAR) AS f;",
+      "types": [
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      "rows": [
+        [
+          "true",
+          "false"
+        ]
+      ]
+    },
+    {
+      "id": "bare_decimal_refusal",
+      "ordered": false,
+      "sql": "SELECT CAST(1.50 AS DECIMAL) AS v;",
+      "types": [
+        "DECIMAL(18,3)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "1.500"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "float_decimal_refusal",
+      "ordered": false,
+      "sql": "SELECT CAST(CAST(1.25 AS DOUBLE) AS DECIMAL(6,2)) AS v;",
+      "types": [
+        "DECIMAL(6,2)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "1.25"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_numeric_0",
+      "ordered": false,
+      "sql": "SELECT CAST(1 AS DECIMAL);",
+      "types": [
+        "DECIMAL(18,3)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "1.000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_numeric_1",
+      "ordered": false,
+      "sql": "SELECT CAST(1 AS NUMERIC);",
+      "types": [
+        "DECIMAL(18,3)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "1.000"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_numeric_2",
+      "ordered": false,
+      "sql": "SELECT CAST(CAST(1 AS DOUBLE) AS DECIMAL(5,2));",
+      "types": [
+        "DECIMAL(5,2)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "1.00"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_0_avg_0",
+      "ordered": false,
+      "sql": "SELECT CAST(AVG(CAST(l_discount AS DOUBLE)) AS DECIMAL(10,4)) FROM discounts;",
+      "types": [
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "0.0267"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_0_avg_1",
+      "ordered": false,
+      "sql": "SELECT k,AVG(DISTINCT CAST(l_discount AS DOUBLE)) FROM discounts GROUP BY k;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "f64": "3fa999999999999a"
+          }
+        ],
+        [
+          2,
+          {
+            "f64": "bf947ae147ae147b"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_0_avg_2",
+      "ordered": false,
+      "sql": "SELECT AVG(CAST(l_discount AS DOUBLE)) FROM discounts WHERE k < 0;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_0_avg_3",
+      "ordered": false,
+      "sql": "SELECT AVG(CAST(l_discount AS DOUBLE)) FROM discounts WHERE l_discount IS NULL;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_0_sum_0",
+      "ordered": false,
+      "sql": "SELECT CAST(SUM(CAST(l_discount AS DOUBLE)) AS DECIMAL(10,4)) FROM discounts;",
+      "types": [
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "0.0800"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_0_sum_1",
+      "ordered": false,
+      "sql": "SELECT k,SUM(DISTINCT CAST(l_discount AS DOUBLE)) FROM discounts GROUP BY k;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "f64": "3fa999999999999a"
+          }
+        ],
+        [
+          2,
+          {
+            "f64": "bf947ae147ae147b"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_0_sum_2",
+      "ordered": false,
+      "sql": "SELECT SUM(CAST(l_discount AS DOUBLE)) FROM discounts WHERE k < 0;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_0_sum_3",
+      "ordered": false,
+      "sql": "SELECT SUM(CAST(l_discount AS DOUBLE)) FROM discounts WHERE l_discount IS NULL;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_1_avg_0",
+      "ordered": false,
+      "sql": "SELECT CAST(AVG(((l_discount::DOUBLE))) AS DECIMAL(10,4)) FROM discounts;",
+      "types": [
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "0.0267"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_1_avg_1",
+      "ordered": false,
+      "sql": "SELECT k,AVG(DISTINCT ((l_discount::DOUBLE))) FROM discounts GROUP BY k;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "f64": "3fa999999999999a"
+          }
+        ],
+        [
+          2,
+          {
+            "f64": "bf947ae147ae147b"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_1_avg_2",
+      "ordered": false,
+      "sql": "SELECT AVG(((l_discount::DOUBLE))) FROM discounts WHERE k < 0;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_1_avg_3",
+      "ordered": false,
+      "sql": "SELECT AVG(((l_discount::DOUBLE))) FROM discounts WHERE l_discount IS NULL;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_1_sum_0",
+      "ordered": false,
+      "sql": "SELECT CAST(SUM(((l_discount::DOUBLE))) AS DECIMAL(10,4)) FROM discounts;",
+      "types": [
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "0.0800"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_1_sum_1",
+      "ordered": false,
+      "sql": "SELECT k,SUM(DISTINCT ((l_discount::DOUBLE))) FROM discounts GROUP BY k;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "f64": "3fa999999999999a"
+          }
+        ],
+        [
+          2,
+          {
+            "f64": "bf947ae147ae147b"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_1_sum_2",
+      "ordered": false,
+      "sql": "SELECT SUM(((l_discount::DOUBLE))) FROM discounts WHERE k < 0;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_1_sum_3",
+      "ordered": false,
+      "sql": "SELECT SUM(((l_discount::DOUBLE))) FROM discounts WHERE l_discount IS NULL;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_precision_0_avg_0",
+      "ordered": false,
+      "sql": "SELECT CAST(AVG(CAST(l_discount AS DOUBLE PRECISION)) AS DECIMAL(10,4)) FROM discounts;",
+      "types": [
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "0.0267"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_precision_0_avg_1",
+      "ordered": false,
+      "sql": "SELECT k,AVG(DISTINCT CAST(l_discount AS DOUBLE PRECISION)) FROM discounts GROUP BY k;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "f64": "3fa999999999999a"
+          }
+        ],
+        [
+          2,
+          {
+            "f64": "bf947ae147ae147b"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_precision_0_avg_2",
+      "ordered": false,
+      "sql": "SELECT AVG(CAST(l_discount AS DOUBLE PRECISION)) FROM discounts WHERE k < 0;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_precision_0_avg_3",
+      "ordered": false,
+      "sql": "SELECT AVG(CAST(l_discount AS DOUBLE PRECISION)) FROM discounts WHERE l_discount IS NULL;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_precision_0_sum_0",
+      "ordered": false,
+      "sql": "SELECT CAST(SUM(CAST(l_discount AS DOUBLE PRECISION)) AS DECIMAL(10,4)) FROM discounts;",
+      "types": [
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "0.0800"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_precision_0_sum_1",
+      "ordered": false,
+      "sql": "SELECT k,SUM(DISTINCT CAST(l_discount AS DOUBLE PRECISION)) FROM discounts GROUP BY k;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "f64": "3fa999999999999a"
+          }
+        ],
+        [
+          2,
+          {
+            "f64": "bf947ae147ae147b"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_precision_0_sum_2",
+      "ordered": false,
+      "sql": "SELECT SUM(CAST(l_discount AS DOUBLE PRECISION)) FROM discounts WHERE k < 0;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_precision_0_sum_3",
+      "ordered": false,
+      "sql": "SELECT SUM(CAST(l_discount AS DOUBLE PRECISION)) FROM discounts WHERE l_discount IS NULL;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_precision_1_avg_0",
+      "ordered": false,
+      "sql": "SELECT CAST(AVG(((l_discount::DOUBLE PRECISION))) AS DECIMAL(10,4)) FROM discounts;",
+      "types": [
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "0.0267"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_precision_1_avg_1",
+      "ordered": false,
+      "sql": "SELECT k,AVG(DISTINCT ((l_discount::DOUBLE PRECISION))) FROM discounts GROUP BY k;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "f64": "3fa999999999999a"
+          }
+        ],
+        [
+          2,
+          {
+            "f64": "bf947ae147ae147b"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_precision_1_avg_2",
+      "ordered": false,
+      "sql": "SELECT AVG(((l_discount::DOUBLE PRECISION))) FROM discounts WHERE k < 0;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_precision_1_avg_3",
+      "ordered": false,
+      "sql": "SELECT AVG(((l_discount::DOUBLE PRECISION))) FROM discounts WHERE l_discount IS NULL;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_precision_1_sum_0",
+      "ordered": false,
+      "sql": "SELECT CAST(SUM(((l_discount::DOUBLE PRECISION))) AS DECIMAL(10,4)) FROM discounts;",
+      "types": [
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "0.0800"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_precision_1_sum_1",
+      "ordered": false,
+      "sql": "SELECT k,SUM(DISTINCT ((l_discount::DOUBLE PRECISION))) FROM discounts GROUP BY k;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "f64": "3fa999999999999a"
+          }
+        ],
+        [
+          2,
+          {
+            "f64": "bf947ae147ae147b"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_precision_1_sum_2",
+      "ordered": false,
+      "sql": "SELECT SUM(((l_discount::DOUBLE PRECISION))) FROM discounts WHERE k < 0;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_double_precision_1_sum_3",
+      "ordered": false,
+      "sql": "SELECT SUM(((l_discount::DOUBLE PRECISION))) FROM discounts WHERE l_discount IS NULL;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_float8_0_avg_0",
+      "ordered": false,
+      "sql": "SELECT CAST(AVG(CAST(l_discount AS FLOAT8)) AS DECIMAL(10,4)) FROM discounts;",
+      "types": [
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "0.0267"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_float8_0_avg_1",
+      "ordered": false,
+      "sql": "SELECT k,AVG(DISTINCT CAST(l_discount AS FLOAT8)) FROM discounts GROUP BY k;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "f64": "3fa999999999999a"
+          }
+        ],
+        [
+          2,
+          {
+            "f64": "bf947ae147ae147b"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_float8_0_avg_2",
+      "ordered": false,
+      "sql": "SELECT AVG(CAST(l_discount AS FLOAT8)) FROM discounts WHERE k < 0;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_float8_0_avg_3",
+      "ordered": false,
+      "sql": "SELECT AVG(CAST(l_discount AS FLOAT8)) FROM discounts WHERE l_discount IS NULL;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_float8_0_sum_0",
+      "ordered": false,
+      "sql": "SELECT CAST(SUM(CAST(l_discount AS FLOAT8)) AS DECIMAL(10,4)) FROM discounts;",
+      "types": [
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "0.0800"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_float8_0_sum_1",
+      "ordered": false,
+      "sql": "SELECT k,SUM(DISTINCT CAST(l_discount AS FLOAT8)) FROM discounts GROUP BY k;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "f64": "3fa999999999999a"
+          }
+        ],
+        [
+          2,
+          {
+            "f64": "bf947ae147ae147b"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_float8_0_sum_2",
+      "ordered": false,
+      "sql": "SELECT SUM(CAST(l_discount AS FLOAT8)) FROM discounts WHERE k < 0;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_float8_0_sum_3",
+      "ordered": false,
+      "sql": "SELECT SUM(CAST(l_discount AS FLOAT8)) FROM discounts WHERE l_discount IS NULL;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_float8_1_avg_0",
+      "ordered": false,
+      "sql": "SELECT CAST(AVG(((l_discount::FLOAT8))) AS DECIMAL(10,4)) FROM discounts;",
+      "types": [
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "0.0267"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_float8_1_avg_1",
+      "ordered": false,
+      "sql": "SELECT k,AVG(DISTINCT ((l_discount::FLOAT8))) FROM discounts GROUP BY k;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "f64": "3fa999999999999a"
+          }
+        ],
+        [
+          2,
+          {
+            "f64": "bf947ae147ae147b"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_float8_1_avg_2",
+      "ordered": false,
+      "sql": "SELECT AVG(((l_discount::FLOAT8))) FROM discounts WHERE k < 0;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_float8_1_avg_3",
+      "ordered": false,
+      "sql": "SELECT AVG(((l_discount::FLOAT8))) FROM discounts WHERE l_discount IS NULL;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_float8_1_sum_0",
+      "ordered": false,
+      "sql": "SELECT CAST(SUM(((l_discount::FLOAT8))) AS DECIMAL(10,4)) FROM discounts;",
+      "types": [
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "0.0800"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_float8_1_sum_1",
+      "ordered": false,
+      "sql": "SELECT k,SUM(DISTINCT ((l_discount::FLOAT8))) FROM discounts GROUP BY k;",
+      "types": [
+        "INTEGER",
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          1,
+          {
+            "f64": "3fa999999999999a"
+          }
+        ],
+        [
+          2,
+          {
+            "f64": "bf947ae147ae147b"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "combined_float8_1_sum_2",
+      "ordered": false,
+      "sql": "SELECT SUM(((l_discount::FLOAT8))) FROM discounts WHERE k < 0;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_float8_1_sum_3",
+      "ordered": false,
+      "sql": "SELECT SUM(((l_discount::FLOAT8))) FROM discounts WHERE l_discount IS NULL;",
+      "types": [
+        "DOUBLE"
+      ],
+      "rows": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "id": "combined_exact_avg_cast",
+      "ordered": false,
+      "sql": "SELECT CAST(AVG(l_discount) AS DECIMAL(10,4)) FROM discounts;",
+      "types": [
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          {
+            "decimal": "0.0267"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_double_0_avg_4",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(AVG(CAST(r.reading AS DOUBLE)) AS DECIMAL(10,4)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.0700"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.0733"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.0732"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.0733"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.0732"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_double_0_avg_6",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(AVG(CAST(r.reading AS DOUBLE)) AS DECIMAL(18,6)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(18,6)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.070000"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.073250"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.073250"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.073250"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.073250"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_double_0_sum_4",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(SUM(CAST(r.reading AS DOUBLE)) AS DECIMAL(10,4)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.2100"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.2198"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.2197"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.2198"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.2197"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_double_0_sum_6",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(SUM(CAST(r.reading AS DOUBLE)) AS DECIMAL(18,6)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(18,6)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.210000"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.219750"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.219750"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.219750"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.219750"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_double_1_avg_4",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(AVG(((r.reading::DOUBLE))) AS DECIMAL(10,4)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.0700"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.0733"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.0732"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.0733"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.0732"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_double_1_avg_6",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(AVG(((r.reading::DOUBLE))) AS DECIMAL(18,6)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(18,6)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.070000"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.073250"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.073250"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.073250"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.073250"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_double_1_sum_4",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(SUM(((r.reading::DOUBLE))) AS DECIMAL(10,4)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.2100"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.2198"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.2197"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.2198"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.2197"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_double_1_sum_6",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(SUM(((r.reading::DOUBLE))) AS DECIMAL(18,6)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(18,6)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.210000"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.219750"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.219750"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.219750"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.219750"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_double_precision_0_avg_4",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(AVG(CAST(r.reading AS DOUBLE PRECISION)) AS DECIMAL(10,4)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.0700"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.0733"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.0732"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.0733"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.0732"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_double_precision_0_avg_6",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(AVG(CAST(r.reading AS DOUBLE PRECISION)) AS DECIMAL(18,6)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(18,6)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.070000"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.073250"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.073250"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.073250"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.073250"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_double_precision_0_sum_4",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(SUM(CAST(r.reading AS DOUBLE PRECISION)) AS DECIMAL(10,4)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.2100"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.2198"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.2197"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.2198"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.2197"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_double_precision_0_sum_6",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(SUM(CAST(r.reading AS DOUBLE PRECISION)) AS DECIMAL(18,6)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(18,6)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.210000"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.219750"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.219750"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.219750"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.219750"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_double_precision_1_avg_4",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(AVG(((r.reading::DOUBLE PRECISION))) AS DECIMAL(10,4)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.0700"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.0733"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.0732"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.0733"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.0732"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_double_precision_1_avg_6",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(AVG(((r.reading::DOUBLE PRECISION))) AS DECIMAL(18,6)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(18,6)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.070000"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.073250"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.073250"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.073250"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.073250"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_double_precision_1_sum_4",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(SUM(((r.reading::DOUBLE PRECISION))) AS DECIMAL(10,4)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.2100"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.2198"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.2197"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.2198"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.2197"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_double_precision_1_sum_6",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(SUM(((r.reading::DOUBLE PRECISION))) AS DECIMAL(18,6)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(18,6)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.210000"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.219750"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.219750"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.219750"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.219750"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_float8_0_avg_4",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(AVG(CAST(r.reading AS FLOAT8)) AS DECIMAL(10,4)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.0700"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.0733"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.0732"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.0733"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.0732"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_float8_0_avg_6",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(AVG(CAST(r.reading AS FLOAT8)) AS DECIMAL(18,6)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(18,6)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.070000"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.073250"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.073250"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.073250"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.073250"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_float8_0_sum_4",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(SUM(CAST(r.reading AS FLOAT8)) AS DECIMAL(10,4)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.2100"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.2198"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.2197"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.2198"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.2197"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_float8_0_sum_6",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(SUM(CAST(r.reading AS FLOAT8)) AS DECIMAL(18,6)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(18,6)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.210000"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.219750"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.219750"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.219750"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.219750"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_float8_1_avg_4",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(AVG(((r.reading::FLOAT8))) AS DECIMAL(10,4)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.0700"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.0733"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.0732"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.0733"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.0732"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_float8_1_avg_6",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(AVG(((r.reading::FLOAT8))) AS DECIMAL(18,6)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(18,6)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.070000"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.073250"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.073250"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.073250"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.073250"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_float8_1_sum_4",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(SUM(((r.reading::FLOAT8))) AS DECIMAL(10,4)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(10,4)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.2100"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.2198"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.2197"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.2198"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.2197"
+          }
+        ]
+      ]
+    },
+    {
+      "id": "lab_float8_1_sum_6",
+      "ordered": true,
+      "sql": "SELECT g.label AS reading_group, CAST(SUM(((r.reading::FLOAT8))) AS DECIMAL(18,6)) AS calibrated_value FROM readings r JOIN instruments i ON r.instrument_id = i.instrument_id JOIN lab_groups g ON i.group_id = g.group_id GROUP BY g.label ORDER BY reading_group;",
+      "types": [
+        "VARCHAR",
+        "DECIMAL(18,6)"
+      ],
+      "rows": [
+        [
+          "missing",
+          null
+        ],
+        [
+          "mixed",
+          {
+            "decimal": "0.210000"
+          }
+        ],
+        [
+          "negative_high",
+          {
+            "decimal": "-0.219750"
+          }
+        ],
+        [
+          "negative_low",
+          {
+            "decimal": "-0.219750"
+          }
+        ],
+        [
+          "positive_high",
+          {
+            "decimal": "0.219750"
+          }
+        ],
+        [
+          "positive_low",
+          {
+            "decimal": "0.219750"
+          }
+        ]
+      ]
+    }
+  ]
+}

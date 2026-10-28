@@ -22,7 +22,7 @@ pub(in crate::execute) struct Partitioned {
     next_ordinal: usize,
     hash: ahash::RandomState,
     budget: Budget,
-    failed: Option<String>,
+    failed: Option<crate::Error>,
     _metadata: Arc<Reservation>,
 }
 impl Partitioned {
@@ -393,7 +393,7 @@ impl Partitioned {
             };
             arrays.push(output_array(array, schema.field(arrays.len()))?);
         }
-        RecordBatch::try_new(schema.clone(), arrays).map_err(|e| e.to_string())
+        Ok(RecordBatch::try_new(schema.clone(), arrays).map_err(|e| e.to_string())?)
     }
     pub(super) fn output_bytes(&self, p: &Plan, range: std::ops::Range<usize>) -> Result<usize> {
         let order = self

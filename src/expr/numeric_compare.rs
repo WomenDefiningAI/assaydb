@@ -1,13 +1,90 @@
-//! Exact Int/Float relation without first rounding the integer to binary64.
+//! SQL float total order and exact Int/Float comparison without integer rounding.
 use super::*;
 use std::cmp::Ordering;
 
+const CANONICAL_NAN_BITS: u64 = 0x7ff8_0000_0000_0000;
+
+/// PostgreSQL/DuckDB numeric equality: all NaNs are peers, as are signed zeros.
+#[inline]
+pub(crate) fn real_equal(a: f64, b: f64) -> bool {
+    a == b || (a.is_nan() && b.is_nan())
+}
+
+/// Keep ordinary comparison operations on the fast path; no integer conversion
+/// or sortable key allocation is needed for a scalar/vector comparison.
+#[inline]
+pub(crate) fn real_compare(op: Op, a: f64, b: f64) -> bool {
+    match op {
+        Op::Eq => real_equal(a, b),
+        Op::Ne => !real_equal(a, b),
+        Op::Lt => !a.is_nan() && (b.is_nan() || a < b),
+        Op::Le => b.is_nan() || (!a.is_nan() && a <= b),
+        Op::Gt => !b.is_nan() && (a.is_nan() || a > b),
+        Op::Ge => a.is_nan() || (!b.is_nan() && a >= b),
+        _ => unreachable!("bound comparison operator"),
+    }
+}
+
+#[inline]
+pub(crate) fn real_order(a: f64, b: f64) -> Ordering {
+    a.partial_cmp(&b)
+        .unwrap_or_else(|| a.is_nan().cmp(&b.is_nan()))
+}
+
+/// Private hash/sort keys only: preserve source payloads and signed-zero bits
+/// in projected values. Positive canonical NaN also sorts above +inf in Arrow.
+#[inline]
+pub(crate) fn canonical(value: f64) -> f64 {
+    if value == 0.0 {
+        0.0
+    } else if value.is_nan() {
+        f64::from_bits(CANONICAL_NAN_BITS)
+    } else {
+        value
+    }
+}
+
+pub(crate) fn needs_canonical(array: &ArrayRef) -> bool {
+    array
+        .as_any()
+        .downcast_ref::<Float64Array>()
+        .is_some_and(|a| {
+            a.values().iter().any(|n| {
+                (n.is_nan() && n.to_bits() != CANONICAL_NAN_BITS)
+                    || (*n == 0.0 && n.is_sign_negative())
+            })
+        })
+}
+
+pub(crate) fn canonical_bytes(array: &ArrayRef) -> Result<usize> {
+    if needs_canonical(array) {
+        array
+            .len()
+            .checked_mul(9)
+            .and_then(|n| n.checked_add(256))
+            .ok_or_else(|| "float key size overflow".into())
+    } else {
+        Ok(0)
+    }
+}
+
+/// Caller funds one replacement float buffer before calling (9 bytes/row +
+/// Arrow overhead). Ordinary finite arrays share their existing buffers.
+pub(crate) fn canonical_array(array: &ArrayRef) -> ArrayRef {
+    if needs_canonical(array) {
+        let a = array.as_any().downcast_ref::<Float64Array>().unwrap();
+        Arc::new(Float64Array::from_iter(a.iter().map(|v| v.map(canonical))))
+    } else {
+        array.clone()
+    }
+}
+
 /// Bounds make Rust's float-to-integer conversion exact and non-saturating.
 /// Precision-38 Int intermediates use the same relation as public i64 values.
-/// NaN stays unordered, preserving existing floating comparison policy.
+/// Every integer is below NaN, the greatest non-NULL SQL numeric value.
 pub(crate) fn integer_real(integer: i128, real: f64) -> Option<Ordering> {
     if real.is_nan() {
-        return None;
+        return Some(Ordering::Less);
     }
     if real < i128::MIN as f64 {
         return Some(Ordering::Greater);
@@ -27,7 +104,9 @@ pub(crate) fn integer_real(integer: i128, real: f64) -> Option<Ordering> {
 }
 
 /// A Float can equal an Int only when its original binary value is integral.
-/// Used for mixed membership keys; neither operand is rounded to match.
+/// Retained as a test control for the exact comparison kernel. Mixed
+/// membership now uses rounded DOUBLE keys instead.
+#[cfg(test)]
 pub(crate) fn exact_integer(real: f64) -> Option<i128> {
     if real.is_finite()
         && real >= i128::MIN as f64
@@ -72,6 +151,43 @@ pub(super) fn compare(op: Op, av: &Value, bv: &Value, left_integer: bool) -> Arr
 mod tests {
     use super::*;
     #[test]
+    fn sql_order_equates_all_nan_payloads_and_signed_zeros() {
+        let ordered = [
+            f64::NEG_INFINITY,
+            -1.0,
+            -0.0,
+            0.0,
+            1.0,
+            f64::INFINITY,
+            f64::from_bits(0xfff8000000000001),
+            f64::from_bits(0x7ff0000000000001),
+            f64::from_bits(0xfff0000000000001),
+            f64::NAN,
+        ];
+        let ranks = [0, 1, 2, 2, 3, 4, 5, 5, 5, 5];
+        for (i, a) in ordered.into_iter().enumerate() {
+            for (j, b) in ordered.into_iter().enumerate() {
+                let order = ranks[i].cmp(&ranks[j]);
+                assert_eq!(real_order(a, b), order);
+                assert_eq!(
+                    canonical(a).to_bits() == canonical(b).to_bits(),
+                    order.is_eq()
+                );
+                for (op, want) in [
+                    (Op::Eq, order.is_eq()),
+                    (Op::Ne, !order.is_eq()),
+                    (Op::Lt, order.is_lt()),
+                    (Op::Le, !order.is_gt()),
+                    (Op::Gt, order.is_gt()),
+                    (Op::Ge, !order.is_lt()),
+                ] {
+                    assert_eq!(real_compare(op, a, b), want, "{a:?} {op:?} {b:?}");
+                }
+            }
+        }
+    }
+
+    #[test]
     fn exact_relation_covers_fraction_sign_and_wide_bounds() {
         use Ordering::*;
         for (integer, real, expected) in [
@@ -94,7 +210,7 @@ mod tests {
         ] {
             assert_eq!(integer_real(integer, real), Some(expected));
         }
-        assert_eq!(integer_real(0, f64::NAN), None);
+        assert_eq!(integer_real(0, f64::NAN), Some(Less));
         for real in [
             f64::NAN,
             f64::INFINITY,

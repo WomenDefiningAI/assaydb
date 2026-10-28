@@ -1,0 +1,3763 @@
+{
+ "duckdb_version": "1.5.6",
+ "setup_sql": "CREATE TABLE orders_a(id INTEGER, cust INTEGER, region TEXT, amount DECIMAL(10,2), day DATE);\nINSERT INTO orders_a VALUES\n(1, 10, 'north', 100.50, DATE '2024-01-05'),\n(2, 10, 'north', 20.00, DATE '2024-01-06'),\n(3, 20, 'south', 75.25, DATE '2024-02-01'),\n(4, NULL, 'south', 5.00, DATE '2024-02-02'),\n(5, 30, NULL, 60.00, NULL),\n(6, 40, 'east', 0.00, DATE '2024-03-01');\nCREATE TABLE orders_b(cust INTEGER, region TEXT, amount DECIMAL(10,2), note TEXT);\nINSERT INTO orders_b VALUES\n(10, 'north', 100.50, 'match'),\n(20, 'south', 70.00, 'amount differs'),\n(20, 'south', 5.25, 'second row'),\n(50, 'west', 12.00, 'only b'),\n(NULL, 'south', 5.00, 'null cust'),\n(NULL, NULL, 1.00, 'all null');\nCREATE TABLE custs(cust INTEGER, name TEXT, tier TEXT);\nINSERT INTO custs VALUES (10, 'Ada', 'gold'), (20, 'Bo', 'silver'), (50, 'Cy', 'gold'), (60, 'Di', NULL), (NULL, 'Nil', 'bronze');\nCREATE TABLE nothing(cust INTEGER, name TEXT);\nCREATE TABLE pa(k INTEGER, k2 TEXT, x INTEGER);\nINSERT INTO pa VALUES (1, 'a', 1), (1, 'b', 2), (2, 'a', 3), (2, NULL, 4), (NULL, 'a', 5), (1, 'a', 6);\nCREATE TABLE pb(k INTEGER, k2 TEXT, y INTEGER);\nINSERT INTO pb VALUES (1, 'a', 10), (2, 'a', 30), (2, 'b', 40), (NULL, 'a', 50), (2, NULL, 60), (1, 'a', 70);\nCREATE TABLE fa(f DOUBLE, flag BOOLEAN, tag TEXT);\nINSERT INTO fa VALUES (1.5, TRUE, 'x'), (2.25, FALSE, 'y'), (NULL, TRUE, 'z'), (-3.0, NULL, 'w');\nCREATE TABLE fb(f DOUBLE, flag BOOLEAN, tag TEXT);\nINSERT INTO fb VALUES (2.25, TRUE, 'y'), (4.0, FALSE, 'v'), (NULL, NULL, 'z'), (1.5, TRUE, 'x');\nCREATE TABLE ma(a INTEGER, b TEXT);\nINSERT INTO ma VALUES (1, 'x'), (1, 'x'), (1, 'x'), (2, 'y'), (2, 'y'), (NULL, 'n'), (NULL, 'n'), (3, NULL), (4, 'z');\nCREATE TABLE mb(a INTEGER, b TEXT);\nINSERT INTO mb VALUES (1, 'x'), (1, 'x'), (2, 'y'), (2, 'y'), (2, 'y'), (NULL, 'n'), (3, NULL), (3, NULL), (5, 'q');\nCREATE TABLE md(a DECIMAL(6,1), b TEXT);\nINSERT INTO md VALUES (1.0, 'x'), (2.0, 'y'), (2.5, 'y');\n",
+ "setup_sha256": "079cd960a9419af1504ab3fae8bfc892d5346e6e8554906590d64b70552bca46",
+ "cases_sha256": "8db2d192effe941ac85c955512c99072129d00457a79c5a0cced043cc3f13f77",
+ "postgresql_execution": "not run; the pg column cites PostgreSQL 17 documentation/source behavior",
+ "unexpected_reference_outcomes": [],
+ "cases": [
+  {
+   "id": "right_basic",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT a.id AS a_id, b.cust AS b_cust, b.note AS note FROM orders_a a RIGHT JOIN orders_b b ON a.cust = b.cust ORDER BY note, a_id NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a_id",
+    "b_cust",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     null,
+     null,
+     "all null"
+    ],
+    [
+     3,
+     20,
+     "amount differs"
+    ],
+    [
+     1,
+     10,
+     "match"
+    ],
+    [
+     2,
+     10,
+     "match"
+    ],
+    [
+     null,
+     null,
+     "null cust"
+    ],
+    [
+     null,
+     50,
+     "only b"
+    ],
+    [
+     3,
+     20,
+     "second row"
+    ]
+   ]
+  },
+  {
+   "id": "right_outer_spelling",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT a.id AS a_id, b.note AS note FROM orders_a a RIGHT OUTER JOIN orders_b b ON a.cust = b.cust;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a_id",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     2,
+     "match"
+    ],
+    [
+     3,
+     "amount differs"
+    ],
+    [
+     3,
+     "second row"
+    ],
+    [
+     1,
+     "match"
+    ],
+    [
+     null,
+     "only b"
+    ],
+    [
+     null,
+     "null cust"
+    ],
+    [
+     null,
+     "all null"
+    ]
+   ]
+  },
+  {
+   "id": "right_duplicates_both_sides",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT pa.x AS x, pb.y AS y FROM pa RIGHT JOIN pb ON pa.k = pb.k;",
+   "reference_outcome": "rows",
+   "columns": [
+    "x",
+    "y"
+   ],
+   "types": [
+    "INTEGER",
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     6,
+     10
+    ],
+    [
+     4,
+     30
+    ],
+    [
+     4,
+     40
+    ],
+    [
+     4,
+     60
+    ],
+    [
+     6,
+     70
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     3,
+     30
+    ],
+    [
+     3,
+     40
+    ],
+    [
+     3,
+     60
+    ],
+    [
+     2,
+     70
+    ],
+    [
+     1,
+     10
+    ],
+    [
+     1,
+     70
+    ],
+    [
+     null,
+     50
+    ]
+   ]
+  },
+  {
+   "id": "right_null_keys_never_match",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT pa.x AS x, pb.y AS y FROM pa RIGHT JOIN pb ON pa.k2 = pb.k2 AND pa.k = pb.k;",
+   "reference_outcome": "rows",
+   "columns": [
+    "x",
+    "y"
+   ],
+   "types": [
+    "INTEGER",
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     6,
+     10
+    ],
+    [
+     3,
+     30
+    ],
+    [
+     6,
+     70
+    ],
+    [
+     1,
+     10
+    ],
+    [
+     1,
+     70
+    ],
+    [
+     null,
+     40
+    ],
+    [
+     null,
+     50
+    ],
+    [
+     null,
+     60
+    ]
+   ]
+  },
+  {
+   "id": "right_non_equi",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT a.id AS a_id, b.note AS note FROM orders_a a RIGHT JOIN orders_b b ON a.amount > b.amount AND a.region = b.region;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a_id",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     3,
+     "amount differs"
+    ],
+    [
+     3,
+     "second row"
+    ],
+    [
+     3,
+     "null cust"
+    ],
+    [
+     null,
+     "match"
+    ],
+    [
+     null,
+     "only b"
+    ],
+    [
+     null,
+     "all null"
+    ]
+   ]
+  },
+  {
+   "id": "right_on_filters_each_side",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT a.id AS a_id, b.note AS note FROM orders_a a RIGHT JOIN orders_b b ON a.cust = b.cust AND a.amount > 50 AND b.note <> 'second row';",
+   "reference_outcome": "rows",
+   "columns": [
+    "a_id",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "match"
+    ],
+    [
+     3,
+     "amount differs"
+    ],
+    [
+     null,
+     "second row"
+    ],
+    [
+     null,
+     "only b"
+    ],
+    [
+     null,
+     "null cust"
+    ],
+    [
+     null,
+     "all null"
+    ]
+   ]
+  },
+  {
+   "id": "right_empty_left",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT n.name AS name, c.name AS cname FROM nothing n RIGHT JOIN custs c ON n.cust = c.cust;",
+   "reference_outcome": "rows",
+   "columns": [
+    "name",
+    "cname"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     null,
+     "Ada"
+    ],
+    [
+     null,
+     "Bo"
+    ],
+    [
+     null,
+     "Cy"
+    ],
+    [
+     null,
+     "Di"
+    ],
+    [
+     null,
+     "Nil"
+    ]
+   ]
+  },
+  {
+   "id": "right_empty_right",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT c.name AS cname, n.name AS name FROM custs c RIGHT JOIN nothing n ON n.cust = c.cust;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cname",
+    "name"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": []
+  },
+  {
+   "id": "right_unmatched_rows_only",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT c.name AS name, c.tier AS tier FROM orders_a a RIGHT JOIN custs c ON a.cust = c.cust WHERE a.id IS NULL ORDER BY name;",
+   "reference_outcome": "rows",
+   "columns": [
+    "name",
+    "tier"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "Cy",
+     "gold"
+    ],
+    [
+     "Di",
+     null
+    ],
+    [
+     "Nil",
+     "bronze"
+    ]
+   ]
+  },
+  {
+   "id": "right_in_join_tree",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT a.id AS a_id, b.note AS note, c.name AS name FROM orders_a a JOIN orders_b b ON a.cust = b.cust RIGHT JOIN custs c ON b.cust = c.cust;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a_id",
+    "note",
+    "name"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     2,
+     "match",
+     "Ada"
+    ],
+    [
+     3,
+     "amount differs",
+     "Bo"
+    ],
+    [
+     3,
+     "second row",
+     "Bo"
+    ],
+    [
+     1,
+     "match",
+     "Ada"
+    ],
+    [
+     null,
+     null,
+     "Nil"
+    ],
+    [
+     null,
+     null,
+     "Cy"
+    ],
+    [
+     null,
+     null,
+     "Di"
+    ]
+   ]
+  },
+  {
+   "id": "right_aggregate",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT c.name AS name, COUNT(a.id) AS orders, SUM(a.amount) AS total FROM orders_a a RIGHT JOIN custs c ON a.cust = c.cust GROUP BY c.name ORDER BY name;",
+   "reference_outcome": "rows",
+   "columns": [
+    "name",
+    "orders",
+    "total"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT",
+    "DECIMAL(38,2)"
+   ],
+   "rows": [
+    [
+     "Ada",
+     2,
+     "120.50"
+    ],
+    [
+     "Bo",
+     1,
+     "75.25"
+    ],
+    [
+     "Cy",
+     0,
+     null
+    ],
+    [
+     "Di",
+     0,
+     null
+    ],
+    [
+     "Nil",
+     0,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "right_text_and_boolean_keys",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT fa.tag AS a_tag, fb.tag AS b_tag FROM fa RIGHT JOIN fb ON fa.flag = fb.flag AND fa.tag = fb.tag;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a_tag",
+    "b_tag"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "x",
+     "x"
+    ],
+    [
+     null,
+     "y"
+    ],
+    [
+     null,
+     "v"
+    ],
+    [
+     null,
+     "z"
+    ]
+   ]
+  },
+  {
+   "id": "full_basic",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT a.id AS a_id, b.note AS note FROM orders_a a FULL JOIN orders_b b ON a.cust = b.cust;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a_id",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     2,
+     "match"
+    ],
+    [
+     3,
+     "amount differs"
+    ],
+    [
+     3,
+     "second row"
+    ],
+    [
+     1,
+     "match"
+    ],
+    [
+     null,
+     "only b"
+    ],
+    [
+     null,
+     "null cust"
+    ],
+    [
+     null,
+     "all null"
+    ],
+    [
+     5,
+     null
+    ],
+    [
+     4,
+     null
+    ],
+    [
+     6,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "full_outer_spelling_star",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT * FROM custs c FULL OUTER JOIN nothing n ON c.cust = n.cust;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "name",
+    "tier",
+    "cust",
+    "name"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR",
+    "VARCHAR",
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     10,
+     "Ada",
+     "gold",
+     null,
+     null
+    ],
+    [
+     20,
+     "Bo",
+     "silver",
+     null,
+     null
+    ],
+    [
+     50,
+     "Cy",
+     "gold",
+     null,
+     null
+    ],
+    [
+     60,
+     "Di",
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     "Nil",
+     "bronze",
+     null,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "full_duplicates_both_sides",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT pa.x AS x, pb.y AS y FROM pa FULL JOIN pb ON pa.k = pb.k;",
+   "reference_outcome": "rows",
+   "columns": [
+    "x",
+    "y"
+   ],
+   "types": [
+    "INTEGER",
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     1,
+     70
+    ],
+    [
+     2,
+     70
+    ],
+    [
+     3,
+     60
+    ],
+    [
+     4,
+     60
+    ],
+    [
+     6,
+     70
+    ],
+    [
+     1,
+     10
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     3,
+     40
+    ],
+    [
+     4,
+     40
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     3,
+     30
+    ],
+    [
+     4,
+     30
+    ],
+    [
+     5,
+     null
+    ],
+    [
+     null,
+     50
+    ]
+   ]
+  },
+  {
+   "id": "full_composite_null_keys",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT pa.x AS x, pb.y AS y FROM pa FULL JOIN pb ON pa.k = pb.k AND pa.k2 = pb.k2;",
+   "reference_outcome": "rows",
+   "columns": [
+    "x",
+    "y"
+   ],
+   "types": [
+    "INTEGER",
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     1,
+     70
+    ],
+    [
+     3,
+     30
+    ],
+    [
+     6,
+     70
+    ],
+    [
+     1,
+     10
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     2,
+     null
+    ],
+    [
+     4,
+     null
+    ],
+    [
+     5,
+     null
+    ],
+    [
+     null,
+     40
+    ],
+    [
+     null,
+     50
+    ],
+    [
+     null,
+     60
+    ]
+   ]
+  },
+  {
+   "id": "full_non_equi_only",
+   "ordered": false,
+   "pg": "same semantics, but PostgreSQL's planner rejects a FULL JOIN with no hash- or merge-joinable equality (FULL JOIN is only supported with merge-joinable or hash-joinable join conditions)",
+   "sql": "SELECT pa.x AS x, pb.y AS y FROM pa FULL JOIN pb ON pa.x * 10 > pb.y AND pb.y > 40;",
+   "reference_outcome": "rows",
+   "columns": [
+    "x",
+    "y"
+   ],
+   "types": [
+    "INTEGER",
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     6,
+     50
+    ],
+    [
+     1,
+     null
+    ],
+    [
+     2,
+     null
+    ],
+    [
+     3,
+     null
+    ],
+    [
+     4,
+     null
+    ],
+    [
+     5,
+     null
+    ],
+    [
+     null,
+     10
+    ],
+    [
+     null,
+     30
+    ],
+    [
+     null,
+     40
+    ],
+    [
+     null,
+     60
+    ],
+    [
+     null,
+     70
+    ]
+   ]
+  },
+  {
+   "id": "full_equi_plus_residual",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT a.id AS a_id, b.note AS note FROM orders_a a FULL JOIN orders_b b ON a.cust = b.cust AND a.amount = b.amount;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a_id",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "match"
+    ],
+    [
+     null,
+     "amount differs"
+    ],
+    [
+     null,
+     "second row"
+    ],
+    [
+     null,
+     "only b"
+    ],
+    [
+     null,
+     "null cust"
+    ],
+    [
+     null,
+     "all null"
+    ],
+    [
+     3,
+     null
+    ],
+    [
+     6,
+     null
+    ],
+    [
+     2,
+     null
+    ],
+    [
+     5,
+     null
+    ],
+    [
+     4,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "full_on_filters_each_side",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT a.id AS a_id, b.note AS note FROM orders_a a FULL JOIN orders_b b ON a.cust = b.cust AND a.region = 'north' AND b.amount > 10;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a_id",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "match"
+    ],
+    [
+     2,
+     "match"
+    ],
+    [
+     null,
+     "amount differs"
+    ],
+    [
+     null,
+     "second row"
+    ],
+    [
+     null,
+     "only b"
+    ],
+    [
+     null,
+     "null cust"
+    ],
+    [
+     null,
+     "all null"
+    ],
+    [
+     3,
+     null
+    ],
+    [
+     4,
+     null
+    ],
+    [
+     5,
+     null
+    ],
+    [
+     6,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "full_on_false",
+   "ordered": false,
+   "pg": "same semantics; not established whether PostgreSQL's planner accepts a constant FULL JOIN condition",
+   "sql": "SELECT c.name AS name, pb.y AS y FROM custs c FULL JOIN pb ON FALSE;",
+   "reference_outcome": "rows",
+   "columns": [
+    "name",
+    "y"
+   ],
+   "types": [
+    "VARCHAR",
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     "Ada",
+     null
+    ],
+    [
+     "Bo",
+     null
+    ],
+    [
+     "Cy",
+     null
+    ],
+    [
+     "Di",
+     null
+    ],
+    [
+     "Nil",
+     null
+    ],
+    [
+     null,
+     10
+    ],
+    [
+     null,
+     30
+    ],
+    [
+     null,
+     40
+    ],
+    [
+     null,
+     50
+    ],
+    [
+     null,
+     60
+    ],
+    [
+     null,
+     70
+    ]
+   ]
+  },
+  {
+   "id": "full_both_empty",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT n.name AS a, m.name AS b FROM nothing n FULL JOIN nothing m ON n.cust = m.cust;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": []
+  },
+  {
+   "id": "full_empty_left",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT n.name AS a, c.name AS b FROM nothing n FULL JOIN custs c ON n.cust = c.cust;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b"
+   ],
+   "types": [
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     null,
+     "Ada"
+    ],
+    [
+     null,
+     "Bo"
+    ],
+    [
+     null,
+     "Cy"
+    ],
+    [
+     null,
+     "Di"
+    ],
+    [
+     null,
+     "Nil"
+    ]
+   ]
+  },
+  {
+   "id": "full_float_bool_text_columns",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT fa.f AS af, fa.flag AS aflag, fb.f AS bf, fb.flag AS bflag, fb.tag AS btag FROM fa FULL JOIN fb ON fa.f = fb.f;",
+   "reference_outcome": "rows",
+   "columns": [
+    "af",
+    "aflag",
+    "bf",
+    "bflag",
+    "btag"
+   ],
+   "types": [
+    "DOUBLE",
+    "BOOLEAN",
+    "DOUBLE",
+    "BOOLEAN",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     {
+      "float_bits": "4002000000000000"
+     },
+     false,
+     {
+      "float_bits": "4002000000000000"
+     },
+     true,
+     "y"
+    ],
+    [
+     {
+      "float_bits": "3ff8000000000000"
+     },
+     true,
+     {
+      "float_bits": "3ff8000000000000"
+     },
+     true,
+     "x"
+    ],
+    [
+     null,
+     null,
+     {
+      "float_bits": "4010000000000000"
+     },
+     false,
+     "v"
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     "z"
+    ],
+    [
+     null,
+     true,
+     null,
+     null,
+     null
+    ],
+    [
+     {
+      "float_bits": "c008000000000000"
+     },
+     null,
+     null,
+     null,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "full_decimal_date_payload",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT a.amount AS a_amount, a.day AS day, b.amount AS b_amount FROM orders_a a FULL JOIN orders_b b ON a.amount = b.amount;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a_amount",
+    "day",
+    "b_amount"
+   ],
+   "types": [
+    "DECIMAL(10,2)",
+    "DATE",
+    "DECIMAL(10,2)"
+   ],
+   "rows": [
+    [
+     "100.50",
+     "2024-01-05",
+     "100.50"
+    ],
+    [
+     "5.00",
+     "2024-02-02",
+     "5.00"
+    ],
+    [
+     "20.00",
+     "2024-01-06",
+     null
+    ],
+    [
+     "75.25",
+     "2024-02-01",
+     null
+    ],
+    [
+     "60.00",
+     null,
+     null
+    ],
+    [
+     "0.00",
+     "2024-03-01",
+     null
+    ],
+    [
+     null,
+     null,
+     "5.25"
+    ],
+    [
+     null,
+     null,
+     "1.00"
+    ],
+    [
+     null,
+     null,
+     "70.00"
+    ],
+    [
+     null,
+     null,
+     "12.00"
+    ]
+   ]
+  },
+  {
+   "id": "full_where_unmatched_either",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT a.id AS a_id, b.note AS note FROM orders_a a FULL JOIN orders_b b ON a.cust = b.cust WHERE a.id IS NULL OR b.cust IS NULL;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a_id",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     null,
+     "only b"
+    ],
+    [
+     null,
+     "null cust"
+    ],
+    [
+     null,
+     "all null"
+    ],
+    [
+     5,
+     null
+    ],
+    [
+     4,
+     null
+    ],
+    [
+     6,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "full_coalesce_group",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT COALESCE(a.cust, b.cust) AS cust, COUNT(a.id) AS a_rows, COUNT(b.note) AS b_rows, SUM(a.amount) AS a_total, SUM(b.amount) AS b_total FROM orders_a a FULL JOIN orders_b b ON a.cust = b.cust GROUP BY COALESCE(a.cust, b.cust) ORDER BY cust NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "a_rows",
+    "b_rows",
+    "a_total",
+    "b_total"
+   ],
+   "types": [
+    "INTEGER",
+    "BIGINT",
+    "BIGINT",
+    "DECIMAL(38,2)",
+    "DECIMAL(38,2)"
+   ],
+   "rows": [
+    [
+     10,
+     2,
+     2,
+     "120.50",
+     "201.00"
+    ],
+    [
+     20,
+     2,
+     2,
+     "150.50",
+     "75.25"
+    ],
+    [
+     30,
+     1,
+     0,
+     "60.00",
+     null
+    ],
+    [
+     40,
+     1,
+     0,
+     "0.00",
+     null
+    ],
+    [
+     50,
+     0,
+     1,
+     null,
+     "12.00"
+    ],
+    [
+     null,
+     1,
+     2,
+     "5.00",
+     "6.00"
+    ]
+   ]
+  },
+  {
+   "id": "full_then_left",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT a.id AS a_id, b.note AS note, c.name AS name FROM orders_a a FULL JOIN orders_b b ON a.cust = b.cust LEFT JOIN custs c ON c.cust = COALESCE(a.cust, b.cust);",
+   "reference_outcome": "rows",
+   "columns": [
+    "a_id",
+    "note",
+    "name"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     2,
+     "match",
+     "Ada"
+    ],
+    [
+     3,
+     "amount differs",
+     "Bo"
+    ],
+    [
+     3,
+     "second row",
+     "Bo"
+    ],
+    [
+     1,
+     "match",
+     "Ada"
+    ],
+    [
+     null,
+     "only b",
+     "Cy"
+    ],
+    [
+     null,
+     "null cust",
+     null
+    ],
+    [
+     null,
+     "all null",
+     null
+    ],
+    [
+     5,
+     null,
+     null
+    ],
+    [
+     4,
+     null,
+     null
+    ],
+    [
+     6,
+     null,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "left_then_full",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT a.id AS a_id, c.name AS name, b.note AS note FROM orders_a a LEFT JOIN custs c ON a.cust = c.cust FULL JOIN orders_b b ON b.cust = c.cust;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a_id",
+    "name",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "Ada",
+     "match"
+    ],
+    [
+     3,
+     "Bo",
+     "amount differs"
+    ],
+    [
+     3,
+     "Bo",
+     "second row"
+    ],
+    [
+     2,
+     "Ada",
+     "match"
+    ],
+    [
+     null,
+     null,
+     "only b"
+    ],
+    [
+     null,
+     null,
+     "null cust"
+    ],
+    [
+     null,
+     null,
+     "all null"
+    ],
+    [
+     5,
+     null,
+     null
+    ],
+    [
+     4,
+     null,
+     null
+    ],
+    [
+     6,
+     null,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "full_parenthesized_right_input",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT c.name AS name, a.id AS a_id, b.note AS note FROM custs c FULL JOIN (orders_a a JOIN orders_b b ON a.cust = b.cust) ON c.cust = a.cust;",
+   "reference_outcome": "rows",
+   "columns": [
+    "name",
+    "a_id",
+    "note"
+   ],
+   "types": [
+    "VARCHAR",
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "Ada",
+     2,
+     "match"
+    ],
+    [
+     "Bo",
+     3,
+     "amount differs"
+    ],
+    [
+     "Bo",
+     3,
+     "second row"
+    ],
+    [
+     "Ada",
+     1,
+     "match"
+    ],
+    [
+     "Nil",
+     null,
+     null
+    ],
+    [
+     "Cy",
+     null,
+     null
+    ],
+    [
+     "Di",
+     null,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "full_chain",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT pa.x AS x, pb.y AS y, c.name AS name FROM pa FULL JOIN pb ON pa.k = pb.k AND pa.k2 = pb.k2 FULL JOIN custs c ON c.cust = pb.y;",
+   "reference_outcome": "rows",
+   "columns": [
+    "x",
+    "y",
+    "name"
+   ],
+   "types": [
+    "INTEGER",
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     6,
+     10,
+     "Ada"
+    ],
+    [
+     null,
+     50,
+     "Cy"
+    ],
+    [
+     null,
+     60,
+     "Di"
+    ],
+    [
+     1,
+     10,
+     "Ada"
+    ],
+    [
+     null,
+     null,
+     "Bo"
+    ],
+    [
+     null,
+     null,
+     "Nil"
+    ],
+    [
+     3,
+     30,
+     null
+    ],
+    [
+     1,
+     70,
+     null
+    ],
+    [
+     6,
+     70,
+     null
+    ],
+    [
+     2,
+     null,
+     null
+    ],
+    [
+     4,
+     null,
+     null
+    ],
+    [
+     5,
+     null,
+     null
+    ],
+    [
+     null,
+     40,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "full_derived_inputs",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT s.cust AS cust, s.n AS a_orders, t.n AS b_rows FROM (SELECT cust, COUNT(*) AS n FROM orders_a GROUP BY cust) s FULL JOIN (SELECT cust, COUNT(*) AS n FROM orders_b GROUP BY cust) t ON s.cust = t.cust;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "a_orders",
+    "b_rows"
+   ],
+   "types": [
+    "INTEGER",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     10,
+     2,
+     1
+    ],
+    [
+     20,
+     1,
+     2
+    ],
+    [
+     null,
+     1,
+     null
+    ],
+    [
+     30,
+     1,
+     null
+    ],
+    [
+     40,
+     1,
+     null
+    ],
+    [
+     null,
+     null,
+     2
+    ],
+    [
+     null,
+     null,
+     1
+    ]
+   ]
+  },
+  {
+   "id": "full_self_join",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT x.id AS earlier, y.id AS later FROM orders_a x FULL JOIN orders_a y ON x.id + 1 = y.id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "earlier",
+    "later"
+   ],
+   "types": [
+    "INTEGER",
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     1,
+     2
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     null
+    ],
+    [
+     null,
+     1
+    ]
+   ]
+  },
+  {
+   "id": "full_count_star",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT COUNT(*) AS n, COUNT(a.id) AS a_n, COUNT(b.note) AS b_n FROM orders_a a FULL JOIN orders_b b ON a.cust = b.cust;",
+   "reference_outcome": "rows",
+   "columns": [
+    "n",
+    "a_n",
+    "b_n"
+   ],
+   "types": [
+    "BIGINT",
+    "BIGINT",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     10,
+     7,
+     7
+    ]
+   ]
+  },
+  {
+   "id": "using_inner",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT cust, a.id AS a_id, b.note AS note FROM orders_a a JOIN orders_b b USING (cust) ORDER BY a_id, note;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "a_id",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     10,
+     1,
+     "match"
+    ],
+    [
+     10,
+     2,
+     "match"
+    ],
+    [
+     20,
+     3,
+     "amount differs"
+    ],
+    [
+     20,
+     3,
+     "second row"
+    ]
+   ]
+  },
+  {
+   "id": "using_left_merged_is_left",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT cust, a.cust AS a_cust, b.cust AS b_cust, a.id AS a_id FROM orders_a a LEFT JOIN orders_b b USING (cust) ORDER BY a_id, b.note;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "a_cust",
+    "b_cust",
+    "a_id"
+   ],
+   "types": [
+    "INTEGER",
+    "INTEGER",
+    "INTEGER",
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     10,
+     10,
+     10,
+     1
+    ],
+    [
+     10,
+     10,
+     10,
+     2
+    ],
+    [
+     20,
+     20,
+     20,
+     3
+    ],
+    [
+     20,
+     20,
+     20,
+     3
+    ],
+    [
+     null,
+     null,
+     null,
+     4
+    ],
+    [
+     30,
+     30,
+     null,
+     5
+    ],
+    [
+     40,
+     40,
+     null,
+     6
+    ]
+   ]
+  },
+  {
+   "id": "using_right_merged_is_right",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT cust, a.cust AS a_cust, b.cust AS b_cust, b.note AS note FROM orders_a a RIGHT JOIN orders_b b USING (cust) ORDER BY note, a.id;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "a_cust",
+    "b_cust",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "INTEGER",
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     null,
+     null,
+     null,
+     "all null"
+    ],
+    [
+     20,
+     20,
+     20,
+     "amount differs"
+    ],
+    [
+     10,
+     10,
+     10,
+     "match"
+    ],
+    [
+     10,
+     10,
+     10,
+     "match"
+    ],
+    [
+     null,
+     null,
+     null,
+     "null cust"
+    ],
+    [
+     50,
+     null,
+     50,
+     "only b"
+    ],
+    [
+     20,
+     20,
+     20,
+     "second row"
+    ]
+   ]
+  },
+  {
+   "id": "using_full_merged_coalesce",
+   "ordered": false,
+   "pg": "agree (merged column is COALESCE(a.cust, b.cust))",
+   "sql": "SELECT cust, a.cust AS a_cust, b.cust AS b_cust, a.id AS a_id, b.note AS note FROM orders_a a FULL JOIN orders_b b USING (cust);",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "a_cust",
+    "b_cust",
+    "a_id",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "INTEGER",
+    "INTEGER",
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     10,
+     10,
+     10,
+     2,
+     "match"
+    ],
+    [
+     20,
+     20,
+     20,
+     3,
+     "amount differs"
+    ],
+    [
+     20,
+     20,
+     20,
+     3,
+     "second row"
+    ],
+    [
+     10,
+     10,
+     10,
+     1,
+     "match"
+    ],
+    [
+     50,
+     null,
+     50,
+     null,
+     "only b"
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     "null cust"
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     "all null"
+    ],
+    [
+     30,
+     30,
+     null,
+     5,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     4,
+     null
+    ],
+    [
+     40,
+     40,
+     null,
+     6,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "using_full_two_columns",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT k, k2, pa.x AS x, pb.y AS y FROM pa FULL JOIN pb USING (k, k2);",
+   "reference_outcome": "rows",
+   "columns": [
+    "k",
+    "k2",
+    "x",
+    "y"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR",
+    "INTEGER",
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     1,
+     "a",
+     1,
+     70
+    ],
+    [
+     2,
+     "a",
+     3,
+     30
+    ],
+    [
+     1,
+     "a",
+     6,
+     70
+    ],
+    [
+     1,
+     "a",
+     1,
+     10
+    ],
+    [
+     1,
+     "a",
+     6,
+     10
+    ],
+    [
+     1,
+     "b",
+     2,
+     null
+    ],
+    [
+     2,
+     null,
+     4,
+     null
+    ],
+    [
+     null,
+     "a",
+     5,
+     null
+    ],
+    [
+     2,
+     "b",
+     null,
+     40
+    ],
+    [
+     null,
+     "a",
+     null,
+     50
+    ],
+    [
+     2,
+     null,
+     null,
+     60
+    ]
+   ]
+  },
+  {
+   "id": "using_star_leading_columns",
+   "ordered": false,
+   "pg": "agree (USING columns lead the left table, so both list k, k2, x, y)",
+   "sql": "SELECT * FROM pa JOIN pb USING (k, k2);",
+   "reference_outcome": "rows",
+   "columns": [
+    "k",
+    "k2",
+    "x",
+    "y"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR",
+    "INTEGER",
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     1,
+     "a",
+     1,
+     70
+    ],
+    [
+     2,
+     "a",
+     3,
+     30
+    ],
+    [
+     1,
+     "a",
+     6,
+     70
+    ],
+    [
+     1,
+     "a",
+     1,
+     10
+    ],
+    [
+     1,
+     "a",
+     6,
+     10
+    ]
+   ]
+  },
+  {
+   "id": "using_star_full",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT * FROM custs c FULL JOIN orders_b b USING (cust);",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "name",
+    "tier",
+    "region",
+    "amount",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "DECIMAL(10,2)",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     10,
+     "Ada",
+     "gold",
+     "north",
+     "100.50",
+     "match"
+    ],
+    [
+     20,
+     "Bo",
+     "silver",
+     "south",
+     "70.00",
+     "amount differs"
+    ],
+    [
+     20,
+     "Bo",
+     "silver",
+     "south",
+     "5.25",
+     "second row"
+    ],
+    [
+     50,
+     "Cy",
+     "gold",
+     "west",
+     "12.00",
+     "only b"
+    ],
+    [
+     null,
+     null,
+     null,
+     "south",
+     "5.00",
+     "null cust"
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     "1.00",
+     "all null"
+    ],
+    [
+     null,
+     "Nil",
+     "bronze",
+     null,
+     null,
+     null
+    ],
+    [
+     60,
+     "Di",
+     null,
+     null,
+     null,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "using_qualified_star",
+   "ordered": false,
+   "pg": "agree (t.* keeps all of t's columns, including the USING column)",
+   "sql": "SELECT b.*, c.* FROM orders_b b FULL JOIN custs c USING (cust);",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "region",
+    "amount",
+    "note",
+    "cust",
+    "name",
+    "tier"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR",
+    "DECIMAL(10,2)",
+    "VARCHAR",
+    "INTEGER",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     10,
+     "north",
+     "100.50",
+     "match",
+     10,
+     "Ada",
+     "gold"
+    ],
+    [
+     20,
+     "south",
+     "70.00",
+     "amount differs",
+     20,
+     "Bo",
+     "silver"
+    ],
+    [
+     20,
+     "south",
+     "5.25",
+     "second row",
+     20,
+     "Bo",
+     "silver"
+    ],
+    [
+     50,
+     "west",
+     "12.00",
+     "only b",
+     50,
+     "Cy",
+     "gold"
+    ],
+    [
+     null,
+     "south",
+     "5.00",
+     "null cust",
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     "1.00",
+     "all null",
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     "Nil",
+     "bronze"
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     60,
+     "Di",
+     null
+    ]
+   ]
+  },
+  {
+   "id": "using_where_on_merged",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT cust, c.name AS name, b.note AS note FROM custs c FULL JOIN orders_b b USING (cust) WHERE cust >= 20 ORDER BY cust, note NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "name",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     20,
+     "Bo",
+     "amount differs"
+    ],
+    [
+     20,
+     "Bo",
+     "second row"
+    ],
+    [
+     50,
+     "Cy",
+     "only b"
+    ],
+    [
+     60,
+     "Di",
+     null
+    ]
+   ]
+  },
+  {
+   "id": "using_group_by_merged",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT cust, COUNT(*) AS n, SUM(amount) AS total FROM custs FULL JOIN orders_b USING (cust) GROUP BY cust ORDER BY cust NULLS LAST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "n",
+    "total"
+   ],
+   "types": [
+    "INTEGER",
+    "BIGINT",
+    "DECIMAL(38,2)"
+   ],
+   "rows": [
+    [
+     10,
+     1,
+     "100.50"
+    ],
+    [
+     20,
+     2,
+     "75.25"
+    ],
+    [
+     50,
+     1,
+     "12.00"
+    ],
+    [
+     60,
+     1,
+     null
+    ],
+    [
+     null,
+     3,
+     "6.00"
+    ]
+   ]
+  },
+  {
+   "id": "using_case_insensitive",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT cust, b.note AS note FROM custs c JOIN orders_b b USING (CUST);",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     10,
+     "match"
+    ],
+    [
+     20,
+     "amount differs"
+    ],
+    [
+     20,
+     "second row"
+    ],
+    [
+     50,
+     "only b"
+    ]
+   ]
+  },
+  {
+   "id": "using_chain_full",
+   "ordered": false,
+   "pg": "agree (each later USING column is COALESCE of the earlier merged column and the new side)",
+   "sql": "SELECT cust, c.cust AS c_cust, b.cust AS b_cust, a.cust AS a_cust FROM custs c FULL JOIN orders_b b USING (cust) FULL JOIN orders_a a USING (cust);",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "c_cust",
+    "b_cust",
+    "a_cust"
+   ],
+   "types": [
+    "INTEGER",
+    "INTEGER",
+    "INTEGER",
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     10,
+     10,
+     10,
+     10
+    ],
+    [
+     10,
+     10,
+     10,
+     10
+    ],
+    [
+     20,
+     20,
+     20,
+     20
+    ],
+    [
+     20,
+     20,
+     20,
+     20
+    ],
+    [
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     30,
+     null,
+     null,
+     30
+    ],
+    [
+     40,
+     null,
+     null,
+     40
+    ],
+    [
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     50,
+     50,
+     50,
+     null
+    ],
+    [
+     60,
+     60,
+     null,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "using_chain_star",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT * FROM custs c JOIN orders_b b USING (cust) JOIN orders_a a USING (cust);",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "name",
+    "tier",
+    "region",
+    "amount",
+    "note",
+    "id",
+    "region",
+    "amount",
+    "day"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR",
+    "VARCHAR",
+    "VARCHAR",
+    "DECIMAL(10,2)",
+    "VARCHAR",
+    "INTEGER",
+    "VARCHAR",
+    "DECIMAL(10,2)",
+    "DATE"
+   ],
+   "rows": [
+    [
+     10,
+     "Ada",
+     "gold",
+     "north",
+     "100.50",
+     "match",
+     2,
+     "north",
+     "20.00",
+     "2024-01-06"
+    ],
+    [
+     20,
+     "Bo",
+     "silver",
+     "south",
+     "70.00",
+     "amount differs",
+     3,
+     "south",
+     "75.25",
+     "2024-02-01"
+    ],
+    [
+     20,
+     "Bo",
+     "silver",
+     "south",
+     "5.25",
+     "second row",
+     3,
+     "south",
+     "75.25",
+     "2024-02-01"
+    ],
+    [
+     10,
+     "Ada",
+     "gold",
+     "north",
+     "100.50",
+     "match",
+     1,
+     "north",
+     "100.50",
+     "2024-01-05"
+    ]
+   ]
+  },
+  {
+   "id": "using_in_subquery",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT name, (SELECT COUNT(*) FROM orders_a a JOIN orders_b b USING (cust) WHERE cust = c.cust) AS matches FROM custs c ORDER BY name;",
+   "reference_outcome": "rows",
+   "columns": [
+    "name",
+    "matches"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "Ada",
+     2
+    ],
+    [
+     "Bo",
+     2
+    ],
+    [
+     "Cy",
+     0
+    ],
+    [
+     "Di",
+     0
+    ],
+    [
+     "Nil",
+     0
+    ]
+   ]
+  },
+  {
+   "id": "using_exists_correlated",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT c.name AS name FROM custs c WHERE EXISTS (SELECT 1 FROM orders_a a JOIN orders_b b USING (cust) WHERE cust = c.cust) ORDER BY name;",
+   "reference_outcome": "rows",
+   "columns": [
+    "name"
+   ],
+   "types": [
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "Ada"
+    ],
+    [
+     "Bo"
+    ]
+   ]
+  },
+  {
+   "id": "natural_inner",
+   "ordered": false,
+   "pg": "agree (common columns cust, region, amount)",
+   "sql": "SELECT cust, region, amount, a.id AS a_id, b.note AS note FROM orders_a a NATURAL JOIN orders_b b;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "region",
+    "amount",
+    "a_id",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR",
+    "DECIMAL(10,2)",
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     10,
+     "north",
+     "100.50",
+     1,
+     "match"
+    ]
+   ]
+  },
+  {
+   "id": "natural_left_unmentioned_columns",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT a.id AS a_id, b.note AS note FROM orders_a a NATURAL LEFT JOIN orders_b b;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a_id",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "match"
+    ],
+    [
+     2,
+     null
+    ],
+    [
+     4,
+     null
+    ],
+    [
+     5,
+     null
+    ],
+    [
+     6,
+     null
+    ],
+    [
+     3,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "natural_full_star",
+   "ordered": false,
+   "pg": "agree (k, k2 lead pa)",
+   "sql": "SELECT * FROM pa NATURAL FULL JOIN pb;",
+   "reference_outcome": "rows",
+   "columns": [
+    "k",
+    "k2",
+    "x",
+    "y"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR",
+    "INTEGER",
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     1,
+     "a",
+     1,
+     70
+    ],
+    [
+     2,
+     "a",
+     3,
+     30
+    ],
+    [
+     1,
+     "a",
+     6,
+     70
+    ],
+    [
+     1,
+     "a",
+     1,
+     10
+    ],
+    [
+     1,
+     "a",
+     6,
+     10
+    ],
+    [
+     1,
+     "b",
+     2,
+     null
+    ],
+    [
+     2,
+     null,
+     4,
+     null
+    ],
+    [
+     null,
+     "a",
+     5,
+     null
+    ],
+    [
+     null,
+     "a",
+     null,
+     50
+    ],
+    [
+     2,
+     null,
+     null,
+     60
+    ],
+    [
+     2,
+     "b",
+     null,
+     40
+    ]
+   ]
+  },
+  {
+   "id": "natural_right",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT cust, name, note FROM custs NATURAL RIGHT JOIN orders_b;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "name",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     10,
+     "Ada",
+     "match"
+    ],
+    [
+     20,
+     "Bo",
+     "amount differs"
+    ],
+    [
+     20,
+     "Bo",
+     "second row"
+    ],
+    [
+     50,
+     "Cy",
+     "only b"
+    ],
+    [
+     null,
+     null,
+     "null cust"
+    ],
+    [
+     null,
+     null,
+     "all null"
+    ]
+   ]
+  },
+  {
+   "id": "intersect_all_duplicates_nulls",
+   "ordered": false,
+   "pg": "agree (min(m, n) copies; NULLs equal)",
+   "sql": "SELECT a, b FROM ma INTERSECT ALL SELECT a, b FROM mb;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     3,
+     null
+    ],
+    [
+     2,
+     "y"
+    ],
+    [
+     2,
+     "y"
+    ],
+    [
+     null,
+     "n"
+    ],
+    [
+     1,
+     "x"
+    ],
+    [
+     1,
+     "x"
+    ]
+   ]
+  },
+  {
+   "id": "except_all_left_minus_right",
+   "ordered": false,
+   "pg": "agree (max(m - n, 0) copies)",
+   "sql": "SELECT a, b FROM ma EXCEPT ALL SELECT a, b FROM mb;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     null,
+     "n"
+    ],
+    [
+     4,
+     "z"
+    ],
+    [
+     1,
+     "x"
+    ]
+   ]
+  },
+  {
+   "id": "except_all_right_minus_left",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT a, b FROM mb EXCEPT ALL SELECT a, b FROM ma;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     3,
+     null
+    ],
+    [
+     2,
+     "y"
+    ],
+    [
+     5,
+     "q"
+    ]
+   ]
+  },
+  {
+   "id": "intersect_all_single_column",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT a FROM ma INTERSECT ALL SELECT a FROM mb ORDER BY a NULLS FIRST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a"
+   ],
+   "types": [
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     null
+    ],
+    [
+     1
+    ],
+    [
+     1
+    ],
+    [
+     2
+    ],
+    [
+     2
+    ],
+    [
+     3
+    ]
+   ]
+  },
+  {
+   "id": "intersect_all_with_empty",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT cust, name FROM custs INTERSECT ALL SELECT cust, name FROM nothing;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "name"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": []
+  },
+  {
+   "id": "except_all_with_empty",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT cust, name FROM custs EXCEPT ALL SELECT cust, name FROM nothing;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "name"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     60,
+     "Di"
+    ],
+    [
+     10,
+     "Ada"
+    ],
+    [
+     20,
+     "Bo"
+    ],
+    [
+     null,
+     "Nil"
+    ],
+    [
+     50,
+     "Cy"
+    ]
+   ]
+  },
+  {
+   "id": "intersect_all_precedence",
+   "ordered": false,
+   "pg": "agree (INTERSECT binds tighter than UNION/EXCEPT)",
+   "sql": "SELECT a FROM ma UNION ALL SELECT a FROM mb INTERSECT ALL SELECT a FROM ma;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a"
+   ],
+   "types": [
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     1
+    ],
+    [
+     1
+    ],
+    [
+     2
+    ],
+    [
+     2
+    ],
+    [
+     null
+    ],
+    [
+     null
+    ],
+    [
+     3
+    ],
+    [
+     4
+    ],
+    [
+     3
+    ],
+    [
+     1
+    ],
+    [
+     1
+    ],
+    [
+     2
+    ],
+    [
+     2
+    ],
+    [
+     null
+    ]
+   ]
+  },
+  {
+   "id": "except_all_left_associative",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT a FROM ma EXCEPT ALL SELECT a FROM mb EXCEPT ALL SELECT a FROM ma WHERE a = 1;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a"
+   ],
+   "types": [
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     4
+    ],
+    [
+     null
+    ]
+   ]
+  },
+  {
+   "id": "intersect_all_widened_types",
+   "ordered": false,
+   "pg": "agree (compared as DECIMAL)",
+   "sql": "SELECT a, b FROM ma INTERSECT ALL SELECT a, b FROM md;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b"
+   ],
+   "types": [
+    "DECIMAL(11,1)",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     "2.0",
+     "y"
+    ],
+    [
+     "1.0",
+     "x"
+    ]
+   ]
+  },
+  {
+   "id": "intersect_all_floats_booleans",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT f, flag FROM fa INTERSECT ALL SELECT f, flag FROM fb;",
+   "reference_outcome": "rows",
+   "columns": [
+    "f",
+    "flag"
+   ],
+   "types": [
+    "DOUBLE",
+    "BOOLEAN"
+   ],
+   "rows": [
+    [
+     {
+      "float_bits": "3ff8000000000000"
+     },
+     true
+    ]
+   ]
+  },
+  {
+   "id": "intersect_all_count",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT COUNT(*) AS n FROM (SELECT cust FROM orders_a INTERSECT ALL SELECT cust FROM orders_b) t;",
+   "reference_outcome": "rows",
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     3
+    ]
+   ]
+  },
+  {
+   "id": "intersect_distinct_unchanged",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "SELECT a, b FROM ma INTERSECT SELECT a, b FROM mb;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "x"
+    ],
+    [
+     2,
+     "y"
+    ],
+    [
+     null,
+     "n"
+    ],
+    [
+     3,
+     null
+    ]
+   ]
+  },
+  {
+   "id": "union_all_order_limit",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT cust, amount FROM orders_a UNION ALL SELECT cust, amount FROM orders_b ORDER BY amount DESC NULLS LAST, cust NULLS LAST LIMIT 4;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust",
+    "amount"
+   ],
+   "types": [
+    "INTEGER",
+    "DECIMAL(10,2)"
+   ],
+   "rows": [
+    [
+     10,
+     "100.50"
+    ],
+    [
+     10,
+     "100.50"
+    ],
+    [
+     20,
+     "75.25"
+    ],
+    [
+     20,
+     "70.00"
+    ]
+   ]
+  },
+  {
+   "id": "union_all_order_by_ordinal_offset",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT id AS n FROM orders_a UNION ALL SELECT y FROM pb ORDER BY 1 LIMIT 3 OFFSET 2;",
+   "reference_outcome": "rows",
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     3
+    ],
+    [
+     4
+    ],
+    [
+     5
+    ]
+   ]
+  },
+  {
+   "id": "union_order_by_name_case",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT cust AS customer FROM orders_a UNION SELECT cust FROM orders_b ORDER BY CUSTOMER NULLS FIRST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "customer"
+   ],
+   "types": [
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     null
+    ],
+    [
+     10
+    ],
+    [
+     20
+    ],
+    [
+     30
+    ],
+    [
+     40
+    ],
+    [
+     50
+    ]
+   ]
+  },
+  {
+   "id": "union_order_by_unaliased_qualified_output",
+   "ordered": true,
+   "pg": "agree (the output column is named cust)",
+   "assay_columns": [
+    "a.cust"
+   ],
+   "sql": "SELECT a.cust FROM orders_a a UNION SELECT b.cust FROM orders_b b ORDER BY cust NULLS FIRST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust"
+   ],
+   "types": [
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     null
+    ],
+    [
+     10
+    ],
+    [
+     20
+    ],
+    [
+     30
+    ],
+    [
+     40
+    ],
+    [
+     50
+    ]
+   ]
+  },
+  {
+   "id": "except_order_desc_nulls_first",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT cust FROM custs EXCEPT SELECT cust FROM orders_a ORDER BY cust DESC NULLS FIRST;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust"
+   ],
+   "types": [
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     60
+    ],
+    [
+     50
+    ]
+   ]
+  },
+  {
+   "id": "intersect_all_order_limit",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT a, b FROM ma INTERSECT ALL SELECT a, b FROM mb ORDER BY a NULLS LAST, b LIMIT 3;",
+   "reference_outcome": "rows",
+   "columns": [
+    "a",
+    "b"
+   ],
+   "types": [
+    "INTEGER",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     1,
+     "x"
+    ],
+    [
+     1,
+     "x"
+    ],
+    [
+     2,
+     "y"
+    ]
+   ]
+  },
+  {
+   "id": "limit_without_order_count",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT COUNT(*) AS n FROM (SELECT cust FROM orders_a UNION ALL SELECT cust FROM orders_b LIMIT 5) t;",
+   "reference_outcome": "rows",
+   "columns": [
+    "n"
+   ],
+   "types": [
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     5
+    ]
+   ]
+  },
+  {
+   "id": "parenthesized_branches_with_limits",
+   "ordered": false,
+   "pg": "agree",
+   "sql": "(SELECT id FROM orders_a ORDER BY id DESC LIMIT 2) UNION ALL (SELECT x FROM pa ORDER BY x LIMIT 2);",
+   "reference_outcome": "rows",
+   "columns": [
+    "id"
+   ],
+   "types": [
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     6
+    ],
+    [
+     5
+    ],
+    [
+     1
+    ],
+    [
+     2
+    ]
+   ]
+  },
+  {
+   "id": "parenthesized_compound_outer_order",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "(SELECT cust FROM orders_a UNION SELECT cust FROM orders_b) ORDER BY 1 DESC NULLS LAST LIMIT 3;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust"
+   ],
+   "types": [
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     50
+    ],
+    [
+     40
+    ],
+    [
+     30
+    ]
+   ]
+  },
+  {
+   "id": "compound_order_in_derived_table",
+   "ordered": true,
+   "pg": "agree",
+   "sql": "SELECT t.v AS v FROM (SELECT amount AS v FROM orders_a UNION ALL SELECT amount FROM orders_b ORDER BY 1 DESC LIMIT 2) t ORDER BY v;",
+   "reference_outcome": "rows",
+   "columns": [
+    "v"
+   ],
+   "types": [
+    "DECIMAL(10,2)"
+   ],
+   "rows": [
+    [
+     "100.50"
+    ],
+    [
+     "100.50"
+    ]
+   ]
+  },
+  {
+   "id": "refuse_using_star_not_leading",
+   "ordered": false,
+   "pg": "differs: PostgreSQL lists the merged cust first (cust, id, region, ...); DuckDB keeps it at the left position (id, cust, region, ...)",
+   "assay_error": "unsupported: SELECT * over a USING/NATURAL join",
+   "difference": "column order differs between the references",
+   "sql": "SELECT * FROM orders_a a JOIN orders_b b USING (cust);",
+   "reference_outcome": "rows",
+   "columns": [
+    "id",
+    "cust",
+    "region",
+    "amount",
+    "day",
+    "region",
+    "amount",
+    "note"
+   ],
+   "types": [
+    "INTEGER",
+    "INTEGER",
+    "VARCHAR",
+    "DECIMAL(10,2)",
+    "DATE",
+    "VARCHAR",
+    "DECIMAL(10,2)",
+    "VARCHAR"
+   ],
+   "rows": [
+    [
+     2,
+     10,
+     "north",
+     "20.00",
+     "2024-01-06",
+     "north",
+     "100.50",
+     "match"
+    ],
+    [
+     3,
+     20,
+     "south",
+     "75.25",
+     "2024-02-01",
+     "south",
+     "70.00",
+     "amount differs"
+    ],
+    [
+     3,
+     20,
+     "south",
+     "75.25",
+     "2024-02-01",
+     "south",
+     "5.25",
+     "second row"
+    ],
+    [
+     1,
+     10,
+     "north",
+     "100.50",
+     "2024-01-05",
+     "north",
+     "100.50",
+     "match"
+    ]
+   ]
+  },
+  {
+   "id": "refuse_natural_no_common",
+   "ordered": false,
+   "pg": "differs: PostgreSQL returns the cross join",
+   "assay_error": "unsupported: NATURAL JOIN without common columns",
+   "difference": "DuckDB rejects, PostgreSQL cross-joins",
+   "sql": "SELECT * FROM custs NATURAL JOIN (SELECT 1 AS q) t;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: No columns found to join on in NATURAL JOIN.\nUse CROSS JOIN if you intended for this to be a cross-product.\n   Left candidates: custs.cust, custs.name, custs.tier\n   Right candidates: t.q\n\nLINE 1: SELECT * FROM custs NATURAL JOIN (SELECT 1 AS q) t;\n                            ^"
+  },
+  {
+   "id": "refuse_duplicate_using",
+   "ordered": false,
+   "pg": "differs: PostgreSQL rejects a repeated USING column",
+   "assay_error": "unsupported: column cust appears more than once in USING",
+   "difference": "DuckDB accepts, PostgreSQL rejects",
+   "sql": "SELECT cust FROM custs JOIN orders_b USING (cust, cust);",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust"
+   ],
+   "types": [
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     10
+    ],
+    [
+     20
+    ],
+    [
+     20
+    ],
+    [
+     50
+    ]
+   ]
+  },
+  {
+   "id": "refuse_using_type_mismatch",
+   "ordered": false,
+   "pg": "differs: PostgreSQL's merged column has the common type (numeric); DuckDB keeps the left type",
+   "assay_error": "unsupported: USING column a has different types",
+   "difference": "merged column type differs between the references",
+   "sql": "SELECT a FROM ma JOIN md USING (a);",
+   "reference_outcome": "rows",
+   "columns": [
+    "a"
+   ],
+   "types": [
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     1
+    ],
+    [
+     1
+    ],
+    [
+     1
+    ],
+    [
+     2
+    ],
+    [
+     2
+    ]
+   ]
+  },
+  {
+   "id": "refuse_parenthesized_join_alias",
+   "ordered": false,
+   "pg": "differs: PostgreSQL answers through the join alias; DuckDB rejects j.x",
+   "assay_error": "unsupported: alias on parenthesized join",
+   "difference": "references disagree; kept refused",
+   "sql": "SELECT j.x AS x FROM (pa JOIN pb USING (k, k2)) AS j;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: Referenced table \"j\" not found!\nCandidate tables: \"pa\"\n\nLINE 1: SELECT j.x AS x FROM (pa JOIN pb USING (k, k2)) AS j;\n               ^"
+  },
+  {
+   "id": "refuse_lateral",
+   "ordered": false,
+   "pg": "agree (both answer)",
+   "assay_error": "unsupported: table factor",
+   "difference": "LATERAL kept refused",
+   "sql": "SELECT c.name AS name, t.n AS n FROM custs c, LATERAL (SELECT COUNT(*) AS n FROM orders_b b WHERE b.cust = c.cust) t;",
+   "reference_outcome": "rows",
+   "columns": [
+    "name",
+    "n"
+   ],
+   "types": [
+    "VARCHAR",
+    "BIGINT"
+   ],
+   "rows": [
+    [
+     "Ada",
+     1
+    ],
+    [
+     "Bo",
+     2
+    ],
+    [
+     "Cy",
+     1
+    ],
+    [
+     "Di",
+     0
+    ],
+    [
+     "Nil",
+     0
+    ]
+   ]
+  },
+  {
+   "id": "refuse_compound_qualified_order",
+   "ordered": true,
+   "pg": "differs: PostgreSQL rejects a qualified ORDER BY over a set operation",
+   "assay_error": "unsupported: qualified ORDER BY name over a set operation",
+   "difference": "DuckDB accepts, PostgreSQL rejects",
+   "sql": "SELECT a.cust FROM orders_a a UNION ALL SELECT b.cust FROM orders_b b ORDER BY a.cust;",
+   "reference_outcome": "rows",
+   "columns": [
+    "cust"
+   ],
+   "types": [
+    "INTEGER"
+   ],
+   "rows": [
+    [
+     10
+    ],
+    [
+     10
+    ],
+    [
+     10
+    ],
+    [
+     20
+    ],
+    [
+     20
+    ],
+    [
+     20
+    ],
+    [
+     30
+    ],
+    [
+     40
+    ],
+    [
+     50
+    ],
+    [
+     null
+    ],
+    [
+     null
+    ],
+    [
+     null
+    ]
+   ]
+  },
+  {
+   "id": "refuse_compound_order_expression",
+   "ordered": true,
+   "pg": "agree (PostgreSQL accepts only output column names or positions after a set operation)",
+   "assay_error": "unsupported: ORDER BY expression over a set operation",
+   "difference": "both references reject",
+   "sql": "SELECT cust FROM orders_a UNION ALL SELECT cust FROM orders_b ORDER BY cust + 1;",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: Could not ORDER BY column \"(memory.main.orders_a.cust + 1)\": add the expression/function to every SELECT, or move the UNION into a FROM clause."
+  },
+  {
+   "id": "error_full_without_condition",
+   "ordered": false,
+   "pg": "agree (syntax error)",
+   "assay_error": "unsupported: join requires ON",
+   "difference": "both references reject",
+   "sql": "SELECT * FROM custs FULL JOIN orders_b;",
+   "reference_outcome": "error",
+   "reference_error": "Parser Error: syntax error at or near \";\"\n\nLINE 1: SELECT * FROM custs FULL JOIN orders_b;\n                                              ^"
+  },
+  {
+   "id": "error_using_missing_column",
+   "ordered": false,
+   "pg": "agree (error)",
+   "assay_error": "semantic: USING column note does not exist on the left side",
+   "difference": "both references reject",
+   "sql": "SELECT * FROM custs JOIN orders_b USING (note);",
+   "reference_outcome": "error",
+   "reference_error": "Binder Error: Column \"note\" does not exist on left side of join!"
+  }
+ ]
+}

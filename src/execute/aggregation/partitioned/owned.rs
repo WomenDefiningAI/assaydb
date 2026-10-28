@@ -18,7 +18,7 @@ struct ErrorKey {
 }
 struct IndexedError {
     key: ErrorKey,
-    message: String,
+    message: crate::Error,
 }
 struct Flight {
     generation: u64,
@@ -34,7 +34,7 @@ pub(in crate::execute) struct OwnedPartitions {
     routing: RoutingPlan,
     generation: u64,
     flight: Option<Flight>,
-    failed: Option<String>,
+    failed: Option<crate::Error>,
     finished: bool,
     // Base metadata outlives all owner-held slot/receipt/identity buffers.
     inner: Partitioned,
@@ -120,7 +120,7 @@ impl OwnedPartitions {
         }
         Ok(())
     }
-    fn fail<T>(&mut self, error: String) -> Result<T> {
+    fn fail<T>(&mut self, error: crate::Error) -> Result<T> {
         self.failed = Some(error.clone());
         Err(error)
     }
