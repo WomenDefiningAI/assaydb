@@ -1,0 +1,117 @@
+{
+  "schema": "assay-validation-update/v1",
+  "updated_utc_date": "2026-10-28",
+  "status": "unreleased candidate validation; not release qualification",
+  "candidate_commit": "b5b34e53618e9975949eaa0e72b08bca8a61db44",
+  "public_comparator_commit": "c4e925f2759c984c271eab923ddc1c09042f535b",
+  "fresh_execution": {
+    "started_utc": "2026-10-28T03:55:12.246524+00:00",
+    "completed_utc": "2026-10-28T04:12:56.147594+00:00",
+    "pacific_date": "2026-10-27",
+    "supervisor_exit": 0,
+    "cleanup_confirmed": true
+  },
+  "candidate_sql_logic_test": {
+    "complete": true,
+    "collection_valid": true,
+    "fixed_total": 7421339,
+    "applicable_total": 5939714,
+    "passed": 5939628,
+    "unsupported": 31,
+    "errors": 55,
+    "wrong_answers": 0,
+    "fixed_nonexecuted": {
+      "after-halt": 75,
+      "conditional-not-executed": 1480933,
+      "control-only": 617
+    },
+    "accounting_note": "The fixed denominator includes conditional-not-executed, after-halt and control-only records. Those records are not executed engine passes. Applicable errors and unsupported cases remain non-passes."
+  },
+  "candidate_differential_55000": {
+    "complete": true,
+    "valid": true,
+    "total": 55000,
+    "direct_passes": 54171,
+    "raw_answer_differences": 739,
+    "documented_sqlite_divergences": 739,
+    "classified_wrong_answers": 0,
+    "native_errors": 65,
+    "documented_expected_native_rejections": 65,
+    "ordinary_native_errors": 0,
+    "oracle_errors": 25,
+    "unsupported": 0,
+    "metamorphic_engine_checks": 9400,
+    "metamorphic_pending": 0
+  },
+  "classification_rule": "Raw outcomes remain unchanged. Answer differences count as documented SQLite divergences only when Assay agrees exactly with the pinned DuckDB reference under the frozen comparison rules. Expected rejection requires the documented compatible DuckDB data error.",
+  "public_main_comparison": {
+    "kind": "additional-current-main",
+    "verdict": "pass",
+    "same_pacific_date": "2026-10-27",
+    "prior_correct_regressions": {
+      "slt": 0,
+      "differential": 0
+    },
+    "baseline_slt": {
+      "passed": 5937073,
+      "applicable_total": 5939714,
+      "unsupported": 640,
+      "errors": 2001,
+      "wrong_answers": 0
+    },
+    "baseline_differential": {
+      "direct_passes": 46980,
+      "unsupported": 6975,
+      "native_errors": 1020,
+      "oracle_errors": 25,
+      "wrong_answers": 0
+    },
+    "limitation": "Supplementary public-main comparison; does not replace the prescribed historical-baseline gate."
+  },
+  "retained_candidate_results": {
+    "execution_date_utc": "2026-10-23",
+    "rechecked_utc_date": "2026-10-28",
+    "rust": {
+      "passed": 1169,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 121,
+      "include_ignored": true,
+      "log_sha256": "b008d340487c9b3fee686f7d2c013b71e933c3d8d311cf1f066dac41ded71e9e"
+    },
+    "retail": {
+      "passed": 64,
+      "performance_claim": false
+    },
+    "python": "installed tests and compatibility replay passed; release wheel and source-distribution checks passed on the tested macOS arm64 environment"
+  },
+  "fresh_tool_checks": {
+    "candidate_validation_fixtures_passed": 85,
+    "public_validation_fixtures_passed": 85,
+    "website_unit_tests_passed": 16,
+    "website_metrics_gate_fixtures_passed": 9,
+    "candidate_source_files_verified": 943,
+    "scope": "Validation and website fixtures are not engine SQL cases."
+  },
+  "sha256": {
+    "slt_summary": "b88ea48c152a099fd8553a47d13b47dd076295c30f937bf65c98616770c49e0c",
+    "differential_summary": "5336f78ffe2bd20c43e41e888d40a2325b5d0dc7bbe2b175bb89fa90b18caebc",
+    "divergence": "be7963f7f191a1fe9bed16918abfd34de01289b9ed41f353d8daccc4c12b421e",
+    "expected_rejection": "bc440b2b3ddd3122021c5e80f0d44eacfdf50d09f768fa9306a4acf8dcb9c7d8",
+    "collection_receipt": "045de6e9ca0dcff3ffbde1c1ae11e76fda11a3d2478ea71fa21cda87eb4279a7",
+    "comparison": "f0a7f663940a164f4008ef9b7da5a19d96f7aaa589e6ad1a3400ddb7da17b3d8"
+  },
+  "limitations": [
+    "No full SQL parity, formal verification, production readiness or release acceptance claimed.",
+    "Retained October 23 results are not new October 28 executions.",
+    "Raw logs, private inputs and local filesystem details are not published.",
+    "Existing historical benchmark notices and caveats remain applicable.",
+    "Zero classified wrong answers is scoped to these collections and rules; 31 unsupported and 55 ordinary SQLLogicTest errors remain, as do 65 documented expected native rejections and 25 oracle errors in the differential suite."
+  ],
+  "not_run_fresh": [
+    "Prescribed historical-baseline paired qualification",
+    "Quiet-host paired performance",
+    "New execution of the already completed source-identical October 23 Rust, installed-package and retail checks"
+  ],
+  "publication_effect": "This update does not publish an engine update or package. No new performance result, benchmark compliance, Alpha 3 achievement or full SQL parity is claimed."
+}
