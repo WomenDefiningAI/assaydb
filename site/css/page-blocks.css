@@ -58,3 +58,6 @@ body[data-page]{--color-story-accent:#e9a99b}
 
 .contribution-scroll-hint{display:none}
 @media(max-width:48rem){.contribution-scroll-hint{display:block;font-size:.85rem;color:var(--color-muted)}}
+
+/* Surface unreleased candidate evidence separately from historical metrics. */
+.candidate-update{margin-top:1.5rem;padding:1rem 1.25rem;border:1px solid var(--color-link);background:var(--color-soft)}.candidate-update .eyebrow{margin-bottom:.5rem}.candidate-update p+p{margin-top:.5rem}.candidate-update a{display:inline-block;padding-block:.25rem}
